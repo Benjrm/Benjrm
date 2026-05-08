@@ -1,0 +1,154 @@
+services:
+  identity-provider:
+    image: quay.io/keycloak/keycloak:26.6.1
+    ports:
+      - "8088:8088"
+      - "9000:9000"
+    env_file:
+      - .env.example
+    entrypoint:
+      - '/bin/bash'
+      - '-c'
+      - |
+        echo "Setup Identity Provider"
+        /opt/keycloak/bin/kc.sh start-dev &
+        echo "Waiting a bit for startup"
+        sleep 6
+        
+        CUSTOM_REALM_NAME=demo_realm
+        CUSTOM_CLIENT_NAME=demo_client
+        CUSTOM_CLIENT_ID=demo_client_resource_id
+        CUSTOM_ROLE_NAME=demo-role
+        DEMO_PASSWORD=password
+        USERS_EMAIL_DOMAIN='example.com'
+        
+        function CreateUserInRealm {
+          while [ $$# -gt 0 ]; do
+            case "$$1" in
+              --realm*|-r*)
+                if [[ "$$1" != *=* ]]; then shift; fi
+                SUPPLIED_REALM="$${1#*=}"
+                ;;
+              --username*|-u*)
+                if [[ "$$1" != *=* ]]; then shift; fi # Value is next arg if no `=`
+                SUPPLIED_USER_NAME="$${1#*=}"
+                ;;
+              --password*|-p*)
+                if [[ "$$1" != *=* ]]; then shift; fi
+                SUPPLIED_USER_PASSWORD="$${1#*=}"
+                ;;
+              *)
+                >&2 printf "Error: Invalid argument\n"
+                exit 1
+                ;;
+            esac
+            shift
+          done
+          echo "==> Creating demo user $${SUPPLIED_USER_NAME} in demo realm $${SUPPLIED_REALM}"
+          /opt/keycloak/bin/kcadm.sh create users \
+            --target-realm $$SUPPLIED_REALM \
+            --set username=$$SUPPLIED_USER_NAME \
+            --set enabled=true \
+            --set emailVerified=true \
+            --set "email=$${SUPPLIED_USER_NAME}@$${USERS_EMAIL_DOMAIN}" \
+            --set "firstName=$${SUPPLIED_USER_NAME}First" \
+            --set "lastName=$${SUPPLIED_USER_NAME}Last" \
+            --output
+          echo "==> Setting password for user $${SUPPLIED_USER_NAME} in demo realm $${SUPPLIED_REALM}"
+          /opt/keycloak/bin/kcadm.sh set-password \
+            --target-realm $$SUPPLIED_REALM \
+            --username $$SUPPLIED_USER_NAME \
+            --new-password $$SUPPLIED_USER_PASSWORD
+        }
+        
+        while :
+        do
+          exec 3<>/dev/tcp/127.0.0.1/9000
+          echo -e 'GET /health/ready HTTP/1.1\nhost: http://localhost/auth\nConnection: close\n\n' >&3
+          if [ $? -eq 0 ]
+          then
+            echo '==> KC Ready'
+            break
+          fi
+          echo "==> KC not ready, sleeping a bit and checking again"
+          sleep 2
+        done
+        
+        echo "Configuring realms and users"
+        echo "==> Configuring admin connection"
+        /opt/keycloak/bin/kcadm.sh config credentials \
+          --server http://localhost:8088 \
+          --realm master \
+          --user $$KC_BOOTSTRAP_ADMIN_USERNAME \
+          --password $$KC_BOOTSTRAP_ADMIN_PASSWORD
+        echo "==> Disabling SSL Required on master realm, because source of noice for local dev use"
+        /opt/keycloak/bin/kcadm.sh update realms/master \
+          --set sslRequired=NONE
+        echo "==> Creating demo realm"
+        /opt/keycloak/bin/kcadm.sh create realms \
+          --set realm=$$CUSTOM_REALM_NAME \
+          --set enabled=true \
+          --set sslRequired=NONE \
+          --output
+        echo "===> Creating client scope openid needed by legact client"
+        /opt/keycloak/bin/kcadm.sh create client-scopes \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --set id="openid_scope_id" \
+          --set name="openid" \
+          --set protocol=openid-connect \
+          --set 'attributes."include.in.token.scope"=true' \
+          --output
+        echo "==> Creating demo oauth client registration in demo realm"
+        /opt/keycloak/bin/kcadm.sh create clients \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --set id="$$CUSTOM_CLIENT_ID" \
+          --set clientId=$$CUSTOM_CLIENT_NAME \
+          --set publicClient="true" \
+          --set "redirectUris=[\"*\"]" \
+          --set "webOrigins=[\"*\"]" \
+          --set directAccessGrantsEnabled=true \
+          --set enabled=true \
+          --output
+        echo "==> Adding scope openid to client $$CUSTOM_CLIENT_NAME"
+        /opt/keycloak/bin/kcadm.sh update \
+          clients/$$CUSTOM_CLIENT_ID/default-client-scopes/openid_scope_id \
+          --target-realm $$CUSTOM_REALM_NAME
+        echo "==> Creating demo role in demo realm"
+        /opt/keycloak/bin/kcadm.sh create roles \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --set name=$$CUSTOM_ROLE_NAME \
+          --output
+        
+        echo "==> Creating demo users in demo realm"
+        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "demo-admin" --password $$DEMO_PASSWORD
+        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "user" --password $$DEMO_PASSWORD
+        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "admin" --password $$DEMO_PASSWORD
+        CreateUserInRealm --realm $$CUSTOM_REALM_NAME --username "simon" --password $$DEMO_PASSWORD
+        
+        echo "==> Assigning roles to demo users"
+        
+        /opt/keycloak/bin/kcadm.sh add-roles \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --uusername "demo-admin" \
+          --rolename $$CUSTOM_ROLE_NAME
+        
+        /opt/keycloak/bin/kcadm.sh add-roles \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --uusername "user" \
+          --rolename $$CUSTOM_ROLE_NAME
+        
+        /opt/keycloak/bin/kcadm.sh add-roles \
+          --target-realm $$CUSTOM_REALM_NAME \
+          --uusername "admin" \
+          --rolename $$CUSTOM_ROLE_NAME
+        
+        echo "Demo setup done"
+        echo "Keeping container alive indefinitely until it's shut down from the outside"
+        echo "To get user access token run curl --request POST --url http://localhost:8088/realms/$$CUSTOM_REALM_NAME/protocol/openid-connect/token --header 'Content-Type: application/x-www-form-urlencoded' --data client_id=$$CUSTOM_CLIENT_NAME --data username=demo-admin --data password=password --data realm=$$CUSTOM_REALM_NAME --data grant_type=password"
+        sleep infinity
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\nHost: http://127.0.0.1:8000\nConnection: close\n\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;" ]
+      start_period: "15s"
+      interval: 30s
+      timeout: 10s
+      retries: 3
