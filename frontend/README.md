@@ -1,7 +1,7 @@
 # Benjrm's Frontend
 
 ## Used Dependencies:
-1. React + TypeScrip
+1. React + TypeScript
 2. React Router
 3. Tanstack Query
 4. Tailwind CSS
