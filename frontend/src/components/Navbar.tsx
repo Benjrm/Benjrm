@@ -1,5 +1,6 @@
 // src/components/Navbar.tsx
 import { Button } from "@/shadcn/components/ui/button";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
     return (
@@ -23,6 +24,7 @@ export default function Navbar() {
                             SIGN UP
                         </Button>
                     </div>
+                    <ThemeToggle />
                 </nav>
             </div>
         </header>

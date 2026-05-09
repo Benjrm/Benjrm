@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Benjrm</title>
+
+    <script>
+      (function () {
+        const theme = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const resolved = theme === "dark" || (!theme || theme === "auto") && prefersDark
+                ? "dark"
+                : "light";
+        document.documentElement.classList.add(resolved);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
