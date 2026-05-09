@@ -1,0 +1,39 @@
+{
+  "realm": "benjrm",
+  "enabled": true,
+  "sslRequired": "external",
+  "clients": [
+    {
+      "clientId": "web",
+      "name": "Client-side Web Application",
+      "description": "Client-side Web Application of Benjrm",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:8080/*"
+      },
+      "rootUrl": "http://127.0.0.1.:8080",
+      "baseUrl": "http://127.0.0.1:8080",
+      "redirectUris": [
+        "http://127.0.0.1:8080/*"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:8080"
+      ]
+    },
+    {
+      "clientId": "api",
+      "name": "Server-side API",
+      "description": "Server-side API of Benjrm",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "rootUrl": "http://127.0.0.1:8080",
+      "baseUrl": "http://127.0.0.1:8080"
+    }
+  ]
+}

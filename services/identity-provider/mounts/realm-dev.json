@@ -1,0 +1,72 @@
+{
+  "realm": "benjrm",
+  "enabled": true,
+  "sslRequired": "external",
+  "clients": [
+    {
+      "clientId": "web",
+      "name": "Client-side Web Application",
+      "description": "Client-side Web Application of Benjrm",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://127.0.0.1:5173/*"
+      },
+      "rootUrl": "http://127.0.0.1:5173",
+      "baseUrl": "http://127.0.0.1:5173",
+      "redirectUris": [
+        "http://127.0.0.1:5173/*"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:5173"
+      ]
+    },
+    {
+      "clientId": "api",
+      "name": "Server-side API",
+      "description": "Server-side API of Benjrm",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "rootUrl": "http://127.0.0.1:8080",
+      "baseUrl": "http://127.0.0.1:8080",
+      "secret": "PFUqhsIk1jmMS6l6sEMdgsf2TXqm9CnE"
+    }
+  ],
+  "users":[
+    {
+      "username": "benjrm",
+      "firstName": "Benjamin",
+      "lastName": "Mustermann",
+      "email": "benjrm@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "max",
+      "firstName": "Max",
+      "lastName": "Mustermann",
+      "email": "max.mustermann@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
