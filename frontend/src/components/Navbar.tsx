@@ -1,4 +1,4 @@
-// src/components/Navbar.jsx
+// src/components/Navbar.tsx
 import { Button } from "@/shadcn/components/ui/button";
 
 export default function Navbar() {

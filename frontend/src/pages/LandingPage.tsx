@@ -1,4 +1,4 @@
-// src/pages/LandingPage.jsx
+// src/pages/LandingPage.tsx
 import { Input } from "@/shadcn/components/ui/input";
 import { Button } from "@/shadcn/components/ui/button";
 
@@ -18,7 +18,7 @@ export default function LandingPage() {
                                 New Features Live
                             </div>
 
-                            <h1 className="text-6xl md:text-7xl font-extrabold tracking-tighter leading-[0.9] font-display">
+                            <h1 className="text-6xl md:text-7xl font-extrabold tracking-tighter leading-[0.9]">
                                 Engage and learn <br />
                                 with <span className="text-[#00F2FF]">Benjrm</span>
                             </h1>
