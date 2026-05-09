@@ -1,0 +1,18 @@
+[package]
+name = "benjrm"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+actix-proxy = "0.2.0"
+actix-session = { version = "0.11.0", features = ["cookie-session"] }
+actix-web = "4.13.0"
+awc = "3.8.2"
+env_logger = "0.11.10"
+lazy_static = "1.5.0"
+log = "0.4.29"
+serde = { version = "1.0.228", features = ["derive"] }
+static-files = "0.3.1"
+
+[build-dependencies]
+static-files = "0.3.1"
