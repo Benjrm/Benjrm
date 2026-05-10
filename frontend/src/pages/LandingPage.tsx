@@ -1,10 +1,12 @@
 // src/pages/LandingPage.tsx
 import { Input } from "@/shadcn/components/ui/input";
 import { Button } from "@/shadcn/components/ui/button";
+import Navbar from "@/components/Navbar.tsx";
 
 export default function LandingPage() {
     return (
         <div className="min-h-full bg-background text-foreground overflow-x-hidden">
+            <Navbar />
             <main className="max-w-360 mx-auto px-4 sm:px-6 py-8 md:py-24 relative">
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-24 items-center relative z-10">
