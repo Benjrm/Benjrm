@@ -8,10 +8,16 @@
     <script>
       (function () {
         try {
-          const saved = localStorage.getItem('theme');
+          const saved = localStorage.getItem('theme') || 'auto';
           const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const isDark = saved === 'dark' || ((saved === 'auto' || !saved) && prefersDark);
-          document.documentElement.classList.toggle('dark', isDark);
+
+          const isDark = saved === 'dark' || (saved === 'auto' && prefersDark);
+
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
         } catch (_) {}
       })();
     </script>
