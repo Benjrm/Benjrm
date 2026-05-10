@@ -1,21 +1,34 @@
 services:
   identity-provider:
-    image: quay.io/keycloak/keycloak:26.6.1
+    # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry>
+    build:
+      context: ./services/identity-provider
+      dockerfile: Dockerfile
     ports:
-      - "8088:8088" # access locally via http://127.0.0.1:8088
-      - "9000:9000" # access locally via http://127.0.0.1:9000
-    volumes:
-      - ./services/identity-provider/mounts/realm-dev.json:/realm-dev.json
+      # access admin interface locally via http://127.0.0.1:8088
+      # admin interface should be accessible to external traffic,
+      # since it is used by the frontend application to authenticate users and manage sessions.
+      - "8088:8088"
+      # access management interface locally via http://127.0.0.1:9000
+      # note: this management interface should not be exposed to external traffic.
+      # It should be protected with a reverse proxy and only accessible to internal traffic
+      - "9000:9000"
     env_file:
+      # it is mandatory to include this environment variable files to configure the Keycloak instance
+      # https://www.keycloak.org/server/configuration#_formats_for_configuration
+      # Consider especially updating the section ---Client configurations--- in the '.env.example' file
+      # to match the frontend and backend applications' configurations.
       - .env.example
-    entrypoint:
-      - '/bin/bash'
-      - '-c'
-      - |
-        /opt/keycloak/bin/kc.sh show-config --verbose
-        /opt/keycloak/bin/kc.sh import --file realm-dev.json
-        /opt/keycloak/bin/kc.sh start-dev
+    command:
+      # The images default command is 'start' '--import-realm' but for development purposes, we want to use 'start-dev'
+      # to start the server in development mode.
+      - "start-dev"
+      - "--import-realm"
     healthcheck:
+      # Checks if Keycloak is ready to process requests or not.
+      # Only direct traffic to a newly started instance once the readiness probe succeeds.
+      # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
+      # https://www.keycloak.org/observability/health#_healthcheck
       test: [
         "CMD-SHELL",
         "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000"
@@ -24,3 +37,21 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+  idp-init:
+    # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry> here
+    build:
+      context: ./services/identity-provider
+      dockerfile: Dockerfile.init
+    env_file:
+      # it is mandatory to include the same environment variables as the identity-provider service,
+      # since the initialization shell script relies on the following environment variables
+      # 'KC_HTTP_PORT'
+      # 'KC_BOOTSTRAP_ADMIN_USERNAME''
+      # 'KC_BOOTSTRAP_ADMIN_PASSWORD'
+      # 'KC_REALM_ID'
+      - .env.example
+    depends_on:
+      # Checks if Keycloak is ready to process requests or not.
+      # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
+      identity-provider:
+        condition: service_healthy

@@ -1,5 +1,5 @@
 {
-  "realm": "benjrm",
+  "realm": "${KC_REALM_ID}",
   "enabled": true,
   "sslRequired": "external",
   "clients": [
@@ -11,15 +11,15 @@
       "standardFlowEnabled": true,
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:8080/*"
+        "post.logout.redirect.uris": "${KC_CLIENTID_WEB_ATTRIBUTES_POST_LOGOUT_REDIRECT_URIS}"
       },
-      "rootUrl": "http://127.0.0.1.:8080",
-      "baseUrl": "http://127.0.0.1:8080",
+      "rootUrl": "${KC_CLIENTID_WEB_ROOT_URL}",
+      "baseUrl": "${KC_CLIENTID_WEB_BASE_URL}",
       "redirectUris": [
-        "http://127.0.0.1:8080/*"
+        "${KC_CLIENTID_WEB_REDIRECT_URIS}"
       ],
       "webOrigins": [
-        "http://127.0.0.1:8080"
+       "${KC_CLIENTID_WEB_WEB_ORIGINS}"
       ]
     },
     {
@@ -32,8 +32,9 @@
       "attributes": {
         "pkce.code.challenge.method": "S256"
       },
-      "rootUrl": "http://127.0.0.1:8080",
-      "baseUrl": "http://127.0.0.1:8080"
+      "rootUrl": "${KC_CLIENTID_API_ROOT_URL}",
+      "baseUrl": "${KC_CLIENTID_API_BASE_URL}",
+      "secret": "${KC_CLIENTID_API_SECRET}"
     }
   ]
 }

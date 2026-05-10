@@ -1,21 +1,28 @@
 services:
   identity-provider:
-    image: quay.io/keycloak/keycloak:26.6.1
+    # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry>
+    build:
+      context: ./services/identity-provider
+      dockerfile: Dockerfile
     ports:
-      - "8088:8088" # access locally via http://127.0.0.1:8088
-      - "9000:9000" # access locally via http://127.0.0.1:9000
-    volumes:
-      - ./services/identity-provider/mounts/realm-prod.json:/realm-prod.json
+      # access admin interface locally via http://127.0.0.1:8088
+      # admin interface should be accessible to external traffic,
+      # since it is used by the frontend application to authenticate users and manage sessions.
+      - "8088:8088"
+      # access management interface locally via http://127.0.0.1:9000
+      # note: this management interface should not be exposed to external traffic.
+      # It should be protected with a reverse proxy and only accessible to internal traffic
+      - "9000:9000"
     env_file:
       - .env.example
-    entrypoint:
-      - '/bin/bash'
-      - '-c'
-      - |
-        /opt/keycloak/bin/kc.sh show-config --verbose
-        /opt/keycloak/bin/kc.sh import --file realm-prod.json
-        /opt/keycloak/bin/kc.sh start
+    # note the difference in comparison to the 'docker-compose.dev.yml' file:
+    # in the production environment we want to use the default command 'start' '--import-realm' to start the server
+    # in production mode and importing its realm and client configuration.
     healthcheck:
+      # Checks if Keycloak is ready to process requests or not.
+      # Only direct traffic to a newly started instance once the readiness probe succeeds.
+      # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
+      # https://www.keycloak.org/observability/health#_healthcheck
       test: [
         "CMD-SHELL",
         "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000"
@@ -24,3 +31,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    # note the difference: in the development stage, we use an 'idp-init' service to initialize the Keycloak instance
+    # with example user data via the REST API interface, while in the production stage, we rely on the 'identity-provider' service itself with
+    # its realm and client configuration.
