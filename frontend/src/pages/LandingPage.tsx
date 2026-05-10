@@ -20,9 +20,9 @@ export default function LandingPage() {
                             </div>
 
                             {/* Smaller heading on mobile */}
-                            <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tighter leading-[0.95]">
-                                Engage and learn <br />
-                                with <span className="text-[#00F2FF]">Benjrm</span>
+                            <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tighter flex flex-col gap-2 sm:gap-2">
+                                <span>Engage and learn</span>
+                                <span>with <span className="text-[#00F2FF]">Benjrm</span></span>
                             </h1>
                             <p className="text-base sm:text-xl text-muted-foreground tracking-wide font-medium">
                                 HOST AND PLAY FUN AND INTERACTIVE QUIZZES
