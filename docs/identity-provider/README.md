@@ -9,6 +9,57 @@
 8. [Authorization Code Flow with Proof Key for Code Exchange (PKCE)](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-pkce)
 9. [Client Credentials Code Flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow)
 
+## Exposed Ports:
+1. **Port 8088**: Admin UI, Account Console, SAML and OIDC endpoints, Admin REST API. See details about in
+[Configuring the hostname (v2)](https://www.keycloak.org/server/hostname)
+2. **Port 9000**: [Management interface](https://www.keycloak.org/server/management-interface)
+providing [health check endpoints](https://www.keycloak.org/observability/health) and [metrics](https://www.keycloak.org/observability/configuration-metrics)
+if enabled in the configuration. Note that only the health check endpoints are currently enabled in the provided Keycloak configuration.
+*Note: You should not proxy port 9000 as health checks and metric suse those ports directly, and you do not want to expose this information to external callers.*
+
+## Hostname Configuration
+[Configuring the hostname (v2)](https://www.keycloak.org/server/hostname#_using_a_reverse_proxy)
+
+### Using a reverse proxy with edge TLS termination
+In the setup we use a reverse proxy with edge TLS termination 
+[See details about configuring a reverse proxy for Keycloak](https://www.keycloak.org/server/reverseproxy)
+
+#### Fully dynamic URLs
+We chose a fully dynamic URL configuration to ensure maximum flexibility across different environments, specifically development and production. 
+Since both environments may differ in domain, protocol, or routing behavior, hardcoding a fixed hostname would introduce unnecessary coupling and reduce portability.
+
+By relying on correctly configured Forwarded headers from the reverse proxy, the application can automatically resolve the correct external URL at runtime. 
+This allows the same deployment artifact to be used in both environments without modification, reducing configuration overhead and minimizing the risk of environment-specific misconfigurations.
+
+Additionally, this approach supports modern infrastructure patterns such as containerization and infrastructure-as-code, where environments are expected to be ephemeral or dynamically provisioned. It also simplifies CI/CD pipelines, as no environment-specific hostname configuration is required within the application itself.
+
+Overall, the fully dynamic approach improves maintainability, reduces duplication of configuration, and ensures consistent behavior across development and production environments while delegating URL resolution to the trusted reverse proxy layer.
+
+[Configuring the hostname (v2) - Using a reverse proxy - Fully dynamic URLS](https://www.keycloak.org/server/hostname#_fully_dynamic_urls)
+
+
+Required http headers for reverse proxy configuration:
+1. `X-Forwarded-Proto`: The protocol used by the client to connect to the reverse proxy (e.g. `http` or `https`).
+2. `X-Forwarded-Host`: The original host requested by the client in the host http header. (e.g. `www.benjrm.de`).
+3. `X-Forwarded-Port`: The port on which the client is connecting to the reverse proxy (e.g. `80 for http`, `443 for https`).
+4. `X-Forwarded-Prefix`: The path prefix used by the reverse proxy to route requests to Keycloak (e.g. `/auth`)
+5. `X-Forwarded-For`: The original client ip address of the client connecting to the reverse proxy (e.g. `203.0.113.195`).
+
+#### Hostname Debug endpoint with dynamic URL and X-Forwarded-* http headers.
+
+Note: This endpoint is only available when the environment variable `KC_HOSTNAME_DEBUG` is set to `true`.
+
+![Configuring the hostname](assets/auth-configuring-the-hostname.png)
+
+#### OIDC Configuration endpoints with dynamic URL and X-Forwarded-* http headers
+
+![OIDC Configuration endpoints with dynamic URL and X-Forwarded-* http headers](assets/auth-configuring-the-hostname-2.png)
+
+> Note: Take a look at
+[Configuring a reverse proxy - Exposed path recommendations](https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations) and
+[Configuring a reverse proxy - Trusted proxies](https://www.keycloak.org/server/reverseproxy#_trusted_proxies) when
+configuring the reverse proxy.
+
 ## Realm Configuration
 1. **"realm": "benjrm"** - 
 A realm manages a set of users, credentials, roles, and groups.
@@ -28,10 +79,12 @@ to authenticate users and obtain access tokens for accessing protected resources
 
 #### 👉Authentication Code Flow Sequence Diagram:
 ![Authentication Code Flow Sequence Diagram](assets/auth-code-flow-diagram.png)
+
 [Authorization Code Flow - Further explanations](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow)
 
 #### 👉Authentication Code Flow Sequence Diagram with Proof Key for Code Exchange (PKCE):
 ![Authentication Code Flow Sequence Diegram with PKCE](assets/auth-sequence-auth-code-pkce.png)
+
 [Authorization Code Flow with Proof Key for Code Exchange (PKCE) - Further explanations](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-pkce)
 
 1. The user clicks the **"Login"** button on the client-side web application. 
@@ -122,10 +175,11 @@ with the following application/x-www-form-urlencoded body parameters:
 - `grant_type`: Must be `client_credentials` for this flow.
 - `client_secret`: The secret associated with the client.
 
-👉 Example of Requesting an Access Token using Client Credentials Flow:
-![Keycloak Client Credentials Flow](./assets/keycloak-client-credentials-flow.png)
-
 2. Keycloak validates the client credentials and responds with an access token if the authentication is successful.
+
+👉 Example of Requesting an Access Token using Client Credentials Flow:
+
+![Keycloak Client Credentials Flow](./assets/keycloak-client-credentials-flow.png)
 
 3. The server-side application can then use the access token to authenticate itself when making requests to protected resources,
 by including the token in the `Authorization` header of the HTTP request as a Bearer token:
