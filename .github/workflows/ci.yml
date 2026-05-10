@@ -10,13 +10,13 @@ on:
 
 jobs:
   lint:
-    uses: Benjrm/demo-repository/.github/workflows/lint.yml@v1.0.0
+    uses: Benjrm/demo-repository/.github/workflows/lint.yml@v1.0.1
     with:
       frontend-path: "frontend"
       backend-path: "backend"
 
   security:
-    uses: Benjrm/demo-repository/.github/workflows/security.yml@v1.0.0
+    uses: Benjrm/demo-repository/.github/workflows/security.yml@v1.0.1
     with:
       frontend-path: "frontend"
       sonar-host-url: ${{ vars.SONAR_HOST_URL}}
