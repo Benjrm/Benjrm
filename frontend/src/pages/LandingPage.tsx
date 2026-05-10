@@ -5,7 +5,7 @@ import { Button } from "@/shadcn/components/ui/button";
 export default function LandingPage() {
     return (
         <div className="min-h-full bg-background text-foreground overflow-x-hidden">
-            <main className="max-w-[90rem] mx-auto px-4 sm:px-6 py-8 md:py-24 relative">
+            <main className="max-w-360 mx-auto px-4 sm:px-6 py-8 md:py-24 relative">
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-24 items-center relative z-10">
 
@@ -54,16 +54,16 @@ export default function LandingPage() {
                     </div>
 
                     {/* Right Column: hidden on small mobile, shown md+ */}
-                    <div className="relative hidden sm:block">
-                        <div className="absolute -inset-1 bg-gradient-to-tr from-[#00F2FF] to-[#FF8A00] rounded-[2.5rem] blur-2xl opacity-20"></div>
+                    <div className="relative hidden md:block">
+                        <div className="absolute -inset-1 bg-linear-to-tr from-[#00F2FF] to-[#FF8A00] rounded-[2.5rem] blur-2xl opacity-20"></div>
 
-                        <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+                        <div className="relative aspect-4/3 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
                             <img
                                 src="/pictures/happy_people.jpg"
                                 alt="Students participating in a quiz"
                                 className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/10 to-transparent flex items-end p-8 lg:p-12">
+                            <div className="absolute inset-0 bg-linear-to-t from-background/95 via-background/10 to-transparent flex items-end p-8 lg:p-12">
                                 <p className="text-3xl lg:text-5xl font-extrabold tracking-tighter text-white leading-tight max-w-[85%]">
                                     Quiz together, learn forever.
                                 </p>
