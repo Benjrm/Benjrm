@@ -28,7 +28,6 @@ jobs:
                 - "frontend/package*.json"
                 - '**/Dockerfile*'
                 - 'docker-compose*.yml'
-                - "services/**"
                 - "backend/Cargo.toml"
                 - "backend/Cargo.lock"
 
