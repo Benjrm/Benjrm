@@ -1,0 +1,62 @@
+name: Testing pipeline
+run-name: Testing for ${{ github.event_name }} by @${{ github.actor }}
+
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/*'
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+  workflow_dispatch:
+
+# Cancel concurrent running workflows, after a new one is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # Check which files have changed to avoid unnecessary tests
+  check_changes:
+    name: "Detect changed Files"
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+
+  # Backend Tests
+  backend_tests:
+    name: "Backend Unit & Integration Tests"
+    runs-on: ubuntu-latest
+    needs: check_changes
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || needs.check_changes.outputs.backend == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test (debug)
+        run: cargo test --all-features
+        working-directory: backend
+      # - name: Test (release)
+      #   run: cargo test --all-features --release
+      #   working-directory: backend
