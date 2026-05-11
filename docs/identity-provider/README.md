@@ -1,4 +1,6 @@
 # Identity Provider - Keycloak
+
+## Resources:
 1. [JSON Schema for Keycloak Import/Export - GitHub Repository](https://github.com/jirutka/keycloak-json-schema)
 2. [JSON Schema for Keycloak Import/Export - Schemas](https://jirutka.github.io/keycloak-json-schema/)
 3. [JSON Schema for Keycloak Import/Export - Keycloak Version 26](assets/keycloak-realm-26.json)
@@ -8,6 +10,22 @@
 7. [Authorization Code Flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow)
 8. [Authorization Code Flow with Proof Key for Code Exchange (PKCE)](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-pkce)
 9. [Client Credentials Code Flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow)
+10. [Configuring the management interface](https://www.keycloak.org/server/management-interface)
+11. [Configuring the hostname (v2)](https://www.keycloak.org/server/hostname)
+12. [Configuring a reverse proxy](https://www.keycloak.org/server/reverseproxy)
+
+## Starting Keycloak with the provided configuration:
+
+### Starting Keycloak in development mode + Providing testusers configurable via `REPOSITORY_ROOT/services/identity-provider/mounts/init.sh`:
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+### Starting Keycloak in production mode without testusers:
+```bash
+docker compose -f docker-compose.prod.yml up --build
+```
+> Note: Use --build option to build images before starting containers.
+> This ensures that any changes to the Dockerfiles or realm configuration are included in the new images.
 
 ## Exposed Ports:
 1. **Port 8088**: Admin UI, Account Console, SAML and OIDC endpoints, Admin REST API. See details about in
@@ -60,6 +78,33 @@ Note: This endpoint is only available when the environment variable `KC_HOSTNAME
 [Configuring a reverse proxy - Trusted proxies](https://www.keycloak.org/server/reverseproxy#_trusted_proxies) when
 configuring the reverse proxy.
 
+## Overview of the Keycloak Authentication process from user perspective:
+1. The user accesses the client-side web application (e.g. `https://www.benjrm.de`) and gets redirected to the 
+Keycloak login page after clicking the "Login" button.
+
+![Keycloak Sign-in to your Account](./assets/sign-in-page.png)
+
+2. On the Keycloak login page, the user either enters their credentials to log in or clicks the "Register" link to create a new account.
+The user has the option to check the "Remember Me" checkbox to stay logged in between browser restarts until the session expires.
+
+3. In case of forgotten credentials, the user can click the "Forgot Password?" link to initiate the password reset process, 
+which will send a password reset email to the user's verified registered email address.
+
+![Keycloak Reset Password Mail](./assets/reset-password.png)
+
+![Keycloak Update Password Interface](./assets/update-password.png)
+
+4. If the user clicks the "Register" link, they will be taken to the registration page where they can create a new account
+by providing the required information such as username, email, and password.
+
+![Keycloak Register interface](./assets/register-page.png)
+
+After successful registration, the user will receive a verification email to confirm their email address.
+
+![Keycloak Verify Email](./assets/verify-email-01.png)
+
+![Keycloak Verify Email Mail](./assets/verify-email-02.png)
+
 ## Realm Configuration
 1. **"realm": "benjrm"** - 
 A realm manages a set of users, credentials, roles, and groups.
@@ -67,22 +112,46 @@ A user belongs to and logs into a realm.
 Realms are isolated from one another and can only manage and authenticate the users that they control.
 2. **"enabled": true** -
 Disabled realms cannot be accessed or used for authentication, and users within the realm cannot log in or perform any actions until the realm is enabled again.
-2. **"sslRequired": "external"** - 
+3. **"sslRequired": "external"** - 
 localhost (via 127.0.0.1.) and private IP addresses can access without HTTPS but all other requests must use HTTPS.
+4. **"registrationAllowed": true** -
+Enable/disable the registration page. A link for registration will show on the login page too.
+5. **"resetPasswordAllowed": true** -
+Show a link on the login page for users who have forgotten their credentials.
+6. **"verifyEmail": true** -
+Require user to verify their email address after initial login or after address changes are submitted.
+7. **"rememberMe": true** -
+   Show checkbox on login page to allow user to remain logged in between browser restarts until session expires.
+7. **"smtpServer": { ... }** -
+Configuration for sending emails from Keycloak, such as verification emails, password reset emails, and other.
+8. **"smtpServer.from": "noreply@benjrm.de"** -
+The email address that appears in the "From" field of emails sent by Keycloak.
+9. **"smtpServer.host": "smtp.ionos.de"** -
+The hostname of the SMTP server that Keycloak will use to send emails.
+10. **"smtpServer.port": "465"** -
+The port number on which the SMTP server is listening for secure connections (SSL/TLS).
+11. **"smtpServer.ssl": "true"** -
+Indicates that Keycloak should use SSL/TLS to connect to the SMTP server for secure email transmission.
+12. **"smtpServer.auth": "true"** -
+Indicates that Keycloak should authenticate with the SMTP server using the provided credentials (username and password) before sending emails.
+13. **"smtpServer.user": "noreply@benjrm.de"** -
+Indicates the username that Keycloak should use to authenticate with the SMTP server when sending emails.
+14. **"smtpServer.password": "SECRET"** -
+Indicates the password that Keycloak should use to authenticate with the SMTP server when sending emails.
 
 ## Client Configuration
-## Client-side Web Application of Benjrm
+### Client-side Web Application of Benjrm
 Uses **OpenID Connect (OIDC)** **Standard Flow (Authorization Code Flow) with PKCE (Proof Key for Code Exchange)**
 to authenticate users and obtain access tokens for accessing protected resources.
 ---
-### 🔐 Authorization Code Flow with Proof Key for Code Exchange (PKCE) - Step-by-Step
+#### 🔐 Authorization Code Flow with Proof Key for Code Exchange (PKCE) - Step-by-Step
 
-#### 👉Authentication Code Flow Sequence Diagram:
+##### 👉Authentication Code Flow Sequence Diagram:
 ![Authentication Code Flow Sequence Diagram](assets/auth-code-flow-diagram.png)
 
 [Authorization Code Flow - Further explanations](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow)
 
-#### 👉Authentication Code Flow Sequence Diagram with Proof Key for Code Exchange (PKCE):
+##### 👉Authentication Code Flow Sequence Diagram with Proof Key for Code Exchange (PKCE):
 ![Authentication Code Flow Sequence Diegram with PKCE](assets/auth-sequence-auth-code-pkce.png)
 
 [Authorization Code Flow with Proof Key for Code Exchange (PKCE) - Further explanations](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-pkce)
@@ -155,13 +224,13 @@ or by verifying the token signature and claims locally using Keycloak's public k
 
 ---
 
-## Server-side API of Benjrm
+### Server-side API of Benjrm
 Uses **OpenID Connect (OIDC)** **Client Credentials Flow** to authenticate itself to Keycloak and obtain
 access tokens for accessing protected resources on behalf of itself (not on behalf of a user).
 
-### 🔐 Client Credentials Code Flow - Step-by-Step
+#### 🔐 Client Credentials Code Flow - Step-by-Step
 
-#### 👉Client Credentials Code Flow Sequence Diagram:
+##### 👉Client Credentials Code Flow Sequence Diagram:
 ![Client Credentials Flow Sequence Diagram](assets/client-credentials-flow-sequence-diagram.png)
 [Client credentials code flow - Further explanations](https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow)
 
