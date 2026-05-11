@@ -29,6 +29,8 @@ jobs:
                 - '**/Dockerfile*'
                 - 'docker-compose*.yml'
                 - "services/**"
+                - "backend/Cargo.toml"
+                - "backend/Cargo.lock"
 
   # SonarQube for SAST
   sonarqube:
