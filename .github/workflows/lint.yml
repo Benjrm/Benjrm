@@ -74,7 +74,7 @@ jobs:
     name: "Rust Linting for Backend"
     runs-on: ubuntu-latest
     needs: check_changes
-    if: github.event_name == 'workflow_dispatch'
+    if: always()
     steps:
       - uses: actions/checkout@v4
       - name: Clippy (debug)
