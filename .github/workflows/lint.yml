@@ -86,9 +86,11 @@ jobs:
       - name: Clippy (debug)
         run: cargo clippy --all-features -- --deny warnings
         working-directory: backend
-      # - name: Clippy (release)
-      #   run: cargo clippy --all-features --release -- --deny warnings
-      #   working-directory: backend
+      - name: Create empty dist folder for release linting check
+        run: mkdir -p frontend/dist
+      - name: Clippy (release)
+        run: cargo clippy --all-features --release -- --deny warnings
+        working-directory: backend
       - name: Check formatting
         run: cargo fmt --check
         working-directory: backend

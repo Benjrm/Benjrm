@@ -57,6 +57,8 @@ jobs:
       - name: Test (debug)
         run: cargo test --all-features
         working-directory: backend
-      # - name: Test (release)
-      #   run: cargo test --all-features --release
-      #   working-directory: backend
+      - name: Create empty dist folder for release testing
+        run: mkdir -p frontend/dist
+      - name: Test (release)
+        run: cargo test --all-features --release
+        working-directory: backend
