@@ -3,11 +3,10 @@
 # development environments to automate the setup of test users.
 
 # using ubuntu as the base image to have a lightweight environment
-FROM ubuntu:22.04
+FROM alpine:3.22.4
 
 # install the necessary tools like curl and jq for making API requests and processing JSON responses.
-RUN apt-get update && apt-get install -y \
-    curl jq bash ca-certificates
+RUN apk add --no-cache curl jq bash ca-certificates
 
 # The init.sh script will contain the logic to interact with the Keycloak REST API to create test users.
 COPY ./mounts/init.sh /init.sh
