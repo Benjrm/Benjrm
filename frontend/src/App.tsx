@@ -1,13 +1,10 @@
-import { Button } from "@/shadcn/components/ui/button";
+import LandingPage from './pages/LandingPage';
 
 function App() {
     return (
-        <>
-            <h1 className="text-red-600">
-                Hello React + TypeScript + React Router + TanStack Query + TailwindCSS + shadcn/ui!
-            </h1>
-            <Button variant="default">Click me</Button>
-        </>
+        <div className="flex flex-col min-h-screen">
+            <LandingPage />
+        </div>
     )
 }
 
