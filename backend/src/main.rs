@@ -7,8 +7,12 @@ use {
     },
 };
 
+mod api;
 mod app_data;
+mod core;
+mod entities;
 mod frontend;
+mod update_value;
 
 pub use app_data::AppData;
 
@@ -50,8 +54,7 @@ async fn main() -> std::io::Result<()> {
         .unwrap_or_else(|_| 80);
 
     HttpServer::new(move || {
-        #[allow(unused_mut)]
-        let mut app = App::new()
+        let app = App::new()
             .wrap(actix_web::middleware::Logger::default())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
@@ -61,13 +64,15 @@ async fn main() -> std::io::Result<()> {
                     .cookie_secure(cfg!(not(debug_assertions)))
                     .build(),
             )
-            .app_data(data.clone());
+            .configure(frontend::init)
+            .app_data(data.clone())
+            .service(web::scope("/api").configure(api::init));
 
-        #[cfg(debug_assertions)]
-        {
-            app = app.app_data(awc::Client::new());
+        if cfg!(debug_assertions) {
+            app.app_data(awc::Client::new())
+        } else {
+            app
         }
-        app.configure(frontend::init)
     })
     .bind(("0.0.0.0", port))?
     .run()

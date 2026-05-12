@@ -4,18 +4,19 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-migration = { path = "../database-migrator" }
 actix-proxy = "0.2.0"
 actix-session = { version = "0.11.0", features = ["cookie-session"] }
 actix-web = "4.13.0"
 awc = "3.8.2"
+dotenvy = "0.15.7"
 env_logger = "0.11.10"
 lazy_static = "1.5.0"
 log = "0.4.29"
-sea-orm = { version = "1.1.20", features = ["runtime-tokio-rustls", "sqlx-postgres", "sqlx-sqlite"] }
+migration = { path = "../database-migrator" }
+sea-orm = { version = "1.1.20", features = ["runtime-tokio-rustls", "sqlx-postgres", "sqlx-sqlite", "uuid"] }
 serde = { version = "1.0.228", features = ["derive"] }
 static-files = "0.3.1"
-dotenvy = "0.15.7"
+uuid = { version = "1.23.1", features = ["v4"] }
 
 [build-dependencies]
 static-files = "0.3.1"
