@@ -34,6 +34,13 @@ docker compose up --build
 providing [health check endpoints](https://www.keycloak.org/observability/health) and [metrics](https://www.keycloak.org/observability/configuration-metrics)
 if enabled in the configuration. Note that only the health check endpoints are currently enabled in the provided Keycloak configuration.
 *Note: You should not proxy port 9000 as health checks and metrics use those ports directly, and you do not want to expose this information to external callers.*
+## Admin interface
+1. Changing the realm from `master` to `benjrm`
+![](./assets/admin-interface-manage-realms.png)
+2. For realm settings like `Login screen customization`, `Email settings` and `User profile settings` refer to benjrm's realm settings
+![](./assets/admin-interface-benjrm-realm-settings.png)
+3. For client settings with corresponding OIDC authentication flows refer to benjrm's client settings.
+![](assets/benjrm-client-configuration.png)
 
 ## Hostname Configuration
 [Configuring the hostname (v2)](https://www.keycloak.org/server/hostname#_using_a_reverse_proxy)
