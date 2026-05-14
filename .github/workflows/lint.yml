@@ -77,19 +77,32 @@ jobs:
       - name: Lint & Format Check
         run: cd "frontend" && npm run lint
 
+  # Build Frontend needed for Backend Linting (release)
+  build_frontend:
+    uses: ./.github/workflows/build_frontend.yml
+
   # Backend Linting & Formatting
   backend_lint:
     name: "Rust Linting for Backend"
     runs-on: ubuntu-latest
-    needs: check_changes
+    needs: [check_changes, build_frontend]
     if: needs.check_changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: frontend/dist
       - name: Clippy (debug)
         run: cargo clippy --all-features -- --deny warnings
         working-directory: backend
-      - name: Create empty dist folder for release linting check
-        run: mkdir -p frontend/dist
+      - name: Restore frontend build
+        uses: actions/cache/restore@v4
+        with:
+          path: frontend/dist
+          key: ${{ runner.os }}-frontend-build-${{ hashFiles('frontend/src/**', 'frontend/package-lock.json', 'frontend/vite.config.ts', 'frontend/tsconfig.json') }}
+          fail-on-cache-miss: true
       - name: Clippy (release)
         run: cargo clippy --all-features --release -- --deny warnings
         working-directory: backend

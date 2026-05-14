@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 import { Button } from '@/shadcn/components/ui/button'
 
 function App(): JSX.Element {
