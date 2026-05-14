@@ -97,12 +97,6 @@ jobs:
       - name: Clippy (debug)
         run: cargo clippy --all-features -- --deny warnings
         working-directory: backend
-      - name: Restore frontend build
-        uses: actions/cache/restore@v4
-        with:
-          path: frontend/dist
-          key: ${{ runner.os }}-frontend-build-${{ hashFiles('frontend/src/**', 'frontend/package-lock.json', 'frontend/vite.config.ts', 'frontend/tsconfig.json') }}
-          fail-on-cache-miss: true
       - name: Clippy (release)
         run: cargo clippy --all-features --release -- --deny warnings
         working-directory: backend

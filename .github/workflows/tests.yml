@@ -70,12 +70,6 @@ jobs:
       - name: Test (debug)
         run: cargo test --all-features
         working-directory: backend
-      - name: Restore frontend build
-        uses: actions/cache/restore@v4
-        with:
-          path: frontend/dist
-          key: ${{ runner.os }}-frontend-build-${{ hashFiles('frontend/src/**', 'frontend/package-lock.json', 'frontend/vite.config.ts', 'frontend/tsconfig.json') }}
-          fail-on-cache-miss: true
       - name: Test (release)
         run: cargo test --all-features --release
         working-directory: backend
