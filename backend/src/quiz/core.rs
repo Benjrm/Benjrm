@@ -6,7 +6,7 @@ use {
     sea_orm::{
         ActiveModelTrait,
         ActiveValue::{self, Set},
-        ColumnTrait, ConnectionTrait, EntityTrait, IntoActiveModel, QueryFilter, TransactionTrait,
+        ColumnTrait, ConnectionTrait, EntityTrait, IntoActiveModel, QueryFilter,
         sqlx::types::chrono::Utc,
     },
     uuid::Uuid,
@@ -31,23 +31,6 @@ impl Quiz {
 
         let quiz = quiz.insert(conn).await?;
         Ok(quiz)
-    }
-
-    pub async fn create_many(
-        conn: &impl TransactionTrait,
-        user: Uuid,
-        quizzes: Vec<NewQuiz>,
-    ) -> Result<Vec<Self>, QuizError> {
-        let tx = conn.begin().await?;
-        let mut created_quizzes = Vec::with_capacity(quizzes.len());
-
-        for quiz in quizzes {
-            let quiz = Self::create(&tx, user, quiz).await?;
-            created_quizzes.push(quiz);
-        }
-
-        tx.commit().await?;
-        Ok(created_quizzes)
     }
 
     pub async fn get(conn: &impl ConnectionTrait, user: Uuid, id: Uuid) -> Result<Self, QuizError> {

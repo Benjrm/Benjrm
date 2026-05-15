@@ -30,34 +30,6 @@ async fn test_create_one() {
 }
 
 #[actix_web::test]
-async fn test_create_many() {
-    let conn = &AppData::test().await.db;
-    let user = Uuid::new_v4();
-
-    let input = vec![
-        NewQuiz {
-            title: "Quiz 1".into(),
-            description: None,
-            hidden: false,
-        },
-        NewQuiz {
-            title: "Quiz 2".into(),
-            description: Some("desc".into()),
-            hidden: true,
-        },
-    ];
-
-    Quiz::create_many(conn, Uuid::new_v4(), input.clone())
-        .await
-        .unwrap();
-    let quizzes = Quiz::create_many(conn, user, input).await.unwrap();
-    assert_eq!(quizzes.len(), 2);
-    assert_eq!(quizzes[0].title, "Quiz 1");
-    assert_eq!(quizzes[1].title, "Quiz 2");
-    assert_eq!(quizzes[1].hidden, true);
-}
-
-#[actix_web::test]
 async fn test_get_many() {
     let conn = &AppData::test().await.db;
     let user = Uuid::new_v4();
@@ -75,10 +47,10 @@ async fn test_get_many() {
         },
     ];
 
-    Quiz::create_many(conn, Uuid::new_v4(), input.clone())
-        .await
-        .unwrap();
-    Quiz::create_many(conn, user, input).await.unwrap();
+    for quiz in input {
+        Quiz::create(conn, user, quiz.clone()).await.unwrap();
+        Quiz::create(conn, Uuid::new_v4(), quiz).await.unwrap();
+    }
 
     let result = Quiz::get_many(
         conn,

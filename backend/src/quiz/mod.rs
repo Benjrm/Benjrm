@@ -46,6 +46,16 @@ pub struct UpdateQuiz {
     hidden: UpdateValue<bool>,
 }
 
+impl From<NewQuiz> for UpdateQuiz {
+    fn from(val: NewQuiz) -> Self {
+        UpdateQuiz {
+            title: UpdateValue::Set(val.title),
+            description: UpdateOption::Set(val.description),
+            hidden: UpdateValue::Set(val.hidden),
+        }
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct QuizFilter {

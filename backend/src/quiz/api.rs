@@ -17,20 +17,6 @@ async fn create_one(
     Ok(HttpResponse::Created().json(quiz))
 }
 
-#[put("/quizzes")]
-async fn create_many(
-    new_quizzes: web::Json<Vec<NewQuiz>>,
-    app_data: web::Data<AppData>,
-) -> Result<HttpResponse> {
-    let quizzes = Quiz::create_many(
-        &app_data.db,
-        app_data.dummy_user(),
-        new_quizzes.into_inner(),
-    )
-    .await?;
-    Ok(HttpResponse::Created().json(quizzes))
-}
-
 #[get("/quizzes")]
 async fn get_many(
     app_data: web::Data<AppData>,
@@ -57,6 +43,19 @@ async fn patch(
     Ok(HttpResponse::Ok().json(quiz))
 }
 
+#[put("/quizzes/{id}")]
+async fn put(
+    id: web::Path<Uuid>,
+    new_quiz: web::Json<NewQuiz>,
+    app_data: web::Data<AppData>,
+) -> Result<HttpResponse> {
+    let quiz = Quiz::get(&app_data.db, app_data.dummy_user(), id.into_inner()).await?;
+    let quiz = quiz
+        .update(&app_data.db, new_quiz.into_inner().into())
+        .await?;
+    Ok(HttpResponse::Ok().json(quiz))
+}
+
 #[delete("/quizzes/{id}")]
 async fn delete(id: web::Path<Uuid>, app_data: web::Data<AppData>) -> Result<HttpResponse> {
     let quiz = Quiz::get(&app_data.db, app_data.dummy_user(), id.into_inner()).await?;
@@ -66,9 +65,9 @@ async fn delete(id: web::Path<Uuid>, app_data: web::Data<AppData>) -> Result<Htt
 
 pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
     cfg.service(create_one);
-    cfg.service(create_many);
     cfg.service(get_many);
     cfg.service(get_one);
     cfg.service(patch);
+    cfg.service(put);
     cfg.service(delete);
 }
