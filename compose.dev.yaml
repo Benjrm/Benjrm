@@ -19,6 +19,9 @@ services:
       # Consider especially updating the section ---Client configurations--- in the '.env' file
       # to match the frontend and backend applications' configurations.
       - .env
+    depends_on:
+      database:
+        condition: service_healthy
     command:
       # The images default command is 'start' '--import-realm' but for development purposes, we want to use 'start-dev'
       # to start the server in development mode.
@@ -60,3 +63,22 @@ services:
       # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
       identity-provider:
         condition: service_healthy
+  database:
+    image: postgres:18.3
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: benjrm
+      POSTGRES_USER: benjrm
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U benjrm -d benjrm" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    env_file:
+      - .env
+    volumes:
+      - ./database:/var/lib/postgresql
+      - ./services/database/mounts/init-keycloak-db.sh:/docker-entrypoint-initdb.d/init-keycloak-db.sh
+    ports:
+      - "5432:5432"

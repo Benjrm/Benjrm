@@ -15,6 +15,9 @@ services:
       - "9000:9000"
     env_file:
       - .env
+    depends_on:
+      database:
+        condition: service_healthy
     # note the difference in comparison to the 'docker-compose.dev.yml' file:
     # in the production environment we want to use the default command 'start' '--import-realm' to start the server
     # in production mode and importing its realm and client configuration.
@@ -64,7 +67,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    env_file:
+      - .env
     volumes:
       - ./database:/var/lib/postgresql
+      - ./services/database/mounts/init-keycloak-db.sh:/docker-entrypoint-initdb.d/init-keycloak-db.sh
     ports:
       - "5432:5432"
