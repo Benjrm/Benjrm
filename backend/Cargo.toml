@@ -8,6 +8,7 @@ actix-proxy = "0.2.0"
 actix-session = { version = "0.11.0", features = ["cookie-session"] }
 actix-web = "4.13.0"
 awc = "3.8.2"
+chrono = { version = "0.4.44", default-features = false, features = ["std", "clock"] }
 dotenvy = "0.15.7"
 env_logger = "0.11.10"
 lazy_static = "1.5.0"

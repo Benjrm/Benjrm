@@ -4,8 +4,7 @@ use {
         quiz::{NewQuiz, QuizError, QuizFilter, UpdateQuiz, entity::Quiz},
         update_value::{UpdateOption, UpdateValue},
     },
-    sea_orm::sqlx::types::chrono::Utc,
-    std::time::Duration,
+    chrono::{Duration, Utc},
     uuid::Uuid,
 };
 
@@ -27,7 +26,7 @@ async fn test_create_one() {
     assert_eq!(quiz.hidden, false);
     assert_eq!(quiz.user, user);
     assert_eq!(quiz.created, quiz.modified);
-    assert!(quiz.created > Utc::now() - Duration::from_secs(5));
+    assert!((quiz.created - Utc::now()).abs() < Duration::seconds(5));
 }
 
 #[actix_web::test]
