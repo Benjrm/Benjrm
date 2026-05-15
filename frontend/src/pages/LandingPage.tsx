@@ -2,7 +2,6 @@
 
 import { Input } from "@/shadcn/components/ui/input";
 import { Button } from "@/shadcn/components/ui/button";
-import Footer from "@/components/Footer";
 
 export default function LandingPage() {
     return (
@@ -77,7 +76,6 @@ export default function LandingPage() {
 
                 </div>
             </div>
-            <Footer />
         </div>
     );
 }

@@ -1,10 +1,12 @@
 // frontend/src/App.tsx
+
 import { Routes, Route } from 'react-router';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import ErrorPage from './pages/ErrorPage';
 import RootLayout from './layouts/RootLayout';
-import PublicLayout from './layouts/PublicLayout'; // Don't forget this import
+import PublicLayout from './layouts/PublicLayout';
+import QuizPage from "@/pages/QuizPage.tsx";
 
 function App() {
     return (
@@ -18,6 +20,7 @@ function App() {
             {/* PRIVATE ROUTES: Wrapped in the authenticated layout */}
             <Route element={<RootLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/quiz/:quizId" element={<QuizPage />} />
             </Route>
         </Routes>
     );
