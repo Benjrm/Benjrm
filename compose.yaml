@@ -14,7 +14,7 @@ services:
       # It should be protected with a reverse proxy and only accessible to internal traffic
       - "9000:9000"
     env_file:
-      - .env.example
+      - .env
     # note the difference in comparison to the 'docker-compose.dev.yml' file:
     # in the production environment we want to use the default command 'start' '--import-realm' to start the server
     # in production mode and importing its realm and client configuration.
@@ -43,7 +43,7 @@ services:
       # 'KC_BOOTSTRAP_ADMIN_USERNAME''
       # 'KC_BOOTSTRAP_ADMIN_PASSWORD'
       # 'KC_REALM_ID'
-      - .env.example
+      - .env
     # note the difference in comparison to the 'docker-compose.dev.yml' file:
     # in the production environment we do not want to create test users in the Keycloak instance, but we want to
     # set up the Keycloak's user profile (necessary fields and their validation)

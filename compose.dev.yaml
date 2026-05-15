@@ -16,9 +16,9 @@ services:
     env_file:
       # it is mandatory to include this environment variable files to configure the Keycloak instance
       # https://www.keycloak.org/server/configuration#_formats_for_configuration
-      # Consider especially updating the section ---Client configurations--- in the '.env.example' file
+      # Consider especially updating the section ---Client configurations--- in the '.env' file
       # to match the frontend and backend applications' configurations.
-      - .env.example
+      - .env
     command:
       # The images default command is 'start' '--import-realm' but for development purposes, we want to use 'start-dev'
       # to start the server in development mode.
@@ -50,7 +50,7 @@ services:
       # 'KC_BOOTSTRAP_ADMIN_USERNAME''
       # 'KC_BOOTSTRAP_ADMIN_PASSWORD'
       # 'KC_REALM_ID'
-      - .env.example
+      - .env
     environment:
       # indicates to the initialization script that it is running in development mode,
       # so we want to create some test users in the Keycloak instance to facilitate the development purposes.
