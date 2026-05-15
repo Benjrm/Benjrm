@@ -10,9 +10,8 @@ FROM quay.io/keycloak/keycloak:26.6.1
 # https://www.keycloak.org/server/importExport#_using_environment_variables_within_the_realm_configuration_files
 
 # This realm.template.json configures the realm and the clients.
-# The realm called 'benjrm' is created with the following two clients:
-# - 'web' for the client-side application, which uses the authorization code flow with PKCE and does not require a client secret.
-# - 'api' for the server-side application, which uses the client credentials flow and requires a client secret.
+# The realm called 'benjrm' is created with the following client:
+# - 'api' for the server-side application, which uses the standard flow (Auhorization Code Flow with Proof Key for Code Exchange (PKCE)) and requires a client secret.
 # Please note that the realm configuration uses environment variables for the client configuration, so you need
 # to adjust '.env.example' file with the appropriate values for the client configuration.
 # https://www.keycloak.org/server/importExport#_using_environment_variables_within_the_realm_configuration_files

@@ -17,36 +17,19 @@
   },
   "clients": [
     {
-      "clientId": "web",
-      "name": "Client-side Web Application",
-      "description": "Client-side Web Application of Benjrm",
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "attributes": {
-        "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "${KC_CLIENTID_WEB_ATTRIBUTES_POST_LOGOUT_REDIRECT_URIS}"
-      },
-      "rootUrl": "${KC_CLIENTID_WEB_ROOT_URL}",
-      "baseUrl": "${KC_CLIENTID_WEB_BASE_URL}",
-      "redirectUris": [
-        "${KC_CLIENTID_WEB_REDIRECT_URIS}"
-      ],
-      "webOrigins": [
-        "${KC_CLIENTID_WEB_WEB_ORIGINS}"
-      ]
-    },
-    {
       "clientId": "api",
       "name": "Server-side API",
       "description": "Server-side API of Benjrm",
       "publicClient": false,
-      "standardFlowEnabled": false,
-      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": false,
       "attributes": {
-        "pkce.code.challenge.method": "S256"
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${KC_CLIENTID_API_BASE_URL}/*"
       },
-      "rootUrl": "${KC_CLIENTID_API_ROOT_URL}",
+      "rootUrl": "${KC_CLIENTID_API_BASE_URL}",
       "baseUrl": "${KC_CLIENTID_API_BASE_URL}",
+      "redirectUris": ["${KC_CLIENTID_API_BASE_URL}/auth/oidc/callback"],
       "secret": "${KC_CLIENTID_API_CLIENT_SECRET}"
     }
   ]

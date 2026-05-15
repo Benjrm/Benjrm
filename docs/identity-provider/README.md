@@ -65,7 +65,7 @@ Overall, the fully dynamic approach improves maintainability, reduces duplicatio
 
 Required http headers for reverse proxy configuration:
 1. `X-Forwarded-Proto`: The protocol used by the client to connect to the reverse proxy (e.g. `http` or `https`).
-2. `X-Forwarded-Host`: The original host requested by the client in the host http header. (e.g. `www.benjrm.de`).
+2. `X-Forwarded-Host`: The original host requested by the client in the host http header. (e.g. `idp.benjrm.de`).
 3. `X-Forwarded-Port`: The port on which the client is connecting to the reverse proxy (e.g. `80 for http`, `443 for https`).
 4. `X-Forwarded-Prefix`: The path prefix used by the reverse proxy to route requests to Keycloak (e.g. `/auth`)
 5. `X-Forwarded-For`: The original client ip address of the client connecting to the reverse proxy (e.g. `203.0.113.195`).
@@ -147,9 +147,10 @@ Indicates the username that Keycloak should use to authenticate with the SMTP se
 Indicates the password that Keycloak should use to authenticate with the SMTP server when sending emails.
 
 ## Client Configuration
-### Client-side Web Application of Benjrm
+### Server-side Application of Benjrm
 Uses **OpenID Connect (OIDC)** **Standard Flow (Authorization Code Flow) with PKCE (Proof Key for Code Exchange)**
 to authenticate users and obtain access tokens for accessing protected resources.
+The client is configured as a confidential client, which means it requires a client secret to authenticate.
 ---
 #### 🔐 Authorization Code Flow with Proof Key for Code Exchange (PKCE) - Step-by-Step
 
@@ -163,10 +164,11 @@ to authenticate users and obtain access tokens for accessing protected resources
 
 [Authorization Code Flow with Proof Key for Code Exchange (PKCE) - Further explanations](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-pkce)
 
-1. The user clicks the **"Login"** button on the client-side web application. 
+1. The user clicks the **"Login"** button on the client-side web application and the client-side web application call
+`/auth/login` endpoint of the server-side application to initiate the authentication process.
 2. This step consists of the steps 2, 3 and 4 of the Authentication Code Flow with PKCE sequence diagram. 
-The client-side application generates a random `state`, `nonce`, `code_verifier` and derives a `code_challange` from the `code_verifier` using a secure transformation (e.g. SHA-256). 
-The client-side application then sends an authorization code request to Keycloak's authorization endpoint:
+The server-side application generates a random `state`, `nonce`, `code_verifier` and derives a `code_challange` from the `code_verifier` using a secure transformation (e.g. SHA-256). 
+The server-side application then sends an authorization code request to Keycloak's authorization endpoint:
 
 ```
 {BASE_URL}/realms/{REALM_NAME}/protocol/openid-connect/auth
@@ -194,7 +196,7 @@ with the following query parameters:
 
 ---
 
-4. After successful authentication, Keycloak redirects the user back to the application with an authorization code:
+4. After successful authentication, Keycloak redirects the user back to the server-side application with an authorization code:
 
 ```
 http://localhost:5173?code=XYZ
@@ -203,7 +205,7 @@ http://localhost:5173?code=XYZ
 ---
 
 5. This step consists of the steps 7, 8, 9 of the Authentication Code Flow with PKCE sequence diagram. 
-The application exchanges the authorization code for tokens by sending a **POST request** to the token endpoint:
+The server-side application exchanges the authorization code for tokens by sending a **POST request** to the token endpoint:
 
 ```
 {BASE_URL}/realms/{REALM_NAME}/protocol/openid-connect/token
@@ -222,40 +224,5 @@ with:
 
 ![Keycloak Token Request Query Parameters](./assets/token-request-query-param.png)
 
-6. Afterward the client-side application can request protected resources from the API by including the JSON Web Token (JWT) access token in the `Authorization` header of the http request.
-The API will validate the access token with Keycloak's token introspection endpoint
-```
-{BASE_URL}/realms/{REALM_NAME}/protocol/openid-connect/token/introspect
-```
-or by verifying the token signature and claims locally using Keycloak's public keys.
-
----
-
-### Server-side API of Benjrm
-Uses **OpenID Connect (OIDC)** **Client Credentials Flow** to authenticate itself to Keycloak and obtain
-access tokens for accessing protected resources on behalf of itself (not on behalf of a user).
-
-#### 🔐 Client Credentials Code Flow - Step-by-Step
-
-##### 👉Client Credentials Code Flow Sequence Diagram:
-![Client Credentials Flow Sequence Diagram](assets/client-credentials-flow-sequence-diagram.png)
-[Client credentials code flow - Further explanations](https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow)
-
-1. The server-side application sends a **POST** request to the Keycloak token endpoint:
-
-```
-{BASE_URL}/realms/{REALM_NAME}/protocol/openid-connect/token
-```
-with the following application/x-www-form-urlencoded body parameters:
-- `client_id`: The registered client identifier of the application (e.g. `api`).
-- `grant_type`: Must be `client_credentials` for this flow.
-- `client_secret`: The secret associated with the client.
-
-2. Keycloak validates the client credentials and responds with an access token if the authentication is successful.
-
-👉 Example of Requesting an Access Token using Client Credentials Flow:
-
-![Keycloak Client Credentials Flow](./assets/keycloak-client-credentials-flow.png)
-
-3. The server-side application can then use the access token to authenticate itself when making requests to protected resources,
-by including the token in the `Authorization` header of the HTTP request as a Bearer token:
+6. Afterward the server-side application receives the access token and ID token from Keycloak and sends 
+a signed http-only cookie containing the ID token to the client-side web application to maintain the user's authenticated session.
