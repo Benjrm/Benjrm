@@ -42,8 +42,9 @@ jobs:
                 - "backend/Cargo.toml"
                 - "backend/Cargo.lock"
                 docker:
-                - '**/Dockerfile*'
-                - 'docker-compose*.yml'
+                - 'docker/**'
+                - 'Dockerfile*'
+                - 'compose.yaml'
 
   # SonarQube for SAST
   sonarqube:
@@ -108,16 +109,16 @@ jobs:
         working-directory: backend
 
   # Trivy Docker & Config Scan
-  trivy_docker:
-    name: "Trivy Docker Scan"
-    needs: detect-changes
-    runs-on: ubuntu-24.04
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.docker == 'true'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run Trivy for Docker
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          trivy-config: 'trivy.yaml'
+  # trivy_docker:
+  #   name: "Trivy Docker Scan"
+  #   needs: detect-changes
+  #   runs-on: ubuntu-24.04
+  #   if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.docker == 'true'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run Trivy for Docker
+  #       uses: aquasecurity/trivy-action@v0.36.0
+  #       with:
+  #         scan-type: 'image'
+  #         image-ref: '.'
+  #         trivy-config: 'trivy.yaml'

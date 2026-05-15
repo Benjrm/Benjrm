@@ -54,7 +54,7 @@ jobs:
             docker:
               - 'docker/**'
               - 'Dockerfile*'
-              - 'docker-compose*'
+              - 'compose*.yaml'
 
   # Frontend Linting
   frontend_lint:
