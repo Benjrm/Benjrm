@@ -1,0 +1,59 @@
+openapi: 3.1.0
+info:
+  title: Benjrm's Rest API
+  version: 1.0.0
+servers:
+  - url: 'https'
+paths:
+  /api/v1/quizzes:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewQuiz'
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quiz'
+        400:
+          description: Bad Request
+
+
+components:
+  schemas:
+    NewQuiz:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        hidden:
+          type: boolean
+          default: false
+
+    Quiz:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        hidden:
+          type: boolean
+        created:
+          type: string
+          format: "date-time"
+        modified:
+          type: string
+          format: "date-time"
