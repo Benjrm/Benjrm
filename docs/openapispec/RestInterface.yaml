@@ -4,7 +4,7 @@ info:
   version: 1.0.0
 servers:
   - url: 'http://localhost:8080'
-  - url: "http://localhost:80"
+  - url: 'http://localhost:80'
 paths:
   /api/v1/quizzes:
 
@@ -64,7 +64,7 @@ paths:
           schema:
             type: string
             format: uuid
-            example: "31a25ce9-c2e8-439b-82d1-7830b2941a6b"
+            example: '31a25ce9-c2e8-439b-82d1-7830b2941a6b'
       responses:
         200:
           description: Ok
@@ -90,7 +90,7 @@ paths:
           schema:
             type: string
             format: uuid
-            example: "31a25ce9-c2e8-439b-82d1-7830b2941a6b"
+            example: '31a25ce9-c2e8-439b-82d1-7830b2941a6b'
       requestBody:
         required: true
         content:
@@ -124,7 +124,7 @@ paths:
           schema:
             type: string
             format: uuid
-            example: "31a25ce9-c2e8-439b-82d1-7830b2941a6b"
+            example: '31a25ce9-c2e8-439b-82d1-7830b2941a6b'
       requestBody:
         required: true
         content:
@@ -158,7 +158,7 @@ paths:
           schema:
             type: string
             format: uuid
-            example: "31a25ce9-c2e8-439b-82d1-7830b2941a6b"
+            example: '31a25ce9-c2e8-439b-82d1-7830b2941a6b'
       responses:
         204:
           description: No Content
@@ -195,7 +195,7 @@ components:
         description:
           type: string
         hidden:
-          type: string
+          type: boolean
 
     Quiz:
       type: object
@@ -203,7 +203,7 @@ components:
         id:
           type: string
           format: uuid
-          example: "31a25ce9-c2e8-439b-82d1-7830b2941a6b"
+          example: '31a25ce9-c2e8-439b-82d1-7830b2941a6b'
         title:
           type: string
         description:
@@ -213,9 +213,9 @@ components:
           example: false
         created:
           type: string
-          format: "date-time"
-          example: "2024-01-01T12:00:00Z"
+          format: 'date-time'
+          example: '2024-01-01T12:00:00.000000Z'
         modified:
           type: string
-          format: "date-time"
-          example: "2024-01-01T12:00:00Z"
+          format: 'date-time'
+          example: '2024-01-01T12:00:00.000000Z'
