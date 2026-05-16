@@ -2,7 +2,7 @@ name: API Testing with Schemathesis
 on:
   push:
     branches:
-      - main
+      - 'main'
     paths:
       - 'docs/openapispec/**'
       - 'backend/**'
