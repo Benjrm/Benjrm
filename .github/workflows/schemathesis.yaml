@@ -26,17 +26,7 @@ jobs:
       - name: Start API
         run: |
           cargo run --manifest-path backend/Cargo.toml &
-          for i in $(seq 1 120); do
-            if curl -s --show-error --fail http://localhost:8080 > /dev/null; then
-              echo "API is ready!"
-              break
-            fi
-            if [ "$i" -eq 90 ]; then
-              echo "API did not become ready within 120 seconds" >&2
-              exit 1
-            fi
-            sleep 1
-          done
+          sleep 90
         env:
           DATABASE_URL: 'sqlite::memory:'
           PORT: '8080'
