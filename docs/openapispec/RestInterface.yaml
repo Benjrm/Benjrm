@@ -48,6 +48,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Quiz'
+        400:
+          description: Bad Request
         401:
           description: Unauthorized
         500:
@@ -193,7 +195,9 @@ components:
         title:
           type: string
         description:
-          type: string
+          oneOf:
+            - type: string
+            - type: 'null'
         hidden:
           type: boolean
 
@@ -207,10 +211,11 @@ components:
         title:
           type: string
         description:
-          type: string
+          oneOf:
+            - type: string
+            - type: 'null'
         hidden:
           type: boolean
-          example: false
         created:
           type: string
           format: 'date-time'

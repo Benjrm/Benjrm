@@ -11,3 +11,6 @@ Next, follow the instructions in the [backend README](backend/README.md) and the
 ## Why Benjrm
 
 Each letter represents one of the creators. Together, it forms a name that is pronounced like "Benjamin". Represented using the Internationales Phonetisches Alphabet as /ˈbɛndʒəmɪn/
+
+## API
+Please refer to the [API-related documentation](docs/api/README.md).
