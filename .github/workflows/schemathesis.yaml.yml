@@ -1,0 +1,33 @@
+name: schemathesis.yaml
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/openapispec/**'
+      - 'backend/**'
+  pull_request:
+    paths:
+      - 'docs/openapispec/**'
+      - 'backend/**'
+
+jobs:
+  test:
+    permissions:
+      # Because the action needs to comment on the PR with the coverage summary powered
+      # by [TraceCov](https://docs.tracecov.sh/) we need to gibe it write permissions to pull requests.
+      pull-requests: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start API
+        run: |
+          cargo run --manifest-path backend/Cargo.toml &
+          sleep 10
+        env:
+          DATABASE_URL: 'sqlite::memory:'
+          PORT: '8080'
+      - uses: schemathesis/action@v3
+        with:
+          schema: 'docs/openapispec.RestInterface.yaml'
+          base-url: 'http://localhost:8080'
