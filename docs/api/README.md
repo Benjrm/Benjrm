@@ -9,6 +9,24 @@
 - Because it is machine-readable, it can be used to automatically generate
   documentation (like *Swagger UI*), client and server code (like *Swagger Codegen*) and even test cases (like *Dredd*).
 
+## Spectral
+- A JSON/YAML linter with out of the box support for OpenAPI 3.x & 2.0 specifications
+- Refer to the [Spectral documentation](https://docs.stoplight.io/docs/spectral/674b27b261c3c-overview) for more details,
+especially the [OpenAPI ruleset](https://docs.stoplight.io/docs/spectral/4dec24461f3af-open-api-rules)
+
+Run Spectral against the [OpenAPI specification (OAS)](../openapispec/RestInterface.yaml) using the following command locally 
+from the root directory of the repository:
+```bash
+spectral lint docs/openapispec/RestInterface.yaml .spectral.yaml
+```
+
+Ensure that you have installed the [Spectral CLI client](https://docs.stoplight.io/docs/spectral/9ffa04e052cc1-spectral-cli) globally using npm before running the above command:
+```bash
+npm install -g @stoplight/spectral-cli
+```
+
+
+
 ## Swagger
 - Eefers to the tooling ecosystem (like Swagger UI, Swagger Editor, and Swagger Codegen)
   that helps you design, visualize, and interact with APIs based on that spec.
