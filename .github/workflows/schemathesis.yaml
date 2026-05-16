@@ -1,4 +1,4 @@
-name: schemathesis.yaml
+name: API Testing with Schemathesis
 on:
   push:
     branches:
@@ -32,5 +32,5 @@ jobs:
           PORT: '8080'
       - uses: schemathesis/action@v3
         with:
-          schema: 'docs/openapispec.RestInterface.yaml'
+          schema: 'docs/openapispec/RestInterface.yaml'
           base-url: 'http://localhost:8080'
