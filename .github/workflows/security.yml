@@ -1,0 +1,122 @@
+name: Security Scan
+run-name: Security Scan for ${{ github.event_name }} by @${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+  workflow_dispatch:
+
+# Cancel concurrent running workflows, after a new one is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # Check which security job to run (Frontend, Backend, Docker or both)
+  detect-changes:
+    name: Detect Changes
+    runs-on: 'ubuntu-24.04'
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/package*.json'
+            backend:
+              - 'backend/Cargo.toml'
+              - 'backend/Cargo.lock'
+            docker:
+              - 'docker/**'
+              - 'Dockerfile*'
+              - 'compose.yaml'
+
+  # SonarQube for SAST
+  sonarqube:
+    name: SonarQube SAST Scan
+    runs-on: 'ubuntu-24.04'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: sonarsource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+            -Dsonar.sources=.
+            -Dsonar.qualitygate.wait=true
+
+  # Trivy Frontend Scan
+  trivy_frontend:
+    name: Trivy Frontend Scan
+    needs: detect-changes
+    runs-on: 'ubuntu-24.04'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy for Frontend
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: 'fs'
+          scan-ref: 'frontend'
+          trivy-config: 'trivy.yaml'
+
+  # Trivy Backend Scan
+  trivy_backend:
+    name: Trivy Backend Scan
+    needs: detect-changes
+    runs-on: 'ubuntu-24.04'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.backend == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy for Backend
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: 'fs'
+          scan-ref: 'backend'
+          trivy-config: 'trivy.yaml'
+
+  cargo_audit:
+    name: Cargo Audit
+    runs-on: 'ubuntu-24.04'
+    needs: detect-changes
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.backend == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+      - name: Audit Dependencies
+        run: cargo audit
+        working-directory: 'backend'
+
+  # Trivy Docker & Config Scan
+  # trivy_docker:
+  #   name: Trivy Docker Scan
+  #   needs: detect-changes
+  #   runs-on: 'ubuntu-24.04'
+  #   if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.docker == 'true'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run Trivy for Docker
+  #       uses: aquasecurity/trivy-action@v0.36.0
+  #       with:
+  #         scan-type: 'image'
+  #         image-ref: '.'
+  #         trivy-config: 'trivy.yaml'
