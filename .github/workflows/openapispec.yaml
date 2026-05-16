@@ -3,7 +3,7 @@ name: Deploy OpenAPI Spec to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - 'main'
     paths:
       - 'docs/openapispec/**'
       - '.github/workflows/openapispec.yaml'
