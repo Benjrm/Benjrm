@@ -18,7 +18,7 @@ jobs:
   test:
     permissions:
       # Because the action needs to comment on the PR with the coverage summary powered
-      # by [TraceCov](https://docs.tracecov.sh/) we need to gibe it write permissions to pull requests.
+      # by [TraceCov](https://docs.tracecov.sh/) we need to give it write permissions to pull requests.
       pull-requests: write
     runs-on: ubuntu-24.04
     steps:
@@ -26,7 +26,17 @@ jobs:
       - name: Start API
         run: |
           cargo run --manifest-path backend/Cargo.toml &
-          sleep 90
+          for i in $(seq 1 120); do
+            if curl -s --show-error --fail http://localhost:8080 > /dev/null; then
+              echo "API is ready!"
+              break
+            fi
+            if [ "$i" -eq 90 ]; then
+              echo "API did not become ready within 120 seconds" >&2
+              exit 1
+            fi
+            sleep 1
+          done
         env:
           DATABASE_URL: 'sqlite::memory:'
           PORT: '8080'
