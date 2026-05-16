@@ -1,9 +1,10 @@
-import LandingPage from './pages/LandingPage';
+import type { JSX } from "react"
+import LandingPage from "./pages/LandingPage"
 import ImprintPage from './pages/ImprintPage';
 
-function App() {
+function App(): JSX.Element {
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex min-h-screen flex-col">
             {/* <LandingPage /> */}
             <ImprintPage />
         </div>

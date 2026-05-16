@@ -1,0 +1,13 @@
+# Trivy Configuration File
+# https://trivy.dev/docs/latest/guide/references/configuration/config-file/
+
+format: table
+exit-code: 1
+severity: HIGH,CRITICAL
+
+# Scan options
+scan:
+  scanners:
+    - vuln
+    - misconfig
+    - secret

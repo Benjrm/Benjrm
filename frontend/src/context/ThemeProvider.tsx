@@ -1,15 +1,15 @@
-// src/components/ThemeProvider.tsx
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import type { JSX, ReactNode } from "react"
 
 export type Theme = "dark" | "light" | "auto"
 
-type ThemeProviderProps = {
-    children: React.ReactNode
+interface ThemeProviderProps {
+    children: ReactNode
     defaultTheme?: Theme
     storageKey?: string
 }
 
-type ThemeProviderState = {
+interface ThemeProviderState {
     theme: Theme
     setTheme: (theme: Theme) => void
 }
@@ -22,11 +22,11 @@ const initialState: ThemeProviderState = {
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 export function ThemeProvider({
-                                  children,
-                                  defaultTheme = "auto",
-                                  storageKey = "theme",
-                                  ...props
-                              }: ThemeProviderProps) {
+    children,
+    defaultTheme = "auto",
+    storageKey = "theme",
+    ...props
+}: ThemeProviderProps): JSX.Element {
     const [theme, setTheme] = useState<Theme>(() => {
         const saved = localStorage.getItem(storageKey) as Theme
         return ["light", "dark", "auto"].includes(saved) ? saved : defaultTheme
@@ -51,13 +51,16 @@ export function ThemeProvider({
         return () => media.removeEventListener("change", applyTheme)
     }, [theme])
 
-    const value = {
-        theme,
-        setTheme: (newTheme: Theme) => {
-            localStorage.setItem(storageKey, newTheme)
-            setTheme(newTheme)
-        },
-    }
+    const value = useMemo(
+        () => ({
+            theme,
+            setTheme: (newTheme: Theme) => {
+                localStorage.setItem(storageKey, newTheme)
+                setTheme(newTheme)
+            },
+        }),
+        [theme, storageKey]
+    )
 
     return (
         <ThemeProviderContext.Provider {...props} value={value}>
@@ -66,7 +69,12 @@ export function ThemeProvider({
     )
 }
 
-export const useTheme = () => {
+ThemeProvider.defaultProps = {
+    defaultTheme: "auto",
+    storageKey: "theme",
+}
+
+export const useTheme = (): ThemeProviderState => {
     const context = useContext(ThemeProviderContext)
     if (context === undefined) {
         throw new Error("useTheme must be used within a ThemeProvider")
