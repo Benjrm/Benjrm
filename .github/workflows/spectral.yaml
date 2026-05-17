@@ -19,8 +19,4 @@ jobs:
       - name: Install Spectral - An open-source API style guide enforcer and linter.
         run: npm install -g @stoplight/spectral-cli
       - name: Run spectral lint
-        run: spectral lint docs/openapispec/RestInterface.yaml -f sarif -o spectral-lint-results.sarif
-      - name: Upload Spectral lint results
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: 'spectral-lint-results.sarif'
+        run: spectral lint docs/openapispec/RestInterface.yaml -f github-actions
