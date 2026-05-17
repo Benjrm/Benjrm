@@ -1,6 +1,6 @@
 // frontend/src/context/ThemeProvider.ts
 
-import { useEffect, useState } from "react"
+import  { useEffect, useState } from "react"
 import { ThemeProviderContext, type Theme } from "./ThemeContext"
 
 type ThemeProviderProps = {
