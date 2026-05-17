@@ -21,7 +21,7 @@ jobs:
     name: Run Spectral
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Spectral - An open-source API style guide enforcer and linter.
         run: npm install -g @stoplight/spectral-cli
       - name: Run spectral lint
