@@ -218,7 +218,9 @@ components:
         title:
           type: string
         description:
-          type: string
+          oneOf:
+            - type: string
+            - type: 'null'
         hidden:
           type: boolean
           default: false
