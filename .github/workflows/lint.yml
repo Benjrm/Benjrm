@@ -1,0 +1,105 @@
+name: Linting pipeline
+run-name: Linting for ${{ github.event_name }} by @${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'feature/*'
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/*.yml'
+  pull_request:
+    branches:
+      - 'main'
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/*.yml'
+  workflow_dispatch:
+
+# Cancel concurrent running workflows, after a new one is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # Check which linting job to run (Frontend or Backend)
+  check_changes:
+    name: Detect changed Files
+    runs-on: 'ubuntu-24.04'
+    # Skip pull_request event for internal PRs (push covers it)
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true)
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+            docker:
+              - 'docker/**'
+              - 'Dockerfile*'
+              - 'compose*.yaml'
+
+  # Frontend Linting
+  frontend_lint:
+    name: Frontend Linting with ESLint
+    runs-on: 'ubuntu-24.04'
+    needs: check_changes
+    if: needs.check_changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Install dependencies
+        run: cd 'frontend' && npm ci --prefer-offline
+      - name: Type-Check
+        run: cd 'frontend' && npm run type:check
+      - name: Lint & Format Check
+        run: cd 'frontend' && npm run lint
+
+  # Build Frontend needed for Backend Linting (release)
+  build_frontend:
+    needs: check_changes
+    if: needs.check_changes.outputs.frontend == 'true' || needs.check_changes.output.backend == 'true' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/build_frontend.yml
+
+  # Backend Linting & Formatting
+  backend_lint:
+    name: Rust Linting for Backend
+    runs-on: 'ubuntu-24.04'
+    needs: [check_changes, build_frontend]
+    if: needs.check_changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: 'frontend/dist'
+      - name: Clippy (debug)
+        run: cargo clippy --all-features -- --deny warnings
+        working-directory: 'backend'
+      - name: Clippy (release)
+        run: cargo clippy --all-features --release -- --deny warnings
+        working-directory: 'backend'
+      - name: Check formatting
+        run: cargo fmt --check
+        working-directory: 'backend'

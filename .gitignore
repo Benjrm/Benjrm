@@ -1,7 +1,12 @@
 .env*
 !.env.example
+
+# Databases
 /database
-/benjrm.db
+*.db
+*.db3
+*.sqlite
+*.sqlite3
 
 # Editor directories and files
 .vscode/*

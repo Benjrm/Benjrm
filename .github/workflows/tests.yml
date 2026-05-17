@@ -1,0 +1,77 @@
+name: Testing pipeline
+run-name: Testing for ${{ github.event_name }} by @${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'feature/*'
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/*.yml'
+  pull_request:
+    branches:
+      - 'main'
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/*.yml'
+  workflow_dispatch:
+
+# Cancel concurrent running workflows, after a new one is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # Check which files have changed to avoid unnecessary tests
+  check_changes:
+    name: Detect changed Files
+    runs-on: 'ubuntu-24.04'
+    # Skip pull_request event for internal PRs (push covers it)
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true)
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+
+  # Build Frontend
+  build_frontend:
+    needs: check_changes
+    if: needs.check_changes.outputs.frontend == 'true' || needs.check_changes.output.backend == 'true' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/build_frontend.yml
+
+  # Backend Tests
+  backend_tests:
+    name: Backend Unit & Integration Tests
+    runs-on: 'ubuntu-24.04'
+    needs: [check_changes, build_frontend]
+    if: needs.check_changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: 'frontend/dist'
+      - name: Test (debug)
+        run: cargo test --all-features
+        working-directory: 'backend'
+      - name: Test (release)
+        run: cargo test --all-features --release
+        working-directory: 'backend'
+        

@@ -1,7 +1,6 @@
 // frontend/src/components/Navbar.tsx
 
 import { NavLink } from "react-router";
-
 import { Button } from "@/shadcn/components/ui/button";
 
 export default function Navbar() {
@@ -32,5 +31,5 @@ export default function Navbar() {
                 </div>
             </div>
         </header>
-    );
+    )
 }
