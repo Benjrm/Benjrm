@@ -2,15 +2,14 @@
 
 import { Input } from "@/shadcn/components/ui/input";
 import { Button } from "@/shadcn/components/ui/button";
-import Footer from "@/components/Footer";
 
 export default function LandingPage() {
     return (
-        <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden">
+        <div className="flex-1 flex flex-col bg-background text-foreground min-h-[calc(100vh-5rem)]">
 
-            <div className="flex-1 w-full max-w-360 mx-auto px-4 sm:px-6 flex items-center relative py-4">
+            <div className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center relative py-12">
 
-                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-24 items-center relative z-10">
+                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16 items-center relative z-10">
 
                     {/* Left Column */}
                     <div className="flex flex-col gap-6 md:gap-10">
@@ -32,7 +31,7 @@ export default function LandingPage() {
                             </p>
                         </div>
 
-                        {/* Game PIN — stacks vertically on mobile, row on sm+ */}
+                        {/* Game PIN */}
                         <div className="bg-muted/50 p-4 sm:p-8 rounded-xl shadow-lg border border-border flex flex-col sm:flex-row gap-3 items-center backdrop-blur-sm">
                             <Input
                                 type="text"
@@ -77,7 +76,6 @@ export default function LandingPage() {
 
                 </div>
             </div>
-            <Footer />
         </div>
     );
 }
