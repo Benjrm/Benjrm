@@ -1,20 +1,22 @@
-// frontend/src/context/ThemeProvider.ts
+// frontend/src/context/ThemeProvider.tsx
 
-import { useEffect, useState } from "react"
-import { ThemeProviderContext, type Theme } from "./ThemeContext"
+import type { JSX } from "react"
+import { useEffect, useState, useMemo } from "react"
+import { ThemeProviderContext } from "./ThemeContext"
+import type { Theme } from "./ThemeContext"
 
-type ThemeProviderProps = {
+interface ThemeProviderProps {
     children: React.ReactNode
     defaultTheme?: Theme
     storageKey?: string
 }
 
-export function ThemeProvider({
-                                  children,
-                                  defaultTheme = "auto",
-                                  storageKey = "theme",
-                                  ...props
-                              }: ThemeProviderProps) {
+export default function ThemeProvider({
+    children,
+    defaultTheme = "auto",
+    storageKey = "theme",
+    ...props
+}: ThemeProviderProps): JSX.Element {
     const [theme, setTheme] = useState<Theme>(() => {
         const saved = localStorage.getItem(storageKey) as Theme
         return ["light", "dark", "auto"].includes(saved) ? saved : defaultTheme
@@ -38,17 +40,25 @@ export function ThemeProvider({
         return () => media.removeEventListener("change", applyTheme)
     }, [theme])
 
-    const value = {
-        theme,
-        setTheme: (newTheme: Theme) => {
-            localStorage.setItem(storageKey, newTheme)
-            setTheme(newTheme)
-        },
-    }
+    const value = useMemo(
+        () => ({
+            theme,
+            setTheme: (newTheme: Theme) => {
+                localStorage.setItem(storageKey, newTheme)
+                setTheme(newTheme)
+            },
+        }),
+        [theme, storageKey]
+    )
 
     return (
         <ThemeProviderContext.Provider {...props} value={value}>
             {children}
         </ThemeProviderContext.Provider>
     )
+}
+
+ThemeProvider.defaultProps = {
+    defaultTheme: "auto",
+    storageKey: "theme",
 }

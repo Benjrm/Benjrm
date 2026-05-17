@@ -1,31 +1,13 @@
 // frontend/src/App.tsx
 
-import { Routes, Route } from 'react-router';
-import LandingPage from './pages/LandingPage';
-import Dashboard from './pages/Dashboard';
-import ErrorPage from './pages/ErrorPage';
-import RootLayout from './layouts/RootLayout';
-import PublicLayout from './layouts/PublicLayout';
-import QuizPage from "@/pages/QuizPage.tsx";
-import QuizCreator from "@/pages/QuizCreator.tsx";
+import type { JSX } from "react"
+import { useRoutes } from "react-router"
+import routes from "./routes"
 
-function App() {
-    return (
-        <Routes>
-            {/* PUBLIC ROUTES: Wrapped in the minimal layout */}
-            <Route element={<PublicLayout />}>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="*" element={<ErrorPage title="404" message="The page you are looking for does not exist." />} />
-            </Route>
+function App(): JSX.Element {
+    const routing = useRoutes(routes)
 
-            {/* PRIVATE ROUTES: Wrapped in the authenticated layout */}
-            <Route element={<RootLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/quiz/:quizId" element={<QuizPage />} />
-                <Route path="/quizCreator" element={<QuizCreator />} />
-            </Route>
-        </Routes>
-    );
+    return <>{routing}</>
 }
 
-export default App;
+export default App

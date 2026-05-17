@@ -1,47 +1,50 @@
 // frontend/src/components/Footer.tsx
 
-import { NavLink } from "react-router";
+import type { JSX } from "react"
+import { NavLink } from "react-router"
 
-export default function Footer() {
+export default function Footer(): JSX.Element {
     return (
-        <footer className="border-t border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 mt-auto">
-            <div className="max-w-360 mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-
+        <footer className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 mt-auto border-t backdrop-blur">
+            <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-6 md:flex-row">
                 {/* Left side: Logo */}
-                <div className="flex-1 flex justify-center md:justify-start">
-                    <NavLink to="/" end className="text-xl sm:text-2xl font-extrabold tracking-tighter text-[#00F2FF] shrink-0">
+                <div className="flex flex-1 justify-center md:justify-start">
+                    <NavLink
+                        end
+                        className="shrink-0 text-xl font-extrabold tracking-tighter text-[#00F2FF] sm:text-2xl"
+                        to="/"
+                    >
                         Benjrm
                     </NavLink>
                 </div>
 
                 {/* Center: Copyright text */}
-                <div className="text-sm font-medium text-muted-foreground text-center shrink-0">
+                <div className="text-muted-foreground shrink-0 text-center text-sm font-medium">
                     &copy; {new Date().getFullYear()} Benjrm. All Rights Reserved.
                 </div>
 
                 {/* Right side: Links */}
-                <nav className="flex-1 flex flex-wrap justify-center md:justify-end items-center gap-4 sm:gap-6">
+                <nav className="flex flex-1 flex-wrap items-center justify-center gap-4 sm:gap-6 md:justify-end">
                     <NavLink
+                        className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
                         to="/imprint"
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                         Impressum
                     </NavLink>
                     <NavLink
+                        className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
                         to="/privacy-policy"
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                         Privacy Policy
                     </NavLink>
                     <NavLink
+                        className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
                         to="/terms"
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                         Terms and Conditions
                     </NavLink>
                 </nav>
-
             </div>
         </footer>
-    );
+    )
 }

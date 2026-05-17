@@ -1,6 +1,7 @@
 # Benjrm's Frontend
 
 ## Used Dependencies:
+
 1. React + TypeScript
 2. React Router
 3. Tanstack Query
@@ -10,21 +11,25 @@
 ## NPM Scripts:
 
 Starting the development server with HMR (Hot Module Replacement):
+
 ```shell
 npm run dev
 ```
 
 Linting the codebase to find and fix issues:
+
 ```shell
 npm run lint
 ```
 
 Building the application for production:
+
 ```shell
 npm run build
 ```
 
 Previewing the production build locally:
+
 ```shell
 npm run preview
 ```
