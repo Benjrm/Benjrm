@@ -17,7 +17,7 @@ especially the [OpenAPI ruleset](https://docs.stoplight.io/docs/spectral/4dec244
 Run Spectral against the [OpenAPI specification (OAS)](../openapispec/RestInterface.yaml) using the following command locally 
 from the root directory of the repository:
 ```bash
-spectral lint docs/openapispec/RestInterface.yaml .spectral.yaml
+cd ../../ && spectral lint docs/openapispec/RestInterface.yaml
 ```
 
 Ensure that you have installed the [Spectral CLI client](https://docs.stoplight.io/docs/spectral/9ffa04e052cc1-spectral-cli) globally using npm before running the above command:

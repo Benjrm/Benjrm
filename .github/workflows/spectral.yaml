@@ -6,6 +6,9 @@ on:
       - '.github/workflows/spectral.yaml'
   workflow_dispatch:
 
+permissions:
+  pull-requests: write
+
 jobs:
   build:
     name: Run Spectral
