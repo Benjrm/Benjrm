@@ -33,3 +33,18 @@ Previewing the production build locally:
 ```shell
 npm run preview
 ```
+
+## Dockerfile:
+
+Build Docker dev-image from root folder:
+
+```shell
+docker build -t benjrm-frontend-dev -f frontend/Dockerfile.dev frontend
+```
+
+Run Dev-Container:
+
+```shell
+docker run --rm -p 5173:5173 benjrm-frontend-dev
+```
+

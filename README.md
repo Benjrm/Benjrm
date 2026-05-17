@@ -6,6 +6,7 @@ We're currently building this project. Stay tuned for updates in the coming days
 
 ## Development environment
 First, set up the database by creating an `.env` file based on `.env.example` and running `docker compose up`.
+Or, for faster development, run the respective development Docker Compose file using: `docker compose -f compose.dev.yaml up`
 Next, follow the instructions in the [backend README](backend/README.md) and the [frontend README](frontend/README.md).
 
 ## Why Benjrm

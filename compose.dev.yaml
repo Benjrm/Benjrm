@@ -1,0 +1,35 @@
+services:
+  database:
+    image: postgres:18.3
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: benjrm
+      POSTGRES_USER: benjrm
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U benjrm -d benjrm" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./database:/var/lib/postgresql
+    ports:
+      - 5432:5432
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: benjrm-dev-frontend
+    restart: unless-stopped
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "100"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - 5173:5173
+
+volumes:
+  frontend-node-modules:
