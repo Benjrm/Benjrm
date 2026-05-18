@@ -2,7 +2,7 @@ use {
     crate::{
         AppData,
         auth::{
-            User,
+            SessionUser, User,
             entity::{ActiveUser, UserColumn, UserEntity},
             oidc::error::Error,
         },
@@ -119,7 +119,7 @@ async fn callback(
         }
     };
 
-    let user = User {
+    let user = SessionUser {
         id: db_user.id,
         id_token: user.id_token,
     };
@@ -138,8 +138,9 @@ async fn callback(
 
 #[post("/logout")]
 async fn logout(data: web::Data<AppData>, session: Session) -> HttpResponse {
-    let user = session.get::<User>("user").ok().flatten();
+    let user = session.get::<SessionUser>("user").ok().flatten();
     session.purge();
+
     if let Some(user) = user
         && let Some(id_token) = user.id_token
     {

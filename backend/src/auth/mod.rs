@@ -13,10 +13,14 @@ pub mod entity;
 pub mod oidc;
 
 #[derive(Debug, Serialize, Deserialize)]
+struct SessionUser {
+    id: Uuid,
+    id_token: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     pub id: Uuid,
-    #[serde(skip)]
-    id_token: Option<String>,
 }
 
 impl FromRequest for User {
@@ -26,13 +30,14 @@ impl FromRequest for User {
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         fn get_user(req: &HttpRequest) -> Result<User, actix_web::Error> {
             let session = Session::extract(req).into_inner()?;
-            let user = session.get("user")?;
-            user.ok_or_else(|| {
-                RequireLogin {
+            let user: Option<SessionUser> = session.get("user")?;
+            match user {
+                Some(user) => Ok(User { id: user.id }),
+                None => Err(RequireLogin {
                     path: req.path().to_owned(),
                 }
-                .into()
-            })
+                .into()),
+            }
         }
         ready(get_user(req))
     }
