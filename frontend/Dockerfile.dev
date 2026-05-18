@@ -22,8 +22,6 @@ USER node
 # Keep npm's cache writable for the adjusted node user during the build step.
 RUN --mount=type=cache,target=/home/node/.npm,uid=$APP_UID,gid=$APP_GID npm ci
 
-COPY --chown=node:node . .
-
 EXPOSE 5173
 
 # In development, we run the vite server for hot reload. So we need to bind to 0.0.0.0 to allow access from outside the container.
