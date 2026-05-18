@@ -9,14 +9,18 @@ ARG APP_GID
 
 WORKDIR /app
 
+# Match the container user to the host IDs so bind mounts stay writable on Linux.
 RUN groupmod --gid "${APP_GID}" node \
 	&& usermod --uid "${APP_UID}" --gid "${APP_GID}" node
 
 COPY --chown=node:node package*.json ./
 
+RUN chown -R node:node /app
+
 USER node
 
-RUN --mount=type=cache,target=/home/node/.npm npm ci
+# Keep npm's cache writable for the adjusted node user during the build step.
+RUN --mount=type=cache,target=/home/node/.npm,uid=$APP_UID,gid=$APP_GID npm ci
 
 COPY --chown=node:node . .
 

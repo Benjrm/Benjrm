@@ -20,6 +20,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+      # Forward the local user IDs so the frontend container can write to bind mounts on Linux.
       args:
         APP_UID: ${UID:-1000}
         APP_GID: ${GID:-1000}
