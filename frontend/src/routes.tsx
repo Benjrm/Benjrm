@@ -7,7 +7,6 @@ import ErrorPage from "./pages/ErrorPage"
 import RootLayout from "./layouts/RootLayout"
 import PublicLayout from "./layouts/PublicLayout"
 
-// 1. Remove the 'export' keyword here
 const routes: RouteObject[] = [
     {
         element: <PublicLayout />,

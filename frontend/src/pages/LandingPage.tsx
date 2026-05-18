@@ -61,19 +61,21 @@ export default function LandingPage(): JSX.Element {
                     </div>
 
                     {/* Right Column */}
-                    <div className="relative hidden md:block">
-                        <div className="absolute -inset-1 rounded-[2.5rem] bg-linear-to-tr from-[#00F2FF] to-[#FF8A00] opacity-20 blur-2xl" />
+                    <div className="relative hidden pr-4 pb-4 md:block">
+                        <div className="pointer-events-none absolute -inset-2 rounded-[2.5rem] bg-linear-to-tr from-[#00F2FF] to-[#FF8A00] opacity-20 blur-2xl" />
 
-                        <div className="relative aspect-4/3 overflow-hidden rounded-3xl border border-white/10 shadow-2xl">
-                            <img
-                                alt="Students participating in a quiz"
-                                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-                                src="/pictures/happy_people.jpg"
-                            />
-                            <div className="from-background/95 via-background/10 absolute inset-0 flex items-end bg-linear-to-t to-transparent p-8 lg:p-12">
-                                <p className="max-w-[85%] text-3xl leading-tight font-extrabold tracking-tighter text-white lg:text-5xl">
-                                    Quiz together, learn forever.
-                                </p>
+                        <div className="relative rounded-3xl border border-white/10 shadow-2xl">
+                            <div className="relative aspect-4/3 overflow-hidden rounded-3xl">
+                                <img
+                                    alt="Students participating in a quiz"
+                                    className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                                    src="/pictures/happy_people.jpg"
+                                />
+                                <div className="from-background/95 via-background/10 absolute inset-0 flex items-end bg-linear-to-t to-transparent p-8 lg:p-12">
+                                    <p className="max-w-[85%] text-3xl leading-tight font-extrabold tracking-tighter text-white lg:text-5xl">
+                                        Quiz together, learn forever.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
