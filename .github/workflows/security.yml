@@ -42,7 +42,9 @@ jobs:
             docker:
               - 'docker/**'
               - 'Dockerfile*'
-              - 'compose.yaml'
+              - 'compose*.yaml'
+              - 'frontend/Dockerfile*'
+              - 'frontend/.dockerignore'
 
   # SonarQube for SAST
   sonarqube:
