@@ -47,4 +47,3 @@ Run Dev-Container:
 ```shell
 docker run --rm -p 5173:5173 benjrm-frontend-dev
 ```
-
