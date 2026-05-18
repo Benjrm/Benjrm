@@ -8,6 +8,7 @@ use {
     },
 };
 
+pub mod entity;
 pub mod oidc;
 
 #[derive(Debug, Serialize, Deserialize)]
