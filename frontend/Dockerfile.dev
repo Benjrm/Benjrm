@@ -10,7 +10,7 @@ ARG APP_GID
 WORKDIR /app
 
 # Match the container user to the host IDs so bind mounts stay writable on Linux.
-RUN groupmod --gid "${APP_GID}" node \
+RUN if [ "${APP_GID}" != "0" ]; then groupmod --gid "${APP_GID}" node; fi \
 	&& usermod --uid "${APP_UID}" --gid "${APP_GID}" node
 
 COPY --chown=node:node package*.json ./
