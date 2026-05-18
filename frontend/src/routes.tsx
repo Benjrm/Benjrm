@@ -6,8 +6,9 @@ import Dashboard from "./pages/Dashboard"
 import ErrorPage from "./pages/ErrorPage"
 import RootLayout from "./layouts/RootLayout"
 import PublicLayout from "./layouts/PublicLayout"
+import QuizCreatorPage from "./pages/QuizCreator.tsx"
+import QuizPage from "./pages/QuizPage.tsx"
 
-// 1. Remove the 'export' keyword here
 const routes: RouteObject[] = [
     {
         element: <PublicLayout />,
@@ -30,6 +31,14 @@ const routes: RouteObject[] = [
             {
                 path: "/dashboard",
                 element: <Dashboard />,
+            },
+            {
+                path: "/createQuiz",
+                element: <QuizCreatorPage />,
+            },
+            {
+                path: "/quizDiscovery",
+                element: <QuizPage />,
             },
         ],
     },
