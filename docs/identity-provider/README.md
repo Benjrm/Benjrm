@@ -2,17 +2,15 @@
 
 ## Resources:
 1. [JSON Schema for Keycloak Import/Export - GitHub Repository](https://github.com/jirutka/keycloak-json-schema)
-2. [JSON Schema for Keycloak Import/Export - Schemas](https://jirutka.github.io/keycloak-json-schema/)
-3. [JSON Schema for Keycloak Import/Export - Keycloak Version 26](assets/keycloak-realm-26.json)
-4. [All configuration options for Keycloak](https://www.keycloak.org/server/all-config)
-5. [Observability - Health Check endpoints](https://www.keycloak.org/observability/health)
-6. [Securing applications and services with OpenID Connect](https://www.keycloak.org/securing-apps/oidc-layers)
-7. [Authorization Code Flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow)
-8. [Authorization Code Flow with Proof Key for Code Exchange (PKCE)](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-pkce)
-9. [Client Credentials Code Flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow)
-10. [Configuring the management interface](https://www.keycloak.org/server/management-interface)
-11. [Configuring the hostname (v2)](https://www.keycloak.org/server/hostname)
-12. [Configuring a reverse proxy](https://www.keycloak.org/server/reverseproxy)
+2. [All configuration options for Keycloak](https://www.keycloak.org/server/all-config)
+3. [Observability - Health Check endpoints](https://www.keycloak.org/observability/health)
+4. [Securing applications and services with OpenID Connect](https://www.keycloak.org/securing-apps/oidc-layers)
+5. [Authorization Code Flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow)
+6. [Authorization Code Flow with Proof Key for Code Exchange (PKCE)](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-pkce)
+7. [Client Credentials Code Flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow)
+8. [Configuring the management interface](https://www.keycloak.org/server/management-interface)
+9. [Configuring the hostname (v2)](https://www.keycloak.org/server/hostname)
+10. [Configuring a reverse proxy](https://www.keycloak.org/server/reverseproxy)
 
 ## Starting Keycloak with the provided configuration:
 
