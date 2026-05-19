@@ -18,11 +18,11 @@ pub struct Oidc {
 
 impl Oidc {
     pub async fn from_env() -> Self {
-        const DEFAULT_NAME: &str = "OIDC_KEYCLOAK_URL and OIDC_KEYCLOAK_REALM";
-        let keycloak = env::var("OIDC_KEYCLOAK_URL")
+        const DEFAULT_NAME: &str = "KC_URL and KC_REALM_ID";
+        let keycloak = env::var("KC_URL")
             .ok()
-            .map(|x| Url::parse(&x).expect("OIDC_KEYCLOAK_URL"))
-            .zip(env::var("OIDC_KEYCLOAK_REALM").ok());
+            .map(|x| Url::parse(&x).expect("KC_URL"))
+            .zip(env::var("KC_REALM_ID").ok());
         let keycloak = keycloak.as_ref();
 
         let public_url = Url::parse(&env_var("PUBLIC_URL")).expect("PUBLIC_URL");
