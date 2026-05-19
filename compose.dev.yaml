@@ -14,13 +14,20 @@ services:
       # It should be protected with a reverse proxy and only accessible to internal traffic
       - "127.0.0.1:9000:9000"
     env_file:
+      # it is mandatory to include this environment variable files to configure the Keycloak instance
+      # https://www.keycloak.org/server/configuration#_formats_for_configuration
+      # Consider especially updating the section ---Client configurations--- in the '.env' file
+      # to match the frontend and backend applications' configurations.
       - .env
     depends_on:
       database:
         condition: service_healthy
-    # note the difference in comparison to the 'docker-compose.dev.yml' file:
-    # in the production environment we want to use the default command 'start' '--import-realm' to start the server
-    # in production mode and importing its realm and client configuration.
+    command:
+      # The images default command is 'start' '--import-realm' but for development purposes, we want to use 'start-dev'
+      # to start the server in development mode.
+      - "start-dev"
+      - "--import-realm"
+      - "--verbose"
     healthcheck:
       # Checks if Keycloak is ready to process requests or not.
       # Only direct traffic to a newly started instance once the readiness probe succeeds.
@@ -47,9 +54,10 @@ services:
       # 'KC_BOOTSTRAP_ADMIN_PASSWORD'
       # 'KC_REALM_ID'
       - .env
-    # note the difference in comparison to the 'docker-compose.dev.yml' file:
-    # in the production environment we do not want to create test users in the Keycloak instance, but we want to
-    # set up the Keycloak's user profile (necessary fields and their validation)
+    environment:
+      # indicates to the initialization script that it is running in development mode,
+      # so we want to create some test users in the Keycloak instance to facilitate the development purposes.
+      - INIT_MODE=DEV
     depends_on:
       # Checks if Keycloak is ready to process requests or not.
       # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
@@ -63,7 +71,7 @@ services:
       POSTGRES_USER: benjrm
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U benjrm -d benjrm"]
+      test: [ "CMD-SHELL", "pg_isready -U benjrm -d benjrm" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -74,3 +82,23 @@ services:
       - ./services/database/mounts/init-keycloak-db.sh:/docker-entrypoint-initdb.d/init-keycloak-db.sh
     ports:
       - "5432:5432"
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      # Forward the local user IDs so the frontend container can write to bind mounts on Linux.
+      args:
+        APP_UID: ${UID:-1000}
+        APP_GID: ${GID:-1000}
+    restart: unless-stopped
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "100"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "5173:5173"
+
+volumes:
+  frontend-node-modules:

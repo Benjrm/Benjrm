@@ -53,6 +53,8 @@ jobs:
               - 'docker/**'
               - 'Dockerfile*'
               - 'compose*.yaml'
+              - 'frontend/Dockerfile*'
+              - 'frontend/.dockerignore'
 
   # Frontend Linting
   frontend_lint:

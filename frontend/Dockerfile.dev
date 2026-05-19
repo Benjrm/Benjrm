@@ -1,0 +1,28 @@
+ARG NODE_VERSION=24-bookworm-slim
+ARG APP_UID=1000
+ARG APP_GID=1000
+
+FROM node:${NODE_VERSION} AS dev
+
+ARG APP_UID
+ARG APP_GID
+
+WORKDIR /app
+
+# Match the container user to the host IDs so bind mounts stay writable on Linux.
+RUN if [ "${APP_GID}" != "0" ]; then groupmod --gid "${APP_GID}" node; fi \
+	&& usermod --uid "${APP_UID}" --gid "${APP_GID}" node
+
+COPY --chown=node:node package*.json ./
+
+RUN chown -R node:node /app
+
+USER node
+
+# Keep npm's cache writable for the adjusted node user during the build step.
+RUN --mount=type=cache,target=/home/node/.npm,uid=$APP_UID,gid=$APP_GID npm ci
+
+EXPOSE 5173
+
+# In development, we run the vite server for hot reload. So we need to bind to 0.0.0.0 to allow access from outside the container.
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
