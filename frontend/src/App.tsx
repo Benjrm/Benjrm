@@ -1,11 +1,13 @@
-import LandingPage from './pages/LandingPage';
+// frontend/src/App.tsx
 
-function App() {
-    return (
-        <div className="flex flex-col min-h-screen">
-            <LandingPage />
-        </div>
-    )
+import type { JSX } from "react"
+import { useRoutes } from "react-router"
+import routes from "./routes"
+
+function App(): JSX.Element {
+    const routing = useRoutes(routes)
+
+    return <>{routing}</>
 }
 
 export default App
