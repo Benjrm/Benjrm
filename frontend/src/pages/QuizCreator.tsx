@@ -2,7 +2,7 @@
 
 import type { JSX } from "react"
 import { useState } from "react"
-import { HelpCircle, Settings } from "lucide-react"
+import { Settings } from "lucide-react"
 
 import QuestionSidebar from "../components/QuestionSidebar"
 import SettingsPanel from "../components/SettingsPanel"
@@ -216,14 +216,6 @@ export default function QuizCreator(): JSX.Element {
                     </div>
                 </div>
             </div>
-
-            {/* Floating Help Button */}
-            <button
-                className="bg-muted/60 border-border text-muted-foreground hover:text-foreground fixed right-6 bottom-6 flex h-14 w-14 items-center justify-center rounded-2xl border shadow-2xl backdrop-blur-md transition-all hover:scale-105 hover:border-[#00F2FF]/40"
-                type="button"
-            >
-                <HelpCircle className="h-6 w-6" />
-            </button>
         </div>
     )
 }
