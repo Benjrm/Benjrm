@@ -7,7 +7,7 @@ import { Button } from "@/shadcn/components/ui/button"
 export default function LandingPage(): JSX.Element {
     return (
         <div className="bg-background text-foreground flex flex-col overflow-x-hidden">
-            <div className="relative mx-auto flex w-full max-w-7xl flex-1 items-start px-4 pt-12 pb-12 sm:px-6 md:pt-20">
+            <div className="relative mx-auto flex w-full flex-1 items-start px-4 pt-12 pb-12 sm:px-6 md:pt-20">
                 <div className="relative z-10 grid w-full grid-cols-1 items-center gap-8 md:grid-cols-2 lg:gap-24">
                     {/* Left Column */}
                     <div className="flex flex-col gap-6 md:gap-10">
