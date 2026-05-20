@@ -13,6 +13,7 @@ const routes: RouteObject[] = [
     {
         element: <PublicLayout />,
         children: [
+            // put public routes within this array
             {
                 path: "/",
                 element: <LandingPage />,
@@ -30,15 +31,15 @@ const routes: RouteObject[] = [
         ],
     },
     {
-        path: "/protected",
         element: (
             <AuthGuard>
                 <RootLayout />
             </AuthGuard>
         ),
         children: [
+            // put protected routes within this array.
             {
-                path: "dashboard",
+                path: "/dashboard",
                 element: <Dashboard />,
             },
         ],
