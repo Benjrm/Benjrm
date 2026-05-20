@@ -6,6 +6,7 @@ use {
 
 pub struct StaticFile {
     content_type: &'static str,
+    content_disposition: String,
     #[cfg(not(debug_assertions))]
     data: &'static [u8],
     #[cfg(debug_assertions)]
@@ -19,6 +20,7 @@ impl StaticFile {
         content_type: &'static str,
     ) -> Self {
         let path = config_dir.as_ref().join(filename);
+        let content_disposition = format!("attachment; filename=\"{filename}\"");
         #[cfg(not(debug_assertions))]
         {
             let data = tokio::fs::read(&path).await;
@@ -34,14 +36,22 @@ current directory: {}"#,
                     )
                 }
             };
-            Self { content_type, data }
+            Self {
+                content_type,
+                content_disposition,
+                data,
+            }
         }
         #[cfg(debug_assertions)]
         {
             if !path.exists() {
                 log::warn!("path {} does not exist", path.display());
             }
-            Self { content_type, path }
+            Self {
+                content_type,
+                content_disposition,
+                path,
+            }
         }
     }
 
@@ -49,12 +59,14 @@ current directory: {}"#,
         #[cfg(not(debug_assertions))]
         return HttpResponse::Ok()
             .content_type(self.content_type)
+            .insert_header(("Content-Disposition", self.content_disposition.as_str()))
             .body(self.data);
         #[cfg(debug_assertions)]
         {
             match tokio::fs::read(&self.path).await {
                 Ok(file) => HttpResponse::Ok()
                     .content_type(self.content_type)
+                    .insert_header(("Content-Disposition", self.content_disposition.as_str()))
                     .body(file),
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                     HttpResponse::NotFound().finish()
