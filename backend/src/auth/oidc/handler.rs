@@ -9,24 +9,20 @@ use {
     },
     actix_session::Session,
     actix_web::{HttpResponse, get, post, web},
+    chrono::{DateTime, TimeDelta, Utc},
     oauth2::{CsrfToken, PkceCodeVerifier},
     openidconnect::Nonce,
-    sea_orm::{ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, QueryFilter},
+    sea_orm::{ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, QueryFilter, SqlErr},
     serde::{Deserialize, Serialize},
-    std::time::{Duration, Instant},
     uuid::Uuid,
 };
-
-lazy_static::lazy_static! {
-    static ref EPOCH: Instant = Instant::now();
-}
 
 #[derive(Serialize, Deserialize)]
 struct State {
     csrf_token: CsrfToken,
     pkce_verifier: Option<PkceCodeVerifier>,
     nonce: Option<Nonce>,
-    time: u64,
+    time: DateTime<Utc>,
     redirect_path: Option<String>,
 }
 
@@ -51,7 +47,7 @@ async fn login(data: web::Data<AppData>, session: Session, path: web::Query<Path
         csrf_token,
         pkce_verifier,
         nonce,
-        time: EPOCH.elapsed().as_secs(),
+        time: Utc::now(),
         redirect_path,
     };
     session.insert("oidc_state", state).unwrap();
@@ -88,10 +84,7 @@ async fn callback(
     if Some(response.issuer) != data.oidc.client.config().issuer_uri {
         return Err(Error::InvalidIssuer);
     }
-    let time_start = EPOCH
-        .checked_add(Duration::from_secs(state.time))
-        .ok_or(Error::InvalidStateTime(state.time))?;
-    if time_start.elapsed() > Duration::from_mins(30) {
+    if Utc::now() - state.time > TimeDelta::minutes(30) {
         return Err(Error::Timeout);
     }
 
@@ -103,19 +96,30 @@ async fn callback(
 
     let user = oidc_user.ok_or(Error::MissingOidcUser(Box::new(oauth_user)))?;
 
-    let db_user = UserEntity::find()
-        .filter(UserColumn::Subject.eq(&user.oauth2_user.sub))
-        .one(&data.db)
-        .await?;
-    let db_user = match db_user {
+    let fetch_db_user = || {
+        UserEntity::find()
+            .filter(UserColumn::Subject.eq(&user.oauth2_user.sub))
+            .one(&data.db)
+    };
+
+    let db_user = match fetch_db_user().await? {
         Some(user) => user,
         None => {
-            ActiveUser {
+            let res = ActiveUser {
                 id: Set(Uuid::new_v4()),
-                subject: Set(user.oauth2_user.sub),
+                subject: Set(user.oauth2_user.sub.clone()),
             }
             .insert(&data.db)
-            .await?
+            .await;
+
+            match res {
+                Ok(model) => model,
+                Err(e) if matches!(e.sql_err(), Some(SqlErr::UniqueConstraintViolation(_))) => {
+                    let db_user = fetch_db_user().await?;
+                    db_user.ok_or(Error::FetchDbUser)?
+                }
+                Err(e) => return Err(e.into()),
+            }
         }
     };
 

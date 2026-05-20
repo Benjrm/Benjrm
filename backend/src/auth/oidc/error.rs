@@ -10,7 +10,6 @@ use {
 pub(super) enum Error {
     MissingState,
     InvalidState(#[allow(dead_code)] SessionGetError),
-    InvalidStateTime(#[allow(dead_code)] u64),
     InvalidCsrfToken,
     InvalidIssuer,
     Timeout,
@@ -18,6 +17,7 @@ pub(super) enum Error {
     MissingOidcUser(#[allow(dead_code)] Box<OAuth2User>),
     SessionInsert(#[allow(dead_code)] SessionInsertError),
     Db(#[allow(dead_code)] DbErr),
+    FetchDbUser,
 }
 
 impl From<OAuth2Error> for Error {
@@ -45,7 +45,6 @@ impl ResponseError for Error {
             | Error::InvalidState(_)
             | Error::InvalidCsrfToken
             | Error::InvalidIssuer
-            | Error::InvalidStateTime(_)
             | Error::Timeout => {
                 log::warn!("Authentication error: {self:?}");
                 HttpResponse::Found()
@@ -55,7 +54,8 @@ impl ResponseError for Error {
             Error::InvalidIdpResponse(_)
             | Error::MissingOidcUser(_)
             | Error::SessionInsert(_)
-            | Error::Db(_) => {
+            | Error::Db(_)
+            | Error::FetchDbUser => {
                 log::error!("Authentication error: {self:?}");
                 HttpResponse::InternalServerError()
                     .body("Error communicating with identity provider")
