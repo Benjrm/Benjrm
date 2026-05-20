@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Benjrm's Rest API
-  description: This is the REST API for Benjrm's - a quiz platform for interactive learning and live competition
+  description: This is the REST API for Benjrm - a quiz platform for interactive learning and live competition
   contact:
     name: Benjrm
     url: 'https://benjrm.de'
