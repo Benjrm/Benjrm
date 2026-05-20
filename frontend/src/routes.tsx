@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard"
 import ErrorPage from "./pages/ErrorPage"
 import RootLayout from "./layouts/RootLayout"
 import PublicLayout from "./layouts/PublicLayout"
+import QuizCreator from "./pages/QuizCreator.tsx"
 
 const routes: RouteObject[] = [
     {
@@ -29,6 +30,19 @@ const routes: RouteObject[] = [
             {
                 path: "/dashboard",
                 element: <Dashboard />,
+            },
+            {
+                path: "/quiz",
+                children: [
+                    {
+                        path: "new", // Maps to /quiz/new
+                        element: <QuizCreator />,
+                    },
+                    // Future routes can easily be added here:
+                    // { path: "edit/:id", element: <QuizEditor /> },
+                    // { path: "play/:id", element: <QuizLobby /> },
+                    // { index: true, element: <QuizList /> },
+                ],
             },
         ],
     },
