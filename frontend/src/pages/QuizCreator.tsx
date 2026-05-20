@@ -141,7 +141,18 @@ export default function QuizCreator(): JSX.Element {
     }
 
     const deleteQuestion = (indexToDelete: number) => {
-        if (questions.length <= 1) return
+        if (questions.length === 1) {
+            setQuestions([
+                {
+                    id: Date.now(),
+                    options: ["", "", "", ""],
+                    title: "",
+                    type: "Multiple Choice",
+                },
+            ])
+            setCurrentQuestionIndex(0)
+            return
+        }
 
         setQuestions((prevQuestions) => prevQuestions.filter((_, index) => index !== indexToDelete))
 
