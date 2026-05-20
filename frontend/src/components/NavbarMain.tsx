@@ -6,6 +6,7 @@ import { NavLink } from "react-router"
 import { Search, Menu, X } from "lucide-react"
 import ThemeToggle from "./ThemeToggle"
 import NavItem from "./NavItem"
+import LogoutButton from "@/auth/components/LogoutButton.tsx"
 
 export default function NavbarMain(): JSX.Element {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -49,6 +50,8 @@ export default function NavbarMain(): JSX.Element {
                         className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-9 sm:w-9"
                         src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200"
                     />
+
+                    <LogoutButton />
 
                     {/* Hamburger Menu Toggle (Mobile) */}
                     <button
