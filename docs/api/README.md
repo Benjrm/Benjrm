@@ -34,12 +34,7 @@ or the [workflow file itself](../../.github/workflows/spectral.yaml).
 
 After pushing to a pull request you can review the Spectral linting results in the "Files changed" tab, especially 
 in the file `docs/openapispec/RestInterface.yaml`
-![](assets/files-changed-01.png)
-![](assets/files-changed-02.png)
-
 or in the "Checks" tab under the "Run Spectral on Pull Requests" workflow.
-![](assets/checks-01.png)
-![](assets/checks-02.png)
 
 ## Swagger
 - Refers to the tooling ecosystem (like Swagger UI, Swagger Editor, and Swagger Codegen)
@@ -50,9 +45,9 @@ or in the "Checks" tab under the "Run Spectral on Pull Requests" workflow.
 
 1. Every API endpoint is documented within the [OpenAPI Specification (OAS)](../openapispec/RestInterface.yaml)
 
-2. OpenAPI Specification (OAS) can be previewed in JetBrains IDEs
-![](assets/preview-openapispec-jetbrains.png)
-![](assets/preview-openapispec-jetbrains-01.png)
+2. OpenAPI Specification (OAS) can be previewed in IDEs either by using a plugin to visualize the 
+OAS in an interactive format directly or by previewing the `index.html` file in the `docs/openapispec/` directory, 
+which is generated using Swagger UI and references the OAS file.
 
 3. Swagger UI displays the OpenAPI Specification (OAS) in an interactive format
 and gets automatically deployed to GitHub Pages when the `main` branch is updated *and* files *either*
