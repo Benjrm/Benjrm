@@ -6,7 +6,7 @@ import Dashboard from "./pages/Dashboard"
 import ErrorPage from "./pages/ErrorPage"
 import RootLayout from "./layouts/RootLayout"
 import PublicLayout from "./layouts/PublicLayout"
-import ImprintPage from "./pages/ImprintPage";
+import ImprintPage from "./pages/ImprintPage"
 
 const routes: RouteObject[] = [
     {
