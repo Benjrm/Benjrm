@@ -7,6 +7,9 @@ info:
     url: 'https://benjrm.de'
     email: 'info@benjrm.de'
   version: 1.0.0
+externalDocs:
+  description: https://github.com/Benjrm/Benjrm
+  url: https://github.com/Benjrm/Benjrm
 servers:
   - url: 'http://localhost:8080'
   - url: 'http://localhost:80'
