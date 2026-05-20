@@ -1,42 +1,11 @@
-import { useQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
 import type { JSX } from "react"
-import { useNavigate } from "react-router"
+import { Navigate } from "react-router"
 import MarkdownPageComponent from "@/components/markdown/MarkdownPageComponent"
-
-const fetchImprintContent = async (): Promise<string> => {
-    const response = await fetch("/imprint.md")
-    const contentType = response.headers.get("content-type")?.toLowerCase() ?? ""
-
-    // Accept Markdown or plain text, but reject HTML fallback responses.
-    if (
-        !response.ok ||
-        contentType.includes("text/html") ||
-        (!contentType.includes("text/markdown") && !contentType.includes("text/plain"))
-    ) {
-        throw Error("Imprint content not found")
-    }
-    return response.text()
-}
+import useImprint from "@/hooks/useImprint"
 
 export default function ImprintPage(): JSX.Element | null {
-    const navigate = useNavigate()
-    const {
-        data: imprintContent,
-        isLoading,
-        error,
-    } = useQuery({
-        queryKey: ["imprint"],
-        queryFn: fetchImprintContent,
-    })
-
-    useEffect(() => {
-        // Redirect on error to 404 page
-        if (error) {
-            navigate("/404", { replace: true })
-        }
-    }, [error, navigate])
+    const { data: imprintContent, isLoading, error } = useImprint()
 
     /** Loading Screen */
     if (isLoading) {
@@ -52,7 +21,7 @@ export default function ImprintPage(): JSX.Element | null {
 
     if (error) {
         // We redirect to 404 page in case of an error.
-        return null
+        return <Navigate replace to="/404" />
     }
 
     /** Imprint Page */

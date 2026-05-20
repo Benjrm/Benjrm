@@ -10,12 +10,12 @@ interface MarkdownPageComponentProps {
 
 const markdownComponents: Components = {
     h1: ({ children }) => (
-        <h1 className="text-foreground mt-10 mb-6 scroll-m-20 text-3xl font-bold tracking-tight first:mt-0">
+        <h1 className="text-foreground mt-10 mb-6 scroll-m-20 text-5xl font-bold tracking-tight first:mt-0">
             {children}
         </h1>
     ),
     h2: ({ children }) => (
-        <h2 className="text-foreground mt-8 mb-4 scroll-m-20 text-2xl font-semibold tracking-tight first:mt-0">
+        <h2 className="text-foreground mt-8 mb-4 scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0">
             {children}
         </h2>
     ),
@@ -28,6 +28,16 @@ const markdownComponents: Components = {
         <h4 className="text-foreground mt-4 mb-2 scroll-m-20 text-lg font-semibold tracking-tight">
             {children}
         </h4>
+    ),
+    h5: ({ children }) => (
+        <h5 className="text-foreground mt-4 mb-2 scroll-m-20 text-base font-semibold tracking-tight">
+            {children}
+        </h5>
+    ),
+    h6: ({ children }) => (
+        <h6 className="text-foreground mt-4 mb-2 scroll-m-20 text-sm font-semibold tracking-tight">
+            {children}
+        </h6>
     ),
     p: ({ children }) => (
         <p className="text-muted-foreground mb-4 leading-7 [&:not(:first-child)]:mt-4">
