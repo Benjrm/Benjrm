@@ -1,13 +1,15 @@
 // frontend/src/pages/QuizCreator.tsx
 
 import type { JSX } from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Settings } from "lucide-react"
+import { useParams, useNavigate } from "react-router"
 
 import QuestionSidebar from "../components/QuestionSidebar"
 import SettingsPanel from "../components/SettingsPanel"
 import AnswerCard from "../components/AnswerCard"
 import type { Question } from "../types/quiz"
+import { getQuiz, deleteQuiz } from "@/api/Quiz"
 
 import { Button } from "@/shadcn/components/ui/button"
 import { Textarea } from "@/shadcn/components/ui/textarea"
@@ -18,11 +20,28 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/shadcn/components/ui/select"
+import CreateQuizModal from "../components/CreateQuizModal"
+import { Edit2, Trash2 } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/shadcn/components/ui/dialog"
 
 // --- Main Page ---
 
 export default function QuizCreator(): JSX.Element {
+    const { quizId } = useParams()
     const [quizTitle, setQuizTitle] = useState<string>("Untitled")
+    const [quizDescription, setQuizDescription] = useState<string>("")
+    const [loadingQuiz, setLoadingQuiz] = useState(false)
+    const [quizLoadError, setQuizLoadError] = useState<string | null>(null)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+    const navigate = useNavigate()
 
     const [questions, setQuestions] = useState<Question[]>([
         {
@@ -36,6 +55,65 @@ export default function QuizCreator(): JSX.Element {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0)
 
     const currentQuestion = questions[currentQuestionIndex]
+
+    useEffect(() => {
+        if (!quizId) return
+
+        const currentQuizId = quizId
+
+        let isMounted = true
+
+        async function loadQuiz(): Promise<void> {
+            try {
+                setLoadingQuiz(true)
+                setQuizLoadError(null)
+
+                const quiz = await getQuiz(currentQuizId)
+
+                if (!isMounted) return
+
+                setQuizTitle(quiz.title)
+                setQuizDescription(quiz.description ?? "")
+            } catch {
+                if (isMounted) {
+                    setQuizLoadError("Quiz konnte nicht geladen werden.")
+                }
+            } finally {
+                if (isMounted) {
+                    setLoadingQuiz(false)
+                }
+            }
+        }
+
+        void loadQuiz()
+
+        return () => {
+            isMounted = false
+        }
+    }, [quizId])
+
+    const handleEditSuccess = async (id: string) => {
+        try {
+            const quiz = await getQuiz(id)
+            setQuizTitle(quiz.title)
+            setQuizDescription(quiz.description ?? "")
+        } catch {
+            // ignore - we already show errors elsewhere
+        }
+    }
+
+    const handleDelete = async (): Promise<void> => {
+        if (!quizId) return
+
+        try {
+            await deleteQuiz(quizId)
+            setIsConfirmOpen(false)
+            navigate("/dashboard")
+        } catch (e) {
+            // eslint-disable-next-line no-alert
+            alert("Quiz could not be deleted. Please try again.")
+        }
+    }
 
     const updateQuestion = (data: Partial<Question>) => {
         setQuestions((prevQuestions) => {
@@ -75,13 +153,29 @@ export default function QuizCreator(): JSX.Element {
                 {/* Header */}
                 <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex-1 space-y-2">
-                        {/* Native input for true transparency */}
-                        <input
-                            className="text-foreground placeholder:text-foreground/40 w-full max-w-2xl appearance-none border-none bg-transparent p-0 text-4xl font-extrabold tracking-tight outline-none focus:ring-0 md:text-5xl"
-                            onChange={(e) => setQuizTitle(e.target.value)}
-                            placeholder="Untitled Quiz"
-                            value={quizTitle}
-                        />
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-4xl font-extrabold md:text-5xl">{quizTitle}</h1>
+                            <button
+                                aria-label="Edit title"
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="text-muted-foreground hover:text-foreground"
+                                type="button"
+                            >
+                                <Edit2 className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="mt-3 flex items-start gap-3">
+                            <p className="whitespace-pre-wrap max-w-2xl text-base">{quizDescription}</p>
+                            <button
+                                aria-label="Edit description"
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="text-muted-foreground hover:text-foreground"
+                                type="button"
+                            >
+                                <Edit2 className="h-4 w-4" />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -96,8 +190,44 @@ export default function QuizCreator(): JSX.Element {
                         <Button className="bg-[#00F2FF] font-bold text-black hover:bg-[#00d8e4]">
                             Save Quiz
                         </Button>
+
+                        {quizId ? (
+                            <Button
+                                onClick={() => setIsConfirmOpen(true)}
+                                className="bg-red-600 text-white hover:bg-red-700"
+                                variant="ghost"
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Quiz
+                            </Button>
+                        ) : null}
+                        <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Delete Quiz?</DialogTitle>
+                                    <DialogDescription>
+                                        This action cannot be undone. Are you sure you want to delete the quiz?
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <DialogFooter>
+                                    <Button onClick={() => setIsConfirmOpen(false)} variant="outline">
+                                        Abbrechen
+                                    </Button>
+                                    <Button onClick={() => void handleDelete()} className="bg-red-600 text-white hover:bg-red-700">
+                                        Löschen
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </header>
+
+                {quizLoadError ? <p className="mb-6 text-sm text-red-500">{quizLoadError}</p> : null}
+
+                {loadingQuiz ? (
+                    <p className="mb-6 text-sm text-muted-foreground">Loading quiz...</p>
+                ) : null}
 
                 {/* Layout: Sidebars are pushed to the edges, center content is handled inside */}
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_1fr_320px]">
@@ -216,6 +346,18 @@ export default function QuizCreator(): JSX.Element {
                     </div>
                 </div>
             </div>
+            <CreateQuizModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                onSuccess={(id) => {
+                    setIsEditModalOpen(false)
+                    void handleEditSuccess(id)
+                }}
+                mode="edit"
+                initialTitle={quizTitle}
+                initialDescription={quizDescription}
+                quizId={quizId}
+            />
         </div>
     )
 }

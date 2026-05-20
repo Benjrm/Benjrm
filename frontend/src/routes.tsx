@@ -35,6 +35,10 @@ const routes: RouteObject[] = [
                 path: "/createQuiz",
                 element: <QuizCreator />,
             },
+            {
+                path: "/createQuiz/:quizId",
+                element: <QuizCreator />,
+            },
         ],
     },
 ]

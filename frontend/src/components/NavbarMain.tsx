@@ -3,7 +3,7 @@
 import type { JSX } from "react"
 import { useState } from "react"
 import { NavLink } from "react-router"
-import { Search, Menu, X } from "lucide-react"
+import { Menu, UserCircle2, X } from "lucide-react"
 import ThemeToggle from "./ThemeToggle"
 import NavItem from "./NavItem"
 
@@ -28,26 +28,17 @@ export default function NavbarMain(): JSX.Element {
                     </nav>
                 </div>
 
-                {/* Right side (Search, Theme, Profile, Mobile Menu Toggle) */}
+                {/* Right side (Theme, Profile, Mobile Menu Toggle) */}
                 <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-                    {/* Desktop Search */}
-                    <div className="border-border bg-background text-muted-foreground hidden items-center rounded-full border px-3 py-1.5 transition-colors focus-within:border-[#00F2FF] md:flex">
-                        <input
-                            aria-label="Search Quiz"
-                            className="placeholder:text-muted-foreground w-40 bg-transparent text-sm outline-none sm:w-52"
-                            placeholder="Search Quiz..."
-                            type="text"
-                        />
-                        <Search className="ml-2 h-4 w-4 shrink-0" />
-                    </div>
-
                     <ThemeToggle />
 
-                    <img
-                        alt="Profile"
-                        className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-9 sm:w-9"
-                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200"
-                    />
+                    <div
+                        aria-label="Profile placeholder"
+                        className="bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 sm:h-9 sm:w-9"
+                        role="img"
+                    >
+                        <UserCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </div>
 
                     {/* Hamburger Menu Toggle (Mobile) */}
                     <button
@@ -68,16 +59,6 @@ export default function NavbarMain(): JSX.Element {
             {/* Mobile Navigation Dropdown */}
             {isMobileMenuOpen ? (
                 <div className="border-border bg-background space-y-6 border-t px-4 py-6 shadow-lg md:hidden">
-                    {/* Mobile Search */}
-                    <div className="border-border bg-background text-muted-foreground flex items-center rounded-full border px-3 py-2 transition-colors focus-within:border-[#00F2FF]">
-                        <input
-                            className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
-                            placeholder="Search Quiz..."
-                            type="text"
-                        />
-                        <Search className="ml-2 h-4 w-4 shrink-0" />
-                    </div>
-
                     {/* Mobile Links - Center */}
                     <nav className="flex flex-col items-center gap-5">
                         <NavItem
