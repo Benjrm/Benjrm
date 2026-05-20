@@ -11,10 +11,10 @@ export default function AuthGuard({ children }: AuthGuardProps): ReactNode {
 
     useEffect(() => {
         if (isError) {
-            window.location.href = "/auth/login"
+            window.location.replace("/auth/login")
         }
     }, [isError])
 
-    if (isLoading) return null
+    if (isLoading || isError) return null
     return <>{children}</>
 }
