@@ -42,7 +42,7 @@ export default function ImprintPage(): JSX.Element | null {
     if (isLoading) {
         return (
             <div className="bg-background text-foreground min-h-full overflow-x-hidden">
-                <div className="flex min-h-100 flex-col items-center justify-center gap-4">
+                <div className="flex min-h-[100vh] flex-col items-center justify-center gap-4">
                     <Loader2 className="text-primary h-10 w-10 animate-spin" />
                     <p className="text-muted-foreground animate-pulse">Loading Imprint...</p>
                 </div>
