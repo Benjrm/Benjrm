@@ -107,7 +107,9 @@ pub fn env_var_default(
         Err(_) => match r#default() {
             Some(x) => x,
             None => {
-                panic!("Missing environement variable: {key} (set {default_name} to use a generated default)")
+                panic!(
+                    "Missing environement variable: {key} (set {default_name} to use a generated default)"
+                )
             }
         },
     }
