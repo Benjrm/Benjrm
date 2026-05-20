@@ -1,0 +1,36 @@
+{
+  "realm": "${KC_REALM_ID}",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "verifyEmail": true,
+  "rememberMe": true,
+  "smtpServer": {
+    "from": "${KC_SMTP_SERVER_FROM}",
+    "host": "${KC_SMTP_SERVER_HOST}",
+    "port": "${KC_SMTP_SERVER_PORT}",
+    "ssl": "${KC_SMTP_SERVER_SSL}",
+    "auth": "${KC_SMTP_SERVER_AUTH}",
+    "password": "${KC_SMTP_SERVER_PASSWORD}",
+    "user": "${KC_SMTP_SERVER_USER}"
+  },
+  "clients": [
+    {
+      "clientId": "api",
+      "name": "Server-side API",
+      "description": "Server-side API of Benjrm",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": false,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${KC_CLIENTID_API_BASE_URL}/*"
+      },
+      "rootUrl": "${KC_CLIENTID_API_BASE_URL}",
+      "baseUrl": "${KC_CLIENTID_API_BASE_URL}",
+      "redirectUris": ["${KC_CLIENTID_API_BASE_URL}/auth/oidc/callback"],
+      "secret": "${KC_CLIENTID_API_CLIENT_SECRET}"
+    }
+  ]
+}
