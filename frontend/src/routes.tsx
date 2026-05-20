@@ -6,6 +6,8 @@ import Dashboard from "./pages/Dashboard"
 import ErrorPage from "./pages/ErrorPage"
 import RootLayout from "./layouts/RootLayout"
 import PublicLayout from "./layouts/PublicLayout"
+import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
+import AuthGuard from "@/auth/guards/AuthGuard.tsx"
 
 const routes: RouteObject[] = [
     {
@@ -21,13 +23,22 @@ const routes: RouteObject[] = [
                     <ErrorPage message="The page you are looking for does not exist." title="404" />
                 ),
             },
+            {
+                path: "/auth/login",
+                element: <LoginRedirect />,
+            },
         ],
     },
     {
-        element: <RootLayout />,
+        path: "/protected",
+        element: (
+            <AuthGuard>
+                <RootLayout />
+            </AuthGuard>
+        ),
         children: [
             {
-                path: "/dashboard",
+                path: "dashboard",
                 element: <Dashboard />,
             },
         ],
