@@ -1,6 +1,7 @@
 // frontend/src/components/CreateQuizModal.tsx
 
-import { useEffect, useState } from "react"
+/* eslint-disable react/require-default-props */
+import { useState } from "react"
 import type { FC, FormEvent } from "react"
 import {
     Dialog,
@@ -18,9 +19,9 @@ interface CreateQuizModalProps {
     isOpen: boolean
     onClose: () => void
     onSuccess: (quizId: string) => void
-    mode?: "create" | "edit"
-    initialTitle?: string
     initialDescription?: string
+    initialTitle?: string
+    mode?: "create" | "edit"
     quizId?: string
 }
 
@@ -38,13 +39,19 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
-    useEffect(() => {
-        if (isOpen) {
-            setTitle(initialTitle)
-            setDescription(initialDescription)
-            setError(null)
-        }
-    }, [isOpen, initialTitle, initialDescription])
+    // Track the last seen props to reset state during render when they change
+    const [prevProps, setPrevProps] = useState({ isOpen, initialTitle, initialDescription })
+
+    if (
+        isOpen !== prevProps.isOpen ||
+        initialTitle !== prevProps.initialTitle ||
+        initialDescription !== prevProps.initialDescription
+    ) {
+        setPrevProps({ isOpen, initialTitle, initialDescription })
+        setTitle(isOpen ? initialTitle : "")
+        setDescription(isOpen ? initialDescription : "")
+        setError(null)
+    }
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault()
@@ -88,6 +95,14 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
         } finally {
             setLoading(false)
         }
+    }
+
+    // Fix no-nested-ternary error by resolving label here
+    let buttonText = "Create Quiz"
+    if (loading) {
+        buttonText = mode === "create" ? "Creating..." : "Saving..."
+    } else if (mode === "edit") {
+        buttonText = "Save changes"
     }
 
     return (
@@ -140,7 +155,7 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
                             Cancel
                         </Button>
                         <Button disabled={loading} type="submit">
-                            {loading ? (mode === "create" ? "Creating..." : "Saving...") : mode === "create" ? "Create Quiz" : "Save changes"}
+                            {buttonText}
                         </Button>
                     </DialogFooter>
                 </form>

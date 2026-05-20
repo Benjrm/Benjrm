@@ -11,11 +11,16 @@ interface DiscoverSectionProps {
     error: string | null
 }
 
-export default function DiscoverSection({ quizzes, loading, error }: DiscoverSectionProps): JSX.Element {
+export default function DiscoverSection({
+    quizzes,
+    loading,
+    error,
+}: DiscoverSectionProps): JSX.Element {
     const recentQuizzes = [...quizzes]
-        .sort((firstQuiz, secondQuiz) => {
-            return new Date(secondQuiz.created).getTime() - new Date(firstQuiz.created).getTime()
-        })
+        .sort(
+            (firstQuiz, secondQuiz) =>
+                new Date(secondQuiz.created).getTime() - new Date(firstQuiz.created).getTime()
+        )
         .slice(0, 4)
 
     return (
@@ -31,11 +36,11 @@ export default function DiscoverSection({ quizzes, loading, error }: DiscoverSec
             {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
             {loading && recentQuizzes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Loading quizzes...</p>
+                <p className="text-muted-foreground text-sm">Loading quizzes...</p>
             ) : null}
 
             {!loading && recentQuizzes.length === 0 && !error ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                     No quizzes yet. Create your first one above.
                 </p>
             ) : null}

@@ -39,8 +39,8 @@ export default function GameHeroSection({ onAddQuiz }: GameHeroSectionProps): JS
                         </Button>
 
                         <Button
-                            onClick={onAddQuiz}
                             className="dark:text-foreground flex items-center gap-2 rounded-xl border-slate-200 bg-transparent px-5 py-5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5"
+                            onClick={onAddQuiz}
                             variant="outline"
                         >
                             Add Quiz

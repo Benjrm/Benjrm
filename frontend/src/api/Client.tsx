@@ -45,8 +45,6 @@ export async function apiDelete(path: string): Promise<void> {
     if (!res.ok) {
         throw new Error(`Request failed: ${res.status}`)
     }
-
-    return
 }
 
 export async function apiGet<T>(path: string): Promise<T> {

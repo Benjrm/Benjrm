@@ -45,7 +45,6 @@ export default function LandingPage(): JSX.Element {
                                 PLAY
                             </Button>
                         </div>
-
                     </div>
 
                     {/* Right Column */}

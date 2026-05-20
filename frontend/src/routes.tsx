@@ -32,11 +32,11 @@ const routes: RouteObject[] = [
                 element: <Dashboard />,
             },
             {
-                path: "/createQuiz",
+                path: "/quiz",
                 element: <QuizCreator />,
             },
             {
-                path: "/createQuiz/:quizId",
+                path: "/quiz/:quizId",
                 element: <QuizCreator />,
             },
         ],

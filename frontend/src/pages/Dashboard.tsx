@@ -29,7 +29,7 @@ export default function Dashboard(): JSX.Element {
                 }
             } catch {
                 if (isMounted) {
-                    setQuizLoadError("Die neuesten Quizzes konnten nicht geladen werden.")
+                    setQuizLoadError("The quizzes could not be loaded.")
                 }
             } finally {
                 if (isMounted) {
@@ -38,7 +38,8 @@ export default function Dashboard(): JSX.Element {
             }
         }
 
-        void loadQuizzes()
+        // Bypasses floating promise rules cleanly with an empty catch callback block
+        loadQuizzes().catch(() => {})
 
         return () => {
             isMounted = false
@@ -46,7 +47,7 @@ export default function Dashboard(): JSX.Element {
     }, [])
 
     const refreshQuizzes = (): void => {
-        void (async () => {
+        const load = async (): Promise<void> => {
             try {
                 setLoadingQuizzes(true)
                 setQuizLoadError(null)
@@ -55,11 +56,14 @@ export default function Dashboard(): JSX.Element {
 
                 setQuizzes(data)
             } catch {
-                setQuizLoadError("Die neuesten Quizzes konnten nicht geladen werden.")
+                setQuizLoadError("The quizzes could not be refreshed.")
             } finally {
                 setLoadingQuizzes(false)
             }
-        })()
+        }
+
+        // Handles execution chain safely without variables or void keywords
+        load().catch(() => {})
     }
 
     return (
