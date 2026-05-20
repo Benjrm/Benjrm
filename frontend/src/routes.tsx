@@ -6,9 +6,9 @@ import Dashboard from "./pages/Dashboard"
 import ErrorPage from "./pages/ErrorPage"
 import RootLayout from "./layouts/RootLayout"
 import PublicLayout from "./layouts/PublicLayout"
+import QuizCreator from "./pages/QuizCreator.tsx"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
-import QuizCreator from "./pages/QuizCreator.tsx"
 
 const routes: RouteObject[] = [
     {
