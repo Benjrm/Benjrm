@@ -78,7 +78,7 @@ impl TestAppData {
     }
 }
 
-/// Get environment variable and display a readable error if variable is not set
+/// Get an environment variable and display a readable error if variable is not set
 pub fn env_var(key: &str) -> String {
     match std::env::var(key) {
         Ok(x) => x,
@@ -88,9 +88,9 @@ pub fn env_var(key: &str) -> String {
     }
 }
 
-/// Get environment variable and use a generated default if variable is not set.
+/// Get an environment variable and use a generated default if variable is not set.
 /// If the default is also unavailable, display a readable error containing which
-/// variable is missing and which variable can be set to use the a generated default.
+/// variable is missing and which variable can be set to use the generated default.
 ///
 /// # Arguments
 ///
@@ -107,7 +107,7 @@ pub fn env_var_default(
         Err(_) => match r#default() {
             Some(x) => x,
             None => {
-                panic!("Missing environement variable: {key} (set {default_name} to use default)")
+                panic!("Missing environement variable: {key} (set {default_name} to use generated default)")
             }
         },
     }
