@@ -44,7 +44,7 @@ or in the "Checks" tab under the "Run Spectral on Pull Requests" workflow.
 ![](assets/checks-02.png)
 
 ## Swagger
-- Eefers to the tooling ecosystem (like Swagger UI, Swagger Editor, and Swagger Codegen)
+- Refers to the tooling ecosystem (like Swagger UI, Swagger Editor, and Swagger Codegen)
   that helps you design, visualize, and interact with APIs based on that spec.
 
 
