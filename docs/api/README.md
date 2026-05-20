@@ -58,7 +58,7 @@ or in the "Checks" tab under the "Run Spectral on Pull Requests" workflow.
 
 3. Swagger UI displays the OpenAPI Specification (OAS) in an interactive format
 and gets automatically deployed to GitHub Pages when the `main` branch is updated *and* files *either*
-in the `docs/openapispec/**` directory *or* the workflow file `.github/workflows/openapispec.yaml` are cahanged.
+in the `docs/openapispec/**` directory *or* the workflow file `.github/workflows/openapispec.yaml` are changed.
 
 > For further details on how the OpenAPI Specification (OAS) is deployed to GitHub Pages in an interactive format using
 > Swagger UI, please refer to the [GitHub Actions workflow file](../../.github/workflows/openapispec.yaml).
