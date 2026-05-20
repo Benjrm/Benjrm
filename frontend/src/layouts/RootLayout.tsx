@@ -10,7 +10,7 @@ export default function RootLayout(): JSX.Element {
         <div className="bg-background flex min-h-screen flex-col">
             <NavbarMain />
 
-            <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 sm:px-6 lg:px-8">
+            <main className="mx-auto flex w-full flex-1 flex-col px-4 sm:px-6 lg:px-8">
                 <Outlet />
             </main>
 

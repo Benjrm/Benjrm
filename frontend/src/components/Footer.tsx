@@ -6,7 +6,7 @@ import { NavLink } from "react-router"
 export default function Footer(): JSX.Element {
     return (
         <footer className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 mt-auto border-t backdrop-blur">
-            <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-6 md:flex-row">
+            <div className="mx-auto flex flex-col items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-6 md:flex-row">
                 {/* Left side: Logo */}
                 <div className="flex flex-1 justify-center md:justify-start">
                     <NavLink
