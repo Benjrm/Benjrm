@@ -153,10 +153,10 @@ export default function QuizCreator(): JSX.Element {
                             <h1 className="text-4xl font-extrabold md:text-5xl">{quizTitle}</h1>
                             <Button
                                 aria-label="Edit title"
-                                variant="ghost"
                                 className="text-muted-foreground hover:text-foreground p-2"
                                 onClick={() => setIsEditModalOpen(true)}
                                 type="button"
+                                variant="ghost"
                             >
                                 <Edit2 className="h-5 w-5" />
                             </Button>
@@ -168,10 +168,10 @@ export default function QuizCreator(): JSX.Element {
                             </p>
                             <Button
                                 aria-label="Edit description"
-                                variant="ghost"
                                 className="text-muted-foreground hover:text-foreground p-2"
                                 onClick={() => setIsEditModalOpen(true)}
                                 type="button"
+                                variant="ghost"
                             >
                                 <Edit2 className="h-4 w-4" />
                             </Button>

@@ -3,7 +3,7 @@
 import type { JSX } from "react"
 import QuizCard from "@/components/QuizCard"
 import CategoryHeader from "@/components/CategoryHeader"
-import type { Quiz } from "@/api/Quiz.tsx"
+import type { Quiz } from "@/api/quiz"
 
 interface DiscoverSectionProps {
     quizzes: Quiz[]
