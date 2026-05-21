@@ -7,8 +7,8 @@ import ErrorPage from "./pages/ErrorPage"
 import RootLayout from "./layouts/RootLayout"
 import PublicLayout from "./layouts/PublicLayout"
 import ImprintPage from "./pages/ImprintPage"
-import QuizCreator from "./pages/QuizCreator.tsx"
-import Quizzes from "./pages/Quizzes.tsx"
+import QuizCreator from "./pages/QuizCreator"
+import Quizzes from "./pages/Quizzes"
 
 const routes: RouteObject[] = [
     {
