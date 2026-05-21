@@ -2,12 +2,15 @@
 
 import type { JSX } from "react"
 import { useState } from "react"
-import { Settings } from "lucide-react"
+import { Edit2, Settings, Trash2 } from "lucide-react"
+import { useParams, useNavigate } from "react-router"
 
+import AnswerCard from "../components/AnswerCard"
+import CreateQuizModal from "../components/CreateQuizModal"
 import QuestionSidebar from "../components/QuestionSidebar"
 import SettingsPanel from "../components/SettingsPanel"
-import AnswerCard from "../components/AnswerCard"
 import type { Question } from "../types/quiz"
+import { useQuiz, useDeleteQuiz } from "@/api/queries"
 
 import { Button } from "@/shadcn/components/ui/button"
 import { Textarea } from "@/shadcn/components/ui/textarea"
@@ -18,11 +21,34 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/shadcn/components/ui/select"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/shadcn/components/ui/dialog"
 
 // --- Main Page ---
 
 export default function QuizCreator(): JSX.Element {
-    const [quizTitle, setQuizTitle] = useState<string>("Untitled")
+    const { quizId } = useParams()
+    const navigate = useNavigate()
+    const modalMode = quizId ? "edit" : "create"
+
+    // Query for loading quiz data
+    const { data: quiz, isLoading, error } = useQuiz(quizId)
+    const deleteQuizMutation = useDeleteQuiz()
+
+    // Derived values
+    const quizTitle = quiz?.title ?? "Untitled"
+    const quizDescription = quiz?.description ?? ""
+    const quizLoadError = error?.message ?? null
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+    const [deleteError, setDeleteError] = useState<string | null>(null)
 
     const [questions, setQuestions] = useState<Question[]>([
         {
@@ -36,6 +62,24 @@ export default function QuizCreator(): JSX.Element {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0)
 
     const currentQuestion = questions[currentQuestionIndex]
+
+    const handleDelete = async (): Promise<void> => {
+        if (!quizId) return
+
+        try {
+            setDeleteError(null)
+            await deleteQuizMutation.mutateAsync(quizId)
+            setIsConfirmOpen(false)
+            navigate("/dashboard")
+        } catch {
+            setDeleteError("Quiz could not be deleted. Please try again.")
+        }
+    }
+
+    const handleEditSuccess = (): void => {
+        // Quiz data is automatically updated by React Query
+        setIsEditModalOpen(false)
+    }
 
     const updateQuestion = (data: Partial<Question>) => {
         setQuestions((prevQuestions) => {
@@ -79,20 +123,59 @@ export default function QuizCreator(): JSX.Element {
         }
     }
 
+    const handleAddQuestion = () => {
+        setQuestions((prev) => [
+            ...prev,
+            {
+                id: Date.now(),
+                options: ["", "", "", ""],
+                title: "",
+                type: "Multiple Choice",
+            },
+        ])
+    }
+
+    const handleSelectType = (value: string) => {
+        updateQuestion({
+            type: value as Question["type"],
+        })
+    }
+
+    const handleConfirmClose = () => setIsConfirmOpen(false)
+
     return (
         <div className="bg-background text-foreground min-h-screen overflow-x-hidden">
-            {/* Removed max-w to let the layout span the full page */}
             <div className="flex w-full flex-col px-4 py-8 sm:px-8">
                 {/* Header */}
                 <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex-1 space-y-2">
-                        {/* Native input for true transparency */}
-                        <input
-                            className="text-foreground placeholder:text-foreground/40 w-full max-w-2xl appearance-none border-none bg-transparent p-0 text-4xl font-extrabold tracking-tight outline-none focus:ring-0 md:text-5xl"
-                            onChange={(e) => setQuizTitle(e.target.value)}
-                            placeholder="Untitled Quiz"
-                            value={quizTitle}
-                        />
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-4xl font-extrabold md:text-5xl">{quizTitle}</h1>
+                            <Button
+                                aria-label="Edit title"
+                                variant="ghost"
+                                className="text-muted-foreground hover:text-foreground p-2"
+                                onClick={() => setIsEditModalOpen(true)}
+                                type="button"
+                            >
+                                <Edit2 className="h-5 w-5" />
+                            </Button>
+                        </div>
+
+                        <div className="mt-3 flex items-start gap-3">
+                            <p className="max-w-2xl text-base whitespace-pre-wrap">
+                                {quizDescription}
+                            </p>
+                            <Button
+                                aria-label="Edit description"
+                                variant="ghost"
+                                className="text-muted-foreground hover:text-foreground p-2"
+                                onClick={() => setIsEditModalOpen(true)}
+                                type="button"
+                            >
+                                <Edit2 className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -107,29 +190,65 @@ export default function QuizCreator(): JSX.Element {
                         <Button className="bg-[#00F2FF] font-bold text-black hover:bg-[#00d8e4]">
                             Save Quiz
                         </Button>
+
+                        {quizId ? (
+                            <Button
+                                className="bg-red-600 text-white hover:bg-red-700"
+                                onClick={() => setIsConfirmOpen(true)}
+                                variant="ghost"
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Quiz
+                            </Button>
+                        ) : null}
+                        <Dialog onOpenChange={setIsConfirmOpen} open={isConfirmOpen}>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Delete Quiz?</DialogTitle>
+                                    <DialogDescription>
+                                        This action cannot be undone. Are you sure you want to
+                                        delete the quiz?
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <DialogFooter>
+                                    <Button onClick={handleConfirmClose} variant="outline">
+                                        Abbrechen
+                                    </Button>
+                                    <Button
+                                        className="bg-red-600 text-white hover:bg-red-700"
+                                        onClick={() => {
+                                            handleDelete().catch(() => {})
+                                        }}
+                                    >
+                                        Löschen
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </header>
 
-                {/* Layout: Sidebars are pushed to the edges, center content is handled inside */}
+                {quizLoadError && quizId ? (
+                    <p className="mb-6 text-sm text-red-500">{quizLoadError}</p>
+                ) : null}
+
+                {isLoading && quizId ? (
+                    <p className="text-muted-foreground mb-6 text-sm">Loading quiz...</p>
+                ) : null}
+
+                {deleteError ? <p className="mb-6 text-sm text-red-500">{deleteError}</p> : null}
+
+                {/* Layout */}
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_1fr_320px]">
                     {/* Sidebar */}
                     <div className="bg-muted/30 border-border rounded-3xl border p-4 shadow-xl backdrop-blur-sm">
                         <QuestionSidebar
                             activeIndex={currentQuestionIndex}
+                            onAdd={handleAddQuestion}
                             onDelete={deleteQuestion}
                             onSelect={setCurrentQuestionIndex}
                             questions={questions}
-                            onAdd={() =>
-                                setQuestions((prev) => [
-                                    ...prev,
-                                    {
-                                        id: Date.now(),
-                                        options: ["", "", "", ""],
-                                        title: "",
-                                        type: "Multiple Choice",
-                                    },
-                                ])
-                            }
                         />
                     </div>
 
@@ -137,7 +256,6 @@ export default function QuizCreator(): JSX.Element {
                     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6">
                         {/* Question Card */}
                         <div className="bg-muted/30 border-border relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-sm md:p-8">
-                            {/* Gradient Glow */}
                             <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full bg-[#00F2FF]/10 blur-3xl" />
 
                             <div className="relative">
@@ -147,12 +265,8 @@ export default function QuizCreator(): JSX.Element {
                                     </div>
 
                                     <Select
+                                        onValueChange={handleSelectType}
                                         value={currentQuestion.type}
-                                        onValueChange={(value: string) =>
-                                            updateQuestion({
-                                                type: value as Question["type"],
-                                            })
-                                        }
                                     >
                                         <SelectTrigger className="bg-background/70 border-border w-52 backdrop-blur-sm">
                                             <SelectValue placeholder="Select type" />
@@ -227,6 +341,15 @@ export default function QuizCreator(): JSX.Element {
                     </div>
                 </div>
             </div>
+            <CreateQuizModal
+                initialDescription={quizDescription}
+                initialTitle={quizTitle}
+                isOpen={isEditModalOpen}
+                mode={modalMode}
+                onClose={() => setIsEditModalOpen(false)}
+                onSuccess={handleEditSuccess}
+                quizId={quizId}
+            />
         </div>
     )
 }
