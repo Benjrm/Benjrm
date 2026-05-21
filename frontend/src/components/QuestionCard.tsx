@@ -4,6 +4,8 @@ import { Building2, Check, Edit2, GripVertical, Target, Trash2, Users, X, Zap } 
 import type { JSX } from "react"
 import { useState } from "react"
 
+import { Button } from "@/shadcn/components/ui/button"
+
 interface QuestionCardProps {
     isEditing: boolean
     onDelete: (id: number) => void
@@ -152,41 +154,49 @@ export default function QuestionCard({
                 >
                     {isEditing ? (
                         <>
-                            <button
-                                className="rounded-md p-2 text-[#00F2FF] transition-colors hover:bg-[#00F2FF]/10"
+                            <Button
+                                className="text-[#00F2FF] hover:bg-[#00F2FF]/10 hover:text-[#00F2FF]"
                                 onClick={handleToggleEdit}
+                                size="icon-sm"
                                 title="Save changes"
                                 type="button"
+                                variant="ghost"
                             >
                                 <Check className="h-4 w-4" />
-                            </button>
-                            <button
-                                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-2 transition-colors"
+                            </Button>
+                            <Button
+                                className="text-muted-foreground hover:text-foreground"
                                 onClick={handleToggleEdit}
+                                size="icon-sm"
                                 title="Cancel"
                                 type="button"
+                                variant="ghost"
                             >
                                 <X className="h-4 w-4" />
-                            </button>
+                            </Button>
                         </>
                     ) : (
                         <>
-                            <button
-                                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-2 transition-colors"
+                            <Button
+                                className="text-muted-foreground hover:text-foreground"
                                 onClick={handleToggleEdit}
+                                size="icon-sm"
                                 title="Edit question"
                                 type="button"
+                                variant="ghost"
                             >
                                 <Edit2 className="h-4 w-4" />
-                            </button>
-                            <button
-                                className="text-muted-foreground rounded-md p-2 transition-colors hover:bg-[#ff4949]/10 hover:text-[#ff4949]"
+                            </Button>
+                            <Button
+                                className="text-muted-foreground hover:bg-[#ff4949]/10 hover:text-[#ff4949]"
                                 onClick={() => onDelete(question.id)}
+                                size="icon-sm"
                                 title="Delete question"
                                 type="button"
+                                variant="ghost"
                             >
                                 <Trash2 className="h-4 w-4" />
-                            </button>
+                            </Button>
                         </>
                     )}
                 </div>
