@@ -45,6 +45,19 @@ export default function LandingPage(): JSX.Element {
                                 PLAY
                             </Button>
                         </div>
+
+                        {/* Create link */}
+                        <div>
+                            <a
+                                className="group text-foreground inline-flex items-center gap-2 text-sm font-bold tracking-wider transition-colors hover:text-[#FF8A00]"
+                                href="/createQuiz"
+                            >
+                                CREATE YOUR OWN QUIZ
+                                <span className="transition-transform group-hover:translate-x-1">
+                                    →
+                                </span>
+                            </a>
+                        </div>
                     </div>
 
                     {/* Right Column */}
