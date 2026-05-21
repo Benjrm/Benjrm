@@ -61,14 +61,18 @@ impl TestAppData {
     pub async fn dummy_user_id(&self) -> uuid::Uuid {
         use {
             crate::auth::entity::ActiveUser,
+            chrono::Utc,
             sea_orm::{ActiveModelTrait, ActiveValue::Set},
             uuid::Uuid,
         };
 
         let id = Uuid::new_v4();
+        let now = Utc::now();
         let user = ActiveUser {
             id: Set(id),
             subject: Set(id.to_string()),
+            registered: Set(now),
+            last_login: Set(now),
         }
         .insert(&self.db)
         .await

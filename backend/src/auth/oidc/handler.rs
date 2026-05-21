@@ -105,9 +105,12 @@ async fn callback(
     let db_user = match fetch_db_user().await? {
         Some(user) => user,
         None => {
+            let now = Utc::now();
             let res = ActiveUser {
                 id: Set(Uuid::new_v4()),
                 subject: Set(user.oauth2_user.sub.clone()),
+                registered: Set(now),
+                last_login: Set(now),
             }
             .insert(&data.db)
             .await;

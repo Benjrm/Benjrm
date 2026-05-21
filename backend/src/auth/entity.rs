@@ -14,6 +14,8 @@ mod user {
         pub id: Uuid,
         #[sea_orm(unique)]
         pub subject: String,
+        pub registered: DateTimeUtc,
+        pub last_login: DateTimeUtc,
     }
 
     #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

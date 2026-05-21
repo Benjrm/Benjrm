@@ -1,5 +1,7 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
+use crate::col_datetime;
+
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
@@ -13,6 +15,8 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(pk_uuid("id"))
                     .col(string("subject"))
+                    .col(col_datetime(manager, "registered").default(Expr::current_timestamp()))
+                    .col(col_datetime(manager, "last_login").default(Expr::current_timestamp()))
                     .index(
                         Index::create()
                             .unique()
