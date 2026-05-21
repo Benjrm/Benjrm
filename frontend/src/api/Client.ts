@@ -1,6 +1,6 @@
-// frontend/src/api/Client.ts
+// frontend/src/api/client.ts
 
-const API_URL = import.meta.env.VITE_BACKEND_URL ?? ""
+const API_URL = "/api/v1"
 
 export interface FetchOptions {
     method?: string

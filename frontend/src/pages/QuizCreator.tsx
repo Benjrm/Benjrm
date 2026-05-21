@@ -10,7 +10,7 @@ import CreateQuizModal from "../components/CreateQuizModal"
 import QuestionSidebar from "../components/QuestionSidebar"
 import SettingsPanel from "../components/SettingsPanel"
 import type { Question } from "../types/quiz"
-import { useQuiz, useDeleteQuiz } from "@/api/Queries"
+import { useQuiz, useDeleteQuiz } from "@/api/queries"
 
 import { Button } from "@/shadcn/components/ui/button"
 import { Textarea } from "@/shadcn/components/ui/textarea"

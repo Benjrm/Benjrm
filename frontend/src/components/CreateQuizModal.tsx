@@ -14,7 +14,7 @@ import {
 } from "@/shadcn/components/ui/dialog"
 import { Button } from "@/shadcn/components/ui/button"
 import { Label } from "@/shadcn/components/ui/label"
-import { useCreateQuiz, useUpdateQuiz } from "@/api/Queries"
+import { useCreateQuiz, useUpdateQuiz } from "@/api/queries"
 
 interface CreateQuizModalProps {
     isOpen: boolean

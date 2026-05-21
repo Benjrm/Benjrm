@@ -5,7 +5,7 @@ import { useState } from "react"
 import GameHeroSection from "../components/GameHeroSection"
 import DiscoverSection from "../components/DiscoverSection"
 import CreateQuizModal from "../components/CreateQuizModal"
-import { useQuizzes } from "@/api/Queries"
+import { useQuizzes } from "@/api/queries"
 
 export default function Dashboard(): JSX.Element {
     const [isCreateQuizOpen, setIsCreateQuizOpen] = useState(false)
