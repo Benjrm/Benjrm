@@ -151,28 +151,30 @@ export default function QuizCreator(): JSX.Element {
                     <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-3">
                             <h1 className="text-4xl font-extrabold md:text-5xl">{quizTitle}</h1>
-                            <button
+                            <Button
                                 aria-label="Edit title"
-                                className="text-muted-foreground hover:text-foreground"
+                                variant="ghost"
+                                className="text-muted-foreground hover:text-foreground p-2"
                                 onClick={() => setIsEditModalOpen(true)}
                                 type="button"
                             >
                                 <Edit2 className="h-5 w-5" />
-                            </button>
+                            </Button>
                         </div>
 
                         <div className="mt-3 flex items-start gap-3">
                             <p className="max-w-2xl text-base whitespace-pre-wrap">
                                 {quizDescription}
                             </p>
-                            <button
+                            <Button
                                 aria-label="Edit description"
-                                className="text-muted-foreground hover:text-foreground"
+                                variant="ghost"
+                                className="text-muted-foreground hover:text-foreground p-2"
                                 onClick={() => setIsEditModalOpen(true)}
                                 type="button"
                             >
                                 <Edit2 className="h-4 w-4" />
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
