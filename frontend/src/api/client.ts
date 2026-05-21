@@ -1,7 +1,5 @@
 // frontend/src/api/client.ts
 
-const API_URL = "/api/v1"
-
 export interface FetchOptions {
     method?: string
     body?: unknown
@@ -11,7 +9,7 @@ export interface FetchOptions {
 
 export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise<T> {
     const { method = "GET", body, headers, signal } = opts
-    const url = `${API_URL}${path}`
+    const url = `/api/v1${path}`
 
     const headerMap: Record<string, string> = {
         ...(headers as Record<string, string> | undefined),
@@ -61,5 +59,3 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
 export async function apiDelete(path: string): Promise<void> {
     await fetcher<undefined>(path, { method: "DELETE" })
 }
-
-export { API_URL }

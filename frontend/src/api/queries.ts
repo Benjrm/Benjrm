@@ -1,10 +1,10 @@
-// frontend/src/api/Queries.ts
+// frontend/src/api/queries.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import type { UseQueryResult, UseMutationResult } from "@tanstack/react-query"
 
-import { getQuiz, getQuizzes, createQuiz, updateQuiz, deleteQuiz } from "@/api/Quiz"
-import type { CreateQuizInput, Quiz } from "@/api/Quiz"
+import { getQuiz, getQuizzes, createQuiz, updateQuiz, deleteQuiz } from "@/api/quiz"
+import type { CreateQuizInput, Quiz } from "@/api/quiz"
 
 // Query Keys
 export const quizKeys = {

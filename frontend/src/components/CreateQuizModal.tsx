@@ -2,7 +2,7 @@
 
 /* eslint-disable react/require-default-props */
 import { useState } from "react"
-import type { FC, FormEvent } from "react"
+import type { FC, SubmitEvent } from "react"
 import { useNavigate } from "react-router"
 import {
     Dialog,
@@ -44,7 +44,7 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
     const updateMutation = useUpdateQuiz(quizId)
     const isLoading = mode === "create" ? createMutation.isPending : updateMutation.isPending
 
-    async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
+    async function handleSubmit(e: SubmitEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault()
         setError(null)
 
