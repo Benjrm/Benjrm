@@ -27,19 +27,19 @@ impl Oidc {
 
         let authorization_url =
             env_var_default("OIDC_AUTHORIZATION_URL", "OIDC_ISSUER_URL", || {
-                well_known.map(|well_known| well_known.authorization_endpoint.clone())
+                well_known.map(|well_known| well_known.authorization_endpoint.clone().into())
             });
 
         let token_url = env_var_default("OIDC_TOKEN_URL", "OIDC_ISSUER_URL", || {
-            well_known.map(|well_known| well_known.token_endpoint.clone())
+            well_known.map(|well_known| well_known.token_endpoint.clone().into())
         });
 
         let userinfo_url = env_var_default("OIDC_USERINFO_URL", "OIDC_ISSUER_URL", || {
-            well_known.map(|well_known| well_known.userinfo_endpoint.clone())
+            well_known.map(|well_known| well_known.userinfo_endpoint.clone().into())
         });
 
         let logout_url = env_var_default("OIDC_LOGOUT_URL", "OIDC_ISSUER_URL", || {
-            well_known.map(|well_known| well_known.end_session_endpoint.clone())
+            well_known.map(|well_known| well_known.end_session_endpoint.clone().into())
         });
         let logout_url = Url::parse(&logout_url).expect("LOGOUT_URL");
 
@@ -70,10 +70,10 @@ impl Oidc {
 
 #[derive(Debug, Deserialize)]
 struct WellKnown {
-    authorization_endpoint: String,
-    token_endpoint: String,
-    userinfo_endpoint: String,
-    end_session_endpoint: String,
+    authorization_endpoint: Url,
+    token_endpoint: Url,
+    userinfo_endpoint: Url,
+    end_session_endpoint: Url,
 }
 
 impl WellKnown {
