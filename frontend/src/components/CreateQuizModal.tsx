@@ -3,6 +3,7 @@
 /* eslint-disable react/require-default-props */
 import { useState } from "react"
 import type { FC, FormEvent } from "react"
+import { useNavigate } from "react-router"
 import {
     Dialog,
     DialogContent,
@@ -13,12 +14,12 @@ import {
 } from "@/shadcn/components/ui/dialog"
 import { Button } from "@/shadcn/components/ui/button"
 import { Label } from "@/shadcn/components/ui/label"
-import { createQuiz } from "@/api/Quiz.tsx"
+import { useCreateQuiz, useUpdateQuiz } from "@/api/Queries"
 
 interface CreateQuizModalProps {
     isOpen: boolean
     onClose: () => void
-    onSuccess: (quizId: string) => void
+    onSuccess: (quizId?: string) => void
     initialDescription?: string
     initialTitle?: string
     mode?: "create" | "edit"
@@ -34,20 +35,22 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
     initialDescription = "",
     quizId,
 }) => {
+    const navigate = useNavigate()
     const [title, setTitle] = useState(initialTitle)
     const [description, setDescription] = useState(initialDescription)
     const [error, setError] = useState<string | null>(null)
-    const [loading, setLoading] = useState(false)
+
+    const createMutation = useCreateQuiz()
+    const updateMutation = useUpdateQuiz(quizId)
+    const isLoading = mode === "create" ? createMutation.isPending : updateMutation.isPending
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault()
         setError(null)
 
         try {
-            setLoading(true)
-
             if (mode === "create") {
-                const quiz = await createQuiz({
+                const quiz = await createMutation.mutateAsync({
                     title,
                     description: description || undefined,
                     hidden: false,
@@ -56,14 +59,16 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
                 setTitle("")
                 setDescription("")
                 onClose()
+                // Navigate to the new quiz editor
+                navigate(`/quiz/${quiz.id}`)
                 onSuccess(quiz.id)
             } else {
-                if (!quizId) throw new Error("Missing quiz id for edit")
+                if (!quizId) {
+                    setError("Missing quiz id for edit")
+                    return
+                }
 
-                // lazy import to avoid circular deps
-                const { updateQuiz } = await import("@/api/Quiz.tsx")
-
-                const updated = await updateQuiz(quizId, {
+                const updated = await updateMutation.mutateAsync({
                     title,
                     description: description || undefined,
                     hidden: false,
@@ -78,14 +83,12 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
                     ? caughtError.message
                     : "Quiz konnte nicht erstellt werden."
             )
-        } finally {
-            setLoading(false)
         }
     }
 
     // Fix no-nested-ternary error by resolving label here
     let buttonText = "Create Quiz"
-    if (loading) {
+    if (isLoading) {
         buttonText = mode === "create" ? "Creating..." : "Saving..."
     } else if (mode === "edit") {
         buttonText = "Save changes"
@@ -151,14 +154,14 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
 
                     <DialogFooter>
                         <Button
-                            disabled={loading}
+                            disabled={isLoading}
                             onClick={onClose}
                             type="button"
                             variant="outline"
                         >
                             Cancel
                         </Button>
-                        <Button disabled={loading} type="submit">
+                        <Button disabled={isLoading} type="submit">
                             {buttonText}
                         </Button>
                     </DialogFooter>

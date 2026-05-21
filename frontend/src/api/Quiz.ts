@@ -1,6 +1,6 @@
-// frontend/src/api/quizzes.tsx
+// frontend/src/api/Quiz.ts
 
-import { apiGet, apiPost, apiPatch, apiDelete } from "@/api/Client.tsx"
+import { apiGet, apiPost, apiPatch, apiDelete } from "@/api/Client.ts"
 
 export interface CreateQuizInput {
     title: string

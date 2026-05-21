@@ -1,7 +1,7 @@
 // frontend/src/pages/QuizCreator.tsx
 
 import type { JSX } from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Edit2, Settings, Trash2 } from "lucide-react"
 import { useParams, useNavigate } from "react-router"
 
@@ -10,7 +10,7 @@ import CreateQuizModal from "../components/CreateQuizModal"
 import QuestionSidebar from "../components/QuestionSidebar"
 import SettingsPanel from "../components/SettingsPanel"
 import type { Question } from "../types/quiz"
-import { deleteQuiz, getQuiz } from "@/api/Quiz.tsx"
+import { useQuiz, useDeleteQuiz } from "@/api/Queries"
 
 import { Button } from "@/shadcn/components/ui/button"
 import { Textarea } from "@/shadcn/components/ui/textarea"
@@ -34,14 +34,21 @@ import {
 
 export default function QuizCreator(): JSX.Element {
     const { quizId } = useParams()
+    const navigate = useNavigate()
     const modalMode = quizId ? "edit" : "create"
-    const [quizTitle, setQuizTitle] = useState<string>("Untitled")
-    const [quizDescription, setQuizDescription] = useState<string>("")
-    const [loadingQuiz, setLoadingQuiz] = useState(false)
-    const [quizLoadError, setQuizLoadError] = useState<string | null>(null)
+
+    // Query for loading quiz data
+    const { data: quiz, isLoading, error } = useQuiz(quizId)
+    const deleteQuizMutation = useDeleteQuiz()
+
+    // Derived values
+    const quizTitle = quiz?.title ?? "Untitled"
+    const quizDescription = quiz?.description ?? ""
+    const quizLoadError = error?.message ?? null
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-    const navigate = useNavigate()
+    const [deleteError, setDeleteError] = useState<string | null>(null)
 
     const [questions, setQuestions] = useState<Question[]>([
         {
@@ -56,67 +63,22 @@ export default function QuizCreator(): JSX.Element {
 
     const currentQuestion = questions[currentQuestionIndex]
 
-    useEffect(() => {
-        let isMounted = true
-
-        if (!quizId) {
-            return () => {
-                isMounted = false
-            }
-        }
-
-        const currentQuizId = quizId
-
-        async function loadQuiz(): Promise<void> {
-            try {
-                setLoadingQuiz(true)
-                setQuizLoadError(null)
-
-                const quiz = await getQuiz(currentQuizId)
-
-                if (isMounted) {
-                    setQuizTitle(quiz.title)
-                    setQuizDescription(quiz.description ?? "")
-                }
-            } catch {
-                if (isMounted) {
-                    setQuizLoadError("Quiz konnte nicht geladen werden.")
-                }
-            } finally {
-                if (isMounted) {
-                    setLoadingQuiz(false)
-                }
-            }
-        }
-
-        loadQuiz().catch(() => {})
-
-        return () => {
-            isMounted = false
-        }
-    }, [quizId])
-
-    const handleEditSuccess = async (id: string) => {
-        try {
-            const quiz = await getQuiz(id)
-            setQuizTitle(quiz.title)
-            setQuizDescription(quiz.description ?? "")
-        } catch {
-            // ignore - we already show errors elsewhere
-        }
-    }
-
     const handleDelete = async (): Promise<void> => {
         if (!quizId) return
 
         try {
-            await deleteQuiz(quizId)
+            setDeleteError(null)
+            await deleteQuizMutation.mutateAsync(quizId)
             setIsConfirmOpen(false)
             navigate("/dashboard")
         } catch {
-            // eslint-disable-next-line no-alert
-            alert("Quiz could not be deleted. Please try again.")
+            setDeleteError("Quiz could not be deleted. Please try again.")
         }
+    }
+
+    const handleEditSuccess = (): void => {
+        // Quiz data is automatically updated by React Query
+        setIsEditModalOpen(false)
     }
 
     const updateQuestion = (data: Partial<Question>) => {
@@ -265,13 +227,15 @@ export default function QuizCreator(): JSX.Element {
                     </div>
                 </header>
 
-                {quizLoadError ? (
+                {quizLoadError && quizId ? (
                     <p className="mb-6 text-sm text-red-500">{quizLoadError}</p>
                 ) : null}
 
-                {loadingQuiz ? (
+                {isLoading && quizId ? (
                     <p className="text-muted-foreground mb-6 text-sm">Loading quiz...</p>
                 ) : null}
+
+                {deleteError ? <p className="mb-6 text-sm text-red-500">{deleteError}</p> : null}
 
                 {/* Layout */}
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_1fr_320px]">
@@ -381,11 +345,8 @@ export default function QuizCreator(): JSX.Element {
                 isOpen={isEditModalOpen}
                 mode={modalMode}
                 onClose={() => setIsEditModalOpen(false)}
+                onSuccess={handleEditSuccess}
                 quizId={quizId}
-                onSuccess={(id) => {
-                    setIsEditModalOpen(false)
-                    handleEditSuccess(id).catch(() => {})
-                }}
             />
         </div>
     )
