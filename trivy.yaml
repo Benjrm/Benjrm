@@ -4,6 +4,7 @@
 format: table
 exit-code: 1
 severity: HIGH,CRITICAL
+ignorefile: .trivyignore
 
 # Scan options
 scan:

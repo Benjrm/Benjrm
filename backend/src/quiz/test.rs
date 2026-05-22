@@ -1,17 +1,16 @@
 use {
     crate::{
-        AppData,
+        app_data::TestAppData,
         quiz::{NewQuiz, QuizError, QuizFilter, UpdateQuiz, entity::Quiz},
         update_value::{UpdateOption, UpdateValue},
     },
     chrono::{Duration, Utc},
-    uuid::Uuid,
 };
 
 #[actix_web::test]
 async fn test_create_one() {
-    let conn = &AppData::test().await.db;
-    let user = Uuid::new_v4();
+    let data = &TestAppData::test().await;
+    let user = data.dummy_user_id().await;
 
     let input = NewQuiz {
         title: "Test Quiz".into(),
@@ -19,7 +18,7 @@ async fn test_create_one() {
         hidden: false,
     };
 
-    let quiz = Quiz::create(conn, user, input).await.unwrap();
+    let quiz = Quiz::create(&data.db, user, input).await.unwrap();
 
     assert_eq!(quiz.title, "Test Quiz");
     assert_eq!(quiz.description.as_deref(), Some("desc"));
@@ -31,8 +30,8 @@ async fn test_create_one() {
 
 #[actix_web::test]
 async fn test_get_many() {
-    let conn = &AppData::test().await.db;
-    let user = Uuid::new_v4();
+    let data = &TestAppData::test().await;
+    let user = data.dummy_user_id().await;
 
     let input = vec![
         NewQuiz {
@@ -48,12 +47,14 @@ async fn test_get_many() {
     ];
 
     for quiz in input {
-        Quiz::create(conn, user, quiz.clone()).await.unwrap();
-        Quiz::create(conn, Uuid::new_v4(), quiz).await.unwrap();
+        Quiz::create(&data.db, user, quiz.clone()).await.unwrap();
+        Quiz::create(&data.db, data.dummy_user_id().await, quiz)
+            .await
+            .unwrap();
     }
 
     let result = Quiz::get_many(
-        conn,
+        &data.db,
         user,
         &QuizFilter {
             hidden: Some(false),
@@ -65,14 +66,14 @@ async fn test_get_many() {
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].title, "Visible");
 
-    let result = Quiz::get_many(conn, user, &QuizFilter { hidden: Some(true) })
+    let result = Quiz::get_many(&data.db, user, &QuizFilter { hidden: Some(true) })
         .await
         .unwrap();
 
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].title, "Hidden");
 
-    let result = Quiz::get_many(conn, user, &QuizFilter { hidden: None })
+    let result = Quiz::get_many(&data.db, user, &QuizFilter { hidden: None })
         .await
         .unwrap();
 
@@ -81,11 +82,11 @@ async fn test_get_many() {
 
 #[actix_web::test]
 async fn test_get_one() {
-    let conn = &AppData::test().await.db;
-    let user = Uuid::new_v4();
+    let data = &TestAppData::test().await;
+    let user = data.dummy_user_id().await;
 
     let quiz = Quiz::create(
-        conn,
+        &data.db,
         user,
         NewQuiz {
             title: "Single".into(),
@@ -96,21 +97,21 @@ async fn test_get_one() {
     .await
     .unwrap();
 
-    let fetched = Quiz::get(conn, user, quiz.id).await.unwrap();
+    let fetched = Quiz::get(&data.db, user, quiz.id).await.unwrap();
     assert_eq!(fetched, quiz);
 
-    let other_user = Uuid::new_v4();
-    let fetched = Quiz::get(conn, other_user, quiz.id).await;
+    let other_user = data.dummy_user_id().await;
+    let fetched = Quiz::get(&data.db, other_user, quiz.id).await;
     assert!(matches!(fetched, Err(QuizError::Forbidden)));
 }
 
 #[actix_web::test]
 async fn test_patch() {
-    let conn = &AppData::test().await.db;
-    let user = Uuid::new_v4();
+    let data = &TestAppData::test().await;
+    let user = data.dummy_user_id().await;
 
     let quiz = Quiz::create(
-        conn,
+        &data.db,
         user,
         NewQuiz {
             title: "Old".into(),
@@ -127,7 +128,7 @@ async fn test_patch() {
         hidden: UpdateValue::Unset,
     };
 
-    let updated = quiz.update(conn, update_data).await.unwrap();
+    let updated = quiz.update(&data.db, update_data).await.unwrap();
 
     assert_eq!(updated.title, "New");
     assert_eq!(updated.description.as_deref(), None);
@@ -136,11 +137,11 @@ async fn test_patch() {
 
 #[actix_web::test]
 async fn test_delete() {
-    let conn = &AppData::test().await.db;
-    let user = Uuid::new_v4();
+    let data = &TestAppData::test().await;
+    let user = data.dummy_user_id().await;
 
     let quiz = Quiz::create(
-        conn,
+        &data.db,
         user,
         NewQuiz {
             title: "Delete me".into(),
@@ -151,13 +152,13 @@ async fn test_delete() {
     .await
     .unwrap();
 
-    Quiz::get(conn, user, quiz.id)
+    Quiz::get(&data.db, user, quiz.id)
         .await
         .unwrap()
-        .delete(conn)
+        .delete(&data.db)
         .await
         .unwrap();
 
-    let result = Quiz::get(conn, user, quiz.id).await;
+    let result = Quiz::get(&data.db, user, quiz.id).await;
     assert!(matches!(result, Err(QuizError::NotFound)));
 }

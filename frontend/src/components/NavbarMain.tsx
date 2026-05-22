@@ -6,6 +6,7 @@ import { NavLink } from "react-router"
 import { Menu, UserCircle2, X } from "lucide-react"
 import ThemeToggle from "./ThemeToggle"
 import NavItem from "./NavItem"
+import LogoutButton from "@/auth/components/LogoutButton.tsx"
 
 export default function NavbarMain(): JSX.Element {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -39,6 +40,8 @@ export default function NavbarMain(): JSX.Element {
                     >
                         <UserCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
+
+                    <LogoutButton />
 
                     {/* Hamburger Menu Toggle (Mobile) */}
                     <button

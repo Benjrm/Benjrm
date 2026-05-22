@@ -20,6 +20,16 @@ impl MigrationTrait for Migration {
                     .col(boolean("hidden").default(false))
                     .col(col_datetime(manager, "created").default(Expr::current_timestamp()))
                     .col(col_datetime(manager, "modified").default(Expr::current_timestamp()))
+                    .foreign_key(
+                        ForeignKeyCreateStatement::new()
+                            .name("fk_quiz_user")
+                            .from_tbl("quiz")
+                            .from_col("user")
+                            .to_tbl("user")
+                            .to_col("id")
+                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_update(ForeignKeyAction::Restrict),
+                    )
                     .to_owned(),
             )
             .await

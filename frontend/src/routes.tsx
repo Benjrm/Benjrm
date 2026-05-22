@@ -9,11 +9,14 @@ import PublicLayout from "./layouts/PublicLayout"
 import ImprintPage from "./pages/ImprintPage"
 import QuizCreator from "./pages/QuizCreator"
 import Quizzes from "./pages/Quizzes"
+import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
+import AuthGuard from "@/auth/guards/AuthGuard.tsx"
 
 const routes: RouteObject[] = [
     {
         element: <PublicLayout />,
         children: [
+            // put public routes within this array
             {
                 path: "/",
                 element: <LandingPage />,
@@ -28,11 +31,20 @@ const routes: RouteObject[] = [
                     <ErrorPage message="The page you are looking for does not exist." title="404" />
                 ),
             },
+            {
+                path: "/auth/login",
+                element: <LoginRedirect />,
+            },
         ],
     },
     {
-        element: <RootLayout />,
+        element: (
+            <AuthGuard>
+                <RootLayout />
+            </AuthGuard>
+        ),
         children: [
+            // put protected routes within this array.
             {
                 path: "/dashboard",
                 element: <Dashboard />,

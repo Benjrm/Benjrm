@@ -5,7 +5,11 @@ pub use quiz::{
 };
 
 mod quiz {
-    use {sea_orm::entity::prelude::*, serde::Serialize};
+    use {
+        crate::auth::entity::{UserColumn, UserEntity},
+        sea_orm::entity::prelude::*,
+        serde::Serialize,
+    };
 
     #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
     #[sea_orm(table_name = "quiz")]
@@ -23,7 +27,22 @@ mod quiz {
     }
 
     #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-    pub enum Relation {}
+    pub enum Relation {
+        #[sea_orm(
+            belongs_to = "UserEntity",
+            from = "Column::User",
+            to = "UserColumn::Id",
+            on_update = "Restrict",
+            on_delete = "Restrict"
+        )]
+        User,
+    }
+
+    impl Related<UserEntity> for Entity {
+        fn to() -> RelationDef {
+            Relation::User.def()
+        }
+    }
 
     impl ActiveModelBehavior for ActiveModel {}
 }

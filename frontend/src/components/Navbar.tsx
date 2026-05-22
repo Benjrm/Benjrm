@@ -2,7 +2,7 @@
 
 import type { JSX } from "react"
 import { NavLink } from "react-router"
-import { Button } from "@/shadcn/components/ui/button"
+import LoginLink from "@/auth/components/LoginLink.tsx"
 import ThemeToggle from "@/components/ThemeToggle.tsx"
 
 export default function Navbar(): JSX.Element {
@@ -20,14 +20,7 @@ export default function Navbar(): JSX.Element {
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2 sm:gap-3">
-                    <Button
-                        className="cursor-pointer bg-black text-sm font-medium text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                        onClick={() => {
-                            // TODO: Implement the actual Keycloak redirect here later
-                        }}
-                    >
-                        SIGN IN
-                    </Button>
+                    <LoginLink />
                     <ThemeToggle />
                 </div>
             </div>

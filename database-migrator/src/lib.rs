@@ -1,12 +1,16 @@
 pub use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::DatabaseBackend;
+mod m20260511_131442_create_user;
 mod m20260511_142253_create_quiz;
 pub struct Migrator;
 
 #[async_trait::async_trait]
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-        vec![Box::new(m20260511_142253_create_quiz::Migration)]
+        vec![
+            Box::new(m20260511_131442_create_user::Migration),
+            Box::new(m20260511_142253_create_quiz::Migration),
+        ]
     }
 }
 

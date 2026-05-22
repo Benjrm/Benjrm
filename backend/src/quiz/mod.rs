@@ -11,7 +11,7 @@ pub use api::init;
 
 mod api;
 mod core;
-mod entity;
+pub mod entity;
 #[cfg(test)]
 mod test;
 

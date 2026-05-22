@@ -9,6 +9,7 @@ use {
 };
 
 mod app_data;
+mod auth;
 mod error;
 mod frontend;
 mod quiz;
@@ -66,8 +67,9 @@ async fn main() -> std::io::Result<()> {
                     .cookie_secure(cfg!(not(debug_assertions)))
                     .build(),
             )
-            .configure(frontend::init)
             .app_data(data.clone())
+            .configure(frontend::init)
+            .configure(auth::init)
             .configure(static_file::init)
             .service(web::scope("/api/v1").configure(quiz::init));
 
