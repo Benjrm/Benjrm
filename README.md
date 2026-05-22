@@ -6,7 +6,10 @@ We're currently building this project. Stay tuned for updates in the coming days
 
 ## Development environment
 
-For a complete development environment with hot reload for the frontend and test users, create an `.env` file based on `.env.example` and run `docker compose -f compose.dev.yaml up --build`.
+For a complete development environment with hot reload for the frontend and test users, create an `.env` file based on `.env.example` and run:
+```
+docker compose -f compose.dev.yaml up --build
+```
 
 > On Linux hosts, the development image can be built with the local user UID/GID so bind-mounted files stay writable inside the container:
 > 
@@ -25,7 +28,10 @@ For a complete development environment with hot reload for the frontend and test
 
 ## Setup
 
-Create an `.env` file based on `.env.example` and run `docker compose up --build`.
+Create an `.env` file based on `.env.example` and run:
+```
+docker compose up --build
+```
 
 Keycloak admin user: admin, password: admin
 
