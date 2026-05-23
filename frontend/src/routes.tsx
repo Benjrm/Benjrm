@@ -10,6 +10,7 @@ import ImprintPage from "./pages/ImprintPage"
 import QuizCreator from "./pages/QuizCreator.tsx"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
+import Leaderboard from "@/quiz/leaderboard/components/Leaderboard.tsx"
 
 const routes: RouteObject[] = [
     {
@@ -29,6 +30,10 @@ const routes: RouteObject[] = [
                 element: (
                     <ErrorPage message="The page you are looking for does not exist." title="404" />
                 ),
+            },
+            {
+                path: "/leaderboard",
+                element: <Leaderboard />,
             },
             {
                 path: "/auth/login",
