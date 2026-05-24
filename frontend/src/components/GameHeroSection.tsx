@@ -3,8 +3,11 @@ import type { JSX } from "react"
 import { Input } from "@/shadcn/components/ui/input"
 import { Button } from "@/shadcn/components/ui/button"
 
-// Die Props können wir jetzt komplett löschen, da die Komponente nichts mehr triggern muss
-export default function GameHeroSection(): JSX.Element {
+interface GameHeroSectionProps {
+    onAddQuizClick: () => void
+}
+
+export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps): JSX.Element {
     return (
         <section className="w-full">
             {/* Container */}
@@ -24,13 +27,21 @@ export default function GameHeroSection(): JSX.Element {
                         </p>
                     </div>
 
-                    {/* Action Buttons - Hier ist nur noch der START GAME Button */}
+                    {/* Action Buttons */}
                     <div className="flex flex-wrap items-center gap-3">
                         <Button className="flex items-center gap-2 rounded-xl border-0 bg-[#00D4E8] px-6 py-5 text-sm font-bold tracking-wide text-black uppercase shadow-[0_0_20px_-5px_rgba(0,212,232,0.5)] transition-all hover:bg-[#00BDD0]">
                             START GAME
                             <svg fill="currentColor" height="10" viewBox="0 0 24 24" width="10">
                                 <path d="M5 3L19 12L5 21V3Z" />
                             </svg>
+                        </Button>
+
+                        <Button
+                            className="rounded-xl border border-slate-200 bg-white px-6 py-5 text-sm font-bold tracking-wide text-slate-900 uppercase transition-all hover:bg-slate-100 dark:border-white/10 dark:bg-[#1C2028] dark:text-white dark:hover:bg-[#252a33]"
+                            onClick={onAddQuizClick}
+                            type="button"
+                        >
+                            Add Quiz
                         </Button>
                     </div>
                 </div>

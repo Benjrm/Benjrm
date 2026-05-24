@@ -29,7 +29,7 @@ export default function Dashboard(): JSX.Element {
     return (
         <div className="flex w-full flex-col gap-12 py-8">
             <div className="mx-auto flex w-full max-w-7xl flex-col items-stretch gap-6 px-4 sm:px-6">
-                <GameHeroSection />
+                <GameHeroSection onAddQuizClick={() => setIsCreateQuizOpen(true)} />
             </div>
 
             <DiscoverSection

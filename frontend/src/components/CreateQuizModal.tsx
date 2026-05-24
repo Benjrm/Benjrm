@@ -1,7 +1,7 @@
 // frontend/src/components/CreateQuizModal.tsx
 
 /* eslint-disable react/require-default-props */
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { FC, SubmitEvent } from "react"
 import { useNavigate } from "react-router"
 import {
@@ -39,6 +39,16 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
     const [title, setTitle] = useState(initialTitle)
     const [description, setDescription] = useState(initialDescription)
     const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!isOpen) {
+            return
+        }
+
+        setTitle(initialTitle)
+        setDescription(initialDescription)
+        setError(null)
+    }, [initialDescription, initialTitle, isOpen])
 
     const createMutation = useCreateQuiz()
     const updateMutation = useUpdateQuiz(quizId)
@@ -104,14 +114,9 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
         <Dialog
             open={isOpen}
             onOpenChange={(open) => {
-                if (open) {
-                    setTitle(initialTitle)
-                    setDescription(initialDescription)
-                    setError(null)
-                    return
+                if (!open) {
+                    onClose()
                 }
-
-                onClose()
             }}
         >
             <DialogContent>
