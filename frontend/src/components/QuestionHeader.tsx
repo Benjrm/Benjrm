@@ -1,13 +1,13 @@
 import type { JSX } from "react"
 
-export interface QuestionHeaderProps {
+interface QuestionHeaderProps {
     playerName: string
     currentQuestion: number
     totalQuestions: number
     remainingTime: number | null
 }
 
-export function QuestionHeader({
+export default function QuestionHeader({
     playerName,
     currentQuestion,
     totalQuestions,
@@ -21,7 +21,7 @@ export function QuestionHeader({
             : null
 
     return (
-        <div className="mb-6 flex flex-col items-center justify-center gap-3">
+        <div className="flex flex-col items-center justify-center gap-3">
             <div className="bg-muted/40 rounded-full px-4 py-2 text-sm font-bold">{playerName}</div>
 
             <div className="text-muted-foreground flex w-full items-center justify-between px-2 text-sm font-bold">

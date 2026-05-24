@@ -1,6 +1,6 @@
 import type { JSX } from "react"
 
-export interface AnswerOptionProps {
+interface AnswerOptionProps {
     index: number
     text: string
     isSelected: boolean
@@ -9,7 +9,7 @@ export interface AnswerOptionProps {
     onSelect: (index: number) => void
 }
 
-export function AnswerOption({
+export default function AnswerOption({
     index,
     text,
     isSelected,
