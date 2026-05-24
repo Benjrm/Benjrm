@@ -23,4 +23,3 @@ export interface ServerEvents {
         name: string
     }
 }
-
