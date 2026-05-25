@@ -13,7 +13,7 @@ export interface ServerEvents {
     updateLeaderboard: {
         name: string
         points: number
-    }
+    }[]
     addParticipant: {
         id: string
         name: string
