@@ -9,22 +9,63 @@ export class WebsocketService {
 
     private listeners = new Map<keyof ServerEvents, Set<AnyServerEventHandler>>()
 
+    private static async decodeMessageData(data: MessageEvent["data"]): Promise<string | null> {
+        if (typeof data === "string") {
+            return data
+        }
+        if (data instanceof Blob) {
+            return data.text()
+        }
+        if (data instanceof ArrayBuffer) {
+            return new TextDecoder().decode(data)
+        }
+        if (ArrayBuffer.isView(data)) {
+            return new TextDecoder().decode(data)
+        }
+        return null
+    }
+
     public connect(url: string): void {
+        if (this.socket?.url === url && this.socket.readyState === WebSocket.OPEN) {
+            return
+        }
+
         this.socket = new WebSocket(url)
+
         this.socket.onopen = () => {
             console.log("Connected")
         }
-        this.socket.onmessage = (event) => {
-            const raw = JSON.parse(event.data)
-            const data = raw as ServerMessage
-            const handlers = this.listeners.get(data.command)
-            handlers?.forEach((handler) =>
-                (handler as ServerEventHandler<typeof data.command>)(data.payload, data.timing)
-            )
+
+        this.socket.onmessage = async (event) => {
+            try {
+                const message = await WebsocketService.decodeMessageData(event.data)
+                if (message === null) {
+                    console.error("Received unsupported WebSocket message type:", event.data)
+                    return
+                }
+                const raw = JSON.parse(message)
+                if (
+                    typeof raw !== "object" ||
+                    raw === null ||
+                    !("command" in raw) ||
+                    typeof raw.command !== "string"
+                ) {
+                    console.error("Received invalid WebSocket message:", raw)
+                }
+                const data = raw as ServerMessage
+                const handlers = this.listeners.get(data.command)
+                handlers?.forEach((handler) =>
+                    (handler as ServerEventHandler<typeof data.command>)(data.payload, data.timing)
+                )
+            } catch (error) {
+                console.error("Failed to process WebSocket message:", error)
+            }
         }
+
         this.socket.onclose = () => {
             this.disconnect()
         }
+
         this.socket.onerror = (error) => {
             console.error("WebSocket error:", error)
         }
