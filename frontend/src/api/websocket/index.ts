@@ -1,6 +1,6 @@
 /**
  * Package for WebSocket-related API hooks.
- * It supports WebSocket connections and event handling for sending and receiving messages bidirectional.
+ * It supports managing WebSocket connection lifecycle and event handling for sending and receiving typed events in a bidirectional way.
  */
 import useWebSocket from "@/api/websocket/hooks/useWebSocket.ts"
 import useSocketEvent from "@/api/websocket/hooks/useSocketEvent.ts"
