@@ -79,7 +79,14 @@ export class WebsocketService {
     }
 
     public send(message: ClientMessage): void {
-        if (!this.socket) return
+        if (!this.socket) {
+            throw new Error("Cannot send WebSocket message: socket is not connected.")
+        }
+        if (this.socket.readyState !== WebSocket.OPEN) {
+            throw new Error(
+                `Cannot send WebSocket message: socket is not open (readyState: ${this.socket.readyState}).`
+            )
+        }
         this.socket.send(JSON.stringify(message))
     }
 
