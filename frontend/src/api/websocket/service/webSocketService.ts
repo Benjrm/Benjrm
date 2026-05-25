@@ -4,7 +4,10 @@ import type { AnyServerEventHandler } from "@/api/websocket/types/anyServerEvent
 import type { ServerEventHandler } from "@/api/websocket/types/serverEventHandler.ts"
 import type { ServerMessage } from "@/api/websocket/types/serverMessage.ts"
 
-export class WebsocketService {
+/**
+ * Service for managing WebSocket connection lifecycle, sending messages, and handling incoming messages with a publish-subscribe pattern.
+ */
+export default class WebSocketService {
     private socket: WebSocket | null = null
 
     private listeners = new Map<keyof ServerEvents, Set<AnyServerEventHandler>>()
@@ -31,6 +34,12 @@ export class WebsocketService {
         this.listeners.clear()
     }
 
+    /**
+     * Connects to the specified WebSocket server URL.
+     * If already connected to the same URL and the connection is open, it does nothing.
+     * Handles onopen, onmessage, onclose, and onerror events to manage connection state and message processing.
+     * @param url The URL of the target WebSocket server to connect to.
+     */
     public connect(url: string): void {
         if (this.socket?.url === url && this.socket.readyState === WebSocket.OPEN) {
             return
@@ -44,7 +53,7 @@ export class WebsocketService {
 
         this.socket.onmessage = async (event) => {
             try {
-                const message = await WebsocketService.decodeMessageData(event.data)
+                const message = await WebSocketService.decodeMessageData(event.data)
                 if (message === null) {
                     console.error("Received unsupported WebSocket message type:", event.data)
                     return
@@ -77,6 +86,10 @@ export class WebsocketService {
         }
     }
 
+    /**
+     * Closes the socket connection.
+     * If the socket does not exist or the connection is already closed, it does nothing.
+     */
     public disconnect(): void {
         if (!this.socket) {
             return
@@ -84,6 +97,11 @@ export class WebsocketService {
         this.socket.close()
     }
 
+    /**
+     * Sends a message to the WebSocket server.
+     * @param message The message to send to the WebSocket server.
+     * @throws Error if the socket is not connected or not open.
+     */
     public send(message: ClientMessage): void {
         if (!this.socket) {
             throw new Error("Cannot send WebSocket message: socket is not connected.")
@@ -96,6 +114,12 @@ export class WebsocketService {
         this.socket.send(JSON.stringify(message))
     }
 
+    /**
+     * Subscribes a handler function to a specific server command. The handler will be invoked whenever a message with the specified command is received from the server.
+     * @param command The server command to subscribe to.
+     * @param handler The handler method to invoke when a message with the specified command is received from the server.
+     * @return A function that can be called to unsubscribe the handler from the specified command.
+     */
     public subscribe<K extends keyof ServerEvents>(
         command: K,
         handler: ServerEventHandler<K>
@@ -109,5 +133,3 @@ export class WebsocketService {
         }
     }
 }
-
-export const websocketService = new WebsocketService()

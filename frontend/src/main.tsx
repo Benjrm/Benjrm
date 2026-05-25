@@ -6,8 +6,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import ThemeProvider from "./context/ThemeProvider"
 import "./index.css"
 import App from "./App.tsx"
-import WebSocketContext from "@/api/websocket/context/WebSocketContext.ts"
-import { websocketService } from "@/api/websocket/service/websocketService.ts"
+import { WebSocketContext, websocketService } from "@/api/websocket"
 
 const queryClient = new QueryClient({
     defaultOptions: {

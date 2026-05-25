@@ -1,4 +1,9 @@
 import { createContext } from "react"
-import type { WebsocketService } from "@/api/websocket/service/websocketService.ts"
+import type WebSocketService from "@/api/websocket/service/webSocketService.ts"
 
-export default createContext<WebsocketService | null>(null)
+/**
+ * Context providing the WebSocketService instance to components that need to interact with the WebSocket connection.
+ * This avoids passing props down through multiple levels of components and allows any component to access the WebSocketService directly.
+ */
+const WebSocketContext = createContext<WebSocketService | null>(null)
+export default WebSocketContext
