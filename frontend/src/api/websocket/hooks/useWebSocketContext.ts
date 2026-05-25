@@ -5,7 +5,7 @@ import type { WebsocketService } from "@/api/websocket/service/websocketService.
 export default function useWebSocketContext(): WebsocketService {
     const websocketContext = useContext(WebSocketContext)
     if (!websocketContext) {
-        throw new Error("useWebSocketContext mus be used within a WebSocketContext")
+        throw new Error("useWebSocketContext must be used within a WebSocketContext")
     }
     return websocketContext
 }
