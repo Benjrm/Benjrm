@@ -4,7 +4,7 @@ import type { Question } from "@/types/quiz.ts"
 import { Button } from "@shadcn/components/ui/button.tsx"
 
 interface QuestionProps {
-    question: Question,
+    question: Question
     onSelect: (index: number) => void
     index: number
     onDelete: (index: number) => void
