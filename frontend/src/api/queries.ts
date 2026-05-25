@@ -5,6 +5,7 @@ import type { UseQueryResult, UseMutationResult } from "@tanstack/react-query"
 
 import { getQuiz, getQuizzes, createQuiz, updateQuiz, deleteQuiz } from "@/api/quiz"
 import type { CreateQuizInput, Quiz } from "@/api/quiz"
+import deleteQuestion from "@/api/question.ts"
 
 // Query Keys
 export const quizKeys = {
@@ -12,6 +13,19 @@ export const quizKeys = {
     lists: () => [...quizKeys.all, "list"] as const,
     details: () => [...quizKeys.all, "detail"] as const,
     detail: (id: string) => [...quizKeys.details(), id] as const,
+}
+
+export const questionKeys = {
+    key: "questions" as const,
+
+    // [quizzes, quizId, questions]
+    all: (quizId: string): string[] => [...quizKeys.all, quizId, questionKeys.key],
+
+    // [quizzes, quizId, questions, questionId]
+    detail: (quizId: string, questionId: string): string[] => [
+        ...questionKeys.all(quizId),
+        questionId,
+    ],
 }
 
 // ============ QUERIES ============
@@ -71,6 +85,28 @@ export function useDeleteQuiz(): UseMutationResult<void, Error, string> {
         mutationFn: async (quizId: string): Promise<void> => deleteQuiz(quizId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: quizKeys.lists() })
+        },
+    })
+}
+
+/**
+ * DELETE /api/v1/quizzes/{quizId}/questions/{questionId}
+ * @param quizId The quiz id the question belongs to.
+ */
+export function useDeleteQuestion(quizId?: string): UseMutationResult<void, Error, string> {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async (questionId: string): Promise<void> => {
+            if (!quizId)
+                throw new Error(
+                    `DELETE /api/v1/quizzes/{quizId}/questions/{questionId} requires quizId and questionId, given quizId=${quizId}; questionId=${questionId}`
+                )
+            return deleteQuestion(quizId, questionId)
+        },
+        onSuccess: async () => {
+            if (quizId) {
+                return queryClient.invalidateQueries({ queryKey: questionKeys.all(quizId) })
+            }
         },
     })
 }
