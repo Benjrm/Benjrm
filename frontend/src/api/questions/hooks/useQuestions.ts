@@ -1,0 +1,20 @@
+import { useQuery } from "@tanstack/react-query"
+import type { UseQueryResult } from "@tanstack/react-query"
+import questionKeys from "@/api/questions/utils/questionKeys.ts"
+import questionAdapterImpl from "@/api/questions/adapter/questionAdapterImpl.ts"
+import type { QuestionApiResponse } from "@/api/questions/types/question.api.ts"
+
+export default function useQuestions(quizId?: string): UseQueryResult<QuestionApiResponse[]> {
+    return useQuery({
+        queryKey: quizId ? questionKeys.all(quizId) : [],
+        enabled: !!quizId,
+        queryFn: async () => {
+            if (!quizId) {
+                throw new Error(
+                    `GET /api/v1/quizzes/{quizId}/questions requires quizId, given quizId=${quizId}`
+                )
+            }
+            return questionAdapterImpl.getQuestions(quizId)
+        },
+    })
+}
