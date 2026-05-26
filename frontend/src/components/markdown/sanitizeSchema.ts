@@ -100,14 +100,6 @@ const sanitizeSchema = {
         ...defaultSchema.attributes,
         a: [...(defaultSchema.attributes?.a ?? []), "target", "rel", "download"],
         img: [...(defaultSchema.attributes?.img ?? []), "width", "height", "loading", "decoding"],
-        iframe: [
-            ...(defaultSchema.attributes?.iframe ?? []),
-            "width",
-            "height",
-            "frameborder",
-            "allow",
-            "allowfullscreen",
-        ],
         video: [
             ...(defaultSchema.attributes?.video ?? []),
             "width",
