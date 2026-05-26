@@ -71,7 +71,6 @@ const sanitizeSchema = {
         "del",
         "picture",
         "img",
-        "svg",
         "figure",
         "figcaption",
         "video",
