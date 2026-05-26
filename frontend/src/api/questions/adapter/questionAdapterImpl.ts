@@ -34,4 +34,6 @@ class QuestionAdapterImpl implements QuestionAdapter {
 }
 
 const questionAdapterImpl = new QuestionAdapterImpl(new QuestionMockAdapter())
+// TODO: Switch to API adapter when backend is ready
+// const questionAdapterImpl = new QuestionAdapterImpl(new QuestionApiAdapter())
 export default questionAdapterImpl
