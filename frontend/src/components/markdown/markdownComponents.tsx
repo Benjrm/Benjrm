@@ -23,7 +23,7 @@ function codeBlock({
 }): JSX.Element {
     const code = String(children).replace(/\n$/, "")
     const match = /language-(\w+)/.exec(className ?? "")
-    const language = match?.[1] ?? ""
+    const language = match?.[1] ?? "markup"
 
     return (
         <Highlight
@@ -175,9 +175,16 @@ const markdownComponents: Components = {
 
         return inline ? inlineCode({ children }) : codeBlock({ className, children })
     },
-    pre: ({ children }) => (
-        <div className="bg-muted mt-4 mb-4 overflow-x-auto rounded-lg border p-4">{children}</div>
-    ),
+    input: (props) => {
+        const { type, checked, disabled: disabledProp, ...rest } = props
+
+        if (type === "checkbox") {
+            return <input {...rest} defaultChecked={Boolean(checked)} type="checkbox" />
+        }
+
+        return <input {...rest} type={type} />
+    },
+    pre: ({ children }) => <>{children}</>,
     table: ({ children }) => markdownTable({ children }),
     thead: ({ children }) => <thead className="border-b">{children}</thead>,
     tbody: ({ children }) => <tbody>{children}</tbody>,

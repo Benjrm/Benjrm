@@ -78,11 +78,6 @@ const sanitizeSchema = {
         "audio",
         "source",
         "track",
-        "canvas",
-        "iframe",
-        "embed",
-        "object",
-        "param",
         "map",
         "area",
         "form",
@@ -131,12 +126,21 @@ const sanitizeSchema = {
             "loop",
         ],
         source: [...(defaultSchema.attributes?.source ?? []), "src", "type", "media"],
+        input: [
+            ...(defaultSchema.attributes?.input ?? []).filter(
+                (attribute) =>
+                    !(
+                        (typeof attribute === "string" && attribute === "disabled") ||
+                        (Array.isArray(attribute) && attribute[0] === "disabled")
+                    )
+            ),
+            ["type", "checkbox"],
+            "checked",
+        ],
         code: [
             ...(defaultSchema.attributes?.code ?? []),
             ["class", /^language-/],
             ["className", /^language-/],
-            ["class", true],
-            ["className", true],
         ],
         pre: [...(defaultSchema.attributes?.pre ?? []), ["class", true], ["className", true]],
         span: [...(defaultSchema.attributes?.span ?? []), ["class", true], ["className", true]],
