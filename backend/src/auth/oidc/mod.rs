@@ -2,8 +2,8 @@ use {
     crate::app_data::{env_var, env_var_default},
     actix_security::http::security::{OAuth2Client, OAuth2Config, OAuth2Provider},
     serde::Deserialize,
-    url::Url,
     std::env,
+    url::Url,
 };
 
 mod error;
@@ -44,7 +44,7 @@ impl Oidc {
 
         let userinfo_url = env_var_default("OIDC_USERINFO_URL", "OIDC_ISSUER_URL", || {
             well_known.map(|well_known| well_known.userinfo_endpoint.clone().into())
-        });        
+        });
 
         let logout_url = env_var_default("OIDC_LOGOUT_URL", "OIDC_ISSUER_URL", || {
             well_known.map(|well_known| well_known.end_session_endpoint.clone().into())

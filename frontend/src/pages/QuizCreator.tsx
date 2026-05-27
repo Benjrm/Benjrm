@@ -30,6 +30,12 @@ import {
     DialogFooter,
 } from "@/shadcn/components/ui/dialog"
 
+function getReadableQuizErrorMessage(error: Error | null | undefined): string | null {
+    if (!error) return null
+
+    return "Quiz data could not be loaded right now."
+}
+
 // --- Main Page ---
 
 export default function QuizCreator(): JSX.Element {
@@ -44,7 +50,7 @@ export default function QuizCreator(): JSX.Element {
     // Derived values
     const quizTitle = quiz?.title ?? "Untitled"
     const quizDescription = quiz?.description ?? ""
-    const quizLoadError = error?.message ?? null
+    const quizLoadError = getReadableQuizErrorMessage(error)
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)

@@ -7,6 +7,11 @@ export interface FetchOptions {
     signal?: AbortSignal
 }
 
+function createFriendlyApiError(): Error {
+    const message = `The backend is currently unavailable. Please try again later.`
+    return new Error(message)
+}
+
 export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise<T> {
     const { method = "GET", body, headers, signal } = opts
     const url = `/api/v1${path}`
@@ -32,15 +37,25 @@ export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise
     const res = await fetch(url, init)
 
     if (!res.ok) {
-        const text = await res.text().catch(() => null)
-        const message = text ? `${res.status} ${text}` : `Request failed: ${res.status}`
-        throw new Error(message)
+        throw createFriendlyApiError()
     }
 
     // Wenn der Status 204 (No Content) ist, geben wir explizit undefined als Typ T zurück
     if (res.status === 204) return undefined as T
 
-    return (await res.json()) as T
+    const responseText = await res.text()
+    if (!responseText) return undefined as T
+
+    const contentType = res.headers.get("content-type") ?? ""
+    if (!contentType.includes("application/json")) {
+        throw createFriendlyApiError()
+    }
+
+    try {
+        return JSON.parse(responseText) as T
+    } catch {
+        throw createFriendlyApiError()
+    }
 }
 
 // Backwards-compatible helpers used across the codebase

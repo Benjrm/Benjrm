@@ -1,19 +1,18 @@
 // frontend/src/components/GameHeroSection.tsx
-
 import type { JSX } from "react"
 import { PlusSquare } from "lucide-react"
 import { Input } from "@/shadcn/components/ui/input"
 import { Button } from "@/shadcn/components/ui/button"
 
 interface GameHeroSectionProps {
-    onAddQuiz: () => void
+    onAddQuizClick: () => void
 }
 
-export default function GameHeroSection({ onAddQuiz }: GameHeroSectionProps): JSX.Element {
+export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps): JSX.Element {
     return (
-        <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
+        <section className="w-full">
             {/* Container */}
-            <div className="dark:text-foreground flex min-h-80 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl lg:flex-row dark:border-white/8 dark:bg-[#111318]">
+            <div className="dark:text-foreground flex min-h-80 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl lg:flex-row dark:border-white/10 dark:bg-[#111318]">
                 {/* Left Side: Controls */}
                 <div className="z-10 flex flex-1 flex-col justify-center gap-8 p-8 lg:p-10">
                     {/* Code Input */}
@@ -39,12 +38,12 @@ export default function GameHeroSection({ onAddQuiz }: GameHeroSectionProps): JS
                         </Button>
 
                         <Button
-                            className="dark:text-foreground flex items-center gap-2 rounded-xl border-slate-200 bg-transparent px-5 py-5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5"
-                            onClick={onAddQuiz}
-                            variant="outline"
+                            className="flex items-center gap-2 rounded-xl border border-slate-700 bg-[#242424] px-5 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition-colors hover:bg-[#2f2f2f] dark:border-white/10 dark:bg-[#242424] dark:hover:bg-[#2f2f2f]"
+                            onClick={onAddQuizClick}
+                            type="button"
                         >
-                            Add Quiz
-                            <PlusSquare className="h-4 w-4" />
+                            <span>Add Quiz</span>
+                            <PlusSquare className="h-4 w-4 shrink-0 text-white/85" />
                         </Button>
                     </div>
                 </div>
@@ -56,7 +55,7 @@ export default function GameHeroSection({ onAddQuiz }: GameHeroSectionProps): JS
                         className="absolute inset-0 h-full w-full object-cover"
                         src="/pictures/happy_people.jpg"
                     />
-                    <div className="absolute inset-0 w-full bg-linear-to-r from-white via-white/70 to-transparent md:w-1/3 dark:from-[#111318] dark:via-[#111318]/40" />
+                    <div className="absolute inset-0 w-full bg-gradient-to-r from-white via-white/70 to-transparent md:w-1/3 dark:from-[#111318] dark:via-[#111318]/40" />
                 </div>
             </div>
         </section>
