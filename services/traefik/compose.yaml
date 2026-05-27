@@ -22,8 +22,8 @@ services:
     depends_on:
       - socket-proxy
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
     networks:
       - web
       - default

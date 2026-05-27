@@ -14,7 +14,7 @@ services:
     volumes:
       - ./config:/config
     ports:
-      - 8080:80
+      - "8080:80"
   
   identity-provider:
     # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry>
