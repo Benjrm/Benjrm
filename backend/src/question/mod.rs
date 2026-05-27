@@ -42,6 +42,7 @@ impl_err! {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Question {
     #[serde(flatten)]
     pub model: QuestionModel,
@@ -68,6 +69,7 @@ impl QuestionOptions {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NewQuestion {
     pub question: String,
     #[serde(default = "bool::default")]
@@ -79,6 +81,7 @@ pub struct NewQuestion {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NewAnswerChoice {
     pub text: String,
     #[serde(default)]
@@ -104,6 +107,7 @@ impl NewQuestionOptions {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateQuestion {
     #[serde(default)]
     pub question: UpdateValue<String>,
@@ -163,6 +167,7 @@ impl From<NewQuestionOptions> for UpdateQuestionOptions {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateAnswerChoice {
     pub id: Uuid,
     #[serde(default)]
@@ -188,7 +193,8 @@ impl<'de> Deserialize<'de> for UpdateAnswerChoiceEnum {
     where
         D: serde::Deserializer<'de>,
     {
-        #[derive(Debug, Deserialize)]
+        #[derive(Debug, Clone, Deserialize)]
+        #[serde(rename_all = "camelCase")]
         struct UpdateAnswerChoiceDto {
             id: Option<Uuid>,
             text: Option<String>,

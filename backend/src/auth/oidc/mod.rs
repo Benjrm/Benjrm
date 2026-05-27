@@ -68,7 +68,7 @@ impl Oidc {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 struct WellKnown {
     authorization_endpoint: Url,
     token_endpoint: Url,

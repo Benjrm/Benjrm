@@ -26,7 +26,8 @@ struct State {
     redirect_path: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct Path {
     path: Option<String>,
 }
@@ -57,7 +58,7 @@ async fn login(data: web::Data<AppData>, session: Session, path: web::Query<Path
         .finish()
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 struct OauthResponse {
     state: String,
     #[serde(rename = "iss")]

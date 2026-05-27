@@ -13,6 +13,7 @@ mod choice {
 
     #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
     #[sea_orm(table_name = "answer_choice")]
+    #[serde(rename_all = "camelCase")]
     pub struct Model {
         #[sea_orm(primary_key, auto_increment = false)]
         pub id: Uuid,
