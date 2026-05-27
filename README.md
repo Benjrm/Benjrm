@@ -29,7 +29,7 @@ Admin user: admin, password: admin
 | user       | password |
 | simon      | password |
 
-> This users are configured in [services/identity-provider/mounts/init.sh](services/identity-provider/mounts/init.sh).
+> These users are configured in [services/identity-provider/mounts/init.sh](services/identity-provider/mounts/init.sh).
 
 ## Setup
 
