@@ -28,7 +28,22 @@ docker compose -f compose.dev.yaml up --build
 
 ## Setup
 
-Create an `.env` file based on `.env.example` and run:
+### Configuration
+
+Create an `.env` file based on `.env.example`. You should at least change:
+- `DATABASE_PASSWORD`
+- `DOMAIN`
+- `PUBLIC_URL`
+- `OIDC_CLIENT_SECRET`
+- `OIDC_PUBLIC_IDP_URL`
+- `KC_DB_PASSWORD`
+
+### Reverse proxy
+
+By default, this project uses traefik as reverse proxy. You can set up traefik using default configuration by following [docs/traefik/README.md](docs/traefik/README.md) or you can use your own traefik instance. If you don't want to use traefik at all, remove all `networks` and `labels` sections from `compose.yaml`.
+
+### Run
+
 ```
 docker compose up --build
 ```
