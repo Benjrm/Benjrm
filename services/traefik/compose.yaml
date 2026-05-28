@@ -35,7 +35,7 @@ services:
       - ./config:/config:ro
       - ./traefik.yaml:/traefik.tpl:ro
       - ./prepare.sh:/prepare.sh:ro
-      - /var/log/traefik:/var/log/traefik
+      - ./logs:/var/log/traefik
     labels:
       traefik.enable: true
       traefik.frontend.passHostHeader: true
