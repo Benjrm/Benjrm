@@ -24,3 +24,17 @@ If you wish to use httpChallenge instead, change `entryPoints.websecure.http.tls
 ### Start traefik
 
 Simply run `docker compose up` in `/services/traefik`.
+
+### Local testing
+
+If you want to start the release compose with traefik locally and without valid certs, you have to do the following:
+
+- delete (or completely comment out) the file `config/tls.yaml`
+- comment out `entryPoints.websecure.http.tls.certResolver` in the file `traefik.yaml`
+- start traefik
+- add your domains to `/etc/hosts`:
+  ```
+  127.0.0.1 yourdomain.de
+  127.0.0.1 idp.yourdomain.de
+  127.0.0.1 traefik.yourdomain.de
+  ```
