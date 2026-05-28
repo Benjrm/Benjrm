@@ -8,6 +8,8 @@ services:
         condition: service_healthy
       identity-provider:
         condition: service_healthy
+      frontend:
+        condition: service_started
     env_file: .env
     environment:
       - FRONTEND_HOST=frontend

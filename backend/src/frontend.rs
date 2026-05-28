@@ -35,15 +35,21 @@ mod serve_frontend {
 #[cfg(debug_assertions)]
 mod serve_frontend {
     use {
-        actix_proxy::{IntoHttpResponse, SendRequestError},
+        actix_proxy::IntoHttpResponse,
         actix_web::{HttpRequest, HttpResponse},
     };
 
-    pub async fn serve_file(req: HttpRequest) -> Result<HttpResponse, SendRequestError> {
-        let client = req.app_data::<awc::Client>().unwrap();
+    pub async fn serve_file(req: HttpRequest) -> HttpResponse {
+        let client = match req.app_data::<awc::Client>() {
+            Some(client) => client,
+            None => {
+                return HttpResponse::InternalServerError().body("awc client not available");
+            }
+        };
         let uri = req.uri();
 
         const FORWARD_HEADER_NAMES: &[&str] = &[
+            "host",
             "accept",
             "accept-encoding",
             "accept-language",
@@ -60,7 +66,15 @@ mod serve_frontend {
                 dev_req = dev_req.insert_header((key, value));
             }
         }
-        Ok(dev_req.send().await?.into_http_response())
+        let req = match dev_req.send().await {
+            Ok(req) => req,
+            Err(e) => {
+                return HttpResponse::InternalServerError().body(format!(
+                    "Send request error: {e:?}. Is the frontend dev server runing?"
+                ));
+            }
+        };
+        req.into_http_response()
     }
 }
 
