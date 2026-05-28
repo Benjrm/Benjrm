@@ -1,4 +1,5 @@
-import { useEffect, type JSX } from "react"
+import { useEffect } from "react"
+import type { JSX } from "react"
 import ReactMarkdown from "react-markdown"
 import rehypeRaw from "rehype-raw"
 import rehypeSanitize from "rehype-sanitize"
@@ -15,7 +16,7 @@ export default function MarkdownPageComponent({
 }: MarkdownPageComponentProps): JSX.Element {
     // Scroll to the element specified in the URL hash when the content changes
     useEffect(() => {
-        const hash = window.location.hash
+        const { hash } = window.location
         if (hash) {
             setTimeout(() => {
                 const id = hash.substring(1)
