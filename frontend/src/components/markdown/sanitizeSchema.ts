@@ -2,6 +2,7 @@ import { defaultSchema } from "rehype-sanitize"
 
 const sanitizeSchema = {
     ...defaultSchema,
+    clobberPrefix: "", // Prevents rehype-sanitize from prefixing attributes like "id" with "user-content-" required to support footnote functionality
     tagNames: [
         ...(defaultSchema.tagNames ?? []),
         "main",
@@ -94,7 +95,15 @@ const sanitizeSchema = {
     ],
     attributes: {
         ...defaultSchema.attributes,
-        a: [...(defaultSchema.attributes?.a ?? []), "target", "rel", "download", "href", "id"],
+        a: [
+            ...(defaultSchema.attributes?.a ?? []),
+            "target",
+            "rel",
+            "download",
+            "href",
+            "id",
+            "data-footnote-backref",
+        ],
         li: [...(defaultSchema.attributes?.li ?? []), "id"],
         img: [...(defaultSchema.attributes?.img ?? []), "width", "height", "loading", "decoding"],
         video: [
@@ -128,7 +137,7 @@ const sanitizeSchema = {
         ],
         pre: [...(defaultSchema.attributes?.pre ?? []), ["class", true], ["className", true]],
         span: [...(defaultSchema.attributes?.span ?? []), ["class", true], ["className", true]],
-        sup: [...(defaultSchema.attributes?.sup ?? []), ["class", true], ["className", true]],
+        sup: [...(defaultSchema.attributes?.sup ?? []), ["class", true], ["className", true], "id"],
         "*": [
             ...(defaultSchema.attributes?.["*"] ?? []),
             "id",

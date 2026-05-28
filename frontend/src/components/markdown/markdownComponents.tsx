@@ -134,6 +134,17 @@ const markdownComponents: Components = {
                 "text-primary hover:text-primary/80 font-medium underline underline-offset-4 transition-colors",
                 className
             )}
+            // Handle navigation for anchor links to enable smooth scrolling
+            onClick={(e) => {
+                if (href?.startsWith("#")) {
+                    e.preventDefault()
+                    const element = document.getElementById(href.substring(1))
+                    if (element) {
+                        element.scrollIntoView({ behavior: "smooth" })
+                        window.history.pushState(null, "", href)
+                    }
+                }
+            }}
             {...props}
         >
             {children}
