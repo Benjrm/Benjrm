@@ -94,7 +94,8 @@ const sanitizeSchema = {
     ],
     attributes: {
         ...defaultSchema.attributes,
-        a: [...(defaultSchema.attributes?.a ?? []), "target", "rel", "download"],
+        a: [...(defaultSchema.attributes?.a ?? []), "target", "rel", "download", "href", "id"],
+        li: [...(defaultSchema.attributes?.li ?? []), "id"],
         img: [...(defaultSchema.attributes?.img ?? []), "width", "height", "loading", "decoding"],
         video: [
             ...(defaultSchema.attributes?.video ?? []),
@@ -132,10 +133,13 @@ const sanitizeSchema = {
             ...(defaultSchema.attributes?.["*"] ?? []),
             "id",
             "class",
+            "className",
             "title",
             "alt",
             "role",
+            "name",
             /^data-/,
+            /^data/,
             /^aria-/,
         ],
     },

@@ -1,10 +1,11 @@
-import type { JSX, ReactElement, ReactNode } from "react"
+import type { JSX, ReactNode } from "react"
 import { isValidElement } from "react"
 import type { Components } from "react-markdown"
 import Highlight, { defaultProps } from "prism-react-renderer"
 import type { Language } from "prism-react-renderer"
 import duotoneTheme from "prism-react-renderer/themes/duotoneDark"
 import { Separator } from "@/shadcn/components/ui/separator"
+import { cn } from "@/shadcn/lib/utils"
 
 function codeBlock({
     className,
@@ -28,23 +29,20 @@ function codeBlock({
         >
             {({ className: preClassName, tokens, getLineProps, getTokenProps }) => (
                 <pre
-                    className={`${preClassName} bg-muted mt-4 mb-4 overflow-x-auto rounded-lg border p-4 whitespace-pre`}
+                    className={cn(
+                        "bg-muted mt-4 mb-4 overflow-x-auto rounded-lg border p-4 whitespace-pre",
+                        preClassName
+                    )}
                 >
-                    {tokens.map((line) => {
-                        const lineProps = getLineProps({ line }) as { key?: React.Key } & Record<
-                            string,
-                            unknown
-                        >
-                        const { key: lineKey, ...lineRest } = lineProps
-
+                    {tokens.map((line, i) => {
+                        const { key: lineKey, ...lineRest } = getLineProps({ line, key: i })
                         return (
                             <div key={lineKey} {...lineRest}>
-                                {line.map((token) => {
-                                    const tokenProps = getTokenProps({ token }) as {
-                                        key?: React.Key
-                                    } & Record<string, unknown>
-                                    const { key: tokenKey, ...tokenRest } = tokenProps
-
+                                {line.map((token, j) => {
+                                    const { key: tokenKey, ...tokenRest } = getTokenProps({
+                                        token,
+                                        key: j,
+                                    })
                                     return <span key={tokenKey} {...tokenRest} />
                                 })}
                             </div>
@@ -58,173 +56,173 @@ function codeBlock({
 
 function markdownHeading({
     level,
+    className,
     children,
-}: {
-    level: 1 | 2 | 3 | 4 | 5 | 6
-    children?: ReactNode
-}): JSX.Element {
-    const className = {
-        1: "text-foreground mt-10 mb-6 scroll-m-20 text-5xl font-bold tracking-tight first:mt-0",
-        2: "text-foreground mt-8 mb-4 scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0",
-        3: "text-foreground mt-6 mb-3 scroll-m-20 text-xl font-semibold tracking-tight",
-        4: "text-foreground mt-4 mb-2 scroll-m-20 text-lg font-semibold tracking-tight",
-        5: "text-foreground mt-4 mb-2 scroll-m-20 text-base font-semibold tracking-tight",
-        6: "text-foreground mt-4 mb-2 scroll-m-20 text-sm font-semibold tracking-tight",
-    }[level]
-
-    switch (level) {
-        case 1:
-            return <h1 className={className}>{children}</h1>
-        case 2:
-            return <h2 className={className}>{children}</h2>
-        case 3:
-            return <h3 className={className}>{children}</h3>
-        case 4:
-            return <h4 className={className}>{children}</h4>
-        case 5:
-            return <h5 className={className}>{children}</h5>
-        case 6:
-            return <h6 className={className}>{children}</h6>
-        default:
-            return <h6 className={className}>{children}</h6>
-    }
-}
-
-function markdownParagraph({ children }: { children?: ReactNode }): JSX.Element {
-    return <p className="text-muted-foreground mb-4 leading-7 not-first:mt-4">{children}</p>
-}
-
-function markdownList({
-    ordered,
-    children,
-}: {
-    ordered?: boolean
-    children?: ReactNode
-}): JSX.Element {
-    if (ordered) {
-        return (
-            <ol className="text-muted-foreground my-4 ml-6 list-decimal space-y-2 [&>li]:mt-2">
-                {children}
-            </ol>
-        )
+    ...props
+}: { level: 1 | 2 | 3 | 4 | 5 | 6; children?: ReactNode } & Omit<
+    React.ComponentPropsWithoutRef<"h1">,
+    "children"
+>) {
+    const Tag = `h${level}` as const
+    const variants = {
+        1: "mt-10 mb-6 text-5xl font-bold first:mt-0",
+        2: "mt-8 mb-4 text-3xl font-semibold first:mt-0",
+        3: "mt-6 mb-3 text-xl font-semibold",
+        4: "mt-4 mb-2 text-lg font-semibold",
+        5: "mt-4 mb-2 text-base font-semibold",
+        6: "mt-4 mb-2 text-sm font-semibold",
     }
 
     return (
-        <ul className="text-muted-foreground my-4 ml-6 list-disc space-y-2 [&>li]:mt-2">
-            {children}
-        </ul>
-    )
-}
-
-function markdownLink({ href, children }: { href?: string; children?: ReactNode }): JSX.Element {
-    const isExternal = href?.startsWith("http") ?? false
-
-    return (
-        <a
-            className="text-primary hover:text-primary/80 font-medium underline underline-offset-4 transition-colors"
-            href={href}
-            rel={isExternal ? "noopener noreferrer" : undefined}
-            target={isExternal ? "_blank" : undefined}
+        <Tag
+            className={cn(
+                `text-foreground scroll-m-20 tracking-tight ${variants[level]}`,
+                className
+            )}
+            {...props}
         >
             {children}
-        </a>
-    )
-}
-
-function markdownBlockquote({ children }: { children?: ReactNode }): JSX.Element {
-    return (
-        <blockquote className="border-primary text-muted-foreground mt-6 border-l-2 pl-6 italic">
-            {children}
-        </blockquote>
-    )
-}
-
-function markdownTable({ children }: { children?: ReactNode }): JSX.Element {
-    return (
-        <div className="my-6 w-full overflow-y-auto">
-            <table className="w-full border-collapse text-sm">{children}</table>
-        </div>
+        </Tag>
     )
 }
 
 const markdownComponents: Components = {
-    h1: ({ children }) => markdownHeading({ level: 1, children }),
-    h2: ({ children }) => markdownHeading({ level: 2, children }),
-    h3: ({ children }) => markdownHeading({ level: 3, children }),
-    h4: ({ children }) => markdownHeading({ level: 4, children }),
-    h5: ({ children }) => markdownHeading({ level: 5, children }),
-    h6: ({ children }) => markdownHeading({ level: 6, children }),
-    p: ({ children }) => markdownParagraph({ children }),
-    ul: ({ children }) => markdownList({ children }),
-    ol: ({ children }) => markdownList({ ordered: true, children }),
-    li: ({ children }) => <li className="leading-7">{children}</li>,
-    a: ({ href, children }) => markdownLink({ href, children }),
-    strong: ({ children }) => <strong className="text-foreground font-semibold">{children}</strong>,
-    em: ({ children }) => <em className="italic">{children}</em>,
-    blockquote: ({ children }) => markdownBlockquote({ children }),
-    hr: () => <Separator className="my-8" />,
-    code({ className, children, ...props }) {
+    h1: ({ node: _, ...props }) => markdownHeading({ level: 1, ...props }),
+    h2: ({ node: _, ...props }) => markdownHeading({ level: 2, ...props }),
+    h3: ({ node: _, ...props }) => markdownHeading({ level: 3, ...props }),
+    h4: ({ node: _, ...props }) => markdownHeading({ level: 4, ...props }),
+    h5: ({ node: _, ...props }) => markdownHeading({ level: 5, ...props }),
+    h6: ({ node: _, ...props }) => markdownHeading({ level: 6, ...props }),
+
+    p: ({ node: _, className, ...props }) => (
+        <p
+            className={cn("text-muted-foreground mb-4 leading-7 not-first:mt-4", className)}
+            {...props}
+        />
+    ),
+
+    ul: ({ node: _, className, ...props }) => (
+        <ul
+            className={cn(
+                "text-muted-foreground my-4 ml-6 list-disc space-y-2 [&>li]:mt-2",
+                className
+            )}
+            {...props}
+        />
+    ),
+
+    ol: ({ node: _, className, ...props }) => (
+        <ol
+            className={cn(
+                "text-muted-foreground my-4 ml-6 list-decimal space-y-2 [&>li]:mt-2",
+                className
+            )}
+            {...props}
+        />
+    ),
+
+    li: ({ node: _, className, ...props }) => (
+        <li className={cn("leading-7", className)} {...props} />
+    ),
+
+    a: ({ node: _, className, href, children, ...props }) => (
+        <a
+            href={href}
+            rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
+            target={href?.startsWith("http") ? "_blank" : undefined}
+            className={cn(
+                "text-primary hover:text-primary/80 font-medium underline underline-offset-4 transition-colors",
+                className
+            )}
+            {...props}
+        >
+            {children}
+        </a>
+    ),
+
+    strong: ({ node: _, className, ...props }) => (
+        <strong className={cn("text-foreground font-semibold", className)} {...props} />
+    ),
+
+    em: ({ node: _, className, ...props }) => <em className={cn("italic", className)} {...props} />,
+
+    blockquote: ({ node: _, className, ...props }) => (
+        <blockquote
+            className={cn(
+                "border-primary text-muted-foreground mt-6 border-l-2 pl-6 italic",
+                className
+            )}
+            {...props}
+        />
+    ),
+
+    hr: ({ node: _, ...props }) => <Separator className="my-8" {...props} />,
+
+    code: ({ node: _, className, children, ...props }) => {
         const match = /language-(\w+)/.exec(className ?? "")
-
-        if (match) {
-            return codeBlock({ language: match[1], children })
-        }
-
-        const inlineCodeClassName =
-            "rounded bg-muted px-1.5 py-0.5 font-mono text-sm font-medium text-foreground"
+        if (match) return codeBlock({ language: match[1], children })
 
         return (
             <code
-                className={className ? `${inlineCodeClassName} ${className}` : inlineCodeClassName}
+                className={cn(
+                    "bg-muted text-foreground rounded px-1.5 py-0.5 font-mono text-sm font-medium",
+                    className
+                )}
                 {...props}
             >
                 {children}
             </code>
         )
     },
-    input: ({ type, checked, disabled, ...rest }) => {
-        if (type === "checkbox") {
-            return (
-                <input
-                    {...rest}
-                    defaultChecked={Boolean(checked)}
-                    type="checkbox"
-                    disabled={true}
-                />
-            )
-        }
 
-        return <input {...rest} type={type} disabled={Boolean(disabled)} />
-    },
-    pre: ({ children }) => {
+    pre: ({ node: _, children, ...props }) => {
         const codeChild = Array.isArray(children) ? children.find(isValidElement) : children
-
-        if (!isValidElement(codeChild)) {
-            return <pre>{children}</pre>
+        if (isValidElement(codeChild)) {
+            const childProps = codeChild.props as { className?: string; children?: ReactNode }
+            return codeBlock({
+                className: childProps.className,
+                children: childProps.children,
+            })
         }
-
-        const typedCodeChild = codeChild as ReactElement<{
-            className?: string
-            children?: ReactNode
-        }>
-
-        return codeBlock({
-            className: typedCodeChild.props.className,
-            children: typedCodeChild.props.children,
-        })
+        return <pre {...props}>{children}</pre>
     },
-    table: ({ children }) => markdownTable({ children }),
-    thead: ({ children }) => <thead className="border-b">{children}</thead>,
-    tbody: ({ children }) => <tbody>{children}</tbody>,
-    tr: ({ children }) => (
-        <tr className="hover:bg-muted/50 border-b transition-colors">{children}</tr>
+
+    input: ({ node: _, type, checked, disabled, ...props }) => (
+        <input
+            defaultChecked={type === "checkbox" ? Boolean(checked) : undefined}
+            disabled={type === "checkbox" ? true : Boolean(disabled)}
+            type={type}
+            {...props}
+        />
     ),
-    th: ({ children }) => (
-        <th className="text-muted-foreground h-10 px-4 text-left align-middle font-medium">
-            {children}
-        </th>
+
+    table: ({ node: _, className, children, ...props }) => (
+        <div className={cn("my-6 w-full overflow-y-auto", className)} {...props}>
+            <table className="w-full border-collapse text-sm">{children}</table>
+        </div>
     ),
-    td: ({ children }) => <td className="text-muted-foreground p-4 align-middle">{children}</td>,
+
+    thead: ({ node: _, className, ...props }) => (
+        <thead className={cn("border-b", className)} {...props} />
+    ),
+    tbody: ({ node: _, className, ...props }) => <tbody className={className} {...props} />,
+    tr: ({ node: _, className, ...props }) => (
+        <tr className={cn("hover:bg-muted/50 border-b transition-colors", className)} {...props} />
+    ),
+    th: ({ node: _, className, ...props }) => (
+        <th
+            className={cn(
+                "text-muted-foreground h-10 px-4 text-left align-middle font-medium",
+                className
+            )}
+            {...props}
+        />
+    ),
+    td: ({ node: _, className, ...props }) => (
+        <td className={cn("text-muted-foreground p-4 align-middle", className)} {...props} />
+    ),
+
+    section: ({ node: _, ...props }) => <section {...props} />,
 }
 
 export default markdownComponents
