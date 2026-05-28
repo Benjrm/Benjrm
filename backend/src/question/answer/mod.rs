@@ -41,9 +41,7 @@ pub trait ActiveNewOption: ActiveModelTrait {
 
 pub trait LinkedItem {
     fn id(&self) -> Uuid;
-    #[allow(dead_code)]
     fn prev(&self) -> Option<Uuid>;
-    #[allow(dead_code)]
     fn next(&self) -> Option<Uuid>;
 }
 
@@ -58,6 +56,12 @@ pub fn sort_linked_items<T: LinkedItem>(mut items: Vec<T>) -> Option<Vec<T>> {
         let item = items.iter().position(|x| x.prev() == Some(id))?;
         items.swap(item, i);
         id = items[i].id();
+        if items[i - 1].next() != Some(id) {
+            return None;
+        }
+    }
+    if items[items.len() - 1].next().is_some() {
+        return None;
     }
     Some(items)
 }

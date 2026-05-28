@@ -13,13 +13,13 @@ use {
 pub struct UpdateLinkedOptions<T: ActiveNewOption> {
     question_id: Uuid,
     pos: usize,
-    options: Vec<LinkedOption<T>>,
-    delete: Vec<LinkedOption<T>>,
+    pub(super) options: Vec<LinkedOption<T>>,
+    pub(super) delete: Vec<LinkedOption<T>>,
 }
 
-struct LinkedOption<T: ActiveNewOption> {
-    id: Uuid,
-    active_model: T,
+pub(super) struct LinkedOption<T: ActiveNewOption> {
+    pub(super) id: Uuid,
+    pub(super) active_model: T,
 }
 
 impl<T: ActiveNewOption> UpdateLinkedOptions<T> {

@@ -1,9 +1,12 @@
 use {
     crate::question::{
-        NewAnswerChoice, QuestionError, UpdateAnswerChoice, UpdateAnswerChoiceEnum,
+        NewAnswerChoice, QuestionError, UpdateAnswerChoiceEnum,
         answer::{
             ActiveNewOption, LinkedItem, NewOption, OptionModel, UpdateOption,
-            choice::entity::{ActiveAnswerChoice, AnswerChoiceModel},
+            choice::{
+                UpdateAnswerChoice,
+                entity::{ActiveAnswerChoice, AnswerChoiceModel},
+            },
             core::UpdateLinkedOptions,
         },
         entity::QuestionModel,
