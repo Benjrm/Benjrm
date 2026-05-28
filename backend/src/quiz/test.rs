@@ -5,24 +5,38 @@ use {
         update_value::{UpdateOption, UpdateValue},
     },
     chrono::{Duration, Utc},
+    sea_orm::ConnectionTrait,
+    uuid::Uuid,
 };
+
+pub async fn create_one(
+    conn: &impl ConnectionTrait,
+    user: Uuid,
+    title: Option<String>,
+    description: Option<String>,
+    hidden: bool,
+) -> Result<QuizModel, QuizError> {
+    let input = NewQuiz {
+        title: title.unwrap_or(String::from("Test Quiz")),
+        description,
+        hidden,
+    };
+
+    QuizModel::create(conn, user, input).await
+}
 
 #[actix_web::test]
 async fn test_create_one() {
     let data = &TestAppData::test().await;
     let user = data.dummy_user_id().await;
 
-    let input = NewQuiz {
-        title: "Test Quiz".into(),
-        description: Some("desc".into()),
-        hidden: false,
-    };
-
-    let quiz = QuizModel::create(&data.db, user, input).await.unwrap();
+    let quiz = create_one(&data.db, user, None, Some("desc".into()), false)
+        .await
+        .unwrap();
 
     assert_eq!(quiz.title, "Test Quiz");
     assert_eq!(quiz.description.as_deref(), Some("desc"));
-    assert_eq!(quiz.hidden, false);
+    assert!(!quiz.hidden);
     assert_eq!(quiz.user, user);
     assert_eq!(quiz.created, quiz.modified);
     assert!((quiz.created - Utc::now()).abs() < Duration::seconds(5));
@@ -33,27 +47,30 @@ async fn test_get_many() {
     let data = &TestAppData::test().await;
     let user = data.dummy_user_id().await;
 
-    let input = vec![
-        NewQuiz {
-            title: "Visible".into(),
-            description: None,
-            hidden: false,
-        },
-        NewQuiz {
-            title: "Hidden".into(),
-            description: Some("desc".into()),
-            hidden: true,
-        },
-    ];
-
-    for quiz in input {
-        QuizModel::create(&data.db, user, quiz.clone())
-            .await
-            .unwrap();
-        QuizModel::create(&data.db, data.dummy_user_id().await, quiz)
-            .await
-            .unwrap();
-    }
+    create_one(
+        &data.db,
+        data.dummy_user_id().await,
+        Some("Visible".into()),
+        None,
+        false,
+    )
+    .await
+    .unwrap();
+    create_one(
+        &data.db,
+        data.dummy_user_id().await,
+        Some("Hidden".into()),
+        None,
+        true,
+    )
+    .await
+    .unwrap();
+    create_one(&data.db, user, Some("Visible".into()), None, false)
+        .await
+        .unwrap();
+    create_one(&data.db, user, Some("Hidden".into()), None, true)
+        .await
+        .unwrap();
 
     let result = QuizModel::get_many(
         &data.db,
@@ -87,17 +104,12 @@ async fn test_get_one() {
     let data = &TestAppData::test().await;
     let user = data.dummy_user_id().await;
 
-    let quiz = QuizModel::create(
-        &data.db,
-        user,
-        NewQuiz {
-            title: "Single".into(),
-            description: None,
-            hidden: false,
-        },
-    )
-    .await
-    .unwrap();
+    let quiz = create_one(&data.db, user, Some("Single".into()), None, false)
+        .await
+        .unwrap();
+    create_one(&data.db, user, Some("Not fetched".into()), None, false)
+        .await
+        .unwrap();
 
     let fetched = QuizModel::get(&data.db, user, quiz.id).await.unwrap();
     assert_eq!(fetched, quiz);
@@ -112,14 +124,12 @@ async fn test_patch() {
     let data = &TestAppData::test().await;
     let user = data.dummy_user_id().await;
 
-    let quiz = QuizModel::create(
+    let quiz = create_one(
         &data.db,
         user,
-        NewQuiz {
-            title: "Old".into(),
-            description: Some("old".into()),
-            hidden: false,
-        },
+        Some("Old".into()),
+        Some("old".into()),
+        false,
     )
     .await
     .unwrap();
@@ -134,7 +144,7 @@ async fn test_patch() {
 
     assert_eq!(updated.title, "New");
     assert_eq!(updated.description.as_deref(), None);
-    assert_eq!(updated.hidden, false);
+    assert!(!updated.hidden);
 }
 
 #[actix_web::test]
@@ -142,17 +152,9 @@ async fn test_delete() {
     let data = &TestAppData::test().await;
     let user = data.dummy_user_id().await;
 
-    let quiz = QuizModel::create(
-        &data.db,
-        user,
-        NewQuiz {
-            title: "Delete me".into(),
-            description: None,
-            hidden: false,
-        },
-    )
-    .await
-    .unwrap();
+    let quiz = create_one(&data.db, user, Some("Delete me".into()), None, false)
+        .await
+        .unwrap();
 
     QuizModel::get(&data.db, user, quiz.id)
         .await

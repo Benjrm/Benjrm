@@ -2,6 +2,8 @@ use {crate::update_value::UpdateValue, serde::Deserialize, uuid::Uuid};
 
 pub mod core;
 pub mod entity;
+#[cfg(test)]
+mod test;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]

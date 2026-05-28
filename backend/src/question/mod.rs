@@ -19,6 +19,8 @@ pub mod answer;
 mod api;
 pub mod core;
 pub mod entity;
+#[cfg(test)]
+pub mod test;
 
 impl_err! {
     enum QuestionError {

@@ -102,6 +102,12 @@ jobs:
       - name: Clippy (release)
         run: cargo clippy --all-features --release -- --deny warnings
         working-directory: 'backend'
+      - name: Clippy (tests debug)
+        run: cargo clippy --all-features --tests -- --deny warnings
+        working-directory: 'backend'
+      - name: Clippy (tests release)
+        run: cargo clippy --all-features --tests --release -- --deny warnings
+        working-directory: 'backend'
       - name: Check formatting
         run: cargo fmt --check
         working-directory: 'backend'
