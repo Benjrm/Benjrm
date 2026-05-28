@@ -9,6 +9,7 @@ import PublicLayout from "./layouts/PublicLayout"
 import ImprintPage from "./pages/ImprintPage"
 import QuizCreator from "./pages/QuizCreator"
 import Quizzes from "./pages/Quizzes"
+import Lobby from "./pages/Lobby"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
 
@@ -34,6 +35,10 @@ const routes: RouteObject[] = [
             {
                 path: "/auth/login",
                 element: <LoginRedirect />,
+            },
+            {
+                path: "/lobby",
+                element: <Lobby />,
             },
         ],
     },
