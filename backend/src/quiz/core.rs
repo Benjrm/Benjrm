@@ -1,12 +1,19 @@
 use {
-    crate::quiz::{
-        NewQuiz, QuizError, QuizFilter, UpdateQuiz,
-        entity::{ActiveQuiz, QuizColumn, QuizEntity, QuizModel},
+    crate::{
+        error::Error,
+        question::{
+            QuestionError,
+            entity::{QuestionColumn, QuestionEntity},
+        },
+        quiz::{
+            NewQuiz, QuizError, QuizFilter, UpdateQuiz,
+            entity::{ActiveQuiz, QuizColumn, QuizEntity, QuizModel},
+        },
     },
     chrono::DateTime,
     sea_orm::{
         ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, DbErr, EntityTrait,
-        IntoActiveModel, QueryFilter, sqlx::types::chrono::Utc,
+        IntoActiveModel, QueryFilter, TransactionTrait, sea_query::Expr, sqlx::types::chrono::Utc,
     },
     uuid::Uuid,
 };
@@ -74,8 +81,34 @@ impl QuizModel {
         Ok(model)
     }
 
-    pub async fn delete(self, conn: &impl ConnectionTrait) -> Result<(), QuizError> {
-        self.into_active_model().delete(conn).await?;
+    pub async fn delete(self, conn: &impl TransactionTrait) -> Result<(), Error> {
+        let txn = conn.begin().await.map_err(QuizError::Database)?;
+
+        let questions = self.get_questions(&txn).await?;
+        for question in questions {
+            question.delete_answers(&txn).await?;
+        }
+
+        QuestionEntity::update_many()
+            .col_expr(QuestionColumn::Next, Expr::value(None::<Uuid>))
+            .col_expr(QuestionColumn::Prev, Expr::value(None::<Uuid>))
+            .filter(QuestionColumn::Quiz.eq(self.id))
+            .exec(&txn)
+            .await
+            .map_err(QuestionError::Database)?;
+
+        QuestionEntity::delete_many()
+            .filter(QuestionColumn::Quiz.eq(self.id))
+            .exec(&txn)
+            .await
+            .map_err(QuestionError::Database)?;
+
+        self.into_active_model()
+            .delete(&txn)
+            .await
+            .map_err(QuizError::Database)?;
+        txn.commit().await.map_err(QuizError::Database)?;
+
         Ok(())
     }
 
