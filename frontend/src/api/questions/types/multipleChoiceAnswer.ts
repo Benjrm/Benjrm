@@ -1,7 +1,7 @@
 import type { Identifier } from "@/api/utils.ts"
 
 export interface MultipleChoiceAnswerRequest {
-    answer: string
+    text: string
     correct: boolean
 }
 

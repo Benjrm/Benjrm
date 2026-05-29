@@ -41,7 +41,7 @@ export default function QuestionAnswerOptions({
                             onDelete={options.length > 2 ? () => onDeleteOption(index) : undefined}
                             onToggleCorrect={() => onToggleCorrect(index)}
                             placeholder={`Option ${index + 1}`}
-                            value={option.answer}
+                            value={option.text}
                         />
                     )
                 })}

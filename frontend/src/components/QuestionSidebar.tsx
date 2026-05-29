@@ -3,6 +3,7 @@
 import { ChevronDown, Plus } from "lucide-react"
 import type { JSX } from "react"
 import { useState } from "react"
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
 import { Button } from "@/shadcn/components/ui/button"
 import QuestionItem from "@/components/QuestionItem.tsx"
@@ -14,6 +15,7 @@ interface QuestionSidebarProps {
     onAdd: () => void
     onDelete: (index: number) => void
     onSelect: (index: number) => void
+    questionIds: string[]
     questions: Question[]
 }
 
@@ -22,6 +24,7 @@ export default function QuestionSidebar({
     onAdd,
     onDelete,
     onSelect,
+    questionIds,
     questions,
 }: QuestionSidebarProps): JSX.Element {
     const [isMobileOpen, setIsMobileOpen] = useState(false)
@@ -49,18 +52,23 @@ export default function QuestionSidebar({
                 {isMobileOpen ? (
                     <div className="mt-4 flex h-[45vh] flex-col overflow-hidden rounded-3xl border border-white/5 bg-black/10 p-4 shadow-inner">
                         <ScrollArea className="min-h-0 flex-1 pr-2">
-                            <div className="space-y-3 pb-2">
-                                {questions.map((question, index) => (
-                                    <QuestionItem
-                                        key={question.id}
-                                        activeIndex={activeIndex}
-                                        index={index}
-                                        onDelete={onDelete}
-                                        onSelect={onSelect}
-                                        question={question}
-                                    />
-                                ))}
-                            </div>
+                            <SortableContext
+                                items={questionIds}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="space-y-3 pb-2">
+                                    {questions.map((question, index) => (
+                                        <QuestionItem
+                                            key={question.id}
+                                            activeIndex={activeIndex}
+                                            index={index}
+                                            onDelete={onDelete}
+                                            onSelect={onSelect}
+                                            question={question}
+                                        />
+                                    ))}
+                                </div>
+                            </SortableContext>
                         </ScrollArea>
 
                         <Button
@@ -84,18 +92,20 @@ export default function QuestionSidebar({
                 </div>
 
                 <ScrollArea className="min-h-0 flex-1 pr-2">
-                    <div className="space-y-3 pb-4">
-                        {questions.map((question, index) => (
-                            <QuestionItem
-                                key={question.id}
-                                activeIndex={activeIndex}
-                                index={index}
-                                onDelete={onDelete}
-                                onSelect={onSelect}
-                                question={question}
-                            />
-                        ))}
-                    </div>
+                    <SortableContext items={questionIds} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-3 pb-4">
+                            {questions.map((question, index) => (
+                                <QuestionItem
+                                    key={question.id}
+                                    activeIndex={activeIndex}
+                                    index={index}
+                                    onDelete={onDelete}
+                                    onSelect={onSelect}
+                                    question={question}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
                 </ScrollArea>
 
                 <Button

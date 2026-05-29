@@ -1,6 +1,7 @@
 import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api.ts"
 import type { QuestionAdapter } from "@/api/questions/adapter/questionAdapter.ts"
 import QuestionMockAdapter from "@/api/questions/adapter/questionMockAdapter.ts"
+import QuestionApiAdapter from "@/api/questions/adapter/questionApiAdapter.ts"
 
 class QuestionAdapterImpl implements QuestionAdapter {
     private service: QuestionAdapter
@@ -33,7 +34,15 @@ class QuestionAdapterImpl implements QuestionAdapter {
     }
 }
 
-const questionAdapterImpl = new QuestionAdapterImpl(new QuestionMockAdapter())
-// TODO: Switch to API adapter when backend is ready
-// const questionAdapterImpl = new QuestionAdapterImpl(new QuestionApiAdapter())
+function createQuestionAdapter(): QuestionAdapter {
+    const adapterType = import.meta.env.VITE_QUESTION_ADAPTER ?? "mock"
+
+    if (adapterType === "api") {
+        return new QuestionApiAdapter()
+    }
+
+    return new QuestionMockAdapter()
+}
+
+const questionAdapterImpl = new QuestionAdapterImpl(createQuestionAdapter())
 export default questionAdapterImpl

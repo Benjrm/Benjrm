@@ -1,4 +1,6 @@
-import { Trash2 } from "lucide-react"
+import { CSS } from "@dnd-kit/utilities"
+import { useSortable } from "@dnd-kit/sortable"
+import { GripVertical, Trash2 } from "lucide-react"
 import type { MouseEvent, KeyboardEvent, ReactNode } from "react"
 import { Button } from "@shadcn/components/ui/button.tsx"
 
@@ -22,6 +24,17 @@ export default function QuestionItem({
 }: QuestionProps): ReactNode {
     const active = index === activeIndex
 
+    const { attributes, isDragging, listeners, setNodeRef, transform, transition } = useSortable({
+        id: question.id,
+    })
+
+    const style = {
+        opacity: isDragging ? 0.7 : 1,
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : "auto",
+    }
+
     const handleDeleteClick = (evt: MouseEvent<HTMLDivElement>) => {
         evt.stopPropagation()
         onDelete(index)
@@ -35,7 +48,9 @@ export default function QuestionItem({
     return (
         <Button
             key={question.id}
+            ref={setNodeRef}
             onClick={() => onSelect(index)}
+            style={style}
             variant="ghost"
             className={`group border-border bg-muted/30 relative h-auto w-full flex-col items-stretch justify-start overflow-hidden rounded-2xl border p-4 text-left whitespace-normal shadow-lg backdrop-blur-sm transition-all duration-200 ${
                 active
@@ -52,6 +67,15 @@ export default function QuestionItem({
                 {/* Top */}
                 <div className="mb-3 flex items-start justify-between">
                     <div className="flex items-center gap-2">
+                        <div
+                            {...attributes}
+                            {...listeners}
+                            aria-label="Drag question"
+                            className="text-muted-foreground/40 hover:text-foreground flex cursor-grab items-center pr-1 transition-colors active:cursor-grabbing"
+                        >
+                            <GripVertical className="h-4 w-4" />
+                        </div>
+
                         <div
                             className={`h-2.5 w-2.5 rounded-full ${
                                 active ? "bg-[#00F2FF]" : "bg-muted-foreground/40"
