@@ -8,7 +8,7 @@ use {
         },
     },
     actix_session::Session,
-    actix_web::{HttpResponse, get, post, web},
+    actix_web::{HttpResponse, web},
     chrono::{DateTime, TimeDelta, Utc},
     oauth2::{CsrfToken, PkceCodeVerifier},
     openidconnect::Nonce,
@@ -31,7 +31,6 @@ struct Path {
     path: Option<String>,
 }
 
-#[get("/login")]
 async fn login(data: web::Data<AppData>, session: Session, path: web::Query<Path>) -> HttpResponse {
     let (auth_url, csrf_token, pkce_verifier, nonce) = data.oidc.client.authorization_url();
 
@@ -65,7 +64,6 @@ struct OauthResponse {
     code: String,
 }
 
-#[get("/oidc/callback")]
 async fn callback(
     data: web::Data<AppData>,
     session: Session,
@@ -143,7 +141,6 @@ async fn callback(
         .finish())
 }
 
-#[post("/logout")]
 async fn logout(data: web::Data<AppData>, session: Session) -> HttpResponse {
     let user = session.get::<SessionUser>("user").ok().flatten();
     session.purge();
@@ -165,14 +162,13 @@ async fn logout(data: web::Data<AppData>, session: Session) -> HttpResponse {
         .finish()
 }
 
-#[get("/user")]
 async fn get_user(user: User) -> HttpResponse {
     HttpResponse::Ok().json(user)
 }
 
 pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(login);
-    cfg.service(callback);
-    cfg.service(logout);
-    cfg.service(get_user);
+    cfg.service(web::resource("/login").route(web::get().to(login)));
+    cfg.service(web::resource("/oidc/callback").route(web::get().to(callback)));
+    cfg.service(web::resource("/logout").route(web::post().to(logout)));
+    cfg.service(web::resource("/user").route(web::get().to(get_user)));
 }
