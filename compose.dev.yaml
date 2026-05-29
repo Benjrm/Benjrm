@@ -117,9 +117,5 @@ services:
       CHOKIDAR_INTERVAL: "100"
     volumes:
       - ./frontend:/app
-      - frontend-node-modules:/app/node_modules
     ports:
       - "5173:5173"
-
-volumes:
-  frontend-node-modules:
