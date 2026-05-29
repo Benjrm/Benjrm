@@ -1,4 +1,4 @@
-// frontend/src/components/WaitingRoom/ProfilePicker.tsx
+// frontend/src/components/ProfilePicker.tsx
 
 import type { FC } from "react"
 import { Button } from "@/shadcn/components/ui/button"

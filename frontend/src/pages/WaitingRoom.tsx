@@ -165,6 +165,7 @@ export default function WaitingRoom(): JSX.Element {
                         {AVAILABLE_EMOJIS.map((em) => (
                             <button
                                 key={em}
+                                aria-label={`Select emoji ${em}`}
                                 className="hover:bg-muted/70 flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-black/20 text-xl transition"
                                 onClick={() => onPickEmoji(em)}
                                 type="button"
