@@ -2,10 +2,11 @@ use {
     crate::error::Error,
     actix_session::{SessionMiddleware, storage::CookieSessionStore},
     actix_web::{
-        App, HttpServer,
+        App, HttpResponse, HttpServer, Route,
         cookie::{self, SameSite},
         web::{self, JsonConfig},
     },
+    awc::http::Method,
 };
 
 mod app_data;
@@ -71,7 +72,12 @@ async fn main() -> std::io::Result<()> {
             .configure(frontend::init)
             .configure(auth::init)
             .configure(static_file::init)
-            .service(web::scope("/api/v1").configure(quiz::init));
+            .route("/api/health", healthcheck_route())
+            .service(
+                web::scope("/api/v1")
+                    .configure(quiz::init)
+                    .route("/health", healthcheck_route()),
+            );
 
         if cfg!(debug_assertions) {
             app.app_data(awc::Client::new())
@@ -82,4 +88,10 @@ async fn main() -> std::io::Result<()> {
     .bind(("0.0.0.0", port))?
     .run()
     .await
+}
+
+fn healthcheck_route() -> Route {
+    Route::new()
+        .method(Method::GET)
+        .to(async || HttpResponse::Ok().body("OK"))
 }
