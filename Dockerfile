@@ -34,4 +34,5 @@ RUN apt update && apt install -y openssl
 COPY --from=build /bin/benjrm /bin/benjrm
 
 EXPOSE 80
+HEALTHCHECK --start-period=5s --start-interval=2s --interval=30s --timeout=2s --retries=5 CMD curl localhost:80/api/health
 ENTRYPOINT ["/bin/benjrm"]
