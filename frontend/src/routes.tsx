@@ -10,8 +10,10 @@ import ImprintPage from "./pages/ImprintPage"
 import QuizCreator from "./pages/QuizCreator"
 import Quizzes from "./pages/Quizzes"
 import Lobby from "./pages/Lobby"
+import InfoSlide from "./pages/InfoSlide"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
+import SingleChoiceQuestion from "@/pages/SingleChoiceQuestion.tsx"
 
 const routes: RouteObject[] = [
     {
@@ -65,11 +67,19 @@ const routes: RouteObject[] = [
                         path: ":quizId",
                         element: <QuizCreator />,
                     },
+                    {
+                        path: "play",
+                        element: <SingleChoiceQuestion />,
+                    },
                 ],
             },
             {
                 path: "/quizzes",
                 element: <Quizzes />,
+            },
+            {
+                path: "/infoslide",
+                element: <InfoSlide />,
             },
         ],
     },
