@@ -1,4 +1,5 @@
-import { useMutation, type UseMutationResult, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import type { UseMutationResult } from "@tanstack/react-query"
 import questionAdapterImpl from "@/api/questions/adapter/questionAdapterImpl.ts"
 import questionKeys from "@/api/questions/utils/questionKeys.ts"
 import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api.ts"
