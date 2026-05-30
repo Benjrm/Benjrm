@@ -5,11 +5,10 @@ use {
         error::Result,
         quiz::{NewQuiz, QuizFilter, UpdateQuiz, entity::QuizModel},
     },
-    actix_web::{HttpResponse, delete, get, patch, post, put, web},
+    actix_web::{HttpResponse, web},
     uuid::Uuid,
 };
 
-#[post("/quizzes")]
 async fn create_one(
     quiz: web::Json<NewQuiz>,
     app_data: web::Data<AppData>,
@@ -19,7 +18,6 @@ async fn create_one(
     Ok(HttpResponse::Created().json(quiz))
 }
 
-#[get("/quizzes")]
 async fn get_many(
     app_data: web::Data<AppData>,
     filter: web::Query<QuizFilter>,
@@ -29,7 +27,6 @@ async fn get_many(
     Ok(HttpResponse::Ok().json(quizzes))
 }
 
-#[get("/quizzes/{id}")]
 async fn get_one(
     id: web::Path<Uuid>,
     app_data: web::Data<AppData>,
@@ -39,7 +36,6 @@ async fn get_one(
     Ok(HttpResponse::Ok().json(quiz))
 }
 
-#[patch("/quizzes/{id}")]
 async fn patch(
     id: web::Path<Uuid>,
     update_quiz: web::Json<UpdateQuiz>,
@@ -51,7 +47,6 @@ async fn patch(
     Ok(HttpResponse::Ok().json(quiz))
 }
 
-#[put("/quizzes/{id}")]
 async fn put(
     id: web::Path<Uuid>,
     new_quiz: web::Json<NewQuiz>,
@@ -65,7 +60,6 @@ async fn put(
     Ok(HttpResponse::Ok().json(quiz))
 }
 
-#[delete("/quizzes/{id}")]
 async fn delete(
     id: web::Path<Uuid>,
     app_data: web::Data<AppData>,
@@ -77,10 +71,16 @@ async fn delete(
 }
 
 pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
-    cfg.service(create_one);
-    cfg.service(get_many);
-    cfg.service(get_one);
-    cfg.service(patch);
-    cfg.service(put);
-    cfg.service(delete);
+    cfg.service(
+        web::resource("/quizzes")
+            .route(web::post().to(create_one))
+            .route(web::get().to(get_many)),
+    );
+    cfg.service(
+        web::resource("/quizzes/{id}")
+            .route(web::get().to(get_one))
+            .route(web::patch().to(patch))
+            .route(web::put().to(put))
+            .route(web::delete().to(delete)),
+    );
 }

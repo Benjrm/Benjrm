@@ -19,10 +19,25 @@ tags:
     description: Operations related to quizzes.
   - name: Questions
     description: Operations related to questions. Questions belong to quizzes.
+  - name: Health
+    description: Server health related checks
 
 paths:
-  /api/v1/quizzes:
+  /api/health:
+    get:
+      description: Backend healthcheck (alias of `/api/v1/health`)
+      operationId: health
+      tags:
+        - Health
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
 
+  /api/v1/quizzes:
     post:
       description: Create a new quiz.
       operationId: createQuiz
