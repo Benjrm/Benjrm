@@ -2,7 +2,7 @@ use {
     crate::{
         error::Error,
         question::{
-            QuestionError,
+            QuestionError, QuestionFilter,
             entity::{QuestionColumn, QuestionEntity},
         },
         quiz::{
@@ -84,7 +84,7 @@ impl QuizModel {
     pub async fn delete(self, conn: &impl TransactionTrait) -> Result<(), Error> {
         let txn = conn.begin().await.map_err(QuizError::Database)?;
 
-        let questions = self.get_questions(&txn).await?;
+        let questions = self.get_questions(&txn, &QuestionFilter::default()).await?;
         for question in questions {
             question.delete_answers(&txn).await?;
         }

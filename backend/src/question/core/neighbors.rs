@@ -1,7 +1,7 @@
 use {
     crate::{
         question::{
-            QuestionError,
+            QuestionError, QuestionFilter,
             entity::{ActiveQuestion, QuestionModel},
         },
         quiz::entity::QuizModel,
@@ -82,7 +82,7 @@ impl Neighbors {
         match pos {
             Some(pos) => Self::get(quiz, pos, conn).await,
             None => {
-                let mut questions = quiz.get_questions(conn).await?;
+                let mut questions = quiz.get_questions(conn, &QuestionFilter::default()).await?;
                 if let Some(model) = questions.pop() {
                     Ok(Neighbors {
                         prev: Some(model),

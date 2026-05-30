@@ -2,8 +2,8 @@ use {
     crate::{
         app_data::TestAppData,
         question::{
-            NewQuestion, NewQuestionOptions, Question, QuestionError, QuestionOptions,
-            UpdateQuestion, UpdateQuestionOptions,
+            NewQuestion, NewQuestionOptions, Question, QuestionError, QuestionFilter,
+            QuestionOptions, UpdateQuestion, UpdateQuestionOptions,
             answer::{
                 choice::{NewAnswerChoice, UpdateAnswerChoice, UpdateAnswerChoiceEnum},
                 order::{UpdateAnswerOrder, UpdateAnswerOrderEnum},
@@ -134,7 +134,10 @@ async fn delete_quiz_with_choice_questions() {
         .unwrap();
 
     quiz.clone().delete(&data.db).await.unwrap();
-    let questions = quiz.get_questions(&data.db).await.unwrap();
+    let questions = quiz
+        .get_questions(&data.db, &QuestionFilter::default())
+        .await
+        .unwrap();
     assert!(questions.is_empty());
 }
 
@@ -491,7 +494,10 @@ async fn create_and_reorder_questions() {
 
     txn.commit().await.unwrap();
 
-    let questions = quiz.get_questions(&data.db).await.unwrap();
+    let questions = quiz
+        .get_questions(&data.db, &QuestionFilter::default())
+        .await
+        .unwrap();
 
     assert_eq!(questions[0].id, before_first.model.id);
     assert_eq!(questions[1].id, first.model.id);
@@ -542,7 +548,10 @@ async fn create_and_reorder_questions() {
         .await
         .unwrap();
 
-    let questions = quiz.get_questions(&data.db).await.unwrap();
+    let questions = quiz
+        .get_questions(&data.db, &QuestionFilter::default())
+        .await
+        .unwrap();
 
     assert_eq!(questions[0].id, last.model.id);
     assert_eq!(questions[1].id, before_first.model.id);

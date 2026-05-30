@@ -400,6 +400,13 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: hidden
+          in: query
+          schema:
+            type: boolean
+            example: false
+          description: Filter questions by hidden status
+          required: false
       responses:
         '200':
           description: List of questions
@@ -791,6 +798,14 @@ components:
         hidden:
           type: boolean
           example: false
+        created:
+          type: string
+          format: 'date-time'
+          example: '2024-01-01T12:00:00.000000Z'
+        modified:
+          type: string
+          format: 'date-time'
+          example: '2024-01-01T12:00:00.000000Z'
     
     Question:
       allOf:

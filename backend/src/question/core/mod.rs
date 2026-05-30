@@ -1,8 +1,8 @@
 use {
     crate::{
         question::{
-            LinkedItem, NewQuestion, NewQuestionOptions, Question, QuestionError, QuestionOptions,
-            UpdateQuestion, UpdateQuestionOptions,
+            LinkedItem, NewQuestion, NewQuestionOptions, Question, QuestionError, QuestionFilter,
+            QuestionOptions, UpdateQuestion, UpdateQuestionOptions,
             answer::{
                 ActiveNewOption, NewOption, OptionModel,
                 choice::entity::{AnswerChoiceColumn, AnswerChoiceEntity},
@@ -113,9 +113,17 @@ impl QuizModel {
     pub async fn get_questions(
         &self,
         conn: &impl ConnectionTrait,
+        filter: &QuestionFilter,
     ) -> Result<Vec<QuestionModel>, QuestionError> {
         let models = self.find_related(QuestionEntity).all(conn).await?;
-        sort_linked_items(models).ok_or(QuestionError::CorruptedQuestionList)
+        let mut questions =
+            sort_linked_items(models).ok_or(QuestionError::CorruptedQuestionList)?;
+
+        if let Some(hidden) = filter.hidden {
+            questions.retain(|x| x.hidden == hidden);
+        }
+
+        Ok(questions)
     }
 }
 

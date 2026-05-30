@@ -4,7 +4,7 @@ use {
         auth::User,
         error::Result,
         not_found_route,
-        question::{NewQuestion, UpdateQuestion},
+        question::{NewQuestion, QuestionFilter, UpdateQuestion},
         quiz::entity::QuizModel,
     },
     actix_web::{HttpResponse, web},
@@ -43,9 +43,12 @@ async fn get_many(
     id: web::Path<Uuid>,
     app_data: web::Data<AppData>,
     user: User,
+    filter: web::Query<QuestionFilter>,
 ) -> Result<HttpResponse> {
     let quiz = QuizModel::get(&app_data.db, user.id, id.into_inner()).await?;
-    let questions = quiz.get_questions(&app_data.db).await?;
+    let questions = quiz
+        .get_questions(&app_data.db, &filter.into_inner())
+        .await?;
     Ok(HttpResponse::Ok().json(questions))
 }
 

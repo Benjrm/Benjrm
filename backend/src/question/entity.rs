@@ -44,9 +44,7 @@ mod question {
         pub prev: Option<Uuid>,
         #[serde(skip)]
         pub next: Option<Uuid>,
-        #[serde(skip)]
         pub created: DateTimeUtc,
-        #[serde(skip)]
         pub modified: DateTimeUtc,
     }
 
