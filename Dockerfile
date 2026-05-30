@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/app/backend/target/ \
 FROM debian:12.13 AS final
 WORKDIR /config
 
-RUN apt update && apt install -y openssl
+RUN apt update && apt install -y openssl curl
 
 COPY --from=build /bin/benjrm /bin/benjrm
 

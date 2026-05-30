@@ -1,7 +1,7 @@
 FROM rust:1.95.0
 WORKDIR /app/backend
 
-RUN apt update && apt install -y libssl-dev
+RUN apt update && apt install -y libssl-dev curl
 
 COPY backend /app/backend
 COPY database-migrator /app/database-migrator
