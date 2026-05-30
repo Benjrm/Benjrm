@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 actix-proxy = "0.2.0"
-actix-security = { version = "0.2.3", features = ["oauth2"] }
+actix-security = { git = "https://github.com/Benjrm/actix-security", features = ["oauth2"] }
 actix-session = { version = "0.11.0", features = ["cookie-session"] }
 actix-web = "4.13.0"
 awc = "3.8.2"

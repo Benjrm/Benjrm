@@ -1,0 +1,26 @@
+http:
+  middlewares:
+    default:
+      chain:
+        middlewares:
+          - default-security-headers
+          - gzip
+    
+    auth:
+      basicauth:
+        users: '{{ env "DASHBOARD_USER" }}'
+        removeheader: true
+
+    default-security-headers:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        frameDeny: true
+        customFrameOptionsValue: "SAMEORIGIN"
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+
+    gzip:
+      compress: {}

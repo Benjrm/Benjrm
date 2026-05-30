@@ -55,7 +55,7 @@ async fn login(data: web::Data<AppData>, session: Session, path: web::Query<Path
     session.insert("oidc_state", state).unwrap();
 
     HttpResponse::Found()
-        .append_header(("Location", auth_url.as_str()))
+        .append_header(("Location", data.oidc.to_public_idp_url(auth_url).as_str()))
         .finish()
 }
 
@@ -82,7 +82,7 @@ async fn callback(
     if response.state != *state.csrf_token.secret() {
         return Err(Error::InvalidCsrfToken);
     }
-    if Some(response.issuer) != data.oidc.client.config().issuer_uri {
+    if response.issuer != data.oidc.issuer_url.as_str() {
         return Err(Error::InvalidIssuer);
     }
     if Utc::now() - state.time > TimeDelta::minutes(30) {

@@ -10,7 +10,6 @@
 declare -A USERS=(
   ["demo-admin"]="password"
   ["user"]="password"
-  ["admin"]="password"
   ["simon"]="password"
 )
 
