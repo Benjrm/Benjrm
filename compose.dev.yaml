@@ -120,6 +120,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       CHOKIDAR_INTERVAL: "100"
     volumes:
-      - ./frontend:/app
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
     ports:
       - "5173:5173"
