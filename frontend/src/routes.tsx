@@ -9,6 +9,7 @@ import PublicLayout from "./layouts/PublicLayout"
 import ImprintPage from "./pages/ImprintPage"
 import QuizCreator from "./pages/QuizCreator"
 import Quizzes from "./pages/Quizzes"
+import WaitingRoom from "./pages/WaitingRoom"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
 
@@ -65,6 +66,10 @@ const routes: RouteObject[] = [
             {
                 path: "/quizzes",
                 element: <Quizzes />,
+            },
+            {
+                path: "/quiz/waiting",
+                element: <WaitingRoom />,
             },
         ],
     },
