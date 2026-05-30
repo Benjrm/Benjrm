@@ -155,7 +155,9 @@ async fn dummy_login(
         id: db_user.id,
         id_token: Some(sub),
     };
-    session.insert("user", &user).map_err(Error::SessionInsert)?;
+    session
+        .insert("user", &user)
+        .map_err(Error::SessionInsert)?;
     session.remove("oidc_state");
 
     Ok(HttpResponse::Ok().json(user))
