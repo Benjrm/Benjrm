@@ -14,9 +14,9 @@ export default class QuestionMockAdapter implements QuestionAdapter {
             ...request,
             created: date,
             modified: date,
-            options: request.options.map((option) => ({
-                id: crypto.randomUUID(),
+            options: request.options?.map((option) => ({
                 ...option,
+                id: crypto.randomUUID(),
             })),
         }
         if (!this.questionsByQuiz[quizId]) {
