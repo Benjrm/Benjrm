@@ -63,6 +63,6 @@ or in the "Checks" tab under the "Run Spectral on Pull Requests" workflow.
 ### Dummy Login Endpoint
 In [#38](https://github.com/Benjrm/Benjrm/pull/38), a dummy login endpoint was introduced for development and debugging purposes. This endpoint is only available in debug builds and is not included in release builds.
 
-When performing a GET request to `/login/dummy/{id}`, where `{id}` is a placeholder for a dummy ID, the endpoint will log the user in as `dummy_user_{id}` (e.g. `/login/dummy/0`), creating or fetching the corresponding database user and establishing a session. It is useful for simplifying local development workflows and testing with tools like Postman or Bruno, where full authentication flows are unnecessary.
+When performing a GET request to `/login/dummy/{id}`, where `{id}` is a placeholder for a dummy ID, the endpoint will log the user in as `dummy_user_{id}` (e.g. via `/login/dummy/0` as `dummy_user_0`), creating or fetching the corresponding database user and establishing a session. It is useful for simplifying local development workflows and testing with tools like Postman or Bruno, where full authentication flows are unnecessary.
 
-After a successful request, the user is not and must manually navigate to the desired page or route. This endpoint is strictly for local development and can't be used in production environments.
+After a successful request, the user is not redirected and must manually navigate to the desired page or route. This endpoint is strictly for local development and can't be used in production environments.
