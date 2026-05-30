@@ -76,6 +76,14 @@ impl MigrationTrait for Migration {
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
             .drop_table(Table::drop().table("question").to_owned())
-            .await
+            .await?;
+
+        if manager.get_database_backend() == DbBackend::Postgres {
+            manager
+            .drop_type(Type::drop().name("question_type").to_owned())
+            .await?;
+        }
+
+        Ok(())
     }
 }
