@@ -160,12 +160,10 @@ async fn dummy_login(
         id: db_user.id,
         id_token: Some(sub),
     };
-    session.insert("user", user).map_err(Error::SessionInsert)?;
+    session.insert("user", &user).map_err(Error::SessionInsert)?;
     session.remove("oidc_state");
 
-    Ok(HttpResponse::Found()
-        .append_header(("Location", "/"))
-        .finish())
+    Ok(HttpResponse::Ok().json(user))
 }
 
 async fn fetch_insert_db_user(conn: &impl ConnectionTrait, sub: &str) -> Result<UserModel, Error> {
