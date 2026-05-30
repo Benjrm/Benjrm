@@ -13,6 +13,8 @@ export interface QuestionApiRequest {
     question: string
     type: QuestionType
     hidden: boolean
+    prev?: string
+    next?: string
     options: (SingleChoiceAnswerRequest | MultipleChoiceAnswerRequest)[]
 }
 
