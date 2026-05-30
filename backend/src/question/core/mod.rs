@@ -72,13 +72,13 @@ impl QuizModel {
         let options = match new_question.options {
             NewQuestionOptions::Slide => QuestionOptions::Slide,
             NewQuestionOptions::SingleChoice { options } => QuestionOptions::SingleChoice {
-                options: question.insert_options(options, &txn).await?,
+                options: question.insert_options(options, &txn, true).await?,
             },
             NewQuestionOptions::MultipleChoice { options } => QuestionOptions::MultipleChoice {
-                options: question.insert_options(options, &txn).await?,
+                options: question.insert_options(options, &txn, true).await?,
             },
             NewQuestionOptions::Order { options } => QuestionOptions::Order {
-                options: question.insert_options(options, &txn).await?,
+                options: question.insert_options(options, &txn, false).await?,
             },
         };
 
@@ -132,7 +132,12 @@ impl QuestionModel {
         &self,
         new_options: Vec<New>,
         txn: &DatabaseTransaction,
+        require_correct: bool,
     ) -> Result<Vec<Model>, QuestionError> {
+        if new_options.len() < 2 {
+            return Err(QuestionError::NotEnoughAnswers(2));
+        }
+
         let mut option_models = Vec::with_capacity(new_options.len());
         let mut correct_found = false;
         for option in new_options {
@@ -143,7 +148,7 @@ impl QuestionModel {
             let model = ActiveNewOption::insert(active_model, txn).await?;
             option_models.push(model);
         }
-        if !correct_found {
+        if require_correct && !correct_found {
             return Err(QuestionError::NoCorrectAnswer);
         }
 

@@ -26,6 +26,10 @@ impl UpdateOption for UpdateAnswerOrder {
     fn id(&self) -> Uuid {
         self.id
     }
+
+    fn correct(&self) -> Option<bool> {
+        None
+    }
 }
 
 impl OptionModel for AnswerOrderModel {
@@ -35,6 +39,10 @@ impl OptionModel for AnswerOrderModel {
 
     fn id(&self) -> Uuid {
         self.id
+    }
+
+    fn correct(&self) -> bool {
+        self.correct
     }
 }
 
@@ -124,6 +132,7 @@ impl UpdateLinkedOptions<AnswerOrderModel> {
         }
         self.delete_remaining();
         self.link_options();
+        self.require_answers(2)?;
         self.execute(txn).await
     }
 }

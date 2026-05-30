@@ -352,7 +352,7 @@ pub async fn create_choice_question() {
                 options: NewQuestionOptions::$id { options: vec![] },
             };
             let result = quiz.clone().create_question(&data.db, new_question).await;
-            assert!(matches!(result, Err(QuestionError::NoCorrectAnswer)));
+            assert!(matches!(result, Err(QuestionError::NotEnoughAnswers(_))));
             let quiz = QuizModel::get(&data.db, user, quiz.id).await.unwrap();
             assert_eq!(quiz.modified, quiz_modification);
 

@@ -22,6 +22,10 @@ impl UpdateOption for UpdateAnswerChoice {
     fn id(&self) -> Uuid {
         self.id
     }
+
+    fn correct(&self) -> Option<bool> {
+        self.correct.into()
+    }
 }
 
 impl OptionModel for AnswerChoiceModel {
@@ -31,6 +35,10 @@ impl OptionModel for AnswerChoiceModel {
 
     fn id(&self) -> Uuid {
         self.id
+    }
+
+    fn correct(&self) -> bool {
+        self.correct
     }
 }
 
@@ -121,6 +129,8 @@ impl UpdateLinkedOptions<AnswerChoiceModel> {
         }
         self.delete_remaining();
         self.link_options();
+        self.require_correct()?;
+        self.require_answers(2)?;
         self.execute(txn).await
     }
 }

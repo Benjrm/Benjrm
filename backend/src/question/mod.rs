@@ -43,6 +43,8 @@ impl_err! {
         AnswerNotFound = NOT_FOUND,
         #[error("Duplicate answer id of `{0}`")]
         DuplicateAnswerId(Uuid) = BAD_REQUEST,
+        #[error("At least a number of {0} answer(s) is required")]
+        NotEnoughAnswers(usize) = BAD_REQUEST,
     }
 }
 

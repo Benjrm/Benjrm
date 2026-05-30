@@ -22,6 +22,7 @@ where
 
 pub trait UpdateOption {
     fn id(&self) -> Uuid;
+    fn correct(&self) -> Option<bool>;
 }
 
 pub trait OptionModel: IntoActiveModel<Self::Active> + Clone {
@@ -29,6 +30,7 @@ pub trait OptionModel: IntoActiveModel<Self::Active> + Clone {
     type New: NewOption<Self, Active = Self::Active>;
     type Update: UpdateOption;
     fn id(&self) -> Uuid;
+    fn correct(&self) -> bool;
 }
 
 pub trait ActiveNewOption<Model, Update>: ActiveModelTrait

@@ -13,12 +13,14 @@ use {
 pub struct UpdateLinkedOptions<Model: OptionModel> {
     question_id: Uuid,
     pos: usize,
+    correct_found: bool,
     pub(super) options: Vec<LinkedOption<Model>>,
     pub(super) delete: Vec<LinkedOption<Model>>,
 }
 
 pub(super) struct LinkedOption<Model: OptionModel> {
     pub(super) id: Uuid,
+    correct: bool,
     pub(super) active_model: Model::Active,
 }
 
@@ -27,10 +29,12 @@ impl<Model: OptionModel> UpdateLinkedOptions<Model> {
         Self {
             question_id: question,
             pos: 0,
+            correct_found: false,
             options: options
                 .into_iter()
                 .map(|option| LinkedOption {
                     id: option.id(),
+                    correct: option.correct(),
                     active_model: option.into_active_model(),
                 })
                 .collect(),
@@ -42,8 +46,12 @@ impl<Model: OptionModel> UpdateLinkedOptions<Model> {
         let id = Uuid::new_v4();
         let option = LinkedOption {
             id,
+            correct: new.correct(),
             active_model: new.into_active_model(self.question_id, id),
         };
+        if option.correct {
+            self.correct_found = true;
+        }
         self.options.insert(self.pos, option);
         self.pos += 1;
     }
@@ -53,7 +61,13 @@ impl<Model: OptionModel> UpdateLinkedOptions<Model> {
             if pos < self.pos {
                 return Err(QuestionError::DuplicateAnswerId(update.id()));
             }
+            if let Some(correct) = update.correct() {
+                self.options[pos].correct = correct;
+            }
             ActiveNewOption::set(&mut self.options[pos].active_model, update);
+            if self.options[pos].correct {
+                self.correct_found = true;
+            }
             self.options.swap(pos, self.pos);
             self.pos += 1;
         } else {
@@ -82,6 +96,21 @@ impl<Model: OptionModel> UpdateLinkedOptions<Model> {
                 self.options[i].active_model.set_next(next);
             }
         }
+    }
+
+    pub fn require_correct(&self) -> Result<(), QuestionError> {
+        match self.correct_found {
+            true => Ok(()),
+            false => Err(QuestionError::NoCorrectAnswer),
+        }
+    }
+
+    pub fn require_answers(&self, num: usize) -> Result<(), QuestionError> {
+        if self.options.len() < num {
+            return Err(QuestionError::NotEnoughAnswers(num));
+        }
+
+        Ok(())
     }
 
     pub async fn execute(self, txn: &DatabaseTransaction) -> Result<Vec<Model>, QuestionError> {
