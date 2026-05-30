@@ -39,3 +39,5 @@ If you want to start the release compose with traefik locally and without valid 
   127.0.0.1 idp.yourdomain.de
   127.0.0.1 traefik.yourdomain.de
   ```
+
+> If you're using Chrome on macOS and are unable to access the site because of the `NET::ERR_CERT_AUTHORITY_INVALID` warning, you can bypass it by clicking somewhere on the page and typing `thisisunsafe`.
