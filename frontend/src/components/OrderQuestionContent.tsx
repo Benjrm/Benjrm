@@ -32,7 +32,7 @@ const MOCK_ITEMS: OrderItem[] = [
     { id: "item-4", label: "Irgendwas 4" },
 ]
 
-function SortableOrderItem({ item }: { item: OrderItem }): JSX.Element {
+function SortableOrderItem({ item, index }: { item: OrderItem; index: number }): JSX.Element {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: item.id,
     })
@@ -40,7 +40,9 @@ function SortableOrderItem({ item }: { item: OrderItem }): JSX.Element {
     return (
         <div
             ref={setNodeRef}
-            className={`bg-muted/10 border-border/20 flex items-center gap-3 rounded-2xl border px-4 py-5 shadow-lg backdrop-blur-sm sm:px-4 sm:py-4 ${
+            {...attributes}
+            {...listeners}
+            className={`bg-muted/10 border-border/20 flex cursor-grab items-center gap-3 rounded-2xl border px-4 py-5 shadow-lg backdrop-blur-sm active:cursor-grabbing sm:px-4 sm:py-4 ${
                 isDragging
                     ? "z-50 scale-[1.01] opacity-80 shadow-[0_0_40px_rgba(0,242,255,0.18)] ring-2 ring-[#FF8A00]/60"
                     : "transition-all duration-200"
@@ -48,21 +50,15 @@ function SortableOrderItem({ item }: { item: OrderItem }): JSX.Element {
             style={{
                 transform: CSS.Transform.toString(transform),
                 transition: isDragging ? "none" : transition,
+                touchAction: "none",
             }}
         >
-            <button
-                aria-label={`Drag ${item.label}`}
-                className="text-muted-foreground/70 hover:text-foreground -mx-2 flex cursor-grab items-center self-stretch px-2 py-1 active:cursor-grabbing sm:-mx-1"
-                style={{ touchAction: "none" }}
-                type="button"
-                {...attributes}
-                {...listeners}
-            >
+            <div className="text-muted-foreground/70 -mx-2 flex items-center self-stretch px-2 py-1 sm:-mx-1">
                 <GripVertical className="h-6 w-6 sm:h-5 sm:w-5" />
-            </button>
+            </div>
 
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-sm font-black text-white/80 sm:h-8 sm:w-8">
-                •••
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-black text-white/90 shadow-inner sm:h-8 sm:w-8">
+                {index + 1}
             </div>
 
             <p className="text-foreground text-lg font-bold tracking-tight select-none sm:text-lg">
@@ -136,8 +132,8 @@ export default function OrderQuestionContent(): JSX.Element {
                 >
                     <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
                         <div className="flex flex-col gap-4 pb-6">
-                            {items.map((item) => (
-                                <SortableOrderItem key={item.id} item={item} />
+                            {items.map((item, index) => (
+                                <SortableOrderItem key={item.id} index={index} item={item} />
                             ))}
                         </div>
                     </SortableContext>
