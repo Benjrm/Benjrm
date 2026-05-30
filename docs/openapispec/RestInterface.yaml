@@ -758,12 +758,6 @@ components:
           type: string
           format: 'date-time'
           example: '2024-01-01T12:00:00.000000Z'
-        type:
-          enum:
-            - SLIDE
-            - SINGLE_CHOICE
-            - MULTIPLE_CHOICE
-            - ORDER
 
     Position:
       oneOf:
