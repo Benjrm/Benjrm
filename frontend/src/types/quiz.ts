@@ -1,13 +1,12 @@
-export interface QuestionOption {
-    id: string
-    answer: string
-    correct: boolean
-}
+import type { QuestionApiResponse } from "@/api/questions/types/question.api.ts"
 
-export interface Question {
-    id: string
-    question: string
-    type: "MULTIPLE_CHOICE" | "SINGLE_CHOICE"
-    hidden: boolean
-    options: QuestionOption[]
+type QuestionChoiceOption = Extract<
+    Extract<QuestionApiResponse["options"], unknown[]> extends (infer Option)[] ? Option : never,
+    { correct: boolean }
+>
+
+export type QuestionOption = QuestionChoiceOption
+
+export type Question = Omit<QuestionApiResponse, "options" | "created" | "modified"> & {
+    options: QuestionChoiceOption[]
 }

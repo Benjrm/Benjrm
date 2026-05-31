@@ -33,4 +33,10 @@ export default class QuestionApiAdapter implements QuestionAdapter {
     ): Promise<QuestionApiResponse> {
         return apiPatch(`/quizzes/${quizId}/questions/${questionId}`, request)
     }
+
+    // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
+    // eslint-disable-next-line class-methods-use-this
+    async reorderQuestions(quizId: string, order: string[]): Promise<void> {
+        await apiPatch(`/quizzes/${quizId}/questions/reorder`, { order })
+    }
 }

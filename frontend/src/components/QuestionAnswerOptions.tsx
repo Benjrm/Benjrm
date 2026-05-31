@@ -3,7 +3,6 @@
 import type { JSX } from "react"
 import { Plus } from "lucide-react"
 
-import getAnswerVisuals from "./answerVisuals"
 import AnswerCard from "@/components/AnswerCard"
 import { Button } from "@/shadcn/components/ui/button"
 import type { QuestionOption } from "@/types/quiz"
@@ -27,16 +26,12 @@ export default function QuestionAnswerOptions({
         <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 {options.map((option, index) => {
-                    const definition = getAnswerVisuals(index)
-
                     return (
                         <AnswerCard
                             key={option.id}
-                            accent={definition.accent}
+                            index={index}
                             canDelete={options.length > 2}
                             correct={option.correct}
-                            glow={definition.glow}
-                            icon={definition.icon}
                             onChange={(value) => onChange(index, value)}
                             onDelete={options.length > 2 ? () => onDeleteOption(index) : undefined}
                             onToggleCorrect={() => onToggleCorrect(index)}

@@ -4,17 +4,21 @@ import type { JSX } from "react"
 import { Check, Trash2, X } from "lucide-react"
 import { Textarea } from "@/shadcn/components/ui/textarea"
 import { Button } from "@/shadcn/components/ui/button"
+import getAnswerVisuals from "../utils/answerVisuals"
 
 export interface AnswerCardProps {
-    icon: string
+    // visual props are optional; can be derived from `index`
+    icon?: string
+    accent?: string
+    glow?: string
+    index?: number
+
     placeholder: string
     value: string
     onChange: (val: string) => void
     onToggleCorrect: () => void
     correct: boolean
     onDelete?: () => void
-    accent: string
-    glow: string
     canDelete?: boolean
 }
 
@@ -29,7 +33,20 @@ export default function AnswerCard({
     accent,
     glow,
     canDelete = false,
+    index,
 }: AnswerCardProps): JSX.Element {
+    // If any visual prop is provided, use provided (with defaults). Otherwise, derive from index when available.
+    const hasProvidedVisuals = icon != null || accent != null || glow != null
+    const visuals = hasProvidedVisuals
+        ? { accent: accent ?? "#111827", glow: glow ?? "transparent", icon: icon ?? "" }
+        : index != null
+        ? getAnswerVisuals(index)
+        : { accent: "#111827", glow: "transparent", icon: "" }
+
+    const usedAccent = visuals.accent
+    const usedGlow = visuals.glow
+    const usedIcon = visuals.icon
+
     return (
         <div
             className="bg-background/95 dark:bg-muted/40 border-border group relative overflow-hidden rounded-2xl border p-3 shadow-lg backdrop-blur-sm transition-all hover:scale-[1.01] sm:p-5"
@@ -41,7 +58,9 @@ export default function AnswerCard({
             <div
                 className="absolute inset-0 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-20"
                 style={{
-                    background: glow,
+                    background: correct
+                        ? "radial-gradient(circle, rgba(34,197,94,0.35) 0%, transparent 70%)"
+                        : usedGlow,
                 }}
             />
 
@@ -50,10 +69,10 @@ export default function AnswerCard({
                     <div
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-white shadow-lg sm:h-11 sm:w-11 sm:rounded-xl sm:text-lg"
                         style={{
-                            background: accent,
+                            background: correct ? "#22c55e" : usedAccent,
                         }}
                     >
-                        {icon}
+                        {usedIcon}
                     </div>
 
                     <Textarea
@@ -78,9 +97,7 @@ export default function AnswerCard({
                             <Trash2 className="h-3.5 w-3.5" />
                             Delete
                         </Button>
-                    ) : (
-                        <span />
-                    )}
+                    ) : null}
 
                     <Button
                         aria-pressed={correct}

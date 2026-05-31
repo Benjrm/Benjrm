@@ -1,18 +1,14 @@
 import type { QuestionAdapter } from "@/api/questions/adapter/questionAdapter.ts"
 import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api.ts"
-import generateUuid from "@/utils/uuid"
+import { createQuestionStorage, type QuestionStorage } from "@/api/questions/storage/questionStorage.ts"
 
 export default class QuestionMockAdapter implements QuestionAdapter {
     private questionsByQuiz: Record<string, QuestionApiResponse[]> = {}
 
-    private readonly storagePrefix = "benjrm:mock-questions:"
+    private readonly storage: QuestionStorage
 
-    private static isBrowserAvailable(): boolean {
-        return typeof window !== "undefined" && typeof localStorage !== "undefined"
-    }
-
-    private storageKey(quizId: string): string {
-        return `${this.storagePrefix}${quizId}`
+    constructor(storage: QuestionStorage = createQuestionStorage()) {
+        this.storage = storage
     }
 
     private loadQuiz(quizId: string): QuestionApiResponse[] {
@@ -20,39 +16,9 @@ export default class QuestionMockAdapter implements QuestionAdapter {
             return this.questionsByQuiz[quizId]
         }
 
-        if (!QuestionMockAdapter.isBrowserAvailable()) {
-            this.questionsByQuiz[quizId] = []
-            return this.questionsByQuiz[quizId]
-        }
-
-        try {
-            const raw = localStorage.getItem(this.storageKey(quizId))
-
-            if (!raw) {
-                this.questionsByQuiz[quizId] = []
-                return this.questionsByQuiz[quizId]
-            }
-
-            const parsed = JSON.parse(raw) as QuestionApiResponse[]
-            this.questionsByQuiz[quizId] = parsed ?? []
-            return this.questionsByQuiz[quizId]
-        } catch {
-            this.questionsByQuiz[quizId] = []
-            return this.questionsByQuiz[quizId]
-        }
-    }
-
-    private persistQuiz(quizId: string): void {
-        if (!QuestionMockAdapter.isBrowserAvailable()) return
-
-        try {
-            localStorage.setItem(
-                this.storageKey(quizId),
-                JSON.stringify(this.questionsByQuiz[quizId] ?? [])
-            )
-        } catch {
-            // ignore storage failures in mock mode
-        }
+        const loaded = this.storage.getQuestions(quizId)
+        this.questionsByQuiz[quizId] = loaded
+        return this.questionsByQuiz[quizId]
     }
 
     async createQuestion(
@@ -62,7 +28,7 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         const questions = this.loadQuiz(quizId)
         const date = new Date().toISOString()
         const newQuestion: QuestionApiResponse = {
-            id: generateUuid(),
+            id: crypto.randomUUID(),
             ...request,
             created: date,
             modified: date,
@@ -73,7 +39,7 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         }
         questions.push(newQuestion)
         this.questionsByQuiz[quizId] = questions
-        this.persistQuiz(quizId)
+        this.storage.setQuestions(quizId, questions)
         return Promise.resolve(newQuestion)
     }
 
@@ -96,7 +62,6 @@ export default class QuestionMockAdapter implements QuestionAdapter {
                   ...prevOptions[i],
                   ...opt,
                   id: prevOptions[i].id ?? crypto.randomUUID(),
-                  modified: new Date().toISOString(),
               }))
             : prev.options
 
@@ -108,7 +73,7 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         }
         questions[idx] = updated
         this.questionsByQuiz[quizId] = questions
-        this.persistQuiz(quizId)
+        this.storage.setQuestions(quizId, questions)
         return Promise.resolve(updated)
     }
 
@@ -117,7 +82,17 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         const idx = questions.findIndex((question) => question.id === questionId)
         if (idx === -1) throw new Error("Question not found")
         this.questionsByQuiz[quizId] = questions.filter((question) => question.id !== questionId)
-        this.persistQuiz(quizId)
+        this.storage.setQuestions(quizId, this.questionsByQuiz[quizId])
+        return Promise.resolve()
+    }
+
+    async reorderQuestions(quizId: string, order: string[]): Promise<void> {
+        const questions = this.loadQuiz(quizId)
+        const map = new Map(questions.map((question) => [question.id, question]))
+        const reordered = order.map((id) => map.get(id)).filter(Boolean) as QuestionApiResponse[]
+        const missing = questions.filter((question) => !order.includes(question.id))
+        this.questionsByQuiz[quizId] = [...reordered, ...missing]
+        this.storage.setQuestions(quizId, this.questionsByQuiz[quizId])
         return Promise.resolve()
     }
 }

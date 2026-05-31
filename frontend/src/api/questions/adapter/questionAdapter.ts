@@ -9,4 +9,5 @@ export interface QuestionAdapter {
         request: Partial<QuestionApiRequest>
     ) => Promise<QuestionApiResponse>
     deleteQuestion: (quizId: string, questionId: string) => Promise<void>
+    reorderQuestions: (quizId: string, order: string[]) => Promise<void>
 }

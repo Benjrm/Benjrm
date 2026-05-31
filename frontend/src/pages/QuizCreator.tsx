@@ -13,7 +13,7 @@ import {
     useSensor,
     useSensors,
 } from "@dnd-kit/core"
-import type { Modifier, DragStartEvent, DragEndEvent } from "@dnd-kit/core"
+import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 
 import CreateQuizModal from "../components/CreateQuizModal"
@@ -22,9 +22,9 @@ import QuestionSidebar from "../components/QuestionSidebar"
 import SettingsPanel from "../components/SettingsPanel"
 import { useQuiz, useDeleteQuiz } from "@/api/queries"
 import { useCreateQuestion, useDeleteQuestion, useQuestions } from "@/api/questions"
-import type { QuestionApiRequest } from "@/api/questions/types/question.api"
 import type { Question } from "@/types/quiz"
-import generateUuid from "@/utils/uuid"
+import { createEmptyQuestion, questionToRequest, responseToQuestion, restrictToVerticalAxis } from "./quiz/quizUtils"
+import useQuestionChangeQueue from "@/hooks/useQuestionChangeQueue"
 
 import { Button } from "@/shadcn/components/ui/button"
 import {
@@ -42,75 +42,10 @@ function getReadableQuizErrorMessage(error: Error | null | undefined): string | 
     return "Quiz data could not be loaded right now."
 }
 
-function createEmptyQuestion(): Question {
-    return {
-        id: generateUuid(),
-        question: "",
-        options: [
-            { id: generateUuid(), answer: "", correct: false },
-            { id: generateUuid(), answer: "", correct: false },
-        ],
-        type: "MULTIPLE_CHOICE",
-        hidden: false,
-    }
-}
 
-function questionToRequest(question: Question): QuestionApiRequest {
-    return {
-        question: question.question,
-        type: question.type,
-        hidden: question.hidden,
-        options: question.options.map(({ answer, correct }) => ({
-            answer,
-            correct,
-        })),
-    }
-}
+// draft storage removed; change-queue hook persists changes instead
 
-function requestToQuestion(request: QuestionApiRequest): Question {
-    return {
-        id: generateUuid(),
-        question: request.question,
-        type: request.type,
-        hidden: request.hidden,
-        options: request.options.map((option) => ({
-            id: generateUuid(),
-            answer: option.answer ?? "",
-            correct: option.correct,
-        })),
-    }
-}
-
-function responseToQuestion(response: {
-    id: string
-    question: string
-    type: Question["type"]
-    hidden: boolean
-    options: { id: string; answer: string; correct: boolean }[]
-}): Question {
-    return {
-        id: response.id,
-        question: response.question,
-        type: response.type,
-        hidden: response.hidden,
-        options: response.options.map((option) => ({
-            id: option.id,
-            answer: option.answer ?? "",
-            correct: option.correct,
-        })),
-    }
-}
-
-interface QuizDraftStorage {
-    questions: Question[]
-    currentQuestionIndex: number
-    savedAt: string
-}
-
-const restrictToVerticalAxis: Modifier = ({ transform }) => ({
-    ...transform,
-    x: 0,
-})
+// `restrictToVerticalAxis` imported from `quizUtils`
 
 // --- Main Page ---
 
@@ -144,7 +79,6 @@ export default function QuizCreator(): JSX.Element {
     const [isSavingQuestions, setIsSavingQuestions] = useState(false)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(!quizId)
     const [isQuestionsReady, setIsQuestionsReady] = useState(false)
-    const [hasDraftQuestions, setHasDraftQuestions] = useState(false)
 
     const [questions, setQuestions] = useState<Question[]>([createEmptyQuestion()])
 
@@ -152,88 +86,22 @@ export default function QuizCreator(): JSX.Element {
     const [hasInitializedQuestions, setHasInitializedQuestions] = useState(false)
     const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null)
 
-    // Local draft storage key (uses 'new' for unsaved quizzes)
-    const draftKey = useMemo(() => `quiz:draft:${quizId ?? "new"}`, [quizId])
     const saveTimeoutRef = useRef<number | null>(null)
     const saveSuccessHideTimeoutRef = useRef<number | null>(null)
     const saveSuccessCleanupTimeoutRef = useRef<number | null>(null)
+    const reorderTimeoutRef = useRef<number | null>(null)
 
-    // Load draft from localStorage on mount / quizId change
-    useEffect(() => {
-        if (typeof window === "undefined") return
-
-        try {
-            const raw = localStorage.getItem(draftKey)
-
-            if (raw) {
-                const parsed = JSON.parse(raw) as Record<string, unknown>
-
-                let hydratedQuestions: Question[] | null = null
-                if (Array.isArray(parsed.questions) && parsed.questions.length) {
-                    hydratedQuestions = (parsed.questions as unknown[]).map((question) => {
-                        if (typeof question === "object" && question !== null && "id" in question) {
-                            return question as Question
-                        }
-
-                        const request = question as QuestionApiRequest & {
-                            options?: { text?: string; answer?: string; correct: boolean }[]
-                        }
-
-                        return requestToQuestion({
-                            ...request,
-                            options: (request.options ?? []).map((option) => ({
-                                answer: (() => {
-                                    const legacyOption = option as {
-                                        text?: string
-                                        answer?: string
-                                        correct: boolean
-                                    }
-
-                                    return legacyOption.answer ?? ""
-                                })(),
-                                correct: (option as { correct: boolean }).correct,
-                            })),
-                        })
-                    })
-                }
-
-                const maybeIndex = parsed.currentQuestionIndex
-                const currentIndex = typeof maybeIndex === "number" ? maybeIndex : undefined
-
-                // apply state updates in a deferred callback to avoid sync setState-in-effect
-                setTimeout(() => {
-                    if (hydratedQuestions) {
-                        setQuestions(hydratedQuestions)
-                        setHasInitializedQuestions(true)
-                        setHasDraftQuestions(true)
-                        setHasUnsavedChanges(true)
-                    }
-
-                    if (typeof currentIndex === "number") {
-                        setCurrentQuestionIndex(currentIndex)
-                    }
-
-                    setIsQuestionsReady(true)
-                }, 0)
-            } else {
-                setTimeout(() => setIsQuestionsReady(true), 0)
-            }
-        } catch {
-            setTimeout(() => setIsQuestionsReady(true), 0)
-            // ignore parse errors
-        }
-    }, [draftKey])
+    const { enqueue, flush, upsertReorder, upsertUpdate } = useQuestionChangeQueue(quizId)
 
     // If no draft exists, initialize editor from the mock adapter state.
     useEffect(() => {
         if (!quizId) return
         if (hasInitializedQuestions) return
         if (!savedQuestions) return
-        if (hasDraftQuestions) return
 
         const nextQuestions =
             savedQuestions.length > 0
-                ? savedQuestions.map(responseToQuestion)
+                                ? savedQuestions.map((response) => responseToQuestion(response as any))
                 : [createEmptyQuestion()]
 
         // avoid synchronous setState waterfall warnings by deferring
@@ -244,37 +112,9 @@ export default function QuizCreator(): JSX.Element {
             setIsQuestionsReady(true)
             setHasInitializedQuestions(true)
         }, 0)
-    }, [quizId, savedQuestions, hasDraftQuestions, hasInitializedQuestions])
+    }, [quizId, savedQuestions, hasInitializedQuestions])
 
-    // Persist drafts debounced when questions or current index change
-    useEffect(() => {
-        if (typeof window === "undefined") return () => {}
-        if (!hasUnsavedChanges) return () => {}
-
-        if (saveTimeoutRef.current) {
-            window.clearTimeout(saveTimeoutRef.current)
-        }
-
-        saveTimeoutRef.current = window.setTimeout(() => {
-            try {
-                const payload: QuizDraftStorage = {
-                    questions,
-                    currentQuestionIndex,
-                    savedAt: new Date().toISOString(),
-                }
-                localStorage.setItem(draftKey, JSON.stringify(payload))
-            } catch {
-                // ignore
-            }
-        }, 500)
-
-        return () => {
-            if (saveTimeoutRef.current) {
-                window.clearTimeout(saveTimeoutRef.current)
-                saveTimeoutRef.current = null
-            }
-        }
-    }, [questions, currentQuestionIndex, draftKey, hasUnsavedChanges])
+    // draft persistence has been replaced by the change-queue hook
 
     const currentQuestion = questions[currentQuestionIndex] ?? questions[0] ?? createEmptyQuestion()
     const questionIds = useMemo(() => questions.map((question) => question.id), [questions])
@@ -304,6 +144,10 @@ export default function QuizCreator(): JSX.Element {
             if (saveSuccessCleanupTimeoutRef.current) {
                 window.clearTimeout(saveSuccessCleanupTimeoutRef.current)
             }
+
+                if (reorderTimeoutRef.current) {
+                    window.clearTimeout(reorderTimeoutRef.current)
+                }
         },
         []
     )
@@ -329,7 +173,7 @@ export default function QuizCreator(): JSX.Element {
 
         const selectedQuestionId = questions[currentQuestionIndex]?.id ?? null
 
-        setQuestions((prevQuestions) => {
+            setQuestions((prevQuestions) => {
             const oldIndex = prevQuestions.findIndex((question) => question.id === activeId)
             const newIndex = prevQuestions.findIndex((question) => question.id === overId)
 
@@ -345,6 +189,16 @@ export default function QuizCreator(): JSX.Element {
                 )
                 setCurrentQuestionIndex(selectedIndex >= 0 ? selectedIndex : 0)
             }
+
+            // schedule debounced upsert of reorder
+            const newOrder = nextQuestions.map((q) => q.id)
+            if (reorderTimeoutRef.current) {
+                window.clearTimeout(reorderTimeoutRef.current)
+            }
+            reorderTimeoutRef.current = window.setTimeout(() => {
+                upsertReorder(newOrder)
+                reorderTimeoutRef.current = null
+            }, 300)
 
             return nextQuestions
         })
@@ -404,6 +258,21 @@ export default function QuizCreator(): JSX.Element {
     }
 
     const handleSaveQuestions = async (): Promise<void> => {
+        // flush queued operations and apply any created-ID mappings
+        let flushResult: { items: any[]; idMap: Record<string, string> } | null = null
+        try {
+            flushResult = await flush()
+        } catch {
+            // ignore flush errors for now
+        }
+
+        // if any temp->real id mappings were returned, replace ids in UI state
+        if (flushResult && flushResult.idMap && Object.keys(flushResult.idMap).length) {
+            const idMap = flushResult.idMap
+            setQuestions((prev) =>
+                prev.map((q) => ({ ...(q as Question), id: idMap[q.id] ?? q.id }))
+            )
+        }
         setSaveError(null)
         setSaveSuccess(null)
 
@@ -435,7 +304,7 @@ export default function QuizCreator(): JSX.Element {
                 questions.map(async (q) => createQuestionMutation.mutateAsync(questionToRequest(q)))
             )
 
-            const createdQuestions = createdResponses.map((r) => responseToQuestion(r))
+            const createdQuestions = createdResponses.map((r) => responseToQuestion(r as any))
 
             setQuestions(createdQuestions)
             setCurrentQuestionIndex((prev) =>
@@ -466,7 +335,6 @@ export default function QuizCreator(): JSX.Element {
                     window.clearTimeout(saveTimeoutRef.current)
                 }
                 saveTimeoutRef.current = null
-                localStorage.removeItem(draftKey)
             }
         } catch (err) {
             setSaveError(
@@ -501,11 +369,12 @@ export default function QuizCreator(): JSX.Element {
         markUnsavedChanges()
         setQuestions((prevQuestions) => {
             const updated = [...prevQuestions]
+            const next = { ...updated[currentQuestionIndex], ...data }
 
-            updated[currentQuestionIndex] = {
-                ...updated[currentQuestionIndex],
-                ...data,
-            }
+            updated[currentQuestionIndex] = next
+
+            // coalesce update for this question (API shape)
+            upsertUpdate(next.id, questionToRequest(next))
 
             return updated
         })
@@ -521,6 +390,8 @@ export default function QuizCreator(): JSX.Element {
         }
 
         updateQuestion({ options: newOptions })
+
+        // updateQuestion already upserts the change
     }
 
     const toggleOptionCorrect = (index: number) => {
@@ -531,6 +402,8 @@ export default function QuizCreator(): JSX.Element {
         )
 
         updateQuestion({ options: newOptions })
+
+        // updateQuestion already upserts the change
     }
 
     const deleteQuestion = (indexToDelete: number) => {
@@ -541,7 +414,18 @@ export default function QuizCreator(): JSX.Element {
             return
         }
 
+        const deletingId = questions[indexToDelete]?.id
         setQuestions((prevQuestions) => prevQuestions.filter((_, index) => index !== indexToDelete))
+
+        if (deletingId) {
+            enqueue({
+                id: crypto.randomUUID(),
+                op: "delete",
+                quizId: quizId ?? "new",
+                questionId: deletingId,
+                createdAt: new Date().toISOString(),
+            })
+        }
 
         if (currentQuestionIndex >= indexToDelete && currentQuestionIndex > 0) {
             setCurrentQuestionIndex((prev) => prev - 1)
@@ -550,17 +434,29 @@ export default function QuizCreator(): JSX.Element {
 
     const handleAddQuestion = () => {
         markUnsavedChanges()
-        setQuestions((prev) => [...prev, createEmptyQuestion()])
+        const newQ = createEmptyQuestion()
+        setQuestions((prev) => [...prev, newQ])
+
+        enqueue({
+            id: crypto.randomUUID(),
+            op: "create",
+            quizId: quizId ?? "new",
+            questionId: newQ.id,
+            payload: questionToRequest(newQ),
+            createdAt: new Date().toISOString(),
+        })
     }
 
     const handleAddOption = () => {
         markUnsavedChanges()
-        updateQuestion({
-            options: [
-                ...currentQuestion.options,
-                { id: generateUuid(), answer: "", correct: false },
-            ],
-        })
+        const newOption = { id: crypto.randomUUID(), answer: "", correct: false }
+        const updatedQuestion = {
+            ...currentQuestion,
+            options: [...currentQuestion.options, newOption],
+        }
+        updateQuestion({ options: updatedQuestion.options })
+
+        // updateQuestion already upserts the change
     }
 
     const handleDeleteOption = (indexToDelete: number) => {
@@ -694,6 +590,8 @@ export default function QuizCreator(): JSX.Element {
                 {deleteError ? <p className="mb-6 text-sm text-red-500">{deleteError}</p> : null}
 
                 {saveError ? <p className="mb-6 text-sm text-red-500">{saveError}</p> : null}
+
+                {/* queue error banner removed per UX request */}
 
                 {saveSuccess ? (
                     <p
