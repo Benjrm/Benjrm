@@ -15,6 +15,7 @@ import Leaderboard from "@/quiz/leaderboard/components/Leaderboard.tsx"
 import SingleChoiceQuestion from "@/pages/SingleChoiceQuestion.tsx"
 import Quizzes from "@/pages/Quizzes.tsx"
 import InfoSlide from "@/pages/InfoSlide.tsx"
+import HostDashboard from "@/pages/HostDashboard.tsx"
 
 const routes: RouteObject[] = [
     {
@@ -69,6 +70,10 @@ const routes: RouteObject[] = [
                     {
                         path: ":quizId",
                         element: <QuizCreator />,
+                    },
+                    {
+                        path: "host",
+                        element: <HostDashboard />,
                     },
                     {
                         path: "play",
