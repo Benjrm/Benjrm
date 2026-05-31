@@ -1,4 +1,82 @@
+networks:
+  web:
+    external: true
+
 services:
+  benjrm:
+    build: .
+    depends_on:
+      database:
+        condition: service_healthy
+      identity-provider:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - ./config:/config
+    networks:
+      - default
+      - web
+    labels:
+      traefik.enable: true
+      traefik.http.routers.benjrm_backend.rule: Host("${DOMAIN}") || Host("www.${DOMAIN}")
+  
+  identity-provider:
+    # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry>
+    build:
+      context: ./services/identity-provider
+      dockerfile: Dockerfile
+    networks:
+      - default
+      - web
+    labels:
+      traefik.enable: true
+      traefik.http.routers.benjrm_identity_provider.rule: Host("idp.${DOMAIN}")
+      traefik.http.services.benjrm_identity_provider.loadbalancer.server.port: 8088
+    env_file:
+      - .env
+    depends_on:
+      database:
+        condition: service_healthy
+    # note the difference in comparison to the 'docker-compose.dev.yml' file:
+    # in the production environment we want to use the default command 'start' '--import-realm' to start the server
+    # in production mode and importing its realm and client configuration.
+    healthcheck:
+      # Checks if Keycloak is ready to process requests or not.
+      # Only direct traffic to a newly started instance once the readiness probe succeeds.
+      # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
+      # https://www.keycloak.org/observability/health#_healthcheck
+      test: [
+        "CMD-SHELL",
+        "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000"
+      ]
+      start_period: 30s
+      start_interval: 5s
+      interval: 30s
+      timeout: 5s
+      retries: 10
+  
+  idp-init:
+    # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry> here
+    build:
+      context: ./services/identity-provider
+      dockerfile: Dockerfile.init
+    env_file:
+      # it is mandatory to include the same environment variables as the identity-provider service,
+      # since the initialization shell script relies on the following environment variables
+      # 'KC_HTTP_PORT'
+      # 'KC_BOOTSTRAP_ADMIN_USERNAME''
+      # 'KC_BOOTSTRAP_ADMIN_PASSWORD'
+      # 'KC_REALM_ID'
+      - .env
+    # note the difference in comparison to the 'docker-compose.dev.yml' file:
+    # in the production environment we do not want to create test users in the Keycloak instance, but we want to
+    # set up the Keycloak's user profile (necessary fields and their validation)
+    depends_on:
+      # Checks if Keycloak is ready to process requests or not.
+      # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
+      identity-provider:
+        condition: service_healthy
+  
   database:
     image: postgres:18.3
     restart: unless-stopped
@@ -8,10 +86,13 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U benjrm -d benjrm"]
-      interval: 5s
-      timeout: 5s
+      start_period: 30s
+      start_interval: 2s
+      interval: 30s
+      timeout: 2s
       retries: 10
+    env_file:
+      - .env
     volumes:
       - ./database:/var/lib/postgresql
-    ports:
-      - 5432:5432
+      - ./services/database/mounts/init-keycloak-db.sh:/docker-entrypoint-initdb.d/init-keycloak-db.sh

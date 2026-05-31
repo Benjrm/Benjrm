@@ -92,6 +92,7 @@ export default defineConfig([
         },
         rules: {
             "react/react-in-jsx-scope": "off",
+            "react/require-default-props": "off",
             "react/prop-types": "off",
             "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
             "import-x/extensions": "off",

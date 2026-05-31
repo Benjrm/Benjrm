@@ -25,4 +25,4 @@ jobs:
       - name: Install Spectral - An open-source API style guide enforcer and linter.
         run: npm install -g @stoplight/spectral-cli
       - name: Run spectral lint
-        run: spectral lint docs/openapispec/RestInterface.yaml -f github-actions
+        run: spectral lint docs/openapispec/RestInterface.yaml -f github-actions --fail-severity warn

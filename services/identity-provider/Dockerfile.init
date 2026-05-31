@@ -1,0 +1,19 @@
+# This image is used to initialize the identity provider by creating test users
+# via the Keycloak REST API. It is intended to be run as a container in the same network as the Keycloak server in
+# development environments to automate the setup of test users.
+
+# using ubuntu as the base image to have a lightweight environment
+FROM alpine:3.22.4
+
+# install the necessary tools like curl and jq for making API requests and processing JSON responses.
+RUN apk add --no-cache curl jq bash ca-certificates
+
+# The init.sh script will contain the logic to interact with the Keycloak REST API to create test users.
+COPY ./mounts/init.sh /init.sh
+
+# JSON Request body for creating the user profile, which will be used by the init.sh script to create
+# a user with its profile information required e.g. in the registration flow of the identity provider.
+COPY ./mounts/user-profile.json /user-profile.json
+
+RUN chmod +x /init.sh
+ENTRYPOINT ["/init.sh"]

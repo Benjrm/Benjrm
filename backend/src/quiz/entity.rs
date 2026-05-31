@@ -1,11 +1,18 @@
 #[allow(unused_imports)]
 pub use quiz::{
-    ActiveModel as ActiveQuiz, Column as QuizColumn, Entity as QuizEntity, Model as Quiz,
+    ActiveModel as ActiveQuiz, Column as QuizColumn, Entity as QuizEntity, Model as QuizModel,
     Relation as QuizRelation,
 };
 
 mod quiz {
-    use {sea_orm::entity::prelude::*, serde::Serialize};
+    use {
+        crate::{
+            auth::entity::{UserColumn, UserEntity},
+            question::entity::QuestionEntity,
+        },
+        sea_orm::entity::prelude::*,
+        serde::Serialize,
+    };
 
     #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
     #[sea_orm(table_name = "quiz")]
@@ -23,7 +30,30 @@ mod quiz {
     }
 
     #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-    pub enum Relation {}
+    pub enum Relation {
+        #[sea_orm(has_many = "QuestionEntity")]
+        Question,
+        #[sea_orm(
+            belongs_to = "UserEntity",
+            from = "Column::User",
+            to = "UserColumn::Id",
+            on_update = "Restrict",
+            on_delete = "Restrict"
+        )]
+        User,
+    }
+
+    impl Related<QuestionEntity> for Entity {
+        fn to() -> RelationDef {
+            Relation::Question.def()
+        }
+    }
+
+    impl Related<UserEntity> for Entity {
+        fn to() -> RelationDef {
+            Relation::User.def()
+        }
+    }
 
     impl ActiveModelBehavior for ActiveModel {}
 }

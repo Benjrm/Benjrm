@@ -1,14 +1,14 @@
+// frontend/src/pages/LandingPage.tsx
+
 import type { JSX } from "react"
 import { Input } from "@/shadcn/components/ui/input"
 import { Button } from "@/shadcn/components/ui/button"
-import Navbar from "@/components/Navbar.tsx"
 
 export default function LandingPage(): JSX.Element {
     return (
-        <div className="bg-background text-foreground min-h-full overflow-x-hidden">
-            <Navbar />
-            <main className="relative mx-auto max-w-360 px-4 py-8 sm:px-6 md:py-24">
-                <div className="relative z-10 grid grid-cols-1 items-center gap-8 md:grid-cols-2 lg:gap-24">
+        <div className="bg-background text-foreground flex flex-col">
+            <div className="relative mx-auto flex w-full flex-1 items-start px-4 pt-12 pb-12 sm:px-6 md:pt-20">
+                <div className="relative z-10 grid w-full grid-cols-1 items-center gap-8 md:grid-cols-2 lg:gap-24">
                     {/* Left Column */}
                     <div className="flex flex-col gap-6 md:gap-10">
                         <div className="space-y-4 md:space-y-6">
@@ -45,40 +45,29 @@ export default function LandingPage(): JSX.Element {
                                 PLAY
                             </Button>
                         </div>
-
-                        {/* Create link */}
-                        <div>
-                            <a
-                                className="group text-foreground inline-flex items-center gap-2 text-sm font-bold tracking-wider transition-colors hover:text-[#FF8A00]"
-                                href="/create"
-                            >
-                                CREATE YOUR OWN QUIZ
-                                <span className="transition-transform group-hover:translate-x-1">
-                                    →
-                                </span>
-                            </a>
-                        </div>
                     </div>
 
-                    {/* Right Column: hidden on small mobile, shown md+ */}
-                    <div className="relative hidden md:block">
-                        <div className="absolute -inset-1 rounded-[2.5rem] bg-linear-to-tr from-[#00F2FF] to-[#FF8A00] opacity-20 blur-2xl" />
+                    {/* Right Column */}
+                    <div className="relative hidden pr-4 pb-4 md:block">
+                        <div className="pointer-events-none absolute -inset-2 rounded-[2.5rem] bg-linear-to-tr from-[#00F2FF] to-[#FF8A00] opacity-20 blur-2xl" />
 
-                        <div className="relative aspect-4/3 overflow-hidden rounded-3xl border border-white/10 shadow-2xl">
-                            <img
-                                alt="Students participating in a quiz"
-                                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-                                src="/pictures/happy_people.jpg"
-                            />
-                            <div className="from-background/95 via-background/10 absolute inset-0 flex items-end bg-linear-to-t to-transparent p-8 lg:p-12">
-                                <p className="max-w-[85%] text-3xl leading-tight font-extrabold tracking-tighter text-white lg:text-5xl">
-                                    Quiz together, learn forever.
-                                </p>
+                        <div className="relative rounded-3xl border border-white/10 shadow-2xl">
+                            <div className="relative aspect-4/3 overflow-hidden rounded-3xl">
+                                <img
+                                    alt="Students participating in a quiz"
+                                    className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                                    src="/pictures/happy_people.jpg"
+                                />
+                                <div className="from-background/95 via-background/10 absolute inset-0 flex items-end bg-linear-to-t to-transparent p-8 lg:p-12">
+                                    <p className="max-w-[85%] text-3xl leading-tight font-extrabold tracking-tighter text-white lg:text-5xl">
+                                        Quiz together, learn forever.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     )
 }
