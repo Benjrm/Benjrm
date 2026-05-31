@@ -58,7 +58,7 @@ export default function QuizCreator(): JSX.Element {
 
     const [questions, setQuestions] = useState<Question[]>([
         {
-            id: 1,
+            id: crypto.randomUUID(),
             options: ["", "", "", ""],
             title: "",
             type: "Multiple Choice",
@@ -112,7 +112,7 @@ export default function QuizCreator(): JSX.Element {
         if (questions.length === 1) {
             setQuestions([
                 {
-                    id: Date.now(),
+                    id: crypto.randomUUID(),
                     options: ["", "", "", ""],
                     title: "",
                     type: "Multiple Choice",
@@ -133,7 +133,7 @@ export default function QuizCreator(): JSX.Element {
         setQuestions((prev) => [
             ...prev,
             {
-                id: Date.now(),
+                id: crypto.randomUUID(),
                 options: ["", "", "", ""],
                 title: "",
                 type: "Multiple Choice",
