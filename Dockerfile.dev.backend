@@ -1,0 +1,17 @@
+FROM rust:1.95.0
+WORKDIR /app/backend
+
+RUN apt update && apt install -y libssl-dev curl
+
+COPY backend /app/backend
+COPY database-migrator /app/database-migrator
+
+RUN --mount=type=cache,target=/app/backend/target/ \
+    --mount=type=cache,target=/usr/local/cargo/git/db \
+    --mount=type=cache,target=/usr/local/cargo/registry/ \
+    cargo build; \
+    cp "./target/debug/benjrm" /bin/benjrm
+
+EXPOSE 80
+HEALTHCHECK --start-period=5s --start-interval=2s --interval=30s --timeout=2s --retries=5 CMD curl localhost:80/api/health
+ENTRYPOINT ["/bin/benjrm"]

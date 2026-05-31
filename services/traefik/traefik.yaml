@@ -1,0 +1,65 @@
+global:
+  checknewversion: true
+  sendanonymoususage: false
+
+log:
+  level: info
+  filepath: /var/log/traefik/traefik.log
+
+accesslog:
+  filepath: /var/log/traefik/access.log
+
+api:
+  dashboard: true
+
+ping:
+  manualRouting: true
+  entryPoint: websecure
+
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: :443
+    http:
+      middlewares: default@file
+      tls:
+        certResolver: dnsResolver
+        domains:
+          - main: "$DOMAIN"
+            sans: "*.$DOMAIN"
+
+providers:
+  docker:
+    endpoint: tcp://socket-proxy:2375
+    exposedByDefault: false
+    watch: true
+    network: web
+  file:
+    directory: /config
+    watch: true
+
+certificatesResolvers:
+  dnsResolver:
+    acme:
+      dnschallenge:
+        provider: rfc2136
+        delayBeforeCheck: 10
+        resolvers:
+          - 1.1.1.1:53
+          - 8.8.8.8:53
+      email: $ACME_EMAIL
+      storage: /letsencrypt/acme.json
+      #caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+  httpResolver:
+    acme:
+      httpchallenge:
+        entrypoint: web
+      email: $ACME_EMAIL
+      storage: /letsencrypt/acme_http.json
+      #caserver: https://acme-staging-v02.api.letsencrypt.org/directory

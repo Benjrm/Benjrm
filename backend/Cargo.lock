@@ -107,8 +107,7 @@ dependencies = [
 [[package]]
 name = "actix-security"
 version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60afa233f153cfc8b54377f1772081842070fdb0431894eac8077cec08a3b910"
+source = "git+https://github.com/Benjrm/actix-security#8aa80ecd920deb0bb4aacfedf2e7ca641d64452d"
 dependencies = [
  "actix-security-codegen",
  "actix-security-core",
@@ -117,8 +116,7 @@ dependencies = [
 [[package]]
 name = "actix-security-codegen"
 version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f35e7c0d896bbd6a001c72adc81f01891fbace91d6e786580c80a9c31ec1fb7a"
+source = "git+https://github.com/Benjrm/actix-security#8aa80ecd920deb0bb4aacfedf2e7ca641d64452d"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -128,9 +126,8 @@ dependencies = [
 
 [[package]]
 name = "actix-security-core"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c668761bc0de1a8a6a240980278c0de3fa615ea61f982664fd40a57e790e81d"
+version = "0.2.3"
+source = "git+https://github.com/Benjrm/actix-security#8aa80ecd920deb0bb4aacfedf2e7ca641d64452d"
 dependencies = [
  "actix-service",
  "actix-web",
@@ -145,6 +142,7 @@ dependencies = [
  "reqwest 0.12.28",
  "serde",
  "serde_json",
+ "time",
  "tokio",
  "url",
 ]
@@ -2412,9 +2410,9 @@ dependencies = [
 
 [[package]]
 name = "num-conv"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6673768db2d862beb9b39a78fdcb1a69439615d5794a1be50caa9bc92c81967"
+checksum = "521739c6d2bac4aa25192232afe6841231376b2b26d4d9fae5ecf8ca5772e441"
 
 [[package]]
 name = "num-integer"

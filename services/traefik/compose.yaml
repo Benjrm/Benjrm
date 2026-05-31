@@ -1,0 +1,41 @@
+networks:
+  web:
+    name: "web"
+
+services:
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.4.2
+    restart: always
+    environment:
+      CONTAINERS: 1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  traefik:
+    image: traefik:v3.7
+    container_name: traefik
+    restart: always
+    entrypoint: /bin/sh /prepare.sh
+    env_file:
+      - ".env"
+      - "../../.env"
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - socket-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - web
+      - default
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./letsencrypt:/letsencrypt
+      - ./config:/config:ro
+      - ./traefik.yaml:/traefik.tpl:ro
+      - ./prepare.sh:/prepare.sh:ro
+      - ./logs:/var/log/traefik
+    labels:
+      traefik.enable: true
+      traefik.frontend.passHostHeader: true

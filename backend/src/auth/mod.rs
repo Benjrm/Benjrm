@@ -1,5 +1,8 @@
 use {
-    crate::error::{Error, impl_err},
+    crate::{
+        error::{Error, impl_err},
+        not_found_route,
+    },
     actix_session::Session,
     actix_web::{FromRequest, HttpRequest, dev::Payload, web},
     serde::{Deserialize, Serialize},
@@ -50,5 +53,9 @@ impl FromRequest for User {
 }
 
 pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/auth").configure(oidc::init));
+    cfg.service(
+        web::scope("/auth")
+            .configure(oidc::init)
+            .default_service(not_found_route()),
+    );
 }

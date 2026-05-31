@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 pub use user::{
-    ActiveModel as ActiveUser, Column as UserColumn, Entity as UserEntity, Model as User,
+    ActiveModel as ActiveUser, Column as UserColumn, Entity as UserEntity, Model as UserModel,
     Relation as UserRelation,
 };
 

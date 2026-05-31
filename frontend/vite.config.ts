@@ -12,4 +12,7 @@ export default defineConfig({
             "@shadcn": resolve(__dirname, "src/shadcn"),
         },
     },
+    server: {
+        allowedHosts: ["frontend"],
+    },
 })

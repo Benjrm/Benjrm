@@ -25,6 +25,21 @@ $ PORT=8080 cargo run # optional: --release
 
 > **Hint:** Release builds compile the frontend into the binary while debug builds require a running vite dev server (on port 5173).
 
+## Development environment
+
+If you want to run the backend directly using `cargo run` but still want to use the identity-provider, database and frontend from the file `../compose.dev.yaml`, you have to do the following:
+
+- change `PUBLIC_URL` in `../.env` to some other port
+- delete the directory `../database`
+- run `docker compose -f compose.dev.yaml up --build` in the project root
+- use `cargo run` with modified environment variables. They can be set in `.cargo/config.toml` if you don't want to include them in the command.
+  ```
+  PORT="<your port>"
+  DATABASE_URL="postgres://benjrm:<password>@localhost:5432/benjrm"
+  OIDC_ISSUER_URL="http://localhost:8088/realms/benjrm"
+  ```
+
+
 ## CVE-2023-49092
 
 The MySQL database driver (`sqlx-mysql`) has a dependency (`rsa`), which has a vulnerability allowing potential key recovery. As a solution, the MySQL driver has been removed from this project. `cargo audit` still reports the vulnerability due to a [Cargo bug](https://github.com/rust-lang/cargo/issues/10801) causing `rsa` to be still included in the `Cargo.lock`. You can verify that `rsa` isn't being used in this project by running `cargo tree | grep rsa`.

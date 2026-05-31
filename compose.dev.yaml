@@ -1,4 +1,23 @@
 services:
+  benjrm:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev.backend
+    depends_on:
+      database:
+        condition: service_healthy
+      identity-provider:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    env_file: .env
+    environment:
+      - FRONTEND_HOST=frontend
+    volumes:
+      - ./config:/config
+    ports:
+      - "8080:80"
+  
   identity-provider:
     # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry>
     build:
@@ -37,10 +56,12 @@ services:
         "CMD-SHELL",
         "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000"
       ]
-      start_period: "15s"
+      start_period: 30s
+      start_interval: 5s
       interval: 30s
-      timeout: 10s
-      retries: 3
+      timeout: 5s
+      retries: 10
+  
   idp-init:
     # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry> here
     build:
@@ -63,6 +84,7 @@ services:
       # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
       identity-provider:
         condition: service_healthy
+  
   database:
     image: postgres:18.3
     restart: unless-stopped
@@ -72,8 +94,10 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U benjrm -d benjrm" ]
-      interval: 5s
-      timeout: 5s
+      start_period: 30s
+      start_interval: 2s
+      interval: 30s
+      timeout: 2s
       retries: 10
     env_file:
       - .env
@@ -82,6 +106,7 @@ services:
       - ./services/database/mounts/init-keycloak-db.sh:/docker-entrypoint-initdb.d/init-keycloak-db.sh
     ports:
       - "5432:5432"
+  
   frontend:
     build:
       context: ./frontend
@@ -95,10 +120,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       CHOKIDAR_INTERVAL: "100"
     volumes:
-      - ./frontend:/app
-      - frontend-node-modules:/app/node_modules
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
     ports:
       - "5173:5173"
-
-volumes:
-  frontend-node-modules:
