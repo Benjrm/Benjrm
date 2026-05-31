@@ -66,9 +66,9 @@ export default class QuestionMockAdapter implements QuestionAdapter {
             ...request,
             created: date,
             modified: date,
-            options: request.options.map((option) => ({
-                id: generateUuid(),
+            options: request.options?.map((option) => ({
                 ...option,
+                id: crypto.randomUUID(),
             })),
         }
         questions.push(newQuestion)
@@ -90,10 +90,13 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         const idx = questions.findIndex((q) => q.id === questionId)
         if (idx === -1) throw new Error("Question not found")
         const prev = questions[idx]
+        const prevOptions = prev.options ?? []
         const updatedOptions = request.options
             ? request.options.map((opt, i) => ({
-                  ...prev.options[i],
+                  ...prevOptions[i],
                   ...opt,
+                  id: prevOptions[i].id ?? crypto.randomUUID(),
+                  modified: new Date().toISOString(),
               }))
             : prev.options
 
