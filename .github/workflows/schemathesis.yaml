@@ -1,4 +1,5 @@
 name: API Testing with Schemathesis
+run-name: API Testing with Schemathesis on ${{ github.ref_name }} by {{ github.actor }
 on:
   push:
     branches:
