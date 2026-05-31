@@ -6,8 +6,7 @@ on:
     branches:
       - 'main'
   pull_request:
-    branches:
-      - 'main'
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 # Cancel concurrent running workflows, after a new one is triggered
@@ -50,7 +49,6 @@ jobs:
   sonarqube:
     name: SonarQube SAST Scan
     runs-on: 'ubuntu-24.04'
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     steps:
       - uses: actions/checkout@v4
         with:
@@ -109,16 +107,16 @@ jobs:
         working-directory: 'backend'
 
   # Trivy Docker & Config Scan
-  # trivy_docker:
-  #   name: Trivy Docker Scan
-  #   needs: detect-changes
-  #   runs-on: 'ubuntu-24.04'
-  #   if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.docker == 'true'
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Run Trivy for Docker
-  #       uses: aquasecurity/trivy-action@v0.36.0
-  #       with:
-  #         scan-type: 'image'
-  #         image-ref: '.'
-  #         trivy-config: 'trivy.yaml'
+  trivy_docker:
+    name: Trivy Docker Scan
+    needs: detect-changes
+    runs-on: 'ubuntu-24.04'
+    if: needs.detect-changes.outputs.docker == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy for Docker
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: 'config'
+          image-ref: '.'
+          trivy-config: 'trivy.yaml'
