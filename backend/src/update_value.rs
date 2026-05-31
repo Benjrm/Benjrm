@@ -35,6 +35,24 @@ impl<T: Into<Value>> From<UpdateValue<T>> for ActiveValue<T> {
     }
 }
 
+impl<T> From<Option<T>> for UpdateValue<T> {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(x) => UpdateValue::Set(x),
+            None => UpdateValue::Unset,
+        }
+    }
+}
+
+impl<T> From<UpdateValue<T>> for Option<T> {
+    fn from(value: UpdateValue<T>) -> Option<T> {
+        match value {
+            UpdateValue::Set(x) => Some(x),
+            UpdateValue::Unset => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 pub enum UpdateOption<T> {
     Set(Option<T>),

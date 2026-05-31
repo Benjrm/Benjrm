@@ -5,6 +5,8 @@ import MarkdownPageComponent from "@/components/markdown/MarkdownPageComponent"
 import useImprint from "@/hooks/useImprint"
 import { Button } from "@/shadcn/components/ui/button"
 
+/** Imprint Page */
+
 export default function ImprintPage(): JSX.Element | null {
     const { data: imprintContent, isLoading, error } = useImprint()
 

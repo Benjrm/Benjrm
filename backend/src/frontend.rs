@@ -1,4 +1,7 @@
-use actix_web::{Route, web};
+use {
+    actix_web::{Route, web},
+    awc::http::Method,
+};
 
 #[cfg(not(debug_assertions))]
 mod serve_frontend {
@@ -32,22 +35,52 @@ mod serve_frontend {
 #[cfg(debug_assertions)]
 mod serve_frontend {
     use {
-        actix_proxy::{IntoHttpResponse, SendRequestError},
+        actix_proxy::IntoHttpResponse,
         actix_web::{HttpRequest, HttpResponse},
     };
 
-    pub async fn serve_file(req: HttpRequest) -> Result<HttpResponse, SendRequestError> {
-        let client = req.app_data::<awc::Client>().unwrap();
-        let path = req.path();
+    pub async fn serve_file(req: HttpRequest) -> HttpResponse {
+        let client = match req.app_data::<awc::Client>() {
+            Some(client) => client,
+            None => {
+                return HttpResponse::InternalServerError().body("awc client not available");
+            }
+        };
+        let uri = req.uri();
 
-        let mut dev_req = client.get(format!("http://localhost:5173{path}"));
-        for header in req.headers() {
-            dev_req = dev_req.insert_header(header);
+        const FORWARD_HEADER_NAMES: &[&str] = &[
+            "accept",
+            "accept-encoding",
+            "accept-language",
+            "cache-control",
+            "user-agent",
+        ];
+        lazy_static::lazy_static! {
+            static ref FRONTEND_HOST: String = std::env::var("FRONTEND_HOST").unwrap_or_else(|_| String::from("localhost"));
         }
-        Ok(dev_req.send().await?.into_http_response())
+
+        let mut dev_req = client.get(format!("http://{}:5173{uri}", *FRONTEND_HOST));
+        for (key, value) in req.headers() {
+            if FORWARD_HEADER_NAMES.contains(&key.as_str()) {
+                dev_req = dev_req.insert_header((key, value));
+            }
+        }
+        let req = match dev_req.send().await {
+            Ok(req) => req,
+            Err(e) => {
+                return HttpResponse::InternalServerError().body(format!(
+                    "Send request error: {e:?}. Is the frontend dev server runing?"
+                ));
+            }
+        };
+        req.into_http_response()
     }
 }
 
 pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.default_service(Route::new().to(serve_frontend::serve_file));
+    cfg.default_service(
+        Route::new()
+            .method(Method::GET)
+            .to(serve_frontend::serve_file),
+    );
 }

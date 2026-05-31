@@ -2,16 +2,18 @@ use {
     crate::error::Error,
     actix_session::{SessionMiddleware, storage::CookieSessionStore},
     actix_web::{
-        App, HttpServer,
+        App, HttpResponse, HttpServer, Route,
         cookie::{self, SameSite},
-        web::{self, JsonConfig},
+        web::{self, JsonConfig, PathConfig},
     },
+    awc::http::Method,
 };
 
 mod app_data;
 mod auth;
 mod error;
 mod frontend;
+mod question;
 mod quiz;
 mod static_file;
 mod update_value;
@@ -59,6 +61,7 @@ async fn main() -> std::io::Result<()> {
         let app = App::new()
             .wrap(actix_web::middleware::Logger::default())
             .app_data(JsonConfig::default().error_handler(Error::json_handler))
+            .app_data(PathConfig::default().error_handler(Error::path_handler))
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_http_only(true)
@@ -68,10 +71,21 @@ async fn main() -> std::io::Result<()> {
                     .build(),
             )
             .app_data(data.clone())
-            .configure(frontend::init)
             .configure(auth::init)
             .configure(static_file::init)
-            .service(web::scope("/api/v1").configure(quiz::init));
+            .service(
+                web::scope("/api")
+                    .route("/health", healthcheck_route())
+                    .service(
+                        web::scope("/v1")
+                            .configure(quiz::init)
+                            .configure(question::init)
+                            .route("/health", healthcheck_route())
+                            .default_service(not_found_route()),
+                    )
+                    .default_service(not_found_route()),
+            )
+            .configure(frontend::init);
 
         if cfg!(debug_assertions) {
             app.app_data(awc::Client::new())
@@ -82,4 +96,14 @@ async fn main() -> std::io::Result<()> {
     .bind(("0.0.0.0", port))?
     .run()
     .await
+}
+
+fn healthcheck_route() -> Route {
+    Route::new()
+        .method(Method::GET)
+        .to(async || HttpResponse::Ok().body("OK"))
+}
+
+fn not_found_route() -> Route {
+    Route::new().to(async || HttpResponse::NotFound().finish())
 }

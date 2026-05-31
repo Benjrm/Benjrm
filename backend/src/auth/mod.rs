@@ -1,5 +1,8 @@
 use {
-    crate::error::{Error, impl_err},
+    crate::{
+        error::{Error, impl_err},
+        not_found_route,
+    },
     actix_session::Session,
     actix_web::{FromRequest, HttpRequest, dev::Payload, web},
     serde::{Deserialize, Serialize},
@@ -21,13 +24,14 @@ impl_err! {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct SessionUser {
     id: Uuid,
     id_token: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct User {
     pub id: Uuid,
 }
@@ -50,5 +54,9 @@ impl FromRequest for User {
 }
 
 pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/auth").configure(oidc::init));
+    cfg.service(
+        web::scope("/auth")
+            .configure(oidc::init)
+            .default_service(not_found_route()),
+    );
 }

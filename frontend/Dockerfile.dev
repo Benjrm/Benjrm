@@ -13,7 +13,10 @@ WORKDIR /app
 RUN if [ "${APP_GID}" != "0" ]; then groupmod --gid "${APP_GID}" node; fi \
 	&& usermod --uid "${APP_UID}" --gid "${APP_GID}" node
 
-COPY --chown=node:node package*.json ./
+COPY --chown=node:node *.json ./
+COPY --chown=node:node *.config.js ./
+COPY --chown=node:node *.config.ts ./
+COPY --chown=node:node index.html ./
 
 RUN chown -R node:node /app
 
