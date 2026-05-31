@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import ThemeProvider from "./context/ThemeProvider"
 import "./index.css"
 import App from "./App.tsx"
+import { WebSocketContext, websocketService } from "@/api/websocket"
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -24,11 +25,13 @@ root.render(
     <StrictMode>
         <QueryClientProvider client={queryClient}>
             <ReactQueryDevtools initialIsOpen={false} />
-            <BrowserRouter>
-                <ThemeProvider defaultTheme="auto" storageKey="theme">
-                    <App />
-                </ThemeProvider>
-            </BrowserRouter>
+            <WebSocketContext value={websocketService}>
+                <BrowserRouter>
+                    <ThemeProvider defaultTheme="auto" storageKey="theme">
+                        <App />
+                    </ThemeProvider>
+                </BrowserRouter>
+            </WebSocketContext>
         </QueryClientProvider>
     </StrictMode>
 )
