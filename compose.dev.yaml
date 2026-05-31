@@ -102,7 +102,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./database:/var/lib/postgresql
+      - database:/var/lib/postgresql
       - ./services/database/mounts/init-keycloak-db.sh:/docker-entrypoint-initdb.d/init-keycloak-db.sh
     ports:
       - "5432:5432"
@@ -124,3 +124,6 @@ services:
       - ./frontend/public:/app/public:ro
     ports:
       - "5173:5173"
+
+volumes:
+  database:
