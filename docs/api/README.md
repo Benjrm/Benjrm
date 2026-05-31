@@ -86,5 +86,3 @@ For detailed documentation please refer to [Schemathesis' official documentation
 
 2. Each run generates multiple coverage reports including a **PR comment** and an **HTML report** uploaded as a workflow artifact.
    Moreover, a summary in the Actions step log is also provided.
-   ![Schemathesis PR Comment Coverage Report](assets/schemathesis-pr-comment-cov-report.png)
-   ![Schemathesis HTML Coverage Report](assets/schemathesis-html-cov-report.png)
