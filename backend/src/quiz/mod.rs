@@ -13,7 +13,7 @@ mod api;
 mod core;
 pub mod entity;
 #[cfg(test)]
-mod test;
+pub mod test;
 
 impl_err! {
     enum QuizError {

@@ -1,7 +1,8 @@
 use {
     crate::error::{Error, error_response::ErrorResponse},
     actix_web::{
-        HttpRequest, HttpResponse, HttpResponseBuilder, ResponseError, error::JsonPayloadError,
+        HttpRequest, HttpResponse, HttpResponseBuilder, ResponseError,
+        error::{JsonPayloadError, PathError},
     },
     awc::http::StatusCode,
 };
@@ -21,6 +22,21 @@ impl Error {
         ErrorResponse {
             status: err.status_code(),
             category: "json_payload",
+            error: error_str,
+            message: err.to_string(),
+        }
+        .into()
+    }
+
+    pub fn path_handler(err: PathError, _req: &HttpRequest) -> actix_web::Error {
+        let error_str = match &err {
+            PathError::Deserialize(_) => "deserialize",
+            _ => "unknown",
+        };
+
+        ErrorResponse {
+            status: err.status_code(),
+            category: "path",
             error: error_str,
             message: err.to_string(),
         }
