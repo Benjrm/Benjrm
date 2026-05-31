@@ -24,15 +24,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Start API
-        run: |
-          PORT=8080 cargo run --manifest-path backend/Cargo.toml &
-          curl --retry 40 --retry-delay 4 --retry-connrefused http://localhost:8080/api/health
-          echo "API is healthy."
-        env:
-          DATABASE_URL: 'sqlite::memory:'
-          PORT: '8080'
-          OIDC_ISSUER_URL: 'https://example.com'
+      - name: Docker Compose Action
+        uses: hoverkraft-tech/compose-action@v2.6.0
+        with:
+          compose-file: 'compose.dev.yaml'
       - uses: schemathesis/action@v3
         with:
           schema: 'docs/openapispec/RestInterface.yaml'
