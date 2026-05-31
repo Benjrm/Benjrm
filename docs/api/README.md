@@ -66,3 +66,23 @@ In [#38](https://github.com/Benjrm/Benjrm/pull/38), a dummy login endpoint was i
 When performing a GET request to `/auth/login/dummy/{id}`, where `{id}` is a placeholder for a dummy ID, the endpoint will log the user in as `dummy_user_{id}` (e.g. via `/auth/login/dummy/0` as `dummy_user_0`), creating or fetching the corresponding database user and establishing a session. It is useful for simplifying local development workflows and testing with tools like Postman or Bruno, where full authentication flows are unnecessary.
 
 After a successful request, the user is not redirected and must manually navigate to the desired page or route. This endpoint is strictly for local development and can't be used in production environments.
+
+## API-first development with *Schemathesis*
+
+Schemathesis ensures that your API implementation matches your OpenAPI or GraphQL schema by automatically generating property-based tests and uncovering edge cases and inconsistencies early.
+
+In general, *Schemathesis* automatically generates property-based tests from your
+OpenAPI or GraphQL schema and exercises the edge cases that break your API.
+
+For detailed documentation please refer to [Schemathesis' official documentation](https://schemathesis.readthedocs.io/en/stable/).
+
+### Integrated into CI-Pipeline
+1. GitHub Actions tests the API with *Schemathesis* when you create
+   a *pull request* modifying *either* the [OpenAPI Specification](../openapispec), the
+   [API implementation itself](../../backend) or the corresponding [workflow file](../../.github/workflows/schemathesis.yaml).
+
+> For further details on how the *Schemathesis* GitHub Action works,
+> please refer to the [GitHub Actions workflow file](../../.github/workflows/schemathesis.yaml).
+
+2. Each run generates multiple coverage reports including a **PR comment** and an **HTML report** uploaded as a workflow artifact.
+   Moreover, a summary in the Actions step log is also provided.
