@@ -24,6 +24,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Create .env from template
+        run: cp .env.example .env
       - name: Docker Compose Action
         uses: hoverkraft-tech/compose-action@v2.6.0
         with:
