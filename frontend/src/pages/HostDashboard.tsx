@@ -1,7 +1,6 @@
 // frontend/src/pages/HostDashboard.tsx
 
 import type { JSX } from "react"
-import { toast } from "sonner"
 import { Button } from "@/shadcn/components/ui/button"
 
 interface LeaderboardEntry {
@@ -26,7 +25,8 @@ function DashboardHeader({ roomPin, playersCount }: { roomPin: string; playersCo
                 <div className="bg-muted/30 border-border/40 rounded-full border px-6 py-2.5 text-base font-bold backdrop-blur-sm">
                     Room Pin: <span className="text-[#00F2FF]">{roomPin}</span>
                 </div>
-                <div className="bg-muted/20 border-border/10 rounded-full border px-4 py-2.5 text-sm font-medium text-white/80">
+                {/* Fixed text-white/80 -> text-foreground/80 for light mode contrast */}
+                <div className="bg-muted/20 border-border/10 text-foreground/80 rounded-full border px-4 py-2.5 text-sm font-medium">
                     {playersCount} players
                 </div>
             </div>
@@ -58,7 +58,8 @@ function QuestionPanel({
             </div>
 
             <div className="my-10">
-                <p className="max-w-3xl text-3xl leading-tight font-black tracking-tight wrap-break-word sm:text-4xl">
+                {/* Fixed typo: wrap-break-word -> break-words */}
+                <p className="max-w-3xl text-3xl leading-tight font-black tracking-tight break-words sm:text-4xl">
                     {question}
                 </p>
             </div>
@@ -79,7 +80,8 @@ function QuestionPanel({
                                 strokeWidth="3.5"
                             />
                         </svg>
-                        <span className="text-base font-medium text-white/90">
+                        {/* Fixed text-white/90 -> text-foreground/90 for light mode contrast */}
+                        <span className="text-foreground/90 text-base font-medium">
                             Waiting for answers...
                         </span>
                     </div>
@@ -162,7 +164,7 @@ export default function HostDashboard(): JSX.Element {
     ]
 
     const handleNextQuestion = () => {
-        toast("Advancing quiz...")
+        // TODO: implement logic later
     }
 
     return (
