@@ -9,6 +9,13 @@ interface LeaderboardEntry {
     points: number
 }
 
+interface Answer {
+    id: string
+    text: string
+    color: string
+    icon: string
+}
+
 function DashboardHeader({ roomPin, playersCount }: { roomPin: string; playersCount: number }) {
     return (
         <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -25,7 +32,6 @@ function DashboardHeader({ roomPin, playersCount }: { roomPin: string; playersCo
                 <div className="bg-muted/30 border-border/40 rounded-full border px-6 py-2.5 text-base font-bold backdrop-blur-sm">
                     Room Pin: <span className="text-[#00F2FF]">{roomPin}</span>
                 </div>
-                {/* Fixed text-white/80 -> text-foreground/80 for light mode contrast */}
                 <div className="bg-muted/20 border-border/10 text-foreground/80 rounded-full border px-4 py-2.5 text-sm font-medium">
                     {playersCount} players
                 </div>
@@ -38,11 +44,20 @@ function QuestionPanel({
     question,
     answered,
     total,
+    answers,
 }: {
     question: string
     answered: number
     total: number
+    answers: Answer[]
 }) {
+    const ANSWER_COLORS = [
+        { color: "#2d4cc9", icon: "▲" },
+        { color: "#ffa602", icon: "◆" },
+        { color: "#11c8d4", icon: "●" },
+        { color: "#ff4949", icon: "■" },
+    ]
+
     return (
         <div className="bg-muted/20 border-border/10 relative overflow-hidden rounded-[2rem] border p-6 shadow-2xl backdrop-blur-sm sm:p-8">
             <div className="pointer-events-none absolute -top-24 -right-16 h-60 w-60 rounded-full bg-[#00F2FF]/10 blur-3xl" />
@@ -58,10 +73,34 @@ function QuestionPanel({
             </div>
 
             <div className="my-10">
-                {/* Fixed typo: wrap-break-word -> break-words */}
-                <p className="max-w-3xl text-3xl leading-tight font-black tracking-tight break-words sm:text-4xl">
+                <p className="max-w-3xl text-3xl leading-tight font-black tracking-tight wrap-break-word sm:text-4xl">
                     {question}
                 </p>
+            </div>
+
+            {/* Answer Options */}
+            <div className="my-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+                {answers.map((answer, idx) => {
+                    const { color, icon } = ANSWER_COLORS[idx] || ANSWER_COLORS[0]
+                    return (
+                        <div
+                            key={answer.id}
+                            className="bg-muted/30 relative flex flex-col items-center justify-center gap-4 overflow-visible rounded-2xl border-2 p-8 text-center shadow-sm backdrop-blur-lg transition-all duration-300"
+                            style={{
+                                borderColor: "rgba(255,255,255,0.08)",
+                            }}
+                        >
+                            <div
+                                className="flex h-14 w-14 items-center justify-center rounded-lg text-2xl font-black text-white shadow-md"
+                                style={{ background: color }}
+                            >
+                                {icon}
+                            </div>
+
+                            <div className="text-base font-bold">{answer.text}</div>
+                        </div>
+                    )
+                })}
             </div>
 
             {/* Progress Bar Section */}
@@ -80,7 +119,6 @@ function QuestionPanel({
                                 strokeWidth="3.5"
                             />
                         </svg>
-                        {/* Fixed text-white/90 -> text-foreground/90 for light mode contrast */}
                         <span className="text-foreground/90 text-base font-medium">
                             Waiting for answers...
                         </span>
@@ -157,6 +195,13 @@ export default function HostDashboard(): JSX.Element {
     const total = playersCount
     const currentQuestion = "Why did the chicken cross the road?"
 
+    const answers: Answer[] = [
+        { id: "1", text: "To get to the other side", color: "#2d4cc9", icon: "▲" },
+        { id: "2", text: "Because it was bored", color: "#ffa602", icon: "◆" },
+        { id: "3", text: "To prove it wasn't a turkey", color: "#11c8d4", icon: "●" },
+        { id: "4", text: "I don't know", color: "#ff4949", icon: "■" },
+    ]
+
     const leaderboard: LeaderboardEntry[] = [
         { id: "1", name: "Funny Crocodile", points: 2395 },
         { id: "2", name: "Tall Goose", points: 2192 },
@@ -173,7 +218,12 @@ export default function HostDashboard(): JSX.Element {
                 <DashboardHeader playersCount={playersCount} roomPin={roomPin} />
 
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
-                    <QuestionPanel answered={answered} question={currentQuestion} total={total} />
+                    <QuestionPanel
+                        answered={answered}
+                        answers={answers}
+                        question={currentQuestion}
+                        total={total}
+                    />
 
                     <SidebarLeaderboard entries={leaderboard} onNext={handleNextQuestion} />
                 </div>
