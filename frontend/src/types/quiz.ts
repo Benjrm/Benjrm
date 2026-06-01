@@ -1,8 +1,12 @@
-// frontend/src/types/quiz.ts
+import type { QuestionApiResponse } from "@/api/questions/types/question.api.ts"
 
-export interface Question {
-    id: string
-    title: string
-    type: "Multiple Choice" | "True/False"
-    options: string[]
+type QuestionChoiceOption = Extract<
+    Extract<QuestionApiResponse["options"], unknown[]> extends (infer Option)[] ? Option : never,
+    { correct: boolean }
+>
+
+export type QuestionOption = QuestionChoiceOption
+
+export type Question = Omit<QuestionApiResponse, "options" | "created" | "modified"> & {
+    options: QuestionChoiceOption[]
 }

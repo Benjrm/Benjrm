@@ -4,70 +4,89 @@ import type { JSX } from "react"
 import { useState } from "react"
 import { Edit2, Settings, Trash2 } from "lucide-react"
 import { useParams, useNavigate } from "react-router"
+import {
+    closestCenter,
+    DndContext,
+    DragOverlay,
+    PointerSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core"
 
-import AnswerCard from "../components/AnswerCard"
 import CreateQuizModal from "../components/CreateQuizModal"
+import QuestionEditor from "../components/QuestionEditor"
 import QuestionSidebar from "../components/QuestionSidebar"
 import SettingsPanel from "../components/SettingsPanel"
-import type { Question } from "../types/quiz"
-import { useQuiz, useDeleteQuiz } from "@/api/queries"
-
+import QuizCreatorFeedback from "../components/QuizCreatorFeedback"
+import { restrictToVerticalAxis } from "./quiz/quizUtils"
+import useQuizEditor from "@/hooks/useQuizEditor"
 import { Button } from "@/shadcn/components/ui/button"
-import { Textarea } from "@/shadcn/components/ui/textarea"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/shadcn/components/ui/select"
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
-    DialogTitle,
     DialogDescription,
     DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/shadcn/components/ui/dialog"
 
-function getReadableQuizErrorMessage(error: Error | null | undefined): string | null {
-    if (!error) return null
-
-    return "Quiz data could not be loaded right now."
-}
-
-// --- Main Page ---
-
 export default function QuizCreator(): JSX.Element {
-    const { quizId } = useParams()
+    const params = useParams()
+    const quizId = params.id ?? params.quizId
     const navigate = useNavigate()
-    const modalMode = quizId ? "edit" : "create"
 
-    // Query for loading quiz data
-    const { data: quiz, isLoading, error } = useQuiz(quizId)
-    const deleteQuizMutation = useDeleteQuiz()
+    const {
+        quizTitle,
+        quizDescription,
+        isLoading,
+        isLoadingQuestions,
+        questionLoadError,
+        error,
+        questions,
+        currentQuestionIndex,
+        setCurrentQuestionIndex,
+        currentQuestion,
+        questionIds,
+        activeQuestionId,
+        handleDragStart,
+        handleDragEnd,
+        handleDragCancel,
+        updateQuestion,
+        updateOption,
+        toggleOptionCorrect,
+        deleteQuestion,
+        handleAddQuestion,
+        handleAddOption,
+        handleDeleteOption,
+        handleSaveQuestions,
+        isSavingQuestions,
+        saveSuccess,
+        saveError,
+        isSaveSuccessVisible,
+        hasUnsavedChanges,
+        deleteQuizMutation,
+        hasInitializedQuestions,
+    } = useQuizEditor(quizId)
 
-    // Derived values
-    const quizTitle = quiz?.title ?? "Untitled"
-    const quizDescription = quiz?.description ?? ""
-    const quizLoadError = getReadableQuizErrorMessage(error)
+    // normalize errors to strings to avoid nested ternaries in JSX
+    let questionLoadErrorStr: string | null = null
+    if (typeof questionLoadError === "string") questionLoadErrorStr = questionLoadError
+    else if (questionLoadError instanceof Error) questionLoadErrorStr = questionLoadError.message
 
+    let quizLoadErrorStr: string | null = null
+    if (typeof error === "string") quizLoadErrorStr = error
+    else if (error instanceof Error) quizLoadErrorStr = error.message
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(TouchSensor, { activationConstraint: { distance: 4 } })
+    )
+
+    // UI-only state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
     const [deleteError, setDeleteError] = useState<string | null>(null)
-
-    const [questions, setQuestions] = useState<Question[]>([
-        {
-            id: crypto.randomUUID(),
-            options: ["", "", "", ""],
-            title: "",
-            type: "Multiple Choice",
-        },
-    ])
-
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0)
-
-    const currentQuestion = questions[currentQuestionIndex]
 
     const handleDelete = async (): Promise<void> => {
         if (!quizId) return
@@ -82,70 +101,7 @@ export default function QuizCreator(): JSX.Element {
         }
     }
 
-    const handleEditSuccess = (): void => {
-        // Quiz data is automatically updated by React Query
-        setIsEditModalOpen(false)
-    }
-
-    const updateQuestion = (data: Partial<Question>) => {
-        setQuestions((prevQuestions) => {
-            const updated = [...prevQuestions]
-
-            updated[currentQuestionIndex] = {
-                ...updated[currentQuestionIndex],
-                ...data,
-            }
-
-            return updated
-        })
-    }
-
-    const updateOption = (index: number, value: string) => {
-        const newOptions = [...currentQuestion.options]
-
-        newOptions[index] = value
-
-        updateQuestion({ options: newOptions })
-    }
-
-    const deleteQuestion = (indexToDelete: number) => {
-        if (questions.length === 1) {
-            setQuestions([
-                {
-                    id: crypto.randomUUID(),
-                    options: ["", "", "", ""],
-                    title: "",
-                    type: "Multiple Choice",
-                },
-            ])
-            setCurrentQuestionIndex(0)
-            return
-        }
-
-        setQuestions((prevQuestions) => prevQuestions.filter((_, index) => index !== indexToDelete))
-
-        if (currentQuestionIndex >= indexToDelete && currentQuestionIndex > 0) {
-            setCurrentQuestionIndex((prev) => prev - 1)
-        }
-    }
-
-    const handleAddQuestion = () => {
-        setQuestions((prev) => [
-            ...prev,
-            {
-                id: crypto.randomUUID(),
-                options: ["", "", "", ""],
-                title: "",
-                type: "Multiple Choice",
-            },
-        ])
-    }
-
-    const handleSelectType = (value: string) => {
-        updateQuestion({
-            type: value as Question["type"],
-        })
-    }
+    const handleEditSuccess = (): void => setIsEditModalOpen(false)
 
     const handleConfirmClose = () => setIsConfirmOpen(false)
 
@@ -193,8 +149,14 @@ export default function QuizCreator(): JSX.Element {
                             Settings
                         </Button>
 
-                        <Button className="bg-[#00F2FF] font-bold text-black hover:bg-[#00d8e4]">
-                            Save Quiz
+                        <Button
+                            className="bg-[#00F2FF] font-bold text-black hover:bg-[#00d8e4]"
+                            disabled={isSavingQuestions || (quizId ? isLoadingQuestions : false)}
+                            onClick={() => {
+                                handleSaveQuestions().catch(() => {})
+                            }}
+                        >
+                            {isSavingQuestions ? "Saving..." : "Save Quiz"}
                         </Button>
 
                         {quizId ? (
@@ -235,111 +197,88 @@ export default function QuizCreator(): JSX.Element {
                     </div>
                 </header>
 
-                {quizLoadError && quizId ? (
-                    <p className="mb-6 text-sm text-red-500">{quizLoadError}</p>
-                ) : null}
-
-                {isLoading && quizId ? (
-                    <p className="text-muted-foreground mb-6 text-sm">Loading quiz...</p>
-                ) : null}
-
-                {deleteError ? <p className="mb-6 text-sm text-red-500">{deleteError}</p> : null}
+                <QuizCreatorFeedback
+                    deleteError={deleteError}
+                    hasInitializedQuestions={hasInitializedQuestions}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    isLoading={isLoading}
+                    isLoadingQuestions={isLoadingQuestions}
+                    isSaveSuccessVisible={isSaveSuccessVisible}
+                    questionLoadError={questionLoadErrorStr}
+                    quizId={quizId}
+                    quizLoadError={quizLoadErrorStr}
+                    saveError={saveError}
+                    saveSuccess={saveSuccess}
+                />
 
                 {/* Layout */}
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_1fr_320px]">
                     {/* Sidebar */}
-                    <div className="bg-muted/30 border-border rounded-3xl border p-4 shadow-xl backdrop-blur-sm">
-                        <QuestionSidebar
-                            activeIndex={currentQuestionIndex}
-                            onAdd={handleAddQuestion}
-                            onDelete={deleteQuestion}
-                            onSelect={setCurrentQuestionIndex}
-                            questions={questions}
-                        />
-                    </div>
-
-                    {/* Main Editor */}
-                    <main className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-                        {/* Question Card */}
-                        <div className="bg-muted/30 border-border relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-sm md:p-8">
-                            <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full bg-[#00F2FF]/10 blur-3xl" />
-
-                            <div className="relative">
-                                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                                    <div className="text-muted-foreground text-sm font-medium tracking-wide">
-                                        Question {currentQuestionIndex + 1} of {questions.length}
-                                    </div>
-
-                                    <Select
-                                        onValueChange={handleSelectType}
-                                        value={currentQuestion.type}
-                                    >
-                                        <SelectTrigger className="bg-background/70 border-border w-52 backdrop-blur-sm">
-                                            <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-
-                                        <SelectContent>
-                                            <SelectItem value="Multiple Choice">
-                                                Multiple Choice
-                                            </SelectItem>
-
-                                            <SelectItem value="True/False">True/False</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <Textarea
-                                    className="placeholder:text-muted-foreground/40 min-h-40 resize-none border-none bg-transparent p-0 text-3xl leading-tight font-bold shadow-none focus-visible:ring-0 md:text-4xl"
-                                    placeholder="Type your question here..."
-                                    value={currentQuestion.title}
-                                    onChange={(e) =>
-                                        updateQuestion({
-                                            title: e.target.value,
-                                        })
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        {/* Answers */}
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <AnswerCard
-                                accent="#2d4cc9"
-                                glow="radial-gradient(circle, #2d4cc9 0%, transparent 70%)"
-                                icon="▲"
-                                onChange={(val) => updateOption(0, val)}
-                                placeholder="Option 1"
-                                value={currentQuestion.options[0]}
-                            />
-
-                            <AnswerCard
-                                accent="#ffa602"
-                                glow="radial-gradient(circle, #ffa602 0%, transparent 70%)"
-                                icon="◆"
-                                onChange={(val) => updateOption(1, val)}
-                                placeholder="Option 2"
-                                value={currentQuestion.options[1]}
-                            />
-
-                            <AnswerCard
-                                accent="#11c8d4"
-                                glow="radial-gradient(circle, #11c8d4 0%, transparent 70%)"
-                                icon="●"
-                                onChange={(val) => updateOption(2, val)}
-                                placeholder="Option 3"
-                                value={currentQuestion.options[2]}
-                            />
-
-                            <AnswerCard
-                                accent="#ff4949"
-                                glow="radial-gradient(circle, #ff4949 0%, transparent 70%)"
-                                icon="■"
-                                onChange={(val) => updateOption(3, val)}
-                                placeholder="Option 4"
-                                value={currentQuestion.options[3]}
+                    <DndContext
+                        collisionDetection={closestCenter}
+                        modifiers={[restrictToVerticalAxis]}
+                        onDragCancel={handleDragCancel}
+                        onDragEnd={handleDragEnd}
+                        onDragStart={handleDragStart}
+                        sensors={sensors}
+                    >
+                        <div className="bg-muted/30 border-border flex h-full min-h-0 flex-col rounded-3xl border p-4 shadow-xl backdrop-blur-sm">
+                            <QuestionSidebar
+                                activeIndex={currentQuestionIndex}
+                                onAdd={handleAddQuestion}
+                                onDelete={deleteQuestion}
+                                onSelect={setCurrentQuestionIndex}
+                                questionIds={questionIds}
+                                questions={questions}
                             />
                         </div>
-                    </main>
+
+                        <DragOverlay dropAnimation={null}>
+                            {activeQuestionId
+                                ? (() => {
+                                      const activeQuestion = questions.find(
+                                          (question) => question.id === activeQuestionId
+                                      )
+                                      if (!activeQuestion) return null
+
+                                      return (
+                                          <div className="border-border bg-muted/95 w-[280px] rounded-2xl border p-4 shadow-2xl">
+                                              <div className="mb-3 flex items-center gap-2">
+                                                  <div className="text-muted-foreground/60 flex h-9 w-9 items-center justify-center rounded-md bg-white/5">
+                                                      <span className="text-lg">⋮⋮</span>
+                                                  </div>
+                                                  <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
+                                                      Question
+                                                  </span>
+                                              </div>
+
+                                              <p className="mb-4 line-clamp-2 min-h-10 text-sm font-semibold">
+                                                  {activeQuestion.question || "Untitled question"}
+                                              </p>
+
+                                              <div className="grid grid-cols-2 gap-1.5 opacity-80">
+                                                  <div className="h-2 rounded-full bg-[#2d4cc9]" />
+                                                  <div className="h-2 rounded-full bg-[#ffa602]" />
+                                                  <div className="h-2 rounded-full bg-[#11c8d4]" />
+                                                  <div className="h-2 rounded-full bg-[#ff4949]" />
+                                              </div>
+                                          </div>
+                                      )
+                                  })()
+                                : null}
+                        </DragOverlay>
+                    </DndContext>
+
+                    <QuestionEditor
+                        onAddOption={handleAddOption}
+                        onChangeOption={updateOption}
+                        onDeleteOption={handleDeleteOption}
+                        onToggleCorrect={toggleOptionCorrect}
+                        question={currentQuestion}
+                        questionIndex={currentQuestionIndex}
+                        totalQuestions={questions.length}
+                        updateQuestion={updateQuestion}
+                    />
 
                     {/* Settings */}
                     <div className="bg-muted/30 border-border rounded-3xl border p-4 shadow-xl backdrop-blur-sm">
@@ -351,7 +290,7 @@ export default function QuizCreator(): JSX.Element {
                 initialDescription={quizDescription}
                 initialTitle={quizTitle}
                 isOpen={isEditModalOpen}
-                mode={modalMode}
+                mode="edit"
                 onClose={() => setIsEditModalOpen(false)}
                 onSuccess={handleEditSuccess}
                 quizId={quizId}

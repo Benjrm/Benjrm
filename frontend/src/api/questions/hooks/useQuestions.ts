@@ -14,7 +14,12 @@ export default function useQuestions(quizId?: string): UseQueryResult<QuestionAp
                     `GET /api/v1/quizzes/{quizId}/questions requires quizId, given quizId=${quizId}`
                 )
             }
-            return questionAdapterImpl.getQuestions(quizId)
+            const questions = await questionAdapterImpl.getQuestions(quizId)
+            return Promise.all(
+                questions.map(async (question) =>
+                    questionAdapterImpl.getQuestion(quizId, question.id)
+                )
+            )
         },
     })
 }

@@ -220,6 +220,7 @@ impl QuestionModel {
         conn: &impl TransactionTrait,
     ) -> Result<(), QuestionError> {
         let txn = conn.begin().await?;
+        Neighbors::remove_links(&self, &txn).await?;
         self.delete_answers(&txn).await?;
         self.into_active_model().delete(&txn).await?;
         quiz.update_modified(Utc::now(), &txn).await?;

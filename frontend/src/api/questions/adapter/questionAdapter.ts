@@ -3,10 +3,12 @@ import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/ty
 export interface QuestionAdapter {
     createQuestion: (quizId: string, request: QuestionApiRequest) => Promise<QuestionApiResponse>
     getQuestions: (quizId: string) => Promise<QuestionApiResponse[]>
+    getQuestion: (quizId: string, questionId: string) => Promise<QuestionApiResponse>
     updateQuestion: (
         quizId: string,
         questionId: string,
         request: Partial<QuestionApiRequest>
     ) => Promise<QuestionApiResponse>
     deleteQuestion: (quizId: string, questionId: string) => Promise<void>
+    reorderQuestions: (quizId: string, order: string[]) => Promise<void>
 }

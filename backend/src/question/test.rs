@@ -95,6 +95,48 @@ async fn delete_choice_question() {
 }
 
 #[actix_web::test]
+async fn delete_linked_slide_question_relinks_neighbors() {
+    let data = TestAppData::test().await;
+    let user = data.dummy_user_id().await;
+    let quiz = create_one(&data.db, user, None, None, false).await.unwrap();
+
+    async fn insert_slide(
+        quiz: &QuizModel,
+        conn: &DatabaseTransaction,
+        question: &str,
+        position: Option<Position>,
+    ) -> Question {
+        quiz.clone()
+            .create_question(
+                conn,
+                NewQuestion {
+                    question: question.into(),
+                    hidden: false,
+                    position,
+                    options: NewQuestionOptions::Slide,
+                },
+            )
+            .await
+            .unwrap()
+    }
+
+    let txn = data.db.begin().await.unwrap();
+    let first = insert_slide(&quiz, &txn, "first", None).await;
+    let second = insert_slide(&quiz, &txn, "second", Some(Position::Prev(first.model.id))).await;
+    let third = insert_slide(&quiz, &txn, "third", Some(Position::Prev(second.model.id))).await;
+    txn.commit().await.unwrap();
+
+    second.model.clone().delete(quiz.clone(), &data.db).await.unwrap();
+
+    let first = quiz.get_question(&data.db, first.model.id).await.unwrap();
+    let third = quiz.get_question(&data.db, third.model.id).await.unwrap();
+
+    assert_eq!(first.next, Some(third.id));
+    assert_eq!(third.prev, Some(first.id));
+    assert!(matches!(quiz.get_question(&data.db, second.model.id).await, Err(QuestionError::NotFound)));
+}
+
+#[actix_web::test]
 async fn delete_quiz_with_choice_questions() {
     let data = TestAppData::test().await;
     let user = data.dummy_user_id().await;
