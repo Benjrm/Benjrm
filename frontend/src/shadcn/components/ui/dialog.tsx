@@ -1,30 +1,30 @@
-import * as React from "react"
+import type { ComponentProps, JSX } from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { XIcon } from "lucide-react"
 import { cn } from "@/shadcn/lib/utils"
 import { Button } from "@/shadcn/components/ui/button"
 
-function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+function Dialog({ ...props }: ComponentProps<typeof DialogPrimitive.Root>): JSX.Element {
     return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
-function DialogTrigger({ ...props }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+function DialogTrigger({ ...props }: ComponentProps<typeof DialogPrimitive.Trigger>): JSX.Element {
     return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
-function DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+function DialogPortal({ ...props }: ComponentProps<typeof DialogPrimitive.Portal>): JSX.Element {
     return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
-function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.Close>) {
+function DialogClose({ ...props }: ComponentProps<typeof DialogPrimitive.Close>): JSX.Element {
     return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
 function DialogOverlay({
     className,
     ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+}: ComponentProps<typeof DialogPrimitive.Overlay>): JSX.Element {
     return (
         <DialogPrimitive.Overlay
             data-slot="dialog-overlay"
@@ -44,7 +44,7 @@ function DialogContent({
     ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
     showCloseButton?: boolean
-}) {
+}): JSX.Element {
     return (
         <DialogPortal>
             <DialogOverlay />
@@ -70,7 +70,7 @@ function DialogContent({
     )
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DialogHeader({ className, ...props }: ComponentProps<"div">): JSX.Element {
     return (
         <div
             className={cn("flex flex-col gap-2", className)}
@@ -87,7 +87,7 @@ function DialogFooter({
     ...props
 }: React.ComponentProps<"div"> & {
     showCloseButton?: boolean
-}) {
+}): JSX.Element {
     return (
         <div
             className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
@@ -104,7 +104,10 @@ function DialogFooter({
     )
 }
 
-function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
+function DialogTitle({
+    className,
+    ...props
+}: ComponentProps<typeof DialogPrimitive.Title>): JSX.Element {
     return (
         <DialogPrimitive.Title
             className={cn("font-heading leading-none font-medium", className)}
@@ -117,7 +120,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
 function DialogDescription({
     className,
     ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+}: ComponentProps<typeof DialogPrimitive.Description>): JSX.Element {
     return (
         <DialogPrimitive.Description
             data-slot="dialog-description"

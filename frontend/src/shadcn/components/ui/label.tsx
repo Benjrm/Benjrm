@@ -1,9 +1,9 @@
-import * as React from "react"
+import type { ComponentProps, JSX } from "react"
 import { Label as LabelPrimitive } from "radix-ui"
 
 import { cn } from "@/shadcn/lib/utils"
 
-function Label({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+function Label({ className, ...props }: ComponentProps<typeof LabelPrimitive.Root>): JSX.Element {
     return (
         <LabelPrimitive.Root
             data-slot="label"
@@ -17,3 +17,4 @@ function Label({ className, ...props }: React.ComponentProps<typeof LabelPrimiti
 }
 
 export { Label }
+export default Label

@@ -1,8 +1,8 @@
-import * as React from "react"
+import type { ComponentProps, JSX } from "react"
 
 import { cn } from "@/shadcn/lib/utils"
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+function Input({ className, type, ...props }: ComponentProps<"input">): JSX.Element {
     return (
         <input
             data-slot="input"
@@ -17,3 +17,4 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 }
 
 export { Input }
+export default Input

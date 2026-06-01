@@ -1,8 +1,8 @@
-import * as React from "react"
+import type { ComponentProps, JSX } from "react"
 
 import { cn } from "@/shadcn/lib/utils"
 
-function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+function Textarea({ className, ...props }: ComponentProps<"textarea">): JSX.Element {
     return (
         <textarea
             data-slot="textarea"
@@ -16,3 +16,4 @@ function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
 }
 
 export { Textarea }
+export default Textarea
