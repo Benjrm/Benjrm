@@ -17,6 +17,12 @@ interface SettingsPanelProps {
     question: Question
 }
 
+const getQuestionTypeLabel = (type?: string) => {
+    if (type === "SINGLE_CHOICE") return "Single"
+    if (type === "ORDER") return "Order"
+    return "Multiple"
+}
+
 export default function SettingsPanel({ question }: SettingsPanelProps): JSX.Element {
     return (
         <aside className="flex flex-col gap-8">
@@ -101,7 +107,7 @@ export default function SettingsPanel({ question }: SettingsPanelProps): JSX.Ele
                             </div>
 
                             <span className="rounded-full border border-black/5 bg-slate-100 px-2.5 py-1 text-[9px] font-bold tracking-[0.18em] text-slate-500 uppercase dark:border-white/5 dark:bg-white/5 dark:text-slate-300">
-                                {question.type === "SINGLE_CHOICE" ? "Single" : "Multiple"}
+                                {getQuestionTypeLabel(question.type)}
                             </span>
                         </div>
 
@@ -117,7 +123,7 @@ export default function SettingsPanel({ question }: SettingsPanelProps): JSX.Ele
 
                         {/* Answers */}
                         <ScrollArea className="min-h-0 flex-1 pr-1">
-                            <AnswerPreviewGrid options={question.options} />
+                            <AnswerPreviewGrid options={question.options} type={question.type} />
                         </ScrollArea>
                     </div>
                 </div>

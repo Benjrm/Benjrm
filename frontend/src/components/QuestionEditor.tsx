@@ -21,6 +21,7 @@ interface QuestionEditorProps {
     onChangeOption: (index: number, value: string) => void
     onDeleteOption: (index: number) => void
     onToggleCorrect: (index: number) => void
+    onReorderOptions: (activeId: string, overId: string) => void
 }
 
 export default function QuestionEditor({
@@ -32,6 +33,7 @@ export default function QuestionEditor({
     onChangeOption,
     onDeleteOption,
     onToggleCorrect,
+    onReorderOptions,
 }: QuestionEditorProps): JSX.Element {
     return (
         <main className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -58,6 +60,7 @@ export default function QuestionEditor({
                             <SelectContent>
                                 <SelectItem value="MULTIPLE_CHOICE">Multiple Choice</SelectItem>
                                 <SelectItem value="SINGLE_CHOICE">Single Choice</SelectItem>
+                                <SelectItem value="ORDER">Order</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -80,8 +83,10 @@ export default function QuestionEditor({
                 onAddOption={onAddOption}
                 onChange={onChangeOption}
                 onDeleteOption={onDeleteOption}
+                onReorderOptions={onReorderOptions}
                 onToggleCorrect={onToggleCorrect}
                 options={question.options}
+                type={question.type}
             />
         </main>
     )

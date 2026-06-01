@@ -9,16 +9,11 @@ import {
     useSensors,
 } from "@dnd-kit/core"
 import type { DragEndEvent } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
-import {
-    SortableContext,
-    arrayMove,
-    useSortable,
-    verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { GripVertical } from "lucide-react"
+import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import type { JSX } from "react"
 import { useMemo, useState } from "react"
+
+import SortableOrderOption from "@/components/SortableOrderOption"
 
 interface OrderItem {
     id: string
@@ -31,42 +26,6 @@ const MOCK_ITEMS: OrderItem[] = [
     { id: "item-3", label: "Irgendwas 3" },
     { id: "item-4", label: "Irgendwas 4" },
 ]
-
-function SortableOrderItem({ item, index }: { item: OrderItem; index: number }): JSX.Element {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id: item.id,
-    })
-
-    return (
-        <div
-            ref={setNodeRef}
-            {...attributes}
-            {...listeners}
-            className={`bg-muted/10 border-border/20 flex cursor-grab items-center gap-3 rounded-2xl border px-4 py-5 shadow-lg backdrop-blur-sm active:cursor-grabbing sm:px-4 sm:py-4 ${
-                isDragging
-                    ? "z-50 scale-[1.01] opacity-80 shadow-[0_0_40px_rgba(0,242,255,0.18)] ring-2 ring-[#FF8A00]/60"
-                    : "transition-all duration-200"
-            }`}
-            style={{
-                transform: CSS.Transform.toString(transform),
-                transition: isDragging ? "none" : transition,
-                touchAction: "none",
-            }}
-        >
-            <div className="text-muted-foreground/70 -mx-2 flex items-center self-stretch px-2 py-1 sm:-mx-1">
-                <GripVertical className="h-6 w-6 sm:h-5 sm:w-5" />
-            </div>
-
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-black text-white/90 shadow-inner sm:h-8 sm:w-8">
-                {index + 1}
-            </div>
-
-            <p className="text-foreground text-lg font-bold tracking-tight select-none sm:text-lg">
-                {item.label}
-            </p>
-        </div>
-    )
-}
 
 export default function OrderQuestionContent(): JSX.Element {
     const [items, setItems] = useState<OrderItem[]>(MOCK_ITEMS)
@@ -133,7 +92,12 @@ export default function OrderQuestionContent(): JSX.Element {
                     <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
                         <div className="flex flex-col gap-4 pb-6">
                             {items.map((item, index) => (
-                                <SortableOrderItem key={item.id} index={index} item={item} />
+                                <SortableOrderOption
+                                    key={item.id}
+                                    id={item.id}
+                                    index={index}
+                                    value={item.label}
+                                />
                             ))}
                         </div>
                     </SortableContext>

@@ -55,6 +55,7 @@ export default function QuizCreator(): JSX.Element {
         updateQuestion,
         updateOption,
         toggleOptionCorrect,
+        reorderOptions,
         deleteQuestion,
         handleAddQuestion,
         handleAddOption,
@@ -66,6 +67,7 @@ export default function QuizCreator(): JSX.Element {
         isSaveSuccessVisible,
         hasUnsavedChanges,
         deleteQuizMutation,
+        discardChanges,
         hasInitializedQuestions,
     } = useQuizEditor(quizId)
 
@@ -148,6 +150,16 @@ export default function QuizCreator(): JSX.Element {
                             <Settings className="h-4 w-4" />
                             Settings
                         </Button>
+
+                        {hasUnsavedChanges ? (
+                            <Button
+                                disabled={isSavingQuestions}
+                                onClick={discardChanges}
+                                variant="outline"
+                            >
+                                Discard Changes
+                            </Button>
+                        ) : null}
 
                         <Button
                             className="bg-[#00F2FF] font-bold text-black hover:bg-[#00d8e4]"
@@ -273,6 +285,7 @@ export default function QuizCreator(): JSX.Element {
                         onAddOption={handleAddOption}
                         onChangeOption={updateOption}
                         onDeleteOption={handleDeleteOption}
+                        onReorderOptions={reorderOptions}
                         onToggleCorrect={toggleOptionCorrect}
                         question={currentQuestion}
                         questionIndex={currentQuestionIndex}

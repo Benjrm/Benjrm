@@ -39,6 +39,7 @@ export interface UseQuizEditorResult {
     updateQuestion: (data: Partial<Question>) => void
     updateOption: (index: number, value: string) => void
     toggleOptionCorrect: (index: number) => void
+    reorderOptions: (activeId: string, overId: string) => void
     deleteQuestion: (index: number) => void
     handleAddQuestion: () => void
     handleAddOption: () => void
@@ -51,6 +52,7 @@ export interface UseQuizEditorResult {
     hasUnsavedChanges: boolean
     setHasUnsavedChanges: (b: boolean) => void
     enqueue: (item: QueueItem) => void
+    discardChanges: () => void
     flush: () => Promise<{ items: unknown[]; idMap: Record<string, string> } | null>
     upsertReorder: (order: string[]) => void
     upsertUpdate: (id: string, payload: Partial<QuestionApiRequest>) => void
@@ -86,8 +88,16 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     const saveSuccessCleanupTimeoutRef = useRef<number | null>(null)
     const reorderTimeoutRef = useRef<number | null>(null)
 
-    const { enqueue, flush, queue, removeQuestion, upsertCreate, upsertReorder, upsertUpdate } =
-        useQuestionChangeQueue(quizId)
+    const {
+        enqueue,
+        clear,
+        flush,
+        queue,
+        removeQuestion,
+        upsertCreate,
+        upsertReorder,
+        upsertUpdate,
+    } = useQuestionChangeQueue(quizId)
 
     const queuedQuestions = useMemo(() => {
         if (!savedQuestions) return null
@@ -144,6 +154,33 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         }
     }
 
+    const discardChanges = () => {
+        if (reorderTimeoutRef.current) {
+            window.clearTimeout(reorderTimeoutRef.current)
+            reorderTimeoutRef.current = null
+        }
+        if (saveSuccessHideTimeoutRef.current) {
+            window.clearTimeout(saveSuccessHideTimeoutRef.current)
+            saveSuccessHideTimeoutRef.current = null
+        }
+        if (saveSuccessCleanupTimeoutRef.current) {
+            window.clearTimeout(saveSuccessCleanupTimeoutRef.current)
+            saveSuccessCleanupTimeoutRef.current = null
+        }
+
+        clear()
+
+        const baseQs =
+            savedQuestions && savedQuestions.length > 0
+                ? savedQuestions.map((response) => responseToQuestion(response))
+                : [createEmptyQuestion()]
+
+        setQuestions(baseQs)
+        setCurrentQuestionIndex((prev) => Math.min(prev, Math.max(baseQs.length - 1, 0)))
+        setHasUnsavedChanges(false)
+        setSaveError(null)
+    }
+
     const currentQuestion = questions[currentQuestionIndex] ?? questions[0] ?? createEmptyQuestion()
     const questionIds = useMemo(() => questions.map((q) => q.id), [questions])
 
@@ -186,6 +223,16 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     const handleDragStart = (event: DragStartEvent) => setActiveQuestionId(String(event.active.id))
     const handleDragCancel = () => setActiveQuestionId(null)
 
+    const toFriendlySaveError = (err: unknown): string => {
+        const message = err instanceof Error ? err.message : String(err)
+
+        if (message.includes("backend is currently unavailable")) {
+            return "The changes could not be saved please try again later."
+        }
+
+        return "The changes could not be saved. Please try again."
+    }
+
     const validateQuestions = (): string | null => {
         if (!quizId)
             return "Please create or open a quiz first so the questions can be saved in the adapter."
@@ -200,7 +247,10 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
                 if (!question.options[oi].answer.trim())
                     return `Question ${qi + 1}, option ${oi + 1} is empty.`
             }
-            if (!question.options.some((o) => o.correct))
+            if (
+                question.type !== "ORDER" &&
+                !question.options.some((o) => (o as { correct?: boolean }).correct)
+            )
                 return `Question ${qi + 1} needs at least one correct answer.`
         }
 
@@ -261,7 +311,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
             return { ok: true }
         } catch (err) {
-            const message = err instanceof Error ? err.message : String(err)
+            const message = toFriendlySaveError(err)
             setSaveError(message)
             return { ok: false, error: message }
         } finally {
@@ -292,11 +342,27 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     }
 
     const toggleOptionCorrect = (index: number) => {
+        if (currentQuestion.type === "ORDER") return
+
         markUnsavedChanges()
         const newOptions = currentQuestion.options.map((option, optionIndex) =>
-            optionIndex === index ? { ...option, correct: !option.correct } : option
+            optionIndex === index
+                ? { ...option, correct: !(option as { correct?: boolean }).correct }
+                : option
         )
         updateQuestion({ options: newOptions })
+    }
+
+    const reorderOptions = (activeId: string, overId: string) => {
+        const oldIndex = currentQuestion.options.findIndex((option) => option.id === activeId)
+        const newIndex = currentQuestion.options.findIndex((option) => option.id === overId)
+
+        if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return
+
+        markUnsavedChanges()
+
+        const nextOptions = arrayMove(currentQuestion.options, oldIndex, newIndex)
+        updateQuestion({ options: nextOptions })
     }
 
     const deleteQuestion = (indexToDelete: number) => {
@@ -364,7 +430,10 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
     const handleAddOption = () => {
         markUnsavedChanges()
-        const newOption = { id: tempId(), answer: "", correct: false }
+        const newOption =
+            currentQuestion.type === "ORDER"
+                ? { id: tempId(), answer: "" }
+                : { id: tempId(), answer: "", correct: false }
         const updatedQuestion = {
             ...currentQuestion,
             options: [...currentQuestion.options, newOption],
@@ -402,6 +471,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         updateQuestion,
         updateOption,
         toggleOptionCorrect,
+        reorderOptions,
         deleteQuestion,
         handleAddQuestion,
         handleAddOption,
@@ -414,6 +484,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         hasUnsavedChanges,
         setHasUnsavedChanges,
         enqueue,
+        discardChanges,
         flush,
         upsertReorder,
         upsertUpdate,

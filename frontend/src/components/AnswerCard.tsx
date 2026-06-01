@@ -16,8 +16,8 @@ export interface AnswerCardProps {
     placeholder: string
     value: string
     onChange: (val: string) => void
-    onToggleCorrect: () => void
-    correct: boolean
+    onToggleCorrect?: () => void
+    correct?: boolean
     onDelete?: () => void
     canDelete?: boolean
 }
@@ -103,24 +103,26 @@ export default function AnswerCard({
                         </Button>
                     ) : null}
 
-                    <Button
-                        aria-pressed={correct}
-                        onClick={onToggleCorrect}
-                        type="button"
-                        variant="ghost"
-                        className={`h-8 w-full gap-2 rounded-full px-3 text-[10px] font-bold tracking-widest shadow-none transition-colors sm:w-auto ${
-                            correct
-                                ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/25"
-                                : "border-red-400/40 bg-red-500/20 text-red-300 hover:bg-red-500/25"
-                        }`}
-                    >
-                        {correct ? (
-                            <Check className="h-3.5 w-3.5" />
-                        ) : (
-                            <X className="h-3.5 w-3.5" />
-                        )}
-                        {correct ? "Correct" : "Wrong"}
-                    </Button>
+                    {onToggleCorrect ? (
+                        <Button
+                            aria-pressed={!!correct}
+                            onClick={onToggleCorrect}
+                            type="button"
+                            variant="ghost"
+                            className={`h-8 w-full gap-2 rounded-full px-3 text-[10px] font-bold tracking-widest shadow-none transition-colors sm:w-auto ${
+                                correct
+                                    ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/25"
+                                    : "border-red-400/40 bg-red-500/20 text-red-300 hover:bg-red-500/25"
+                            }`}
+                        >
+                            {correct ? (
+                                <Check className="h-3.5 w-3.5" />
+                            ) : (
+                                <X className="h-3.5 w-3.5" />
+                            )}
+                            {correct ? "Correct" : "Wrong"}
+                        </Button>
+                    ) : null}
                 </div>
             </div>
         </div>

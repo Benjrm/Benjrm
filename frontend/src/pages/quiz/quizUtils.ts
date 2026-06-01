@@ -34,7 +34,13 @@ export function questionToRequest(question: Question): QuestionApiRequest {
         question: question.question,
         type: question.type,
         hidden: question.hidden,
-        options: question.options.map(({ answer, correct }) => ({ answer, correct })),
+        options:
+            question.type === "ORDER"
+                ? question.options.map((opt) => ({ answer: opt.answer }))
+                : question.options.map((opt) => ({
+                      answer: opt.answer,
+                      correct: Boolean((opt as { correct?: boolean }).correct),
+                  })),
     }
 }
 

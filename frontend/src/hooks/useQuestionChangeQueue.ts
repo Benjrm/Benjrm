@@ -318,7 +318,19 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
             // Remove only successfully processed items from the persisted queue.
             // Keep any skipped items (e.g., reorders with unmapped temp ids) for a later flush.
             try {
-                const remaining = queue.filter((q) => !succeededIds.has(q.id))
+                const remaining = queue
+                    .filter((q) => !succeededIds.has(q.id))
+                    .map((item) => {
+                        if (item.op !== "reorder") return item
+
+                        const payload = item.payload as { order?: string[] } | undefined
+                        const order = (payload?.order ?? []).map((id) => idMap[id] ?? id)
+
+                        return {
+                            ...item,
+                            payload: { ...(payload ?? {}), order },
+                        }
+                    })
                 dispatch({ type: "replace", items: remaining })
             } catch {
                 // ignore persistence errors here
@@ -328,7 +340,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
         } catch (err) {
             const e = err instanceof Error ? err : new Error(String(err))
             setLastError(e)
-            return { items: [], idMap: {} }
+            throw e
         } finally {
             setIsFlushing(false)
         }
