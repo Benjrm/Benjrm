@@ -26,6 +26,12 @@ export default class QuestionApiAdapter implements QuestionAdapter {
 
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
     // eslint-disable-next-line class-methods-use-this
+    async getQuestion(quizId: string, questionId: string): Promise<QuestionApiResponse> {
+        return apiGet(`/quizzes/${quizId}/questions/${questionId}`)
+    }
+
+    // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
+    // eslint-disable-next-line class-methods-use-this
     async updateQuestion(
         quizId: string,
         questionId: string,
@@ -37,6 +43,17 @@ export default class QuestionApiAdapter implements QuestionAdapter {
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
     // eslint-disable-next-line class-methods-use-this
     async reorderQuestions(quizId: string, order: string[]): Promise<void> {
-        await apiPatch(`/quizzes/${quizId}/questions/reorder`, { order })
+        if (order.length === 0) {
+            return
+        }
+
+        const promises = order.map(async (id, i) => {
+            const prev = i > 0 ? order[i - 1] : null
+            const next = i < order.length - 1 ? order[i + 1] : null
+
+            return apiPatch(`/quizzes/${quizId}/questions/${id}`, { prev, next })
+        })
+
+        await Promise.all(promises)
     }
 }

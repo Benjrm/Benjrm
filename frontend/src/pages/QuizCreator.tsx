@@ -62,6 +62,7 @@ export default function QuizCreator(): JSX.Element {
         handleSaveQuestions,
         isSavingQuestions,
         saveSuccess,
+        saveError,
         isSaveSuccessVisible,
         hasUnsavedChanges,
         deleteQuizMutation,
@@ -206,6 +207,7 @@ export default function QuizCreator(): JSX.Element {
                     questionLoadError={questionLoadErrorStr}
                     quizId={quizId}
                     quizLoadError={quizLoadErrorStr}
+                    saveError={saveError}
                     saveSuccess={saveSuccess}
                 />
 

@@ -18,6 +18,13 @@ type Action =
     | { type: "enqueue"; item: QueueItem }
     | { type: "clear" }
     | { type: "replace"; items: QueueItem[] }
+    | { type: "removeQuestion"; questionId: string }
+    | {
+          type: "upsertCreate"
+          questionId: string
+          payload: QuestionApiRequest
+          quizId?: string
+      }
     | { type: "upsertReorder"; order: string[]; quizId?: string }
     | {
           type: "upsertUpdate"
@@ -34,8 +41,23 @@ function reducer(state: QueueItem[], action: Action): QueueItem[] {
             return []
         case "replace":
             return action.items
+        case "removeQuestion":
+            return state.filter(
+                (item) => !(item.questionId === action.questionId && item.op !== "delete")
+            )
+        case "upsertCreate":
+            return [
+                ...state.filter((i) => !(i.op === "create" && i.questionId === action.questionId)),
+                {
+                    id: `create-${action.questionId}-${Date.now()}`,
+                    op: "create",
+                    quizId: action.quizId ?? "",
+                    questionId: action.questionId,
+                    payload: action.payload,
+                    createdAt: new Date().toISOString(),
+                },
+            ]
         case "upsertReorder":
-            // remove existing reorder items and append the latest
             return [
                 ...state.filter((i) => i.op !== "reorder"),
                 {
@@ -47,7 +69,6 @@ function reducer(state: QueueItem[], action: Action): QueueItem[] {
                 },
             ]
         case "upsertUpdate":
-            // remove existing update items for this question and append latest
             return [
                 ...state.filter((i) => !(i.op === "update" && i.questionId === action.questionId)),
                 {
@@ -68,6 +89,8 @@ export interface UseQuestionChangeQueueReturn {
     enqueue: (item: QueueItem) => void
     clear: () => void
     flush: () => Promise<{ items: QueueItem[]; idMap: Record<string, string> }>
+    removeQuestion: (questionId: string) => void
+    upsertCreate: (questionId: string, payload: QuestionApiRequest) => void
     upsertReorder: (order: string[]) => void
     upsertUpdate: (questionId: string, payload: Partial<QuestionApiRequest>) => void
     pendingCount: number
@@ -80,31 +103,45 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
     const queueStorage = useQuestionQueueStorage()
     const storageQuizId = quizId ?? "new"
     const [queue, dispatch] = useReducer(reducer, [] as QueueItem[])
+    const [hydratedStorageQuizId, setHydratedStorageQuizId] = useState<string | null>(null)
     const [isFlushing, setIsFlushing] = useState(false)
     const [lastError, setLastError] = useState<Error | null>(null)
 
-    // hydrate from localStorage
-    useEffect(() => {
+    if (hydratedStorageQuizId !== storageQuizId) {
+        setHydratedStorageQuizId(storageQuizId)
         try {
             const parsed = queueStorage.getQueue(storageQuizId)
             dispatch({ type: "replace", items: parsed })
         } catch {
-            // ignore
+            dispatch({ type: "clear" })
         }
-    }, [queueStorage, storageQuizId])
+    }
 
     // persist
     useEffect(() => {
+        if (hydratedStorageQuizId !== storageQuizId) return
+
         try {
             queueStorage.setQueue(storageQuizId, queue)
         } catch {
             // ignore
         }
-    }, [queueStorage, storageQuizId, queue])
+    }, [queueStorage, storageQuizId, queue, hydratedStorageQuizId])
 
     const enqueue = useCallback((item: QueueItem) => {
         dispatch({ type: "enqueue", item })
     }, [])
+
+    const removeQuestion = useCallback((questionId: string) => {
+        dispatch({ type: "removeQuestion", questionId })
+    }, [])
+
+    const upsertCreate = useCallback(
+        (questionId: string, payload: QuestionApiRequest) => {
+            dispatch({ type: "upsertCreate", questionId, payload, quizId })
+        },
+        [quizId]
+    )
 
     const upsertReorder = useCallback(
         (order: string[]) => {
@@ -137,10 +174,18 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
         setIsFlushing(true)
         setLastError(null)
         try {
-            const items = [...queue]
+            const items = [...queue].sort((a, b) => {
+                const order: Record<string, number> = {
+                    delete: 0,
+                    create: 1,
+                    update: 2,
+                    reorder: 3,
+                }
+                return (order[a.op] ?? 99) - (order[b.op] ?? 99)
+            })
             const idMap: Record<string, string> = {}
 
-            // process sequentially by chaining promises to avoid `await` in a loop lint rule
+            const succeededIds = new Set<string>()
             await items.reduce(async (prevPromise, rawItem) => {
                 await prevPromise
 
@@ -163,26 +208,103 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
                         if (item.questionId) {
                             idMap[item.questionId] = created.id
                         }
+                        succeededIds.add(item.id)
                     } else if (item.op === "update") {
                         const req = item.payload as Partial<QuestionApiRequest>
                         if (!item.questionId) {
                             await Promise.resolve()
                             return undefined
                         }
+
+
+                        const isTemp = String(item.questionId).startsWith("temp-")
+                        if (isTemp && !idMap[item.questionId]) {
+                            // Try to find a queued create for this temp id
+                            const queuedCreate = items.find(
+                                (x) => x.op === "create" && x.questionId === item.questionId
+                            )
+                            if (queuedCreate) {
+                                const createReq = queuedCreate.payload as QuestionApiRequest
+                                const created = await questionAdapterImpl.createQuestion(
+                                    item.quizId,
+                                    createReq
+                                )
+                                if (queuedCreate.questionId)
+                                    idMap[queuedCreate.questionId] = created.id
+                                // also map current item's questionId to the created id
+                                idMap[item.questionId] = created.id
+                                await Promise.resolve()
+                                return undefined
+                            }
+
+                            const maybeCreate = req as QuestionApiRequest
+                            const opts = (maybeCreate as Partial<QuestionApiRequest>)?.options
+                            const hasOptions = Array.isArray(opts) && opts.length >= 2
+                            if (
+                                maybeCreate &&
+                                typeof maybeCreate.question === "string" &&
+                                maybeCreate.type &&
+                                hasOptions
+                            ) {
+                                const created = await questionAdapterImpl.createQuestion(
+                                    item.quizId,
+                                    maybeCreate
+                                )
+                                idMap[item.questionId] = created.id
+                                await Promise.resolve()
+                                return undefined
+                            }
+
+                            // otherwise, skip updating now and let queue handling
+                            // or a later flush handle creation first
+                            await Promise.resolve()
+                            return undefined
+                        }
+
                         await questionAdapterImpl.updateQuestion(item.quizId, item.questionId, req)
+                        succeededIds.add(item.id)
                     } else if (item.op === "delete") {
                         if (!item.questionId) {
                             await Promise.resolve()
                             return undefined
                         }
                         await questionAdapterImpl.deleteQuestion(item.quizId, item.questionId)
+                        succeededIds.add(item.id)
                     } else if (item.op === "reorder") {
                         const payload = item.payload as { order?: string[] } | undefined
                         let order = payload?.order ?? []
                         if (order.length) {
+                            // Map known ids
                             order = order.map((id) => idMap[id] ?? id)
+                            const tempIdPromises = order.map(async (id) => {
+                                if (String(id).startsWith("temp-") && !idMap[id]) {
+                                    const queuedCreate = items.find(
+                                        (x) => x.op === "create" && x.questionId === id
+                                    )
+                                    if (queuedCreate) {
+                                        const created = await questionAdapterImpl.createQuestion(
+                                            item.quizId,
+                                            queuedCreate.payload as QuestionApiRequest
+                                        )
+                                        if (queuedCreate.questionId) {
+                                            idMap[queuedCreate.questionId] = created.id
+                                        }
+                                        return created.id
+                                    }
+                                }
+                                return id
+                            })
+                            order = await Promise.all(tempIdPromises)
                         }
+
+                        const unmapped = order.find((id) => String(id).startsWith("temp-"))
+                        if (unmapped) {
+                            await Promise.resolve()
+                            return undefined
+                        }
+
                         await questionAdapterImpl.reorderQuestions(item.quizId, order)
+                        succeededIds.add(item.id)
                     }
 
                     await Promise.resolve()
@@ -194,7 +316,14 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
                 }
             }, Promise.resolve())
 
-            clear()
+            // Remove only successfully processed items from the persisted queue.
+            // Keep any skipped items (e.g., reorders with unmapped temp ids) for a later flush.
+            try {
+                const remaining = queue.filter((q) => !succeededIds.has(q.id))
+                dispatch({ type: "replace", items: remaining })
+            } catch {
+            }
+
             return { items, idMap }
         } catch (err) {
             const e = err instanceof Error ? err : new Error(String(err))
@@ -203,12 +332,14 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
         } finally {
             setIsFlushing(false)
         }
-    }, [queue, clear])
+    }, [queue])
 
     return {
         enqueue,
         clear,
         flush,
+        removeQuestion,
+        upsertCreate,
         upsertReorder,
         upsertUpdate,
         pendingCount: queue.length,

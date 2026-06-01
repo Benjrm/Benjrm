@@ -10,6 +10,7 @@ interface Props {
     hasInitializedQuestions: boolean
     deleteError?: string | null
     saveSuccess?: string | null
+    saveError?: string | null
     isSaveSuccessVisible?: boolean
 }
 
@@ -23,6 +24,7 @@ const QuizCreatorFeedback: FC<Props> = ({
     hasInitializedQuestions,
     deleteError,
     saveSuccess,
+    saveError,
     isSaveSuccessVisible,
 }) => (
     <>
@@ -62,6 +64,8 @@ const QuizCreatorFeedback: FC<Props> = ({
                 {saveSuccess}
             </p>
         ) : null}
+
+        {saveError ? <p className="mb-6 text-sm text-red-500">{saveError}</p> : null}
     </>
 )
 

@@ -48,6 +48,13 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         return Promise.resolve(this.loadQuiz(quizId))
     }
 
+    async getQuestion(quizId: string, questionId: string): Promise<QuestionApiResponse> {
+        const questions = this.loadQuiz(quizId)
+        const question = questions.find((item) => item.id === questionId)
+        if (!question) throw new Error("Question not found")
+        return Promise.resolve(question)
+    }
+
     async updateQuestion(
         quizId: string,
         questionId: string,

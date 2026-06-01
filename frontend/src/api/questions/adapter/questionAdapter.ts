@@ -3,6 +3,7 @@ import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/ty
 export interface QuestionAdapter {
     createQuestion: (quizId: string, request: QuestionApiRequest) => Promise<QuestionApiResponse>
     getQuestions: (quizId: string) => Promise<QuestionApiResponse[]>
+    getQuestion: (quizId: string, questionId: string) => Promise<QuestionApiResponse>
     updateQuestion: (
         quizId: string,
         questionId: string,

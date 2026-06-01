@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { arrayMove } from "@dnd-kit/sortable"
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core"
+import { useQueryClient } from "@tanstack/react-query"
 import { useQuiz, useDeleteQuiz } from "@/api/queries"
-import { useCreateQuestion, useDeleteQuestion, useQuestions } from "@/api/questions"
+import { useQuestions } from "@/api/questions"
+import questionKeys from "@/api/questions/utils/questionKeys"
 import type { Question } from "@/types/quiz"
-import { createEmptyQuestion, questionToRequest, responseToQuestion } from "@/pages/quiz/quizUtils"
+import {
+    createEmptyQuestion,
+    questionToRequest,
+    responseToQuestion,
+    applyQueueToQuestions,
+} from "@/pages/quiz/quizUtils"
+import tempId from "@/utils/tempId"
 import useQuestionChangeQueue from "@/hooks/useQuestionChangeQueue"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
 import type { QuestionApiRequest } from "@/api/questions/types/question.api.ts"
@@ -38,6 +46,7 @@ export interface UseQuizEditorResult {
     handleSaveQuestions: () => Promise<{ ok: boolean; error?: string }>
     isSavingQuestions: boolean
     saveSuccess: string | null
+    saveError: string | null
     isSaveSuccessVisible: boolean
     hasUnsavedChanges: boolean
     setHasUnsavedChanges: (b: boolean) => void
@@ -50,6 +59,7 @@ export interface UseQuizEditorResult {
 }
 
 export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
+    const queryClient = useQueryClient()
     const { data: quiz, isLoading, error } = useQuiz(quizId)
     const deleteQuizMutation = useDeleteQuiz()
     const {
@@ -57,8 +67,6 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         isLoading: isLoadingQuestions,
         error: questionLoadError,
     } = useQuestions(quizId)
-    const createQuestionMutation = useCreateQuestion(quizId)
-    const deleteQuestionMutation = useDeleteQuestion(quizId)
 
     const quizTitle = quiz?.title ?? "Untitled"
     const quizDescription = quiz?.description ?? ""
@@ -70,6 +78,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(!quizId)
     const [isSavingQuestions, setIsSavingQuestions] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
+    const [saveError, setSaveError] = useState<string | null>(null)
     const [isSaveSuccessVisible, setIsSaveSuccessVisible] = useState(false)
 
     const saveTimeoutRef = useRef<number | null>(null)
@@ -77,25 +86,34 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     const saveSuccessCleanupTimeoutRef = useRef<number | null>(null)
     const reorderTimeoutRef = useRef<number | null>(null)
 
-    const { enqueue, flush, upsertReorder, upsertUpdate } = useQuestionChangeQueue(quizId)
+    const { enqueue, flush, queue, removeQuestion, upsertCreate, upsertReorder, upsertUpdate } =
+        useQuestionChangeQueue(quizId)
 
-    useEffect(() => {
-        if (!quizId) return
-        if (hasInitializedQuestions) return
-        if (!savedQuestions) return
+    const queuedQuestions = useMemo(() => {
+        if (!savedQuestions) return null
 
-        const nextQuestions =
+        const baseQuestions =
             savedQuestions.length > 0
                 ? savedQuestions.map((response) => responseToQuestion(response))
                 : [createEmptyQuestion()]
 
-        setTimeout(() => {
-            setQuestions(nextQuestions)
-            setCurrentQuestionIndex((prev) => Math.min(prev, Math.max(nextQuestions.length - 1, 0)))
-            setHasUnsavedChanges(false)
+        return applyQueueToQuestions(baseQuestions, queue)
+    }, [queue, savedQuestions])
+
+    useEffect(() => {
+        if (!quizId || hasInitializedQuestions || !queuedQuestions) return undefined
+
+        const initTimeoutId = window.setTimeout(() => {
+            setQuestions(queuedQuestions)
+            setCurrentQuestionIndex((prev) =>
+                Math.min(prev, Math.max(queuedQuestions.length - 1, 0))
+            )
+            setHasUnsavedChanges(queue.length > 0)
             setHasInitializedQuestions(true)
         }, 0)
-    }, [quizId, savedQuestions, hasInitializedQuestions])
+
+        return () => window.clearTimeout(initTimeoutId)
+    }, [quizId, queuedQuestions, hasInitializedQuestions, queue.length])
 
     useEffect(
         () => () => {
@@ -113,6 +131,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         setHasUnsavedChanges(true)
         setIsSaveSuccessVisible(false)
         setSaveSuccess(null)
+        setSaveError(null)
 
         if (saveSuccessHideTimeoutRef.current) {
             window.clearTimeout(saveSuccessHideTimeoutRef.current)
@@ -189,45 +208,35 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     }
 
     const handleSaveQuestions = async () => {
-        let flushResult = null
-        try {
-            flushResult = await flush()
-        } catch {
-            // ignore
-        }
-
-        if (flushResult?.idMap && Object.keys(flushResult.idMap).length > 0) {
-            const { idMap } = flushResult
-            setQuestions((prev) => prev.map((q) => ({ ...q, id: idMap[q.id] ?? q.id })))
-        }
-
         const validationError = validateQuestions()
-        if (validationError) return { ok: false, error: validationError }
+        if (validationError) {
+            setSaveError(validationError)
+            return { ok: false, error: validationError }
+        }
         if (!quizId)
             return {
                 ok: false,
                 error: "Save the quiz first before persisting questions to the adapter.",
             }
 
+        if (reorderTimeoutRef.current) {
+            window.clearTimeout(reorderTimeoutRef.current)
+            reorderTimeoutRef.current = null
+            upsertReorder(questions.map((q) => q.id))
+        }
+
         setIsSavingQuestions(true)
 
         try {
-            const existingQuestions = savedQuestions ?? []
-            await Promise.all(
-                [...existingQuestions]
-                    .reverse()
-                    .map(async (q) => deleteQuestionMutation.mutateAsync(q.id))
-            )
+            const flushResult = await flush()
 
-            const createdResponses = await Promise.all(
-                questions.map(async (q) => createQuestionMutation.mutateAsync(questionToRequest(q)))
-            )
+            if (flushResult?.idMap && Object.keys(flushResult.idMap).length > 0) {
+                const { idMap } = flushResult
+                setQuestions((prev) => prev.map((q) => ({ ...q, id: idMap[q.id] ?? q.id })))
+            }
 
-            const createdQuestions = createdResponses.map((r) => responseToQuestion(r))
-            setQuestions(createdQuestions)
-            setCurrentQuestionIndex((prev) =>
-                Math.min(prev, Math.max(createdQuestions.length - 1, 0))
-            )
+            await queryClient.invalidateQueries({ queryKey: questionKeys.all(quizId) })
+            setSaveError(null)
             setHasUnsavedChanges(false)
             setSaveSuccess("Quiz changes saved.")
             setIsSaveSuccessVisible(true)
@@ -252,7 +261,9 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
             return { ok: true }
         } catch (err) {
-            return { ok: false, error: err instanceof Error ? err.message : String(err) }
+            const message = err instanceof Error ? err.message : String(err)
+            setSaveError(message)
+            return { ok: false, error: message }
         } finally {
             setIsSavingQuestions(false)
         }
@@ -264,7 +275,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
             const updated = [...prevQuestions]
             const next = { ...updated[currentQuestionIndex], ...data }
             updated[currentQuestionIndex] = next
-            upsertUpdate(next.id, questionToRequest(next))
+            if (typeof next.id === "string" && next.id.startsWith("temp-")) {
+                upsertCreate(next.id, questionToRequest(next))
+            } else {
+                upsertUpdate(next.id, questionToRequest(next))
+            }
             return updated
         })
     }
@@ -286,18 +301,31 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
     const deleteQuestion = (indexToDelete: number) => {
         markUnsavedChanges()
+        if (reorderTimeoutRef.current) {
+            window.clearTimeout(reorderTimeoutRef.current)
+            reorderTimeoutRef.current = null
+        }
+        const deletingQuestion = questions[indexToDelete]
+        const deletingId = deletingQuestion?.id
         if (questions.length === 1) {
             setQuestions([createEmptyQuestion()])
             setCurrentQuestionIndex(0)
-            return
+        } else {
+            const nextQuestions = questions.filter((_, index) => index !== indexToDelete)
+            setQuestions(nextQuestions)
+
+            if (quizId && nextQuestions.length > 0) {
+                upsertReorder(nextQuestions.map((question) => question.id))
+            }
+
+            if (currentQuestionIndex >= indexToDelete && currentQuestionIndex > 0) {
+                setCurrentQuestionIndex((prev) => prev - 1)
+            }
         }
 
-        const deletingId = questions[indexToDelete]?.id
-        setQuestions((prevQuestions) => prevQuestions.filter((_, index) => index !== indexToDelete))
-
-        if (deletingId) {
+        if (deletingId && !String(deletingId).startsWith("temp-")) {
             enqueue({
-                id: crypto.randomUUID(),
+                id: tempId(),
                 op: "delete",
                 quizId: quizId ?? "new",
                 questionId: deletingId,
@@ -305,17 +333,27 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
             })
         }
 
-        if (currentQuestionIndex >= indexToDelete && currentQuestionIndex > 0) {
-            setCurrentQuestionIndex((prev) => prev - 1)
+        if (deletingId) {
+            removeQuestion(deletingId)
         }
     }
 
     const handleAddQuestion = () => {
         markUnsavedChanges()
         const newQ = createEmptyQuestion()
-        setQuestions((prev) => [...prev, newQ])
+        setQuestions((prev) => {
+            const next = [...prev, newQ]
+            setCurrentQuestionIndex(next.length - 1)
+            return next
+        })
+
+        if (quizId) {
+            upsertCreate(newQ.id, questionToRequest(newQ))
+            return
+        }
+
         enqueue({
-            id: crypto.randomUUID(),
+            id: tempId(),
             op: "create",
             quizId: quizId ?? "new",
             questionId: newQ.id,
@@ -326,7 +364,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
     const handleAddOption = () => {
         markUnsavedChanges()
-        const newOption = { id: crypto.randomUUID(), answer: "", correct: false }
+        const newOption = { id: tempId(), answer: "", correct: false }
         const updatedQuestion = {
             ...currentQuestion,
             options: [...currentQuestion.options, newOption],
@@ -371,6 +409,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         handleSaveQuestions,
         isSavingQuestions,
         saveSuccess,
+        saveError,
         isSaveSuccessVisible,
         hasUnsavedChanges,
         setHasUnsavedChanges,
