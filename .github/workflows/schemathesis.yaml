@@ -34,4 +34,4 @@ jobs:
         with:
           schema: 'docs/openapispec/RestInterface.yaml'
           base-url: 'http://localhost:8080'
-          version: '4.18.5'
+          version: '4.20.3'
