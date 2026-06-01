@@ -216,7 +216,6 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
                             return undefined
                         }
 
-
                         const isTemp = String(item.questionId).startsWith("temp-")
                         if (isTemp && !idMap[item.questionId]) {
                             // Try to find a queued create for this temp id
@@ -322,6 +321,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
                 const remaining = queue.filter((q) => !succeededIds.has(q.id))
                 dispatch({ type: "replace", items: remaining })
             } catch {
+                // ignore persistence errors here
             }
 
             return { items, idMap }
