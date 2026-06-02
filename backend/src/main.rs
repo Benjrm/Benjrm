@@ -4,7 +4,8 @@ use {
     actix_web::{
         App, HttpResponse, HttpServer, Route,
         cookie::{self, SameSite},
-        web::{self, JsonConfig, PathConfig},
+        mime,
+        web::{self, JsonConfig, PathConfig, QueryConfig},
     },
     awc::http::Method,
 };
@@ -62,6 +63,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(actix_web::middleware::Logger::default())
             .app_data(JsonConfig::default().error_handler(Error::json_handler))
             .app_data(PathConfig::default().error_handler(Error::path_handler))
+            .app_data(QueryConfig::default().error_handler(Error::query_handler))
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_http_only(true)
@@ -101,7 +103,7 @@ async fn main() -> std::io::Result<()> {
 fn healthcheck_route() -> Route {
     Route::new()
         .method(Method::GET)
-        .to(async || HttpResponse::Ok().body("OK"))
+        .to(async || HttpResponse::Ok().content_type(mime::TEXT_PLAIN).body("OK"))
 }
 
 fn not_found_route() -> Route {
