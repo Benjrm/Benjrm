@@ -691,13 +691,13 @@ components:
       type: object
       required:
         - category
-        - code
+        - error
         - message
       properties:
         category:
           type: string
           example: 'Quiz'
-        code:
+        error:
           type: string
           example: 'not_found'
         message:
