@@ -331,13 +331,13 @@ paths:
       tags:
         - Quizzes
 
-  /api/v1/quizzes/{quiz}/questions:
+  /api/v1/quizzes/{quizId}/questions:
     post:
       summary: Create a question
       operationId: createQuestion
-      description: 'Create a new question' 
+      description: 'Create a new question'
       parameters:
-        - name: quiz
+        - name: quizId
           in: path
           required: true
           schema:
@@ -394,7 +394,7 @@ paths:
       operationId: getQuestions
       description: 'Get all questions belonging to a quiz'
       parameters:
-        - name: quiz
+        - name: quizId
           in: path
           required: true
           schema:
@@ -449,19 +449,19 @@ paths:
       tags:
         - Questions
 
-  /api/v1/quizzes/{quiz}/questions/{question}:
+  /api/v1/quizzes/{quizId}/questions/{questionId}:
     get:
       summary: Get a single question
       operationId: getQuestion
       description: 'Get a single question belonging to a quiz'
       parameters:
-        - name: quiz
+        - name: quizId
           in: path
           required: true
           schema:
             type: string
             format: uuid
-        - name: question
+        - name: questionId
           in: path
           required: true
           schema:
@@ -511,13 +511,13 @@ paths:
       operationId: updateQuestion
       description: 'Partially update a question'
       parameters:
-        - name: quiz
+        - name: quizId
           in: path
           required: true
           schema:
             type: string
             format: uuid
-        - name: question
+        - name: questionId
           in: path
           required: true
           schema:
@@ -574,13 +574,13 @@ paths:
       operationId: replaceQuestion
       description: 'Relace a question'
       parameters:
-        - name: quiz
+        - name: quizId
           in: path
           required: true
           schema:
             type: string
             format: uuid
-        - name: question
+        - name: questionId
           in: path
           required: true
           schema:
@@ -637,13 +637,13 @@ paths:
       operationId: deleteQuestion
       description: Delete a question
       parameters:
-        - name: quiz
+        - name: quizId
           in: path
           required: true
           schema:
             type: string
             format: uuid
-        - name: question
+        - name: questionId
           in: path
           required: true
           schema:
