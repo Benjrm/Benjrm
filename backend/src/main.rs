@@ -4,6 +4,7 @@ use {
     actix_web::{
         App, HttpResponse, HttpServer, Route,
         cookie::{self, SameSite},
+        mime,
         web::{self, JsonConfig, PathConfig, QueryConfig},
     },
     awc::http::Method,
@@ -102,7 +103,7 @@ async fn main() -> std::io::Result<()> {
 fn healthcheck_route() -> Route {
     Route::new()
         .method(Method::GET)
-        .to(async || HttpResponse::Ok().body("OK"))
+        .to(async || HttpResponse::Ok().content_type(mime::TEXT_PLAIN).body("OK"))
 }
 
 fn not_found_route() -> Route {
