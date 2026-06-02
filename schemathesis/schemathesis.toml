@@ -1,0 +1,27 @@
+# https://schemathesis.readthedocs.io/en/stable/reference/configuration/#base-url
+base-url = "http://localhost:8080"
+
+# https://schemathesis.readthedocs.io/en/stable/reference/configuration/#hooks
+hooks = "src.hooks"
+
+# https://schemathesis.readthedocs.io/en/stable/reference/configuration/#suppress-health-check
+suppress-health-check = ["filter_too_much"]
+
+# https://schemathesis.readthedocs.io/en/stable/reference/configuration/#seed
+seed = 42
+
+# https://schemathesis.readthedocs.io/en/stable/reference/configuration/#generationallow-extra-parameters
+[generation]
+allow-extra-parameters = false
+
+[phases.examples]
+enabled = true
+
+[phases.coverage]
+enabled = false
+
+[phases.fuzzing]
+enabled = false
+
+[phases.stateful]
+enabled = false
