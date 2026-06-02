@@ -2,7 +2,7 @@ use {
     crate::error::{Error, error_response::ErrorResponse},
     actix_web::{
         HttpRequest, HttpResponse, HttpResponseBuilder, ResponseError,
-        error::{JsonPayloadError, PathError},
+        error::{JsonPayloadError, PathError, QueryPayloadError},
     },
     awc::http::StatusCode,
 };
@@ -37,6 +37,21 @@ impl Error {
         ErrorResponse {
             status: err.status_code(),
             category: "path",
+            error: error_str,
+            message: err.to_string(),
+        }
+        .into()
+    }
+
+    pub fn query_handler(err: QueryPayloadError, _req: &HttpRequest) -> actix_web::Error {
+        let error_str = match &err {
+            QueryPayloadError::Deserialize(_) => "deserialize",
+            _ => "unknown",
+        };
+
+        ErrorResponse {
+            status: err.status_code(),
+            category: "query",
             error: error_str,
             message: err.to_string(),
         }
