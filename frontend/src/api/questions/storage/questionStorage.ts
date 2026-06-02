@@ -11,7 +11,7 @@ function isBrowserAvailable(): boolean {
 }
 
 function storageKey(quizId: string): string {
-    return `benjrm:mock-questions:${quizId}`
+    return `quiz:${quizId}:questions`
 }
 
 function cloneQuestions(questions: QuestionApiResponse[]): QuestionApiResponse[] {

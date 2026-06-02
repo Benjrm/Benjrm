@@ -8,7 +8,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Button } from "@/shadcn/components/ui/button"
 import QuestionItem from "@/components/QuestionItem.tsx"
 import { ScrollArea } from "@/shadcn/components/ui/scroll-area"
-import type { Question } from "@/types/quiz"
+import type { Question } from "@/types/question"
 
 interface QuestionSidebarProps {
     activeIndex: number

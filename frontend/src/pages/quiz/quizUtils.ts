@@ -1,5 +1,5 @@
 import type { Modifier } from "@dnd-kit/core"
-import type { Question } from "@/types/quiz"
+import type { Question } from "@/types/question"
 import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api"
 import tempId from "@/utils/tempId"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"

@@ -15,7 +15,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
 import SortableOrderOption from "@/components/SortableOrderOption"
 import { Button } from "@/shadcn/components/ui/button"
-import type { QuestionOption } from "@/types/quiz"
+import type { QuestionOption } from "@/types/question"
 import { restrictToVerticalAxis, restrictToParentElement } from "@/pages/quiz/quizUtils"
 
 interface OrderOptionsProps {

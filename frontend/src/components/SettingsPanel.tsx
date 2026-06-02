@@ -3,7 +3,7 @@
 import type { JSX } from "react"
 import AnswerPreviewGrid from "./AnswerPreviewGrid"
 import { ScrollArea } from "@/shadcn/components/ui/scroll-area"
-import type { Question } from "@/types/quiz"
+import type { Question } from "@/types/question"
 import MarkdownPageComponent from "@/components/markdown/MarkdownPageComponent"
 
 interface SettingsPanelProps {

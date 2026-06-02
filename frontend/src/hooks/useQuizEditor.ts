@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { useQuiz, useDeleteQuiz } from "@/api/queries"
 import { useQuestions } from "@/api/questions"
 import questionKeys from "@/api/questions/utils/questionKeys"
-import type { Question } from "@/types/quiz"
+import type { Question } from "@/types/question"
 import {
     createEmptyQuestion,
     questionToRequest,

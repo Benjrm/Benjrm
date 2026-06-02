@@ -3,7 +3,7 @@
 import type { JSX } from "react"
 import OrderOptions from "./OrderOptions"
 import StandardOptions from "./StandardOptions"
-import type { QuestionOption, Question } from "@/types/quiz"
+import type { QuestionOption, Question } from "@/types/question"
 
 interface QuestionAnswerOptionsProps {
     onAddOption: () => void

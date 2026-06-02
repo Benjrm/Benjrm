@@ -11,7 +11,7 @@ function isBrowserAvailable(): boolean {
 }
 
 function storageKey(quizId: string): string {
-    return `quiz:queue:${quizId}`
+    return `quiz:${quizId}:queue`
 }
 
 function cloneQueue(queue: QueueItem[]): QueueItem[] {

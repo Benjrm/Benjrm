@@ -14,7 +14,7 @@ import {
 import { Textarea } from "@/shadcn/components/ui/textarea"
 import { Button } from "@/shadcn/components/ui/button"
 import { useTheme } from "@/context/ThemeContext"
-import type { Question } from "@/types/quiz"
+import type { Question } from "@/types/question"
 
 interface QuestionEditorProps {
     question: Question

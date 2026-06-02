@@ -1,6 +1,6 @@
 import type { JSX } from "react"
 import getAnswerVisuals from "../utils/answerVisuals"
-import type { QuestionOption, Question } from "@/types/quiz"
+import type { QuestionOption, Question } from "@/types/question"
 
 interface Props {
     options: QuestionOption[]
