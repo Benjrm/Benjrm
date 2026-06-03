@@ -182,7 +182,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
         if (hydratedStorageQuizIdRef.current === storageQuizId) return
 
         try {
-            const parsed = queueStorage.getQueue(storageQuizId)
+            const parsed = queueStorage.get(storageQuizId)
             dispatch({ type: "replace", items: parsed })
         } catch {
             dispatch({ type: "clear" })
@@ -195,7 +195,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
         if (hydratedStorageQuizIdRef.current !== storageQuizId) return
 
         try {
-            queueStorage.setQueue(storageQuizId, queue)
+            queueStorage.set(storageQuizId, queue)
         } catch {
             // gracefully ignore persistence errors
         }
@@ -233,7 +233,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
     const clear = useCallback(() => {
         dispatch({ type: "clear" })
         try {
-            queueStorage.clearQueue(storageQuizId)
+            queueStorage.delete(storageQuizId)
         } catch {
             // ignore
         }
@@ -338,7 +338,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
                 dispatch({ type: "replace", items: remaining })
 
                 if (remaining.length === 0) {
-                    queueStorage.clearQueue(storageQuizId)
+                    queueStorage.delete(storageQuizId)
                 }
             } catch {
                 // ignore persistence errors here

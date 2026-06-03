@@ -1,14 +1,13 @@
 import type { QuestionAdapter } from "@/api/questions/adapter/questionAdapter.ts"
 import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api.ts"
-import { createQuestionStorage } from "@/api/questions/storage/questionStorage.ts"
-import type { QuestionStorage } from "@/api/questions/storage/questionStorage.ts"
+import type { ListStorage } from "@/utils/listStorage"
 
 export default class QuestionMockAdapter implements QuestionAdapter {
     private questionsByQuiz: Record<string, QuestionApiResponse[]> = {}
 
-    private readonly storage: QuestionStorage
+    private readonly storage: ListStorage<QuestionApiResponse>
 
-    constructor(storage: QuestionStorage = createQuestionStorage()) {
+    constructor(storage: ListStorage<QuestionApiResponse>) {
         this.storage = storage
     }
 
@@ -17,7 +16,7 @@ export default class QuestionMockAdapter implements QuestionAdapter {
             return this.questionsByQuiz[quizId]
         }
 
-        const loaded = this.storage.getQuestions(quizId)
+        const loaded = this.storage.get(quizId)
         this.questionsByQuiz[quizId] = loaded
         return this.questionsByQuiz[quizId]
     }
@@ -40,7 +39,7 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         }
         questions.push(newQuestion)
         this.questionsByQuiz[quizId] = questions
-        this.storage.setQuestions(quizId, questions)
+        this.storage.set(quizId, questions)
         return Promise.resolve(newQuestion)
     }
 
@@ -81,7 +80,7 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         }
         questions[idx] = updated
         this.questionsByQuiz[quizId] = questions
-        this.storage.setQuestions(quizId, questions)
+        this.storage.set(quizId, questions)
         return Promise.resolve(updated)
     }
 
@@ -90,7 +89,7 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         const idx = questions.findIndex((question) => question.id === questionId)
         if (idx === -1) throw new Error("Question not found")
         this.questionsByQuiz[quizId] = questions.filter((question) => question.id !== questionId)
-        this.storage.setQuestions(quizId, this.questionsByQuiz[quizId])
+        this.storage.set(quizId, this.questionsByQuiz[quizId])
         return Promise.resolve()
     }
 
@@ -100,7 +99,7 @@ export default class QuestionMockAdapter implements QuestionAdapter {
         const reordered = order.map((id) => map.get(id)).filter(Boolean) as QuestionApiResponse[]
         const missing = questions.filter((question) => !order.includes(question.id))
         this.questionsByQuiz[quizId] = [...reordered, ...missing]
-        this.storage.setQuestions(quizId, this.questionsByQuiz[quizId])
+        this.storage.set(quizId, this.questionsByQuiz[quizId])
         return Promise.resolve()
     }
 }
