@@ -94,6 +94,7 @@ export default function OrderQuestionContent(): JSX.Element {
                             {items.map((item, index) => (
                                 <SortableOrderOption
                                     key={item.id}
+                                    error={false}
                                     id={item.id}
                                     index={index}
                                     value={item.label}
