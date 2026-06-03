@@ -79,10 +79,9 @@ Unsere Webanwendung setzt ausschließlich technisch notwendige Cookies ein. Dies
 
 Technisch notwendige Cookies werden insbesondere im Rahmen der Nutzer-Authentifizierung über unseren selbst gehosteten Identity-Provider Keycloak eingesetzt, um Anmeldesitzungen aufrechtzuerhalten.
 
-**Rechtsgrundlage:** Art. 6 Abs. 1 lit. b und lit. f DSGVO i. V. m. § 25 Abs. 2 TDDDG (Telekommunikation-Digitale-Dienste-Datenschutz-Gesetz). Für technisch notwendige Cookies ist keine Einwilligung erforderlich.
+**Rechtsgrundlage:** Art. 6 Abs. 1 lit. b und lit. f DSGVO i. V. m. § 25 Abs. 2 TDDDG (Telekommunikation-Digitale-Dienste-Datenschutz-Gesetz). Für technisch notwendige Cookies und den Local Storage ist keine Einwilligung erforderlich.
 
-**Speicherdauer:** Session-Cookies werden automatisch gelöscht, wenn Sie den Browser schließen. Persistente Authentifizierungs-Tokens werden nach Ablauf der Sitzungsdauer oder nach dem Abmelden automatisch ungültig gemacht.
-
+**Speicherdauer:** Session-Cookies werden automatisch gelöscht, wenn Sie den Browser schließen. Persistente Authentifizierungs-Tokens werden nach Ablauf der Sitzungsdauer oder nach dem Abmelden automatisch ungültig gemacht. Einstellungen, die im Local Storage Ihres Browsers gespeichert werden, bleiben auf Ihrem Endgerät bestehen, bis Sie diese manuell über Ihre Browsereinstellungen löschen.
 ---
 
 ## 6. Registrierung und Nutzerkonto
@@ -152,7 +151,7 @@ Hierbei werden insbesondere folgende Daten verarbeitet:
 * Zuordnung zum Nutzerkonto
 
 **Rechtsgrundlage:**
-Art. 6 Abs. 1 lit. b DSGVO.
+Art. 6 Abs. 1 lit. b DSGVO. (Vertragserfüllung; Bereitstellung der Kernanwendung).
 
 Die Daten bleiben gespeichert, bis sie durch den Nutzer gelöscht werden oder das Nutzerkonto entfernt wird.
 
