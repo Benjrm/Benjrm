@@ -14,7 +14,7 @@ import {
     applyQueueToQuestions,
 } from "@/pages/quiz/quizUtils"
 import tempId from "@/utils/tempId"
-import useQuestionChangeQueue from "@/hooks/useQuestionChangeQueue"
+import useQuestionChangeQueue, { QuestionQueueError } from "@/hooks/useQuestionChangeQueue"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
 import type { QuestionApiRequest } from "@/api/questions/types/question.api.ts"
 
@@ -240,10 +240,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         if (!question.question.trim()) {
             questionAffected = true
             if (question.type === "SLIDE") {
-                firstError ??= [
-                    "The text is missing.",
-                    `Slide ${index + 1} is missing the text.`,
-                ]
+                firstError ??= ["The text is missing.", `Slide ${index + 1} is missing the text.`]
             } else {
                 firstError ??= [
                     "The question text is missing.",
@@ -362,9 +359,17 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
             return { ok: true }
         } catch (err) {
-            const message = toFriendlySaveError(err)
-            toast.error(message)
-            return { ok: false, error: message }
+            let msg = ""
+            if (err instanceof QuestionQueueError) {
+                const question = questions.findIndex((q) => q.id === err.question)
+                if (question !== -1) {
+                    msg += `Question ${question + 1}: `
+                }
+                msg += err.error.message
+            } else {
+                msg = toFriendlySaveError(err)
+            }
+            return { ok: false, error: msg }
         } finally {
             setIsSavingQuestions(false)
         }

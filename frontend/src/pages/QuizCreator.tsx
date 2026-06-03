@@ -76,6 +76,8 @@ export default function QuizCreator(): JSX.Element {
         hasInitializedQuestions,
     } = useQuizEditor(quizId)
 
+    const [saveError, setSaveError] = useState<string | null>(null)
+
     useEffect(() => {
         if (isLoading && quizId) {
             toast.loading("Loading quiz...", { id: "quiz-loading" })
@@ -193,7 +195,12 @@ export default function QuizCreator(): JSX.Element {
                             className="bg-[#00F2FF] font-bold text-black hover:bg-[#00d8e4]"
                             disabled={isSavingQuestions || (quizId ? isLoadingQuestions : false)}
                             onClick={() => {
-                                handleSaveQuestions().catch(() => {})
+                                handleSaveQuestions()
+                                    .then((res) => {
+                                        if (res.error) setSaveError(res.error)
+                                        else setSaveError(null)
+                                    })
+                                    .catch(() => {})
                             }}
                         >
                             {isSavingQuestions ? "Saving..." : "Save Quiz"}
@@ -236,6 +243,12 @@ export default function QuizCreator(): JSX.Element {
                         </Dialog>
                     </div>
                 </header>
+
+                {saveError ? (
+                    <div className="text-black-950 dark:text-white-200 mb-6 rounded-2xl border border-red-400 bg-red-50 px-4 py-3 text-sm font-medium shadow-sm dark:border-red-400/30 dark:bg-red-500/10">
+                        {saveError}
+                    </div>
+                ) : null}
 
                 {/* Layout */}
                 <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden xl:grid-cols-[280px_1fr_320px]">

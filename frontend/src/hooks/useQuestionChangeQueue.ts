@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 import questionAdapterImpl from "@/api/questions/adapter/questionAdapterImpl"
 import type { QuestionApiRequest } from "@/api/questions/types/question.api.ts"
 import useQuestionQueueStorage from "@/api/questions/hooks/useQuestionQueueStorage.ts"
+import { ApiError } from "@/api/utils"
 
 export type QueueOp = "create" | "update" | "delete" | "reorder"
 
@@ -95,8 +96,20 @@ export interface UseQuestionChangeQueueReturn {
     upsertUpdate: (questionId: string, payload: Partial<QuestionApiRequest>) => void
     pendingCount: number
     isFlushing: boolean
-    lastError: Error | null
+    lastError: QuestionQueueError | null
     queue: QueueItem[]
+}
+
+export class QuestionQueueError extends Error {
+    question: string | undefined
+
+    error: Error | ApiError
+
+    constructor(question: string | undefined, error: Error | ApiError) {
+        super(error.message)
+        this.question = question
+        this.error = error
+    }
 }
 
 type ProcessResult =
@@ -141,10 +154,10 @@ async function processReorderOp(
     const payload = item.payload as { order?: string[] } | undefined
     let order = payload?.order ?? []
 
-    if (order.length > 0) {
-        // Resolve temp IDs to real IDs if they exist in the idMap
-        order = order.map((id) => idMap[id] ?? id)
-    }
+    if (order.length === 0) return { status: "skipped", reason: "missing_order_payload" }
+
+    // Resolve temp IDs to real IDs if they exist in the idMap
+    order = order.map((id) => idMap[id] ?? id)
 
     // If any IDs remain unresolved, we skip the reorder for now
     const hasUnresolvedTempIds = order.some((id) => String(id).startsWith("temp-"))
@@ -162,7 +175,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
     const [queue, dispatch] = useReducer(reducer, [] as QueueItem[])
     const hydratedStorageQuizIdRef = useRef<string | null>(null)
     const [isFlushing, setIsFlushing] = useState(false)
-    const [lastError, setLastError] = useState<Error | null>(null)
+    const [lastError, setLastError] = useState<QuestionQueueError | null>(null)
 
     // Hydrate the queue from local storage when the quiz ID changes
     useEffect(() => {
@@ -291,11 +304,17 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
 
                         if (result.status === "success") {
                             succeededIds.add(item.id)
+                        } else {
+                            throw new Error(result.reason)
                         }
                     } catch (innerErr) {
-                        const e = innerErr instanceof Error ? innerErr : new Error(String(innerErr))
-                        setLastError(e)
-                        throw e
+                        const e =
+                            innerErr instanceof ApiError || innerErr instanceof Error
+                                ? innerErr
+                                : new Error(String(innerErr))
+                        const error = new QuestionQueueError(item.questionId, e)
+                        setLastError(error)
+                        throw error
                     }
                 }
             }
@@ -327,7 +346,14 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
 
             return { items, idMap }
         } catch (err) {
-            const e = err instanceof Error ? err : new Error(String(err))
+            let e: QuestionQueueError
+            if (err instanceof QuestionQueueError) {
+                e = err
+            } else {
+                const apiError =
+                    err instanceof ApiError || err instanceof Error ? err : new Error(String(err))
+                e = new QuestionQueueError(undefined, apiError)
+            }
             setLastError(e)
             throw e
         } finally {

@@ -1,5 +1,7 @@
 // frontend/src/api/client.ts
 
+import { ApiError } from "./utils"
+
 export interface FetchOptions {
     method?: string
     body?: unknown
@@ -36,7 +38,13 @@ export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise
     const res = await fetch(url, init)
 
     if (!res.ok) {
-        throw createFriendlyApiError()
+        let error
+        try {
+            error = new ApiError(await res.json())
+        } catch {
+            throw createFriendlyApiError()
+        }
+        throw error
     }
 
     if (res.status === 204) return undefined as T
