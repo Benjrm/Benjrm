@@ -200,7 +200,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
             if (selectedQuestionId) {
                 const selectedIndex = nextQuestions.findIndex((q) => q.id === selectedQuestionId)
-                setCurrentQuestionIndex(selectedIndex >= 0 ? selectedIndex : 0)
+                setCurrentQuestionIndexInternal(selectedIndex >= 0 ? selectedIndex : 0)
             }
         }
     }
