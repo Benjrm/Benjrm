@@ -2,7 +2,9 @@ import type { Modifier } from "@dnd-kit/core"
 import type { Question } from "@/types/question"
 import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api"
 import tempId from "@/utils/tempId"
+import { QueueOpEnum } from "@/hooks/useQuestionChangeQueue"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
+import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 export function getQuestionPreviewText(text: string | undefined, type?: string): string {
     const firstLine =
@@ -15,7 +17,7 @@ export function getQuestionPreviewText(text: string | undefined, type?: string):
         .replace(/[*_~`]/g, "")
         .replace(/\[(.*?)\]\(.*?\)/g, "$1")
         .trim()
-    return cleaned || (type === "SLIDE" ? "Untitled slide" : "Untitled question")
+    return cleaned || (type === QuestionTypeEnum.SLIDE ? "Untitled slide" : "Untitled question")
 }
 
 export function createEmptyQuestion(): Question {
@@ -26,15 +28,15 @@ export function createEmptyQuestion(): Question {
             { id: tempId(), answer: "", correct: false },
             { id: tempId(), answer: "", correct: false },
         ],
-        type: "MULTIPLE_CHOICE",
+        type: QuestionTypeEnum.MULTIPLE_CHOICE,
         hidden: false,
     }
 }
 
 export function questionToRequest(question: Question): QuestionApiRequest {
     const getOptions = () => {
-        if (question.type === "SLIDE") return []
-        if (question.type === "ORDER")
+        if (question.type === QuestionTypeEnum.SLIDE) return []
+        if (question.type === QuestionTypeEnum.ORDER)
             return question.options.map((opt) => ({ answer: opt.answer }))
         return question.options.map((opt) => ({
             answer: opt.answer,
@@ -62,7 +64,7 @@ export function responseToQuestion(response: QuestionApiResponse): Question {
     return {
         id: String(response.id ?? tempId()),
         question: String(response.question ?? ""),
-        type: response.type ?? "MULTIPLE_CHOICE",
+        type: response.type ?? QuestionTypeEnum.MULTIPLE_CHOICE,
         hidden: Boolean(response.hidden),
         options,
     }
@@ -97,7 +99,7 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
     }
 
     queue.forEach((item) => {
-        if (item.op === "reorder") {
+        if (item.op === QueueOpEnum.REORDER) {
             const payload = item.payload as { order?: string[] } | undefined
             const order = payload?.order ?? []
             if (!order.length) return
@@ -116,12 +118,12 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
 
         if (!item.questionId) return
 
-        if (item.op === "delete") {
+        if (item.op === QueueOpEnum.DELETE) {
             draftQuestions = draftQuestions.filter((question) => question.id !== item.questionId)
             return
         }
 
-        if (item.op === "create") {
+        if (item.op === QueueOpEnum.CREATE) {
             const request = item.payload as QuestionApiRequest | undefined
             if (!request) return
 
@@ -145,7 +147,7 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
             return
         }
 
-        if (item.op === "update") {
+        if (item.op === QueueOpEnum.UPDATE) {
             const request = item.payload as Partial<QuestionApiRequest> | undefined
             if (!request) return
 

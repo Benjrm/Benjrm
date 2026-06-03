@@ -15,6 +15,7 @@ import { Textarea } from "@/shadcn/components/ui/textarea"
 import { Button } from "@/shadcn/components/ui/button"
 import { useTheme } from "@/context/ThemeContext"
 import type { Question } from "@/types/question"
+import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 interface QuestionEditorProps {
     question: Question
@@ -53,7 +54,7 @@ export default function QuestionEditor({
         if (saved !== null) {
             return saved === "markdown"
         }
-        return question.type === "SLIDE"
+        return question.type === QuestionTypeEnum.SLIDE
     })
 
     useEffect(() => {
@@ -75,7 +76,7 @@ export default function QuestionEditor({
                     <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                             <div className="text-muted-foreground text-sm font-medium tracking-wide">
-                                {question.type === "SLIDE" ? "Slide" : "Question"}{" "}
+                                {question.type === QuestionTypeEnum.SLIDE ? "Slide" : "Question"}{" "}
                                 {questionIndex + 1} of {totalQuestions}
                             </div>
                             <Button
@@ -99,10 +100,17 @@ export default function QuestionEditor({
                             </SelectTrigger>
 
                             <SelectContent>
-                                <SelectItem value="MULTIPLE_CHOICE">Multiple Choice</SelectItem>
-                                <SelectItem value="SINGLE_CHOICE">Single Choice</SelectItem>
-                                <SelectItem value="ORDER">Order</SelectItem>
-                                <SelectItem value="SLIDE">Slide</SelectItem>
+                                {Object.values(QuestionTypeEnum).map((value) => {
+                                    const name = value
+                                        .split("_")
+                                        .map((v) => `${v.charAt(0)}${v.slice(1).toLowerCase()}`)
+                                        .join(" ")
+                                    return (
+                                        <SelectItem key={value} value={value}>
+                                            {name}
+                                        </SelectItem>
+                                    )
+                                })}
                             </SelectContent>
                         </Select>
                     </div>
@@ -117,7 +125,7 @@ export default function QuestionEditor({
                             }`}
                         >
                             <MDEditor
-                                height={question.type === "SLIDE" ? 320 : 200}
+                                height={question.type === QuestionTypeEnum.SLIDE ? 320 : 200}
                                 onChange={(val) => updateQuestion({ question: val ?? "" })}
                                 preview="edit"
                                 value={question.question}
@@ -128,7 +136,7 @@ export default function QuestionEditor({
                                 }
                                 textareaProps={{
                                     placeholder:
-                                        question.type === "SLIDE"
+                                        question.type === QuestionTypeEnum.SLIDE
                                             ? "Type your slide content here (Markdown supported)..."
                                             : "Type your question here (Markdown supported)...",
                                 }}
@@ -148,7 +156,7 @@ export default function QuestionEditor({
                                 })
                             }
                             placeholder={
-                                question.type === "SLIDE"
+                                question.type === QuestionTypeEnum.SLIDE
                                     ? "Type your slide content here..."
                                     : "Type your question here..."
                             }
@@ -164,7 +172,7 @@ export default function QuestionEditor({
             </div>
 
             {/* Answers / Editor for choice-based questions */}
-            {question.type !== "SLIDE" ? (
+            {question.type !== QuestionTypeEnum.SLIDE ? (
                 <QuestionAnswerOptions
                     errorAffectedAnswers={errorAffectedAnswers}
                     onAddOption={onAddOption}

@@ -14,11 +14,15 @@ import {
     applyQueueToQuestions,
 } from "@/pages/quiz/quizUtils"
 import tempId from "@/utils/tempId"
-import useQuestionChangeQueue, { QuestionQueueError } from "@/hooks/useQuestionChangeQueue"
+import useQuestionChangeQueue, {
+    QuestionQueueError,
+    QueueOpEnum,
+} from "@/hooks/useQuestionChangeQueue"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
 import type { QuestionApiRequest } from "@/api/questions/types/question.api.ts"
 import { getQuiz } from "@/api/quiz"
 import { ApiError } from "@/api/utils"
+import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 export interface UseQuizEditorResult {
     quiz: unknown
@@ -255,7 +259,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         let firstError = null
         if (!question.question.trim()) {
             questionAffected = true
-            if (question.type === "SLIDE") {
+            if (question.type === QuestionTypeEnum.SLIDE) {
                 firstError ??= ["The text is missing.", `Slide ${index + 1} is missing the text.`]
             } else {
                 firstError ??= [
@@ -265,7 +269,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
             }
         }
 
-        if (question.type !== "SLIDE") {
+        if (question.type !== QuestionTypeEnum.SLIDE) {
             if (question.options.length < 2) {
                 firstError ??= [
                     "At least two answer options are required.",
@@ -282,7 +286,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
                 }
             }
             if (
-                question.type !== "ORDER" &&
+                question.type !== QuestionTypeEnum.ORDER &&
                 !question.options.some((o) => (o as { correct?: boolean }).correct)
             ) {
                 firstError ??= [
@@ -425,7 +429,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     }
 
     const toggleOptionCorrect = (index: number) => {
-        if (currentQuestion.type === "ORDER" || currentQuestion.type === "SLIDE") return
+        if (
+            currentQuestion.type === QuestionTypeEnum.ORDER ||
+            currentQuestion.type === QuestionTypeEnum.SLIDE
+        )
+            return
 
         markUnsavedChanges()
         const newOptions = currentQuestion.options.map((option, optionIndex) =>
@@ -475,7 +483,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         if (deletingId && !String(deletingId).startsWith("temp-")) {
             enqueue({
                 id: tempId(),
-                op: "delete",
+                op: QueueOpEnum.DELETE,
                 quizId: quizId ?? "new",
                 questionId: deletingId,
                 createdAt: new Date().toISOString(),
@@ -511,7 +519,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
         enqueue({
             id: tempId(),
-            op: "create",
+            op: QueueOpEnum.CREATE,
             quizId: quizId ?? "new",
             questionId: newQ.id,
             payload: questionToRequest(newQ),
@@ -520,11 +528,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     }
 
     const handleAddOption = () => {
-        if (currentQuestion.type === "SLIDE") return
+        if (currentQuestion.type === QuestionTypeEnum.SLIDE) return
 
         markUnsavedChanges()
         const newOption =
-            currentQuestion.type === "ORDER"
+            currentQuestion.type === QuestionTypeEnum.ORDER
                 ? { id: tempId(), answer: "" }
                 : { id: tempId(), answer: "", correct: false }
         const updatedQuestion = {

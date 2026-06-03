@@ -5,6 +5,7 @@ import AnswerPreviewGrid from "./AnswerPreviewGrid"
 import { ScrollArea } from "@/shadcn/components/ui/scroll-area"
 import type { Question } from "@/types/question"
 import MarkdownComponent from "@/components/markdown/MarkdownComponent"
+import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 interface SettingsPanelProps {
     question: Question
@@ -30,9 +31,11 @@ export default function SettingsPanel({ question }: SettingsPanelProps): JSX.Ele
                         {/* Question */}
                         <div className="border-border mb-3 rounded-[1.25rem] border bg-white/90 p-3 text-center shadow-sm dark:bg-white/10">
                             <div className="text-[10px] font-bold tracking-[0.2em] text-[#FF8A00] uppercase">
-                                {question.type === "SLIDE" ? "Slide Content" : "Question"}
+                                {question.type === QuestionTypeEnum.SLIDE
+                                    ? "Slide Content"
+                                    : "Question"}
                             </div>
-                            {question.type === "SLIDE" ? (
+                            {question.type === QuestionTypeEnum.SLIDE ? (
                                 <div className="mt-2 text-left text-xs leading-5 text-slate-900 dark:text-white">
                                     <MarkdownComponent
                                         content={
@@ -53,7 +56,7 @@ export default function SettingsPanel({ question }: SettingsPanelProps): JSX.Ele
                         </div>
 
                         {/* Answers */}
-                        {question.type !== "SLIDE" ? (
+                        {question.type !== QuestionTypeEnum.SLIDE ? (
                             <ScrollArea className="min-h-0 flex-1 pr-1">
                                 <AnswerPreviewGrid
                                     options={question.options}

@@ -4,6 +4,7 @@ import { GripVertical, Trash2 } from "lucide-react"
 import type { MouseEvent, KeyboardEvent, ReactNode } from "react"
 import { Button } from "@shadcn/components/ui/button.tsx"
 import { getQuestionPreviewText } from "@/pages/quiz/quizUtils"
+import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 interface QuestionProps {
     question: {
@@ -48,9 +49,9 @@ export default function QuestionItem({
     }
 
     let previewOptions
-    if (question.type === "SLIDE") {
+    if (question.type === QuestionTypeEnum.SLIDE) {
         previewOptions = null
-    } else if (question.type === "ORDER") {
+    } else if (question.type === QuestionTypeEnum.ORDER) {
         previewOptions = (
             <div className="grid grid-cols-1 gap-1.5 opacity-80">
                 <div className="h-2 rounded-full bg-[#2d4cc9]" />
@@ -107,7 +108,8 @@ export default function QuestionItem({
                         />
 
                         <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
-                            {question.type === "SLIDE" ? "Slide" : "Question"} {index + 1}
+                            {question.type === QuestionTypeEnum.SLIDE ? "Slide" : "Question"}{" "}
+                            {index + 1}
                         </span>
                     </div>
 

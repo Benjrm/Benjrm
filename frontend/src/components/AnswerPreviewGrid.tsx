@@ -1,6 +1,7 @@
 import type { JSX } from "react"
 import getAnswerVisuals from "../utils/answerVisuals"
 import type { QuestionOption, Question } from "@/types/question"
+import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 interface Props {
     options: QuestionOption[]
@@ -8,7 +9,7 @@ interface Props {
 }
 
 export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element {
-    if (type === "ORDER") {
+    if (type === QuestionTypeEnum.ORDER) {
         return (
             <div className="space-y-3">
                 {options.map((option, index) => (

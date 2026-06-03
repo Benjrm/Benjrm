@@ -4,6 +4,7 @@ import type { JSX } from "react"
 import OrderOptions from "./OrderOptions"
 import StandardOptions from "./StandardOptions"
 import type { QuestionOption, Question } from "@/types/question"
+import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 interface QuestionAnswerOptionsProps {
     onAddOption: () => void
@@ -26,7 +27,7 @@ export default function QuestionAnswerOptions({
     type,
     errorAffectedAnswers,
 }: QuestionAnswerOptionsProps): JSX.Element {
-    if (type === "ORDER") {
+    if (type === QuestionTypeEnum.ORDER) {
         return (
             <OrderOptions
                 errorAffectedAnswers={errorAffectedAnswers}

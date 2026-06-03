@@ -4,7 +4,14 @@ import type { QuestionApiRequest } from "@/api/questions/types/question.api.ts"
 import useQuestionQueueStorage from "@/api/questions/hooks/useQuestionQueueStorage.ts"
 import { ApiError } from "@/api/utils"
 
-export type QueueOp = "create" | "update" | "delete" | "reorder"
+export const QueueOpEnum = {
+    CREATE: "create",
+    UPDATE: "update",
+    DELETE: "delete",
+    REORDER: "reorder",
+} as const
+
+export type QueueOp = (typeof QueueOpEnum)[keyof typeof QueueOpEnum]
 
 export interface QueueItem {
     id: string
@@ -44,14 +51,16 @@ function reducer(state: QueueItem[], action: Action): QueueItem[] {
             return action.items
         case "removeQuestion":
             return state.filter(
-                (item) => !(item.questionId === action.questionId && item.op !== "delete")
+                (item) => !(item.questionId === action.questionId && item.op !== QueueOpEnum.DELETE)
             )
         case "upsertCreate":
             return [
-                ...state.filter((i) => !(i.op === "create" && i.questionId === action.questionId)),
+                ...state.filter(
+                    (i) => !(i.op === QueueOpEnum.CREATE && i.questionId === action.questionId)
+                ),
                 {
                     id: `create-${action.questionId}-${Date.now()}`,
-                    op: "create",
+                    op: QueueOpEnum.CREATE,
                     quizId: action.quizId ?? "",
                     questionId: action.questionId,
                     payload: action.payload,
@@ -60,10 +69,10 @@ function reducer(state: QueueItem[], action: Action): QueueItem[] {
             ]
         case "upsertReorder":
             return [
-                ...state.filter((i) => i.op !== "reorder"),
+                ...state.filter((i) => i.op !== QueueOpEnum.REORDER),
                 {
                     id: `reorder-${Date.now()}`,
-                    op: "reorder",
+                    op: QueueOpEnum.REORDER,
                     quizId: action.quizId ?? "",
                     payload: { order: action.order },
                     createdAt: new Date().toISOString(),
@@ -71,10 +80,12 @@ function reducer(state: QueueItem[], action: Action): QueueItem[] {
             ]
         case "upsertUpdate":
             return [
-                ...state.filter((i) => !(i.op === "update" && i.questionId === action.questionId)),
+                ...state.filter(
+                    (i) => !(i.op === QueueOpEnum.UPDATE && i.questionId === action.questionId)
+                ),
                 {
                     id: `update-${action.questionId}-${Date.now()}`,
-                    op: "update",
+                    op: QueueOpEnum.UPDATE,
                     quizId: action.quizId ?? "",
                     questionId: action.questionId,
                     payload: action.payload,
@@ -282,7 +293,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
                         let result: ProcessResult = { status: "skipped" }
 
                         switch (item.op) {
-                            case "create":
+                            case QueueOpEnum.CREATE:
                                 // eslint-disable-next-line no-await-in-loop
                                 result = await processCreateOp(item)
                                 if (
@@ -294,15 +305,15 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
                                     idMap[item.questionId] = result.createdId
                                 }
                                 break
-                            case "update":
+                            case QueueOpEnum.UPDATE:
                                 // eslint-disable-next-line no-await-in-loop
                                 result = await processUpdateOp(item)
                                 break
-                            case "delete":
+                            case QueueOpEnum.DELETE:
                                 // eslint-disable-next-line no-await-in-loop
                                 result = await processDeleteOp(item)
                                 break
-                            case "reorder":
+                            case QueueOpEnum.REORDER:
                                 // eslint-disable-next-line no-await-in-loop
                                 result = await processReorderOp(item, idMap)
                                 break
@@ -333,7 +344,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
                 const remaining = queue
                     .filter((q) => !succeededIds.has(q.id))
                     .map((item) => {
-                        if (item.op !== "reorder") return item
+                        if (item.op !== QueueOpEnum.REORDER) return item
 
                         const payload = item.payload as { order?: string[] } | undefined
                         const order = (payload?.order ?? []).map((id) => idMap[id] ?? id)
