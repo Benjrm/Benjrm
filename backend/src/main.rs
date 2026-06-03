@@ -2,12 +2,11 @@ use {
     crate::error::Error,
     actix_session::{SessionMiddleware, storage::CookieSessionStore},
     actix_web::{
-        App, HttpResponse, HttpServer, Route,
+        App, HttpResponse, HttpServer, Resource, Route,
         cookie::{self, SameSite},
         mime,
         web::{self, JsonConfig, PathConfig, QueryConfig},
     },
-    awc::http::Method,
 };
 
 mod app_data;
@@ -77,12 +76,12 @@ async fn main() -> std::io::Result<()> {
             .configure(static_file::init)
             .service(
                 web::scope("/api")
-                    .route("/health", healthcheck_route())
+                    .service(healthcheck_resource())
                     .service(
                         web::scope("/v1")
                             .configure(quiz::init)
                             .configure(question::init)
-                            .route("/health", healthcheck_route())
+                            .service(healthcheck_resource())
                             .default_service(not_found_route()),
                     )
                     .default_service(not_found_route()),
@@ -100,10 +99,9 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-fn healthcheck_route() -> Route {
-    Route::new()
-        .method(Method::GET)
-        .to(async || HttpResponse::Ok().content_type(mime::TEXT_PLAIN).body("OK"))
+fn healthcheck_resource() -> Resource {
+    web::resource("/health")
+        .route(web::get().to(async || HttpResponse::Ok().content_type(mime::TEXT_PLAIN).body("OK")))
 }
 
 fn not_found_route() -> Route {
