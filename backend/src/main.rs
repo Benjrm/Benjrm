@@ -4,7 +4,7 @@ use {
     actix_web::{
         App, HttpResponse, HttpServer, Route,
         cookie::{self, SameSite},
-        web::{self, JsonConfig},
+        web::{self, JsonConfig, PathConfig},
     },
     awc::http::Method,
 };
@@ -13,6 +13,7 @@ mod app_data;
 mod auth;
 mod error;
 mod frontend;
+mod question;
 mod quiz;
 mod static_file;
 mod update_value;
@@ -60,6 +61,7 @@ async fn main() -> std::io::Result<()> {
         let app = App::new()
             .wrap(actix_web::middleware::Logger::default())
             .app_data(JsonConfig::default().error_handler(Error::json_handler))
+            .app_data(PathConfig::default().error_handler(Error::path_handler))
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_http_only(true)
@@ -77,6 +79,7 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/v1")
                             .configure(quiz::init)
+                            .configure(question::init)
                             .route("/health", healthcheck_route())
                             .default_service(not_found_route()),
                     )
