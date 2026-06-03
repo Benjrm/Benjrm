@@ -83,7 +83,6 @@ paths:
           in: query
           schema:
             type: boolean
-            example: false
           description: Filter quizzes by hidden status
           required: false
 
@@ -404,7 +403,6 @@ paths:
           in: query
           schema:
             type: boolean
-            example: false
           description: Filter questions by hidden status
           required: false
       responses:
