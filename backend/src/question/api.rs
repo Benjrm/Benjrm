@@ -117,6 +117,5 @@ pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
                     .route(web::put().to(put))
                     .route(web::delete().to(delete)),
             )
-            .default_service(not_found_route()),
     );
 }
