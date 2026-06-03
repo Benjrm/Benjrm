@@ -14,15 +14,11 @@ function storageKey(quizId: string): string {
     return `quiz:${quizId}:queue`
 }
 
-function cloneQueue(queue: QueueItem[]): QueueItem[] {
-    return queue.map((item) => ({ ...item, payload: item.payload }))
-}
-
 export function createQuestionQueueStorage(): QuestionQueueStorage {
     const memoryStore = new Map<string, QueueItem[]>()
 
     const readFromMemory = (quizId: string): QueueItem[] =>
-        cloneQueue(memoryStore.get(quizId) ?? [])
+        structuredClone(memoryStore.get(quizId) ?? [])
 
     return {
         getQueue(quizId: string): QueueItem[] {
@@ -36,8 +32,8 @@ export function createQuestionQueueStorage(): QuestionQueueStorage {
 
                 const parsed = JSON.parse(raw) as QueueItem[]
                 const queue = parsed ?? []
-                memoryStore.set(quizId, cloneQueue(queue))
-                return cloneQueue(queue)
+                memoryStore.set(quizId, structuredClone(queue))
+                return queue
             } catch {
                 return readFromMemory(quizId)
             }
@@ -49,7 +45,7 @@ export function createQuestionQueueStorage(): QuestionQueueStorage {
                 return
             }
 
-            const cloned = cloneQueue(queue)
+            const cloned = structuredClone(queue)
             memoryStore.set(quizId, cloned)
 
             if (!isBrowserAvailable()) return

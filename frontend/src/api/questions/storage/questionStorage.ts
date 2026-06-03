@@ -14,21 +14,12 @@ function storageKey(quizId: string): string {
     return `quiz:${quizId}:questions`
 }
 
-function cloneQuestions(questions: QuestionApiResponse[]): QuestionApiResponse[] {
-    return questions.map((question) => ({
-        ...question,
-        options: Array.isArray(question.options)
-            ? question.options.map((option) => ({ ...option }))
-            : question.options,
-    }))
-}
-
 export function createQuestionStorage(): QuestionStorage {
     const memoryStore = new Map<string, QuestionApiResponse[]>()
 
     const readFromMemory = (quizId: string): QuestionApiResponse[] => {
         const questions = memoryStore.get(quizId) ?? []
-        return cloneQuestions(questions)
+        return structuredClone(questions)
     }
 
     return {
@@ -43,15 +34,15 @@ export function createQuestionStorage(): QuestionStorage {
 
                 const parsed = JSON.parse(raw) as QuestionApiResponse[]
                 const questions = parsed ?? []
-                memoryStore.set(quizId, cloneQuestions(questions))
-                return cloneQuestions(questions)
+                memoryStore.set(quizId, structuredClone(questions))
+                return questions
             } catch {
                 return readFromMemory(quizId)
             }
         },
 
         setQuestions(quizId: string, questions: QuestionApiResponse[]): void {
-            const cloned = cloneQuestions(questions)
+            const cloned = structuredClone(questions)
             memoryStore.set(quizId, cloned)
 
             if (!isBrowserAvailable()) return
