@@ -24,4 +24,10 @@ enabled = true
 enabled = true
 
 [phases.stateful]
-enabled = false
+enabled = true
+
+[reports.junit]
+enabled = true
+
+[reports.har]
+enabled = true
