@@ -183,18 +183,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
         const selectedQuestionId = questions[currentQuestionIndex]?.id ?? null
 
-        setQuestions((prevQuestions) => {
-            const oldIndex = prevQuestions.findIndex((question) => question.id === activeId)
-            const newIndex = prevQuestions.findIndex((question) => question.id === overId)
+        const oldIndex = questions.findIndex((question) => question.id === activeId)
+        const newIndex = questions.findIndex((question) => question.id === overId)
 
-            if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return prevQuestions
-
-            const nextQuestions = arrayMove(prevQuestions, oldIndex, newIndex)
-
-            if (selectedQuestionId) {
-                const selectedIndex = nextQuestions.findIndex((q) => q.id === selectedQuestionId)
-                setCurrentQuestionIndex(selectedIndex >= 0 ? selectedIndex : 0)
-            }
+        if (!(oldIndex === -1 || newIndex === -1 || oldIndex === newIndex)) {
+            const nextQuestions = arrayMove(questions, oldIndex, newIndex)
 
             const newOrder = nextQuestions.map((q) => q.id)
             if (reorderTimeoutRef.current) window.clearTimeout(reorderTimeoutRef.current)
@@ -203,8 +196,13 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
                 reorderTimeoutRef.current = null
             }, 300)
 
-            return nextQuestions
-        })
+            setQuestions(nextQuestions)
+
+            if (selectedQuestionId) {
+                const selectedIndex = nextQuestions.findIndex((q) => q.id === selectedQuestionId)
+                setCurrentQuestionIndex(selectedIndex >= 0 ? selectedIndex : 0)
+            }
+        }
     }
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -377,28 +375,28 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
     const updateQuestion = (data: Partial<Question>) => {
         markUnsavedChanges()
+        const next = { ...questions[currentQuestionIndex], ...data }
+        if (typeof next.id === "string" && next.id.startsWith("temp-")) {
+            upsertCreate(next.id, questionToRequest(next))
+        } else {
+            upsertUpdate(next.id, questionToRequest(next))
+        }
         setQuestions((prevQuestions) => {
             const updated = [...prevQuestions]
-            const next = { ...updated[currentQuestionIndex], ...data }
             updated[currentQuestionIndex] = next
-            if (typeof next.id === "string" && next.id.startsWith("temp-")) {
-                upsertCreate(next.id, questionToRequest(next))
-            } else {
-                upsertUpdate(next.id, questionToRequest(next))
-            }
-            const validationRes = validateQuestion(next, currentQuestionIndex)
-            if (validationRes) {
-                setErrorIsQuestion(validationRes[0])
-                setErrorAffectedAnswers(validationRes[1])
-                setQuestionError(validationRes[2])
-            } else {
-                setErrorIsQuestion(false)
-                setErrorAffectedAnswers([])
-                setQuestionError(null)
-                setShowBigQuestionError(false)
-            }
             return updated
         })
+        const validationRes = validateQuestion(next, currentQuestionIndex)
+        if (validationRes) {
+            setErrorIsQuestion(validationRes[0])
+            setErrorAffectedAnswers(validationRes[1])
+            setQuestionError(validationRes[2])
+        } else {
+            setErrorIsQuestion(false)
+            setErrorAffectedAnswers([])
+            setQuestionError(null)
+            setShowBigQuestionError(false)
+        }
     }
 
     const updateOption = (index: number, value: string) => {
