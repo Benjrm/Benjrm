@@ -78,7 +78,7 @@ export default function WaitingRoom(): JSX.Element {
 
     if (isLoadingSession || isLoadingQuiz) {
         return (
-            <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center py-24 gap-4">
+            <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-4 py-24">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
                 <p className="text-muted-foreground text-sm">Quiz-Lobby wird geladen…</p>
             </section>
@@ -91,7 +91,8 @@ export default function WaitingRoom(): JSX.Element {
                 <div className="w-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">
                     <h1 className="text-base font-bold">Quiz-Lobby konnte nicht geladen werden</h1>
                     <p className="mt-1 text-sm">
-                        Das Quiz konnte nicht gefunden werden, bitte überprüfe den Einladungscode und versuche es erneut.
+                        Das Quiz konnte nicht gefunden werden, bitte überprüfe den Einladungscode
+                        und versuche es erneut.
                     </p>
                 </div>
             </section>
