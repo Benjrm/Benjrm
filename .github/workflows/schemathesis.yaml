@@ -31,10 +31,10 @@ jobs:
         with:
           compose-file: 'compose.dev.yaml'
       - name: Test hook import
-        run: python -c "import schemathesis.src.hooks; print('OK')"
+        run: python -c "import api_tests.src.hooks; print('OK')"
       - uses: schemathesis/action@v3
         with:
           schema: 'docs/openapispec/RestInterface.yaml'
           config-file: 'schemathesis/schemathesis.toml'
           version: '4.21.0'
-          hooks: 'schemathesis.src.hooks'
+          hooks: 'api_tests.src.hooks'
