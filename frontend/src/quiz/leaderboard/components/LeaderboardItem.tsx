@@ -1,16 +1,18 @@
 import type { ReactNode } from "react"
 import { Avatar, AvatarImage, AvatarFallback } from "@shadcn/components/ui/avatar"
 import getRankingClassName from "@/quiz/leaderboard/utils/getRankingClassName.ts"
+import type { LeaderboardEntry } from "@/types/quiz"
 
-export interface LeaderboardItemProps {
+export interface LeaderboardItemProps extends Omit<LeaderboardEntry, "id"> {
     ranking: number
-    avatar?: string | undefined
-    name: string
-    points: number
 }
 
-export default function LeaderboardItem(leaderboardItemProps: LeaderboardItemProps): ReactNode {
-    const { ranking, avatar, name, points } = leaderboardItemProps
+export default function LeaderboardItem({
+    ranking,
+    avatar,
+    name,
+    points,
+}: LeaderboardItemProps): ReactNode {
     const rankingClassName = getRankingClassName(ranking)
     const initials = name.substring(0, 2).toUpperCase()
 
