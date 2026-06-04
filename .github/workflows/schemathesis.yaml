@@ -31,7 +31,13 @@ jobs:
         with:
           compose-file: 'compose.dev.yaml'
       - uses: schemathesis/action@v3
+        env:
+          SCHEMATHESIS_COVERAGE_FORMAT: 'html,markdown'
+          SCHEMATHESIS_COVERAGE_REPORT_HTML_PATH: 'schema-coverage.html'
+          SCHEMATHESIS_COVERAGE_REPORT_MARKDOWN_PATH: '/tmp/_st_coverage.md'
         with:
           schema: 'docs/openapispec/RestInterface.yaml'
+          coverage-report-path: 'schema-coverage.html'
           config-file: 'api_tests/schemathesis.toml'
           version: '4.21.0'
+          coverage: false
