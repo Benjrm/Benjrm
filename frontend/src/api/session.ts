@@ -4,7 +4,7 @@ import { apiPost, apiGet, apiDelete } from "@/api/client"
 import type { Quiz } from "@/api/quiz"
 
 export interface CreateSessionInput {
-    quizId: string
+    quiz: string
 }
 
 export interface Session {

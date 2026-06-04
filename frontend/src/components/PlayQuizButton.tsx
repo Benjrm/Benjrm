@@ -15,7 +15,7 @@ export function PlayQuizButton({ quizId, className }: PlayQuizButtonProps): JSX.
 
     const handlePlayQuiz = (): void => {
         if (!quizId) return
-        createSessionMutation.mutate({ quizId })
+        createSessionMutation.mutate({ quiz: quizId })
     }
 
     return (
