@@ -100,6 +100,9 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(!quizId)
     const [isSavingQuestions, setIsSavingQuestions] = useState(false)
 
+    const currentQuestion = questions[currentQuestionIndex] ?? questions[0] ?? createEmptyQuestion()
+    const questionIds = useMemo(() => questions.map((q) => q.id), [questions])
+
     const saveTimeoutRef = useRef<number | null>(null)
     const reorderTimeoutRef = useRef<number | null>(null)
 
@@ -130,26 +133,96 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         })
     }, [cleanup])
 
+    /**
+     * @returns [isQuestionAffected, affectedAnswer | null, errorMessage, quizErrorMessage] | null
+     */
+    const validateQuestion = (question: Question): QuestionError | null => {
+        const validationError: QuestionError = {
+            missingQuestion: false,
+            missingAnswers: [],
+            missingCorrectAnswer: false,
+        }
+        if (!question.question.trim()) {
+            validationError.missingQuestion = true
+        }
+
+        if (question.type !== QuestionTypeEnum.SLIDE) {
+            for (let oi = 0; oi < question.options.length; oi += 1) {
+                if (!question.options[oi].answer.trim()) {
+                    validationError.missingAnswers.push(oi)
+                }
+            }
+            if (
+                question.type !== QuestionTypeEnum.ORDER &&
+                !question.options.some((o) => (o as { correct?: boolean }).correct)
+            ) {
+                validationError.missingCorrectAnswer = true
+            }
+        }
+        if (
+            validationError.missingQuestion ||
+            validationError.missingAnswers.length !== 0 ||
+            validationError.missingCorrectAnswer
+        ) {
+            return validationError
+        }
+        return null
+    }
+
+    const validateQuestions = (): string | null => {
+        if (!quizId)
+            return "Please create or open a quiz first so the questions can be saved in the adapter."
+        if (!questions.length) return "Add at least one question before saving."
+
+        for (let qi = 0; qi < questions.length; qi += 1) {
+            const validationRes = validateQuestion(questions[qi])
+            if (validationRes) {
+                if (validationRes.missingQuestion) {
+                    if (questions[qi].type === QuestionTypeEnum.SLIDE) {
+                        return `Slide ${qi + 1} is missing the text.`
+                    }
+                    return `Question ${qi + 1} is missing the question text.`
+                }
+                if (validationRes.missingAnswers.length !== 0) {
+                    const answer = validationRes.missingAnswers[0]
+                    return `Question ${qi + 1}, option ${answer + 1} is empty.`
+                }
+                if (validationRes.missingCorrectAnswer) {
+                    return `Question ${qi + 1} needs at least one correct answer.`
+                }
+                return `Question ${qi + 1} has an unknown validation error`
+            }
+        }
+
+        return null
+    }
+
+    const showBigQuestionError = (showError: QuestionError) => {
+        let errorMessage = null
+        if (showError.missingQuestion) {
+            errorMessage = "The question text is missing."
+        } else if (showError.missingAnswers.length !== 0) {
+            const option = showError.missingAnswers[0]
+            errorMessage = `Option ${option + 1} is empty.`
+        } else if (showError.missingCorrectAnswer) {
+            errorMessage = "At least one correct answer is required."
+        }
+        setQuestionError(showError)
+        setBigQuestionError(errorMessage)
+    }
+
     const setCurrentQuestionIndex = useCallback(
         (value: number | ((number: number) => number)) => {
             if (hasInitializedQuestions) {
-                let errorMessage = null
-                if (questionError.missingQuestion) {
-                    errorMessage = "The question text is missing."
-                } else if (questionError.missingAnswers.length !== 0) {
-                    const option = questionError.missingAnswers[0]
-                    errorMessage = `Option ${option + 1} is empty.`
-                } else if (questionError.missingCorrectAnswer) {
-                    errorMessage = "At least one correct answer is required."
-                }
-                if (errorMessage) {
-                    setBigQuestionError(errorMessage)
+                const validationRes = validateQuestion(currentQuestion)
+                if (validationRes) {
+                    showBigQuestionError(validationRes)
                 } else {
                     setCurrentQuestionIndexInternal(value)
                 }
             }
         },
-        [hasInitializedQuestions, questionError]
+        [hasInitializedQuestions, currentQuestion]
     )
 
     const queuedQuestions = useMemo(() => {
@@ -214,9 +287,6 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         setBigQuestionError(null)
     }
 
-    const currentQuestion = questions[currentQuestionIndex] ?? questions[0] ?? createEmptyQuestion()
-    const questionIds = useMemo(() => questions.map((q) => q.id), [questions])
-
     const reorderQuestions = (activeId: string, overId: string) => {
         markUnsavedChanges()
 
@@ -264,95 +334,9 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         return "The changes could not be saved. Please try again."
     }
 
-    /**
-     * @returns [isQuestionAffected, affectedAnswer | null, errorMessage, quizErrorMessage] | null
-     */
-    const validateQuestion = (question: Question): QuestionError | null => {
-        const validationError: QuestionError = {
-            missingQuestion: false,
-            missingAnswers: [],
-            missingCorrectAnswer: false,
-        }
-        if (!question.question.trim()) {
-            validationError.missingQuestion = true
-        }
-
-        if (question.type !== QuestionTypeEnum.SLIDE) {
-            for (let oi = 0; oi < question.options.length; oi += 1) {
-                if (!question.options[oi].answer.trim()) {
-                    validationError.missingAnswers.push(oi)
-                }
-            }
-            if (
-                question.type !== QuestionTypeEnum.ORDER &&
-                !question.options.some((o) => (o as { correct?: boolean }).correct)
-            ) {
-                validationError.missingCorrectAnswer = true
-            }
-        }
-        if (
-            validationError.missingQuestion ||
-            validationError.missingAnswers.length !== 0 ||
-            validationError.missingCorrectAnswer
-        ) {
-            return validationError
-        }
-        return null
-    }
-
-    useEffect(() => {
-        if (hasInitializedQuestions) {
-            const timeout = window.setTimeout(() => {
-                const validationRes = validateQuestion(questions[currentQuestionIndex])
-                if (validationRes) {
-                    setQuestionError(validationRes)
-                } else {
-                    setQuestionError({
-                        missingQuestion: false,
-                        missingAnswers: [],
-                        missingCorrectAnswer: false,
-                    })
-                    setBigQuestionError(null)
-                }
-            }, 0)
-
-            return () => window.clearTimeout(timeout)
-        }
-        return undefined
-    }, [currentQuestionIndex, questions, hasInitializedQuestions])
-
-    const validateQuestions = (): string | null => {
-        if (!quizId)
-            return "Please create or open a quiz first so the questions can be saved in the adapter."
-        if (!questions.length) return "Add at least one question before saving."
-
-        for (let qi = 0; qi < questions.length; qi += 1) {
-            const validationRes = validateQuestion(questions[qi])
-            if (validationRes) {
-                if (validationRes.missingQuestion) {
-                    if (questions[qi].type === QuestionTypeEnum.SLIDE) {
-                        return `Slide ${qi + 1} is missing the text.`
-                    }
-                    return `Question ${qi + 1} is missing the question text.`
-                }
-                if (validationRes.missingAnswers.length !== 0) {
-                    const answer = validationRes.missingAnswers[0]
-                    return `Question ${qi + 1}, option ${answer + 1} is empty.`
-                }
-                if (validationRes.missingCorrectAnswer) {
-                    return `Question ${qi + 1} needs at least one correct answer.`
-                }
-                return `Question ${qi + 1} has an unknown validation error`
-            }
-        }
-
-        return null
-    }
-
     const handleSaveQuestions = async () => {
         const validationError = validateQuestions()
         if (validationError) {
-            toast.error(validationError)
             return { ok: false, error: validationError }
         }
         if (!quizId) {
@@ -418,8 +402,9 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
             return updated
         })
         const validationRes = validateQuestion(next)
-        if (validationRes) {
+        if (validationRes && bigQuestionError) {
             setQuestionError(validationRes)
+            showBigQuestionError(validationRes)
         } else {
             setQuestionError({
                 missingQuestion: false,
@@ -505,9 +490,9 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     }
 
     const handleAddQuestion = () => {
-        const validationRes = validateQuestion(questions[currentQuestionIndex])
+        const validationRes = validateQuestion(currentQuestion)
         if (validationRes) {
-            setBigQuestionError(null)
+            showBigQuestionError(validationRes)
             return
         }
         markUnsavedChanges()

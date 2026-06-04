@@ -167,12 +167,6 @@ export default function QuestionEditor({
                         ) : null}
                     </div>
                 </div>
-
-                {questionError.missingCorrectAnswer ? (
-                    <div className="absolute right-0 bottom-0 left-0 px-6 pb-1 text-sm font-medium text-red-500 shadow-sm md:px-8">
-                        At least one correct answer is required.
-                    </div>
-                ) : null}
             </div>
 
             {/* Answers / Editor for choice-based questions */}
