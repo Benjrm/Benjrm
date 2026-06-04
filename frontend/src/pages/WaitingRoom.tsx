@@ -2,7 +2,10 @@
 
 import type { JSX } from "react"
 import { useState } from "react"
+import { useSearchParams } from "react-router"
 import ProfilePicker from "../components/ProfilePicker"
+import useSession from "@/api/session/hooks/useSession"
+import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import { Button } from "@/shadcn/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
 
@@ -41,6 +44,13 @@ const AVAILABLE_EMOJIS = [
 ]
 
 export default function WaitingRoom(): JSX.Element {
+    // get quiz code from url for join session
+    const [searchParams] = useSearchParams()
+    const code = searchParams.get("code") ?? undefined
+
+    const { isLoading: isLoadingSession, isError: isErrorSession } = useSession(code)
+    const { data: quiz, isLoading: isLoadingQuiz, isError: isErrorQuiz } = useSessionQuiz(code)
+
     // MOCK
     const isHost = true
     const [players, setPlayers] = useState<Player[]>([
@@ -66,6 +76,28 @@ export default function WaitingRoom(): JSX.Element {
         setIsEmojiOpen(false)
     }
 
+    if (isLoadingSession || isLoadingQuiz) {
+        return (
+            <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center py-24 gap-4">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
+                <p className="text-muted-foreground text-sm">Quiz-Lobby wird geladen…</p>
+            </section>
+        )
+    }
+
+    if (isErrorQuiz || isErrorSession) {
+        return (
+            <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center py-24">
+                <div className="w-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">
+                    <h1 className="text-base font-bold">Quiz-Lobby konnte nicht geladen werden</h1>
+                    <p className="mt-1 text-sm">
+                        Das Quiz konnte nicht gefunden werden, bitte überprüfe den Einladungscode und versuche es erneut.
+                    </p>
+                </div>
+            </section>
+        )
+    }
+
     return (
         <section className="mx-auto w-full max-w-4xl py-8">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -73,7 +105,7 @@ export default function WaitingRoom(): JSX.Element {
                     <span className="h-2 w-2 animate-pulse rounded-full bg-[#FF8A00]" />
                     Waiting Lobby
                 </div>
-                <p className="text-muted-foreground text-sm">Game Pin: 134 567</p>
+                <p className="text-muted-foreground text-sm">Game Pin: {code ?? "No active PIN"}</p>
             </div>
 
             <div className="dark:text-foreground overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl dark:border-white/10 dark:bg-[#111318]">
@@ -116,7 +148,7 @@ export default function WaitingRoom(): JSX.Element {
 
                     <div className="mb-4">
                         <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                            Firefighting Training Quiz
+                            {quiz?.title ?? (isLoadingQuiz ? "Wird geladen..." : "Kein Titel")}
                         </h1>
                         <p className="text-muted-foreground mt-1 text-sm">
                             Players joined:{" "}

@@ -3,6 +3,7 @@
 import type { JSX } from "react"
 import { Link } from "react-router"
 import type { Quiz } from "@/api/quiz"
+import { PlayQuizButton } from "@/components/PlayQuizButton"
 
 interface QuizCardProps {
     quiz: Quiz
@@ -17,7 +18,7 @@ export default function QuizCard({ quiz }: QuizCardProps): JSX.Element {
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     src="/pictures/happy_people.jpg"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent dark:from-black dark:via-black/15" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent dark:from-black dark:via-black/15" />
             </div>
 
             <div className="space-y-4 p-5">
@@ -34,6 +35,7 @@ export default function QuizCard({ quiz }: QuizCardProps): JSX.Element {
                 >
                     Edit Quiz
                 </Link>
+                <PlayQuizButton className="mx-4 rounded-full" quizId={quiz.id} />
             </div>
         </article>
     )

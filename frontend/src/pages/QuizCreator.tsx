@@ -11,6 +11,7 @@ import QuestionSidebar from "../components/QuestionSidebar"
 import SettingsPanel from "../components/SettingsPanel"
 import type { Question } from "../types/quiz"
 import { useQuiz, useDeleteQuiz } from "@/api/queries"
+import { PlayQuizButton } from "@/components/PlayQuizButton"
 
 import { Button } from "@/shadcn/components/ui/button"
 import { Textarea } from "@/shadcn/components/ui/textarea"
@@ -185,6 +186,7 @@ export default function QuizCreator(): JSX.Element {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <PlayQuizButton quizId={quizId} />
                         <Button
                             className="border-border bg-muted/40 hover:bg-muted/70 gap-2 border backdrop-blur-sm"
                             variant="ghost"
