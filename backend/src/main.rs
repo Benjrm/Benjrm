@@ -13,6 +13,7 @@ mod app_data;
 mod auth;
 mod error;
 mod frontend;
+mod game_session;
 mod question;
 mod quiz;
 mod static_file;
@@ -80,6 +81,7 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/v1")
                             .configure(quiz::init)
                             .configure(question::init)
+                            .configure(game_session::init)
                             .route("/health", healthcheck_route())
                             .default_service(not_found_route()),
                     )

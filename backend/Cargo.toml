@@ -8,18 +8,24 @@ actix-proxy = "0.2.0"
 actix-security = { git = "https://github.com/Benjrm/actix-security", features = ["oauth2"] }
 actix-session = { version = "0.11.0", features = ["cookie-session"] }
 actix-web = "4.13.0"
+actix-ws = "0.4.0"
+async-trait = "0.1.89"
 awc = "3.8.2"
+bytes = "1.11.1"
 chrono = { version = "0.4.44", default-features = false, features = ["std", "clock", "serde"] }
 dotenvy = "0.15.7"
 env_logger = "0.11.10"
+futures = "0.3.32"
 lazy_static = "1.5.0"
 log = "0.4.29"
 migration = { path = "../database-migrator" }
 oauth2 = "4.4.2"
 openidconnect = "3.5.0"
 paste = "1.0.15"
+rand = "0.10.1"
 sea-orm = { version = "1.1.20", features = ["runtime-tokio-rustls", "sqlx-postgres", "sqlx-sqlite", "uuid"] }
 serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
 static-files = "0.3.1"
 thiserror = "2.0.18"
 tokio = { version = "1.52.3", features = ["fs"] }
@@ -29,6 +35,3 @@ uuid = { version = "1.23.1", features = ["v4"] }
 
 [build-dependencies]
 static-files = "0.3.1"
-
-[dev-dependencies]
-serde_json = "1.0.150"

@@ -1,5 +1,5 @@
 use {
-    crate::{auth::oidc::Oidc, static_file::StaticFile},
+    crate::{auth::oidc::Oidc, game_session::GameSessions, static_file::StaticFile},
     std::path::PathBuf,
 };
 
@@ -7,6 +7,7 @@ pub struct AppData {
     pub db: sea_orm::DbConn,
     pub imprint: StaticFile,
     pub oidc: Oidc,
+    pub game_sessions: GameSessions,
 }
 
 impl AppData {
@@ -30,7 +31,14 @@ impl AppData {
 
         let oidc = Oidc::from_env().await;
 
-        Self { db, imprint, oidc }
+        let game_sessions = GameSessions::new();
+
+        Self {
+            db,
+            imprint,
+            oidc,
+            game_sessions,
+        }
     }
 }
 

@@ -1,10 +1,11 @@
 use {
     crate::{
         error::impl_err,
+        quiz::entity::QuizModel,
         update_value::{UpdateOption, UpdateValue},
     },
     sea_orm::DbErr,
-    serde::Deserialize,
+    serde::{Deserialize, Serialize},
 };
 
 pub use api::init;
@@ -59,5 +60,12 @@ impl From<NewQuiz> for UpdateQuiz {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct QuizFilter {
-    hidden: Option<bool>,
+    pub hidden: Option<bool>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Quiz<T> {
+    #[serde(flatten)]
+    pub model: QuizModel,
+    pub questions: Vec<T>,
 }
