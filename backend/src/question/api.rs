@@ -1,6 +1,7 @@
 use {
     crate::{
         AppData,
+        not_found_route,
         auth::User,
         error::Result,
         question::{NewQuestion, QuestionFilter, UpdateQuestion},
@@ -114,7 +115,8 @@ pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
                     .route(web::get().to(get_one))
                     .route(web::patch().to(patch))
                     .route(web::put().to(put))
-                    .route(web::delete().to(delete)),
+                    .route(web::delete().to(delete))
             )
+            .default_service(not_found_route())
     );
 }
