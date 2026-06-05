@@ -31,6 +31,8 @@ jobs:
         with:
           compose-file: 'compose.dev.yaml'
       - uses: schemathesis/action@v3
+        env:
+          PYTHONPATH: {{ github.workspace }}/api_tests
         with:
           schema: 'docs/openapispec/RestInterface.yaml'
           config-file: 'api_tests/schemathesis.toml'
