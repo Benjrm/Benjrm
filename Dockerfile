@@ -31,8 +31,16 @@ WORKDIR /config
 
 RUN apt update && apt install -y openssl curl
 
+RUN useradd -m -u 1000 app
+
 COPY --from=build /bin/benjrm /bin/benjrm
 
+RUN chown app:app /bin/benjrm
+
 EXPOSE 80
+
+USER app
+
 HEALTHCHECK --start-period=5s --start-interval=2s --interval=30s --timeout=2s --retries=5 CMD curl localhost:80/api/health
+
 ENTRYPOINT ["/bin/benjrm"]
