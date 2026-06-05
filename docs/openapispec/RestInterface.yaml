@@ -749,7 +749,7 @@ paths:
           required: true
           schema:
             type: integer
-            example: '12345678'
+            example: 12345678
       responses:
         '200':
           description: Session
@@ -800,7 +800,7 @@ paths:
           required: true
           schema:
             type: integer
-            example: '12345678'
+            example: 12345678
       responses:
         '204':
           description: No content
@@ -848,7 +848,7 @@ paths:
           required: true
           schema:
             type: integer
-            example: '12345678'
+            example: 12345678
       responses:
         '200':
           description: Quiz
@@ -902,7 +902,7 @@ paths:
           required: true
           schema:
             type: integer
-            example: '12345678'
+            example: 12345678
       responses:
         '101':
           description: Switching Protocols
@@ -1395,7 +1395,7 @@ components:
       properties:
         code:
           type: integer
-          example: '12345678'
+          example: 12345678
         quiz:
           type: string
           format: uuid
