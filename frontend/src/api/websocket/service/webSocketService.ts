@@ -1,3 +1,4 @@
+import { toast } from "sonner"
 import type { ClientMessage } from "@/api/websocket/types/clientMessage.ts"
 import type { ServerEvents } from "@/api/websocket/types/serverEvents.ts"
 import type { AnyServerEventHandler } from "@/api/websocket/types/anyServerEventHandler.ts"
@@ -29,7 +30,7 @@ export default class WebSocketService {
     }
 
     private cleanup(): void {
-        console.log("Disconnected")
+        toast("Disconnected")
         this.socket = null
         this.listeners.clear()
     }
@@ -48,14 +49,14 @@ export default class WebSocketService {
         this.socket = new WebSocket(url)
 
         this.socket.onopen = () => {
-            console.log("Connected")
+            toast("Connected")
         }
 
         this.socket.onmessage = async (event) => {
             try {
                 const message = await WebSocketService.decodeMessageData(event.data)
                 if (message === null) {
-                    console.error("Received unsupported WebSocket message type:", event.data)
+                    toast("Received unsupported WebSocket message type")
                     return
                 }
                 const raw = JSON.parse(message)
@@ -63,9 +64,10 @@ export default class WebSocketService {
                     typeof raw !== "object" ||
                     raw === null ||
                     !("command" in raw) ||
+                    !("command" in raw) ||
                     typeof raw.command !== "string"
                 ) {
-                    console.error("Received invalid WebSocket message:", raw)
+                    toast("Received invalid WebSocket message")
                 }
                 const data = raw as ServerMessage
                 const handlers = this.listeners.get(data.command)
@@ -73,7 +75,11 @@ export default class WebSocketService {
                     (handler as ServerEventHandler<typeof data.command>)(data.payload, data.timing)
                 )
             } catch (error) {
-                console.error("Failed to process WebSocket message:", error)
+                toast(
+                    error instanceof Error
+                        ? `Failed to process WebSocket message: ${error.message}`
+                        : "Failed to process WebSocket message"
+                )
             }
         }
 
@@ -81,8 +87,8 @@ export default class WebSocketService {
             this.cleanup()
         }
 
-        this.socket.onerror = (error) => {
-            console.error("WebSocket error:", error)
+        this.socket.onerror = () => {
+            toast("WebSocket error")
         }
     }
 
@@ -112,6 +118,22 @@ export default class WebSocketService {
             )
         }
         this.socket.send(JSON.stringify(message))
+    }
+
+    /**
+     * Directly dispatches a fake server message to all registered handlers for the given command.
+     * Useful for development mocks and testing without a real WebSocket connection.
+     * @param command The server command to simulate.
+     * @param payload The payload to pass to the handlers.
+     * @param timing An ISO timestamp string; defaults to now.
+     */
+    public simulateReceive<K extends keyof ServerEvents>(
+        command: K,
+        payload: ServerEvents[K],
+        timing = new Date().toISOString()
+    ): void {
+        const handlers = this.listeners.get(command)
+        handlers?.forEach((handler) => (handler as ServerEventHandler<K>)(payload, timing))
     }
 
     /**

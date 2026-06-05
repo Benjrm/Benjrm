@@ -3,11 +3,13 @@ import type { JSX } from "react"
 interface DashboardHeaderProps {
     roomPin: string
     playersCount: number
+    quizTitle: string
 }
 
 export default function DashboardHeader({
     roomPin,
     playersCount,
+    quizTitle,
 }: DashboardHeaderProps): JSX.Element {
     return (
         <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -17,7 +19,7 @@ export default function DashboardHeader({
                 </h1>
                 <p className="flex items-center gap-2 text-sm font-black tracking-widest text-[#FF8A00] uppercase">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#FF8A00]" />
-                    Firefighting Quiz
+                    {quizTitle}
                 </p>
             </div>
             <div className="flex items-center gap-4">

@@ -6,6 +6,7 @@ interface QuestionPanelProps {
     answered: number
     total: number
     answers: Answer[]
+    timeLeft: number | null
 }
 
 const ANSWER_COLORS = [
@@ -20,6 +21,7 @@ export default function QuestionPanel({
     answered,
     total,
     answers,
+    timeLeft,
 }: QuestionPanelProps): JSX.Element {
     return (
         <div className="bg-muted/20 border-border/10 relative overflow-hidden rounded-[2rem] border p-6 shadow-2xl backdrop-blur-sm sm:p-8">
@@ -30,9 +32,11 @@ export default function QuestionPanel({
                 <h3 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
                     Current Question
                 </h3>
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-bold tracking-tight text-[#FF8A00] shadow-[0_0_15px_rgba(255,138,0,0.2)]">
-                    3 Secs left
-                </div>
+                {timeLeft !== null && (
+                    <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-bold tracking-tight text-[#FF8A00] shadow-[0_0_15px_rgba(255,138,0,0.2)]">
+                        {timeLeft > 0 ? `${timeLeft}s left` : "Time's up!"}
+                    </div>
+                )}
             </div>
 
             <div className="my-10">
