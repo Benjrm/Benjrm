@@ -74,24 +74,46 @@ macro_rules! impl_err {
                         $field
                     ),*))?,
                 )*
+                #[allow(dead_code)]
+                #[error("Invalid character in string")]
+                DatabaseInvalidCharacter,
             }
 
             impl $error {
                 pub fn error(&self) -> &'static str {
                     match self {
                         $(Self::$name$(($crate::error::impl_err!($($field),*)))? => stringify!([< $name:snake >]),)*
+                        Self::DatabaseInvalidCharacter => "database_invalid_character",
                     }
                 }
 
                 pub fn status(&self) -> awc::http::StatusCode {
                     match self {
                         $(Self::$name$(($crate::error::impl_err!($($field),*)))? => awc::http::StatusCode::$status,)*
+                        Self::DatabaseInvalidCharacter => awc::http::StatusCode::BAD_REQUEST,
                     }
+                }
+            }
+
+            $($crate::error::impl_err!{DbErrImpl; $error; $name; $($($field),*)?})*
+        }
+    };
+    ($($ty:ty),*) => {..};
+    (DbErrImpl; $error:ident; $name:ident; DbErr) => {
+        impl From<sea_orm::DbErr> for $error {
+            fn from(value: sea_orm::DbErr) -> Self {
+                match value {
+                    // SQLSTATE 22021 (e.g. NUL byte in text).
+                    // Postgres rejects `\0` in strings, unlike MySQL/SQLite.
+                    sea_orm::DbErr::Query(sea_orm::RuntimeErr::SqlxError(
+                        sea_orm::SqlxError::Database(error),
+                    )) if error.code().as_deref() == Some("22021") => Self::DatabaseInvalidCharacter,
+                    e => Self::$name(e),
                 }
             }
         }
     };
-    ($($ty:ty),*) => {..};
+    (DbErrImpl; $error:ident; $name:ident; $($field:ty),*) => {};
 }
 
 pub(crate) use impl_err;

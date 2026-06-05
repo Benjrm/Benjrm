@@ -30,7 +30,7 @@ impl_err! {
         #[error("Question not found")]
         NotFound = NOT_FOUND,
         #[error("Internal Server Error")]
-        Database(#[from] DbErr) = INTERNAL_SERVER_ERROR,
+        Database(DbErr) = INTERNAL_SERVER_ERROR,
         #[error("Question belongs to a other quiz")]
         QuestionBelongsToOtherQuiz = NOT_FOUND,
         #[error("Expected at least one correct answer")]
@@ -92,7 +92,7 @@ pub struct NewQuestion {
     pub question: String,
     #[serde(default = "bool::default")]
     pub hidden: bool,
-    #[serde(flatten)]
+    #[serde(flatten, deserialize_with = "Position::deserialize_optional")]
     pub position: Option<Position>,
     #[serde(flatten)]
     pub options: NewQuestionOptions,
@@ -125,7 +125,7 @@ pub struct UpdateQuestion {
     pub question: UpdateValue<String>,
     #[serde(default)]
     pub hidden: UpdateValue<bool>,
-    #[serde(flatten)]
+    #[serde(flatten, deserialize_with = "Position::deserialize_optional")]
     pub position: Option<Position>,
     #[serde(flatten)]
     pub options: Option<UpdateQuestionOptions>,

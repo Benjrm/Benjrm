@@ -22,7 +22,7 @@ impl_err! {
         #[error("Forbidden")]
         Forbidden = FORBIDDEN,
         #[error("Internal Server Error")]
-        Database(#[from] DbErr) = INTERNAL_SERVER_ERROR,
+        Database(DbErr) = INTERNAL_SERVER_ERROR,
     }
 }
 

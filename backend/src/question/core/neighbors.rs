@@ -11,7 +11,7 @@ use {
         ActiveValue::{Set, Unchanged},
         ConnectionTrait, DatabaseTransaction, IntoActiveModel,
     },
-    serde::Deserialize,
+    serde::{Deserialize, Deserializer},
     uuid::Uuid,
 };
 
@@ -20,6 +20,30 @@ use {
 pub enum Position {
     Prev(Uuid),
     Next(Uuid),
+}
+
+impl Position {
+    pub fn deserialize_optional<'de, D>(deserializer: D) -> Result<Option<Self>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct RawPosition {
+            prev: Option<Uuid>,
+            next: Option<Uuid>,
+        }
+        let raw = RawPosition::deserialize(deserializer)?;
+
+        match (raw.prev, raw.next) {
+            (Some(p), None) => Ok(Some(Position::Prev(p))),
+            (None, Some(n)) => Ok(Some(Position::Next(n))),
+            (None, None) => Ok(None),
+            _ => Err(serde::de::Error::custom(
+                "expected exactly one of `prev` or `next`",
+            )),
+        }
+    }
 }
 
 pub struct Neighbors {
