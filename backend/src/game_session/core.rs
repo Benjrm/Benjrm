@@ -144,6 +144,9 @@ impl GameSession {
                 return Err(err);
             }
         }
+        if let Some(old_channel) = self.host.channel.take() {
+            old_channel.close().await;
+        }
         self.host.channel = Some(channel);
         Ok(())
     }

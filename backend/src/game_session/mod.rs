@@ -19,6 +19,8 @@ use {
 
 mod api;
 mod core;
+#[cfg(test)]
+mod test;
 
 pub use api::init;
 
