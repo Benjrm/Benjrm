@@ -1,19 +1,15 @@
 // frontend/src/pages/Quizzes.tsx
 
 import type { JSX } from "react"
+import { useEffect } from "react"
+import { toast, Toaster } from "sonner"
 import QuizCard from "@/components/QuizCard"
 import { useQuizzes } from "@/api/queries"
 import type { Quiz } from "@/api/quiz"
 
-function getReadableErrorMessage(error: Error | null | undefined): string | null {
-    if (!error) return null
-
-    return "Quizzes could not be loaded right now."
-}
-
-function renderQuizzesContent(sortedQuizzes: Quiz[], isLoading: boolean): JSX.Element {
+function renderQuizzesContent(sortedQuizzes: Quiz[], isLoading: boolean): JSX.Element | null {
     if (isLoading) {
-        return <p className="text-muted-foreground mt-4 text-sm">Loading quizzes...</p>
+        return null
     }
 
     if (sortedQuizzes.length === 0) {
@@ -36,14 +32,23 @@ export default function Quizzes(): JSX.Element {
             new Date(secondQuiz.created).getTime() - new Date(firstQuiz.created).getTime()
     )
 
-    const errMessage = getReadableErrorMessage(error)
-    const content: JSX.Element = renderQuizzesContent(sortedQuizzes, isLoading)
+    useEffect(() => {
+        if (isLoading) {
+            toast.loading("Loading quizzes...", { id: "quizzes-loading" })
+        } else {
+            toast.dismiss("quizzes-loading")
+            if (error) {
+                toast.error("Quizzes could not be loaded right now.", { id: "quizzes-error" })
+            }
+        }
+    }, [isLoading, error])
+
+    const content = renderQuizzesContent(sortedQuizzes, isLoading)
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
-            {errMessage ? <p className="mt-4 text-sm text-red-500">{errMessage}</p> : null}
-
             {content}
+            <Toaster richColors position="bottom-right" />
         </section>
     )
 }

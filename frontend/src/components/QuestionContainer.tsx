@@ -1,4 +1,5 @@
 import type { JSX } from "react"
+import MarkdownPageComponent from "@/components/markdown/MarkdownPageComponent"
 
 interface QuestionContainerProps {
     question: string | undefined
@@ -6,10 +7,10 @@ interface QuestionContainerProps {
 
 export default function QuestionContainer({ question }: QuestionContainerProps): JSX.Element {
     return (
-        <div className="bg-muted/30 relative overflow-hidden rounded-2xl p-5 shadow-xl backdrop-blur-sm">
-            <h2 className="text-center text-xl font-extrabold">
-                {question ?? "Loading question..."}
-            </h2>
+        <div className="bg-muted/30 relative overflow-hidden rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+            <div className="text-center text-xl font-extrabold [&_p]:text-center [&_p]:text-3xl [&_p]:leading-tight [&_p]:font-bold md:[&_p]:text-4xl">
+                <MarkdownPageComponent content={question ?? "Loading question..."} />
+            </div>
         </div>
     )
 }

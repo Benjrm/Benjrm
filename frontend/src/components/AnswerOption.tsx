@@ -1,11 +1,12 @@
 import type { JSX } from "react"
+import getAnswerVisuals from "@/utils/answerVisuals"
 
 interface AnswerOptionProps {
     index: number
     text: string
     isSelected: boolean
-    color: string
-    icon: string
+    color?: string
+    icon?: string
     onSelect: (index: number) => void
 }
 
@@ -17,6 +18,10 @@ export default function AnswerOption({
     icon,
     onSelect,
 }: AnswerOptionProps): JSX.Element {
+    let visuals = { accent: color, icon }
+    if (icon == null && color == null) {
+        visuals = getAnswerVisuals(index)
+    }
     return (
         <button
             aria-pressed={isSelected}
@@ -30,16 +35,16 @@ export default function AnswerOption({
             style={
                 {
                     borderColor: isSelected ? "var(--glow-color)" : "rgba(255,255,255,0.08)",
-                    boxShadow: isSelected ? `0 0 40px ${color}` : undefined,
-                    "--glow-color": color,
+                    boxShadow: isSelected ? `0 0 40px ${visuals.accent}` : undefined,
+                    "--glow-color": visuals.accent,
                 } as React.CSSProperties
             }
         >
             <div
                 className="flex h-14 w-14 items-center justify-center rounded-lg text-2xl font-black text-white shadow-md"
-                style={{ background: color }}
+                style={{ background: visuals.accent }}
             >
-                {icon}
+                {visuals.icon}
             </div>
 
             <div className="text-base font-bold">{text || `Option ${index + 1}`}</div>

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import type { FC, SubmitEvent } from "react"
 import { useNavigate } from "react-router"
+import { toast } from "sonner"
 import { DialogFooter } from "@/shadcn/components/ui/dialog"
 import { Button } from "@/shadcn/components/ui/button"
 import { Label } from "@/shadcn/components/ui/label"
@@ -32,7 +33,6 @@ const QuizForm: FC<QuizFormProps> = ({
     const navigate = useNavigate()
     const [title, setTitle] = useState(initialTitle)
     const [description, setDescription] = useState(initialDescription)
-    const [error, setError] = useState<string | null>(null)
 
     const createMutation = useCreateQuiz()
     const updateMutation = useUpdateQuiz(quizId)
@@ -40,7 +40,6 @@ const QuizForm: FC<QuizFormProps> = ({
 
     async function handleSubmit(e: SubmitEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault()
-        setError(null)
 
         try {
             if (mode === "create") {
@@ -57,7 +56,7 @@ const QuizForm: FC<QuizFormProps> = ({
                 onSuccess(quiz.id)
             } else {
                 if (!quizId) {
-                    setError("Missing quiz id for edit")
+                    toast.error("Missing quiz id for edit")
                     return
                 }
 
@@ -71,7 +70,7 @@ const QuizForm: FC<QuizFormProps> = ({
                 onSuccess(updated.id)
             }
         } catch {
-            setError(getReadableQuizMutationError())
+            toast.error(getReadableQuizMutationError())
         }
     }
 
@@ -112,8 +111,6 @@ const QuizForm: FC<QuizFormProps> = ({
                     value={description}
                 />
             </div>
-
-            {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
             <DialogFooter>
                 <Button disabled={isLoading} onClick={onClose} type="button" variant="outline">

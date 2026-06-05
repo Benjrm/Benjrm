@@ -1,159 +1,146 @@
 // frontend/src/pages/QuizCreator.tsx
 
 import type { JSX } from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Edit2, Settings, Trash2 } from "lucide-react"
 import { useParams, useNavigate } from "react-router"
+import { toast, Toaster } from "sonner"
+import {
+    closestCenter,
+    DndContext,
+    DragOverlay,
+    PointerSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core"
 
-import AnswerCard from "../components/AnswerCard"
 import CreateQuizModal from "../components/CreateQuizModal"
+import QuestionEditor from "../components/QuestionEditor"
 import QuestionSidebar from "../components/QuestionSidebar"
 import SettingsPanel from "../components/SettingsPanel"
-import type { Question } from "../types/quiz"
-import { useQuiz, useDeleteQuiz } from "@/api/queries"
-
-import { Button } from "@/shadcn/components/ui/button"
-import { Textarea } from "@/shadcn/components/ui/textarea"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/shadcn/components/ui/select"
+    restrictToVerticalAxis,
+    restrictToParentElement,
+    getQuestionPreviewText,
+} from "./quiz/quizUtils"
+import useQuizEditor from "@/hooks/useQuizEditor"
+import { Button } from "@/shadcn/components/ui/button"
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
-    DialogTitle,
     DialogDescription,
     DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/shadcn/components/ui/dialog"
-
-function getReadableQuizErrorMessage(error: Error | null | undefined): string | null {
-    if (!error) return null
-
-    return "Quiz data could not be loaded right now."
-}
-
-// --- Main Page ---
+import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 export default function QuizCreator(): JSX.Element {
-    const { quizId } = useParams()
+    const params = useParams()
+    const quizId = params.id ?? params.quizId
     const navigate = useNavigate()
-    const modalMode = quizId ? "edit" : "create"
 
-    // Query for loading quiz data
-    const { data: quiz, isLoading, error } = useQuiz(quizId)
-    const deleteQuizMutation = useDeleteQuiz()
+    const {
+        quizTitle,
+        quizDescription,
+        isLoading,
+        isLoadingQuestions,
+        questionLoadError,
+        error,
+        questionError,
+        bigQuestionError,
+        questions,
+        currentQuestionIndex,
+        handleSelectQuestion,
+        currentQuestion,
+        questionIds,
+        activeQuestionId,
+        handleDragStart,
+        handleDragEnd,
+        handleDragCancel,
+        updateQuestion,
+        updateOption,
+        toggleOptionCorrect,
+        reorderOptions,
+        deleteQuestion,
+        handleAddQuestion,
+        handleAddOption,
+        handleDeleteOption,
+        handleSaveQuestions,
+        isSavingQuestions,
+        hasUnsavedChanges,
+        deleteQuizMutation,
+        discardChanges,
+        hasInitializedQuestions,
+    } = useQuizEditor(quizId)
 
-    // Derived values
-    const quizTitle = quiz?.title ?? "Untitled"
-    const quizDescription = quiz?.description ?? ""
-    const quizLoadError = getReadableQuizErrorMessage(error)
+    const [saveError, setSaveError] = useState<string | null>(null)
 
+    useEffect(() => {
+        if (isLoading && quizId) {
+            toast.loading("Loading quiz...", { id: "quiz-loading" })
+        } else {
+            toast.dismiss("quiz-loading")
+            if (error && quizId) {
+                const msg = error instanceof Error ? error.message : String(error)
+                toast.error(msg, { id: "quiz-error" })
+            }
+        }
+    }, [isLoading, error, quizId])
+
+    useEffect(() => {
+        if (isLoadingQuestions && quizId && !hasInitializedQuestions) {
+            toast.loading("Loading questions...", { id: "questions-loading" })
+        } else {
+            toast.dismiss("questions-loading")
+            if (questionLoadError) {
+                toast.error("Failed to load questions.", { id: "questions-error" })
+            }
+        }
+    }, [isLoadingQuestions, questionLoadError, quizId, hasInitializedQuestions])
+
+    useEffect(() => {
+        if (hasUnsavedChanges) {
+            toast.warning("There are still unsaved changes. Click Save Quiz to save them.", {
+                id: "unsaved-changes",
+                duration: Infinity,
+            })
+        } else {
+            toast.dismiss("unsaved-changes")
+        }
+    }, [hasUnsavedChanges])
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(TouchSensor, { activationConstraint: { distance: 4 } })
+    )
+
+    // UI-only state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-    const [deleteError, setDeleteError] = useState<string | null>(null)
-
-    const [questions, setQuestions] = useState<Question[]>([
-        {
-            id: 1,
-            options: ["", "", "", ""],
-            title: "",
-            type: "Multiple Choice",
-        },
-    ])
-
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0)
-
-    const currentQuestion = questions[currentQuestionIndex]
 
     const handleDelete = async (): Promise<void> => {
         if (!quizId) return
 
         try {
-            setDeleteError(null)
             await deleteQuizMutation.mutateAsync(quizId)
             setIsConfirmOpen(false)
             navigate("/dashboard")
         } catch {
-            setDeleteError("Quiz could not be deleted. Please try again.")
+            toast.error("Quiz could not be deleted. Please try again.")
         }
     }
 
-    const handleEditSuccess = (): void => {
-        // Quiz data is automatically updated by React Query
-        setIsEditModalOpen(false)
-    }
-
-    const updateQuestion = (data: Partial<Question>) => {
-        setQuestions((prevQuestions) => {
-            const updated = [...prevQuestions]
-
-            updated[currentQuestionIndex] = {
-                ...updated[currentQuestionIndex],
-                ...data,
-            }
-
-            return updated
-        })
-    }
-
-    const updateOption = (index: number, value: string) => {
-        const newOptions = [...currentQuestion.options]
-
-        newOptions[index] = value
-
-        updateQuestion({ options: newOptions })
-    }
-
-    const deleteQuestion = (indexToDelete: number) => {
-        if (questions.length === 1) {
-            setQuestions([
-                {
-                    id: Date.now(),
-                    options: ["", "", "", ""],
-                    title: "",
-                    type: "Multiple Choice",
-                },
-            ])
-            setCurrentQuestionIndex(0)
-            return
-        }
-
-        setQuestions((prevQuestions) => prevQuestions.filter((_, index) => index !== indexToDelete))
-
-        if (currentQuestionIndex >= indexToDelete && currentQuestionIndex > 0) {
-            setCurrentQuestionIndex((prev) => prev - 1)
-        }
-    }
-
-    const handleAddQuestion = () => {
-        setQuestions((prev) => [
-            ...prev,
-            {
-                id: Date.now(),
-                options: ["", "", "", ""],
-                title: "",
-                type: "Multiple Choice",
-            },
-        ])
-    }
-
-    const handleSelectType = (value: string) => {
-        updateQuestion({
-            type: value as Question["type"],
-        })
-    }
+    const handleEditSuccess = (): void => setIsEditModalOpen(false)
 
     const handleConfirmClose = () => setIsConfirmOpen(false)
 
     return (
-        <div className="bg-background text-foreground min-h-screen overflow-x-hidden">
-            <div className="flex w-full flex-col px-4 py-8 sm:px-8">
+        <div className="bg-background text-foreground flex flex-col overflow-hidden px-4 py-6 sm:px-8 lg:absolute lg:inset-0">
+            <div className="flex w-full flex-1 flex-col overflow-hidden">
                 {/* Header */}
-                <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <header className="mb-6 flex shrink-0 flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-3">
                             <h1 className="text-4xl font-extrabold md:text-5xl">{quizTitle}</h1>
@@ -193,8 +180,29 @@ export default function QuizCreator(): JSX.Element {
                             Settings
                         </Button>
 
-                        <Button className="bg-[#00F2FF] font-bold text-black hover:bg-[#00d8e4]">
-                            Save Quiz
+                        {hasUnsavedChanges ? (
+                            <Button
+                                disabled={isSavingQuestions}
+                                onClick={discardChanges}
+                                variant="outline"
+                            >
+                                Discard Changes
+                            </Button>
+                        ) : null}
+
+                        <Button
+                            className="bg-[#00F2FF] font-bold text-black hover:bg-[#00d8e4]"
+                            disabled={isSavingQuestions || (quizId ? isLoadingQuestions : false)}
+                            onClick={() => {
+                                handleSaveQuestions()
+                                    .then((res) => {
+                                        if (res.error) setSaveError(res.error)
+                                        else setSaveError(null)
+                                    })
+                                    .catch(() => {})
+                            }}
+                        >
+                            {isSavingQuestions ? "Saving..." : "Save Quiz"}
                         </Button>
 
                         {quizId ? (
@@ -235,114 +243,96 @@ export default function QuizCreator(): JSX.Element {
                     </div>
                 </header>
 
-                {quizLoadError && quizId ? (
-                    <p className="mb-6 text-sm text-red-500">{quizLoadError}</p>
+                {saveError ? (
+                    <div className="text-black-950 dark:text-white-200 mb-6 rounded-2xl border border-red-400 bg-red-50 px-4 py-3 text-sm font-medium shadow-sm dark:border-red-400/30 dark:bg-red-500/10">
+                        {saveError}
+                    </div>
                 ) : null}
-
-                {isLoading && quizId ? (
-                    <p className="text-muted-foreground mb-6 text-sm">Loading quiz...</p>
-                ) : null}
-
-                {deleteError ? <p className="mb-6 text-sm text-red-500">{deleteError}</p> : null}
 
                 {/* Layout */}
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_1fr_320px]">
+                <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_320px]">
                     {/* Sidebar */}
-                    <div className="bg-muted/30 border-border rounded-3xl border p-4 shadow-xl backdrop-blur-sm">
-                        <QuestionSidebar
-                            activeIndex={currentQuestionIndex}
-                            onAdd={handleAddQuestion}
-                            onDelete={deleteQuestion}
-                            onSelect={setCurrentQuestionIndex}
-                            questions={questions}
+                    <DndContext
+                        collisionDetection={closestCenter}
+                        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                        onDragCancel={handleDragCancel}
+                        onDragEnd={handleDragEnd}
+                        onDragStart={handleDragStart}
+                        sensors={sensors}
+                    >
+                        <div className="bg-muted/30 border-border custom-scrollbar flex h-full min-h-0 flex-col overflow-y-auto rounded-3xl border p-4 shadow-xl backdrop-blur-sm">
+                            <QuestionSidebar
+                                activeIndex={currentQuestionIndex}
+                                onAdd={handleAddQuestion}
+                                onDelete={deleteQuestion}
+                                onSelect={handleSelectQuestion}
+                                questionIds={questionIds}
+                                questions={questions}
+                            />
+                        </div>
+
+                        <DragOverlay dropAnimation={null}>
+                            {activeQuestionId
+                                ? (() => {
+                                      const activeQuestion = questions.find(
+                                          (question) => question.id === activeQuestionId
+                                      )
+                                      if (!activeQuestion) return null
+
+                                      return (
+                                          <div className="border-border bg-muted/95 w-[280px] rounded-2xl border p-4 shadow-2xl">
+                                              <div className="mb-3 flex items-center gap-2">
+                                                  <div className="text-muted-foreground/60 flex h-9 w-9 items-center justify-center rounded-md bg-white/5">
+                                                      <span className="text-lg">⋮⋮</span>
+                                                  </div>
+                                                  <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
+                                                      {activeQuestion.type ===
+                                                      QuestionTypeEnum.SLIDE
+                                                          ? "Slide"
+                                                          : "Question"}
+                                                  </span>
+                                              </div>
+
+                                              <p className="mb-4 line-clamp-2 min-h-10 text-sm font-semibold">
+                                                  {getQuestionPreviewText(
+                                                      activeQuestion.question,
+                                                      activeQuestion.type
+                                                  )}
+                                              </p>
+
+                                              {activeQuestion.type !== QuestionTypeEnum.SLIDE ? (
+                                                  <div className="grid grid-cols-2 gap-1.5 opacity-80">
+                                                      <div className="h-2 rounded-full bg-[#2d4cc9]" />
+                                                      <div className="h-2 rounded-full bg-[#ffa602]" />
+                                                      <div className="h-2 rounded-full bg-[#11c8d4]" />
+                                                      <div className="h-2 rounded-full bg-[#ff4949]" />
+                                                  </div>
+                                              ) : null}
+                                          </div>
+                                      )
+                                  })()
+                                : null}
+                        </DragOverlay>
+                    </DndContext>
+
+                    <div className="custom-scrollbar h-auto overflow-y-auto rounded-3xl px-1">
+                        <QuestionEditor
+                            bigQuestionError={bigQuestionError}
+                            onAddOption={handleAddOption}
+                            onChangeOption={updateOption}
+                            onDeleteOption={handleDeleteOption}
+                            onReorderOptions={reorderOptions}
+                            onToggleCorrect={toggleOptionCorrect}
+                            question={currentQuestion}
+                            questionError={questionError}
+                            questionIndex={currentQuestionIndex}
+                            totalQuestions={questions.length}
+                            updateQuestion={updateQuestion}
                         />
                     </div>
 
-                    {/* Main Editor */}
-                    <main className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-                        {/* Question Card */}
-                        <div className="bg-muted/30 border-border relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-sm md:p-8">
-                            <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full bg-[#00F2FF]/10 blur-3xl" />
-
-                            <div className="relative">
-                                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                                    <div className="text-muted-foreground text-sm font-medium tracking-wide">
-                                        Question {currentQuestionIndex + 1} of {questions.length}
-                                    </div>
-
-                                    <Select
-                                        onValueChange={handleSelectType}
-                                        value={currentQuestion.type}
-                                    >
-                                        <SelectTrigger className="bg-background/70 border-border w-52 backdrop-blur-sm">
-                                            <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-
-                                        <SelectContent>
-                                            <SelectItem value="Multiple Choice">
-                                                Multiple Choice
-                                            </SelectItem>
-
-                                            <SelectItem value="True/False">True/False</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <Textarea
-                                    className="placeholder:text-muted-foreground/40 min-h-40 resize-none border-none bg-transparent p-0 text-3xl leading-tight font-bold shadow-none focus-visible:ring-0 md:text-4xl"
-                                    placeholder="Type your question here..."
-                                    value={currentQuestion.title}
-                                    onChange={(e) =>
-                                        updateQuestion({
-                                            title: e.target.value,
-                                        })
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        {/* Answers */}
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <AnswerCard
-                                accent="#2d4cc9"
-                                glow="radial-gradient(circle, #2d4cc9 0%, transparent 70%)"
-                                icon="▲"
-                                onChange={(val) => updateOption(0, val)}
-                                placeholder="Option 1"
-                                value={currentQuestion.options[0]}
-                            />
-
-                            <AnswerCard
-                                accent="#ffa602"
-                                glow="radial-gradient(circle, #ffa602 0%, transparent 70%)"
-                                icon="◆"
-                                onChange={(val) => updateOption(1, val)}
-                                placeholder="Option 2"
-                                value={currentQuestion.options[1]}
-                            />
-
-                            <AnswerCard
-                                accent="#11c8d4"
-                                glow="radial-gradient(circle, #11c8d4 0%, transparent 70%)"
-                                icon="●"
-                                onChange={(val) => updateOption(2, val)}
-                                placeholder="Option 3"
-                                value={currentQuestion.options[2]}
-                            />
-
-                            <AnswerCard
-                                accent="#ff4949"
-                                glow="radial-gradient(circle, #ff4949 0%, transparent 70%)"
-                                icon="■"
-                                onChange={(val) => updateOption(3, val)}
-                                placeholder="Option 4"
-                                value={currentQuestion.options[3]}
-                            />
-                        </div>
-                    </main>
-
                     {/* Settings */}
-                    <div className="bg-muted/30 border-border rounded-3xl border p-4 shadow-xl backdrop-blur-sm">
+                    <div className="bg-muted/30 border-border custom-scrollbar hidden h-auto overflow-y-auto rounded-3xl border p-4 shadow-xl backdrop-blur-sm xl:block">
                         <SettingsPanel question={currentQuestion} />
                     </div>
                 </div>
@@ -351,11 +341,12 @@ export default function QuizCreator(): JSX.Element {
                 initialDescription={quizDescription}
                 initialTitle={quizTitle}
                 isOpen={isEditModalOpen}
-                mode={modalMode}
+                mode="edit"
                 onClose={() => setIsEditModalOpen(false)}
                 onSuccess={handleEditSuccess}
                 quizId={quizId}
             />
+            <Toaster richColors position="bottom-right" />
         </div>
     )
 }

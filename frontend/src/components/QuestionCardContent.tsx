@@ -7,9 +7,6 @@ import QuestionHeader from "@/components/QuestionHeader"
 import QuestionContainer from "@/components/QuestionContainer"
 import AnswerOption from "@/components/AnswerOption"
 
-const ICONS = ["▲", "◆", "●", "■", "◯", "◆"]
-const COLORS = ["#2d4cc9", "#ffa602", "#11c8d4", "#ff4949", "#28c28b", "#8b5cf6"]
-
 export default function QuestionCardContent(): JSX.Element {
     const remainingTime = 12
 
@@ -50,8 +47,6 @@ export default function QuestionCardContent(): JSX.Element {
                     {question?.options?.map((option, i) => (
                         <AnswerOption
                             key={option.id}
-                            color={COLORS[i % COLORS.length]}
-                            icon={ICONS[i % ICONS.length]}
                             index={i}
                             isSelected={selectedAnswer === option.id}
                             onSelect={() => sendAnswer(option.id)}
