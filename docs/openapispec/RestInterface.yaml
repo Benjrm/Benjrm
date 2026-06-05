@@ -19,6 +19,8 @@ tags:
     description: Operations related to quizzes.
   - name: Questions
     description: Operations related to questions. Questions belong to quizzes.
+  - name: Sessions
+    description: Operations related to sessions.
   - name: Health
     description: Server health related checks
 
@@ -685,6 +687,258 @@ paths:
       tags:
         - Questions
 
+  /api/v1/sessions:
+    post:
+      summary: Create a session
+      operationId: createSession
+      description: 'Create a new session' 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSession'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Sessions
+  
+  /api/v1/sessions/{session}:
+    get:
+      summary: Get a single session
+      operationId: getSession
+      description: 'Get a single session'
+      parameters:
+        - name: session
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 12345678
+      responses:
+        '200':
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Sessions
+
+    delete:
+      summary: Close a session
+      operationId: deleteSession
+      description: Close a session
+      parameters:
+        - name: session
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 12345678
+      responses:
+        '204':
+          description: No content
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Sessions
+  
+  /api/v1/sessions/{session}/quiz:
+    get:
+      summary: Get the quiz from a session
+      operationId: getSessionQuiz
+      description: 'Get the quiz from a session'
+      parameters:
+        - name: session
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 12345678
+      responses:
+        '200':
+          description: Quiz
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteQuiz'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Sessions
+        - Quizzes
+        - Questions
+  
+  /api/v1/sessions/{session}/ws/host:
+    get:
+      summary: Connect to the host websocket
+      operationId: getSessionHostWs
+      description: 'Connect to the host websocket'
+      parameters:
+        - name: session
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 12345678
+      responses:
+        '101':
+          description: Switching Protocols
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Sessions
+
 components:
   schemas:
     Error:
@@ -758,7 +1012,17 @@ components:
           type: string
           format: 'date-time'
           example: '2024-01-01T12:00:00.000000Z'
-
+    
+    CompleteQuiz:
+      allOf:
+        - $ref: '#/components/schemas/Quiz'
+        - type: object
+          properties:
+            question:
+              type: array
+              items:
+                $ref: '#/components/schemas/Question'
+    
     Position:
       oneOf:
         - type: object
@@ -1120,3 +1384,18 @@ components:
         answer:
           type: string
           example: 'Testing fonts'
+    
+    NewSession:
+      properties:
+        quiz:
+          type: string
+          format: uuid
+    
+    Session:
+      properties:
+        code:
+          type: integer
+          example: 12345678
+        quiz:
+          type: string
+          format: uuid

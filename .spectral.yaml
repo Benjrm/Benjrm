@@ -1,1 +1,7 @@
 extends: ["spectral:oas"]
+overrides:
+  - files:
+      # /api/v1/sessions/{session}/ws/host
+      - "docs/openapispec/RestInterface.yaml#/paths/~1api~1v1~1sessions~1%7Bsession%7D~1ws~1host"
+    rules:
+      operation-success-response: "off"
