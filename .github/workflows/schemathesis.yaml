@@ -36,3 +36,4 @@ jobs:
           config-file: 'api_tests/schemathesis.toml'
           version: '4.21.0'
           coverage: 'false'
+          args: '--generation-database none'
