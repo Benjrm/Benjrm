@@ -20,6 +20,8 @@ COPY ./mounts/realm.template.json \
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 
+USER keycloak
+
 # start the server in production mode and import the realm on first startup
 # https://www.keycloak.org/server/importExport#_importing_a_realm_during_startup
 # note: this command will be overridden by the command start-dev --import realm in the docker-compose.dev.yml file

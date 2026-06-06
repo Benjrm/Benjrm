@@ -1,5 +1,7 @@
 // frontend/src/api/client.ts
 
+import { ApiError } from "./utils"
+
 export interface FetchOptions {
     method?: string
     body?: unknown
@@ -25,7 +27,6 @@ export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise
     if (body !== undefined) {
         if (body instanceof FormData) {
             init.body = body as BodyInit
-            // let browser set Content-Type for FormData
         } else {
             headerMap["Content-Type"] = "application/json"
             init.body = JSON.stringify(body)
@@ -37,10 +38,15 @@ export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise
     const res = await fetch(url, init)
 
     if (!res.ok) {
-        throw createFriendlyApiError()
+        let error
+        try {
+            error = new ApiError(await res.json())
+        } catch {
+            throw createFriendlyApiError()
+        }
+        throw error
     }
 
-    // Wenn der Status 204 (No Content) ist, geben wir explizit undefined als Typ T zurück
     if (res.status === 204) return undefined as T
 
     const responseText = await res.text()

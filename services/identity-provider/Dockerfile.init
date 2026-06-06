@@ -8,6 +8,8 @@ FROM alpine:3.22.4
 # install the necessary tools like curl and jq for making API requests and processing JSON responses.
 RUN apk add --no-cache curl jq bash ca-certificates
 
+RUN addgroup -S app && adduser -S app -G app
+
 # The init.sh script will contain the logic to interact with the Keycloak REST API to create test users.
 COPY ./mounts/init.sh /init.sh
 
@@ -16,4 +18,7 @@ COPY ./mounts/init.sh /init.sh
 COPY ./mounts/user-profile.json /user-profile.json
 
 RUN chmod +x /init.sh
+
+USER app
+
 ENTRYPOINT ["/init.sh"]

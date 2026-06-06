@@ -70,7 +70,7 @@ const prettierConfig = defineConfig([
 ])
 
 export default defineConfig([
-    globalIgnores(["dist", "src/shadcn"]),
+    globalIgnores(["dist"]),
     // Ignore files and folders listed in .gitignore
     includeIgnoreFile(gitignorePath),
     // JavaScript config

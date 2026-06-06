@@ -1,26 +1,27 @@
 // frontend/src/pages/Dashboard.tsx
 import type { JSX } from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { toast, Toaster } from "sonner"
 import GameHeroSection from "../components/GameHeroSection"
 import DiscoverSection from "../components/DiscoverSection"
 import CreateQuizModal from "../components/CreateQuizModal"
 import { useQuizzes } from "@/api/queries"
 
-function getQuizLoadErrorMessage(error: Error | null | undefined): string | null {
-    if (!error) return null
-
-    if (/did not match the expected pattern/i.test(error.message)) {
-        return "Quizzes could not be loaded right now."
-    }
-
-    return "Quizzes could not be loaded right now."
-}
-
 export default function Dashboard(): JSX.Element {
     const [isCreateQuizOpen, setIsCreateQuizOpen] = useState(false)
 
     const { data: quizzes = [], isLoading: loadingQuizzes, error } = useQuizzes()
-    const quizLoadError = getQuizLoadErrorMessage(error)
+
+    useEffect(() => {
+        if (loadingQuizzes) {
+            toast.loading("Loading quizzes...", { id: "quizzes-loading" })
+        } else {
+            toast.dismiss("quizzes-loading")
+            if (error) {
+                toast.error("Quizzes could not be loaded right now.", { id: "quizzes-error" })
+            }
+        }
+    }, [loadingQuizzes, error])
 
     const handleCreateSuccess = (): void => {
         setIsCreateQuizOpen(false)
@@ -33,7 +34,6 @@ export default function Dashboard(): JSX.Element {
             </div>
 
             <DiscoverSection
-                error={quizLoadError}
                 loading={loadingQuizzes}
                 onCreateQuizClick={() => setIsCreateQuizOpen(true)}
                 quizzes={quizzes}
@@ -43,6 +43,7 @@ export default function Dashboard(): JSX.Element {
                 onClose={() => setIsCreateQuizOpen(false)}
                 onSuccess={handleCreateSuccess}
             />
+            <Toaster richColors position="bottom-right" />
         </div>
     )
 }
