@@ -6,6 +6,7 @@ use {
 pub struct AppData {
     pub db: sea_orm::DbConn,
     pub imprint: StaticFile,
+    pub privacy: StaticFile,
     pub oidc: Oidc,
 }
 
@@ -27,10 +28,16 @@ impl AppData {
         };
 
         let imprint = StaticFile::new(&config_dir, "imprint.md", "text/markdown").await;
+        let privacy = StaticFile::new(&config_dir, "privacy.md", "text/markdown").await;
 
         let oidc = Oidc::from_env().await;
 
-        Self { db, imprint, oidc }
+        Self {
+            db,
+            imprint,
+            privacy,
+            oidc,
+        }
     }
 }
 

@@ -6,9 +6,9 @@ import Dashboard from "./pages/Dashboard"
 import ErrorPage from "./pages/ErrorPage"
 import RootLayout from "./layouts/RootLayout"
 import PublicLayout from "./layouts/PublicLayout"
-import ImprintPage from "./pages/ImprintPage"
 import QuizCreator from "./pages/QuizCreator"
 import OrderQuestion from "./pages/OrderQuestion"
+import DownloadableMarkdown from "./components/DownloadableMarkdown"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
 import Leaderboard from "@/quiz/leaderboard/components/Leaderboard.tsx"
@@ -27,7 +27,13 @@ const routes: RouteObject[] = [
             },
             {
                 path: "/imprint",
-                element: <ImprintPage />,
+                element: <DownloadableMarkdown displayName="Imprint" filename="imprint.md" />,
+            },
+            {
+                path: "/privacy",
+                element: (
+                    <DownloadableMarkdown displayName="Privacy Policy" filename="privacy.md" />
+                ),
             },
             {
                 path: "*",

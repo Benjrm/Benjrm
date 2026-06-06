@@ -33,7 +33,7 @@ export default function Footer(): JSX.Element {
                     </NavLink>
                     <NavLink
                         className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
-                        to="/privacy-policy"
+                        to="/privacy"
                     >
                         Privacy Policy
                     </NavLink>

@@ -1,13 +1,13 @@
 # Impressum § 5 DDG
 
-*Vorname Nachname*
-*Strasse Hausnummer*
-*PLZ Ort*
+[Vorname Nachname]  
+[Strasse Hausnummer]  
+[PLZ Ort]
 
 ## Kontaktmöglichkeiten
 
-Tel:
-E-Mail:
+Tel: [+49 123 456789]  
+E-Mail: [info@example.com]
 
 ## Rechtliche Pflichten
 
