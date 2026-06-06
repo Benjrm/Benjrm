@@ -17,6 +17,15 @@ export default function useWebSocket(code: number | string | undefined, path = "
         const wsUrl = `${protocol}://${host}/api/v1/sessions/${code}/${path}`
 
         websocketService.connect(wsUrl)
+        websocketService.subscribe("ping", (payload: {id: number}) => {
+            websocketService.send({
+                command: "pong",
+                payload: {
+                    id: payload.id,
+                    timestamp: new Date().toISOString()
+                }
+            })
+        })
         return () => {
             websocketService.disconnect()
         }

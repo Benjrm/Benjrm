@@ -3,6 +3,9 @@
  * Each key represents a command sent by the server, and its value defines the structure of the data payload associated with that command.
  */
 export interface ServerEvents {
+    ping: {
+        id: number
+    }
     displayQuestion: {
         id: string
         question: string

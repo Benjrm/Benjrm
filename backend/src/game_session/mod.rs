@@ -4,7 +4,7 @@ use {
         quiz::Quiz,
     },
     chrono::{DateTime, Utc},
-    serde::Serialize,
+    serde::{Deserialize, Serialize},
     std::{
         collections::HashMap,
         fmt::Debug,
@@ -108,6 +108,29 @@ impl<T: Serialize> From<T> for Message<T> {
     }
 }
 
-#[derive(Serialize)]
+pub trait Command: Sized {
+    fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error>;
+    fn pong(&self) -> Option<(u32, DateTime<Utc>)>;
+}
+
+#[derive(Debug, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 pub enum HostMessage {}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "command", content = "payload", rename_all = "camelCase")]
+pub enum HostCommand {
+    Pong { id: u32, timestamp: DateTime<Utc> },
+}
+
+impl Command for HostCommand {
+    fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error> {
+        serde_json::from_slice(data)
+    }
+
+    fn pong(&self) -> Option<(u32, DateTime<Utc>)> {
+        match self {
+            Self::Pong { id, timestamp } => Some((*id, *timestamp)),
+        }
+    }
+}
