@@ -151,9 +151,7 @@ export default function WaitingRoom(): JSX.Element {
                                 </div>
                             </div>
                         </div>
-                    ) : (
-                        <></>
-                    )}
+                    ) : null}
 
                     <div className="mb-4">
                         <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">

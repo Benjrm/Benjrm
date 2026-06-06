@@ -15,7 +15,10 @@ const queryClient = new QueryClient({
             staleTime: 1000 * 60 * 5, // 5 minutes
             gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
             retry: (failureCount, error) => {
-                if (error instanceof ApiError && (error.status === 401 || error.status === 403 || error.status === 404)) {
+                if (
+                    error instanceof ApiError &&
+                    (error.status === 401 || error.status === 403 || error.status === 404)
+                ) {
                     return false
                 }
                 return failureCount < 3

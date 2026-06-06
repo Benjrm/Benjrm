@@ -4,7 +4,7 @@
  */
 export interface ClientEvents {
     pong: {
-        id: number,
+        id: number
         timestamp: string
     }
     join: {
