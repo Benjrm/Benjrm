@@ -116,9 +116,9 @@ impl NewQuestionOptions {
     pub fn r#type(&self) -> QuestionType {
         match self {
             Self::Slide => QuestionType::Slide,
-            Self::SingleChoice { .. } => QuestionType::SingleChoice,
-            Self::MultipleChoice { .. } => QuestionType::MultipleChoice,
-            Self::Order { .. } => QuestionType::Order,
+            Self::SingleChoice(_) => QuestionType::SingleChoice,
+            Self::MultipleChoice(_) => QuestionType::MultipleChoice,
+            Self::Order(_) => QuestionType::Order,
         }
     }
 }
@@ -168,9 +168,9 @@ impl UpdateQuestionOptions {
     pub fn r#type(&self) -> QuestionType {
         match self {
             Self::Slide => QuestionType::Slide,
-            Self::SingleChoice { .. } => QuestionType::SingleChoice,
-            Self::MultipleChoice { .. } => QuestionType::MultipleChoice,
-            Self::Order { .. } => QuestionType::Order,
+            Self::SingleChoice(_) => QuestionType::SingleChoice,
+            Self::MultipleChoice(_) => QuestionType::MultipleChoice,
+            Self::Order(_) => QuestionType::Order,
         }
     }
 
