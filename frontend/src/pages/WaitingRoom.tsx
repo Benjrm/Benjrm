@@ -115,41 +115,45 @@ export default function WaitingRoom(): JSX.Element {
 
             <div className="dark:text-foreground overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl dark:border-white/10 dark:bg-[#111318]">
                 <div className="bg-linear-to-r from-[#00D4E8]/10 via-transparent to-[#FF8A00]/10 p-6 sm:p-8">
-                    <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
-                        <div className="mb-4 flex items-center justify-between">
-                            <p className="text-sm font-semibold tracking-wide">Player Setup</p>
-                            <span className="text-muted-foreground text-xs">
-                                Tap avatar to choose emoji
-                            </span>
-                        </div>
+                    {!isHost ? (
+                        <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
+                            <div className="mb-4 flex items-center justify-between">
+                                <p className="text-sm font-semibold tracking-wide">Player Setup</p>
+                                <span className="text-muted-foreground text-xs">
+                                    Tap avatar to choose emoji
+                                </span>
+                            </div>
 
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                            <ProfilePicker
-                                emoji={emoji}
-                                name={name}
-                                onNameChange={setName}
-                                onOpenEmoji={() => setIsEmojiOpen(true)}
-                            />
-                            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-                                <Button
-                                    className="border-white/20 bg-[#242424] text-white hover:bg-[#2f2f2f]"
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        // Name generation is implemented in a separate PR.
-                                    }}
-                                >
-                                    Generate Name
-                                </Button>
-                                <Button
-                                    className="border-0 bg-[#00D4E8] font-semibold text-black shadow-[0_0_20px_-6px_rgba(0,212,232,0.75)] hover:bg-[#00BDD0]"
-                                    type="button"
-                                >
-                                    Save
-                                </Button>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                                <ProfilePicker
+                                    emoji={emoji}
+                                    name={name}
+                                    onNameChange={setName}
+                                    onOpenEmoji={() => setIsEmojiOpen(true)}
+                                />
+                                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+                                    <Button
+                                        className="border-white/20 bg-[#242424] text-white hover:bg-[#2f2f2f]"
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            // Name generation is implemented in a separate PR.
+                                        }}
+                                    >
+                                        Generate Name
+                                    </Button>
+                                    <Button
+                                        className="border-0 bg-[#00D4E8] font-semibold text-black shadow-[0_0_20px_-6px_rgba(0,212,232,0.75)] hover:bg-[#00BDD0]"
+                                        type="button"
+                                    >
+                                        Save
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        <></>
+                    )}
 
                     <div className="mb-4">
                         <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
