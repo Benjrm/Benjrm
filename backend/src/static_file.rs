@@ -85,6 +85,12 @@ async fn serve_imprint(app_data: web::Data<AppData>) -> HttpResponse {
     app_data.imprint.get_response().await
 }
 
+#[get("/privacy.md")]
+async fn serve_privacy(app_data: web::Data<AppData>) -> HttpResponse {
+    app_data.privacy.get_response().await
+}
+
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(serve_imprint);
+    cfg.service(serve_privacy);
 }

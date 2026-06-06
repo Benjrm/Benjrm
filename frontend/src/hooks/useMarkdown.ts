@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 
-const fetchImprintContent = async (): Promise<string> => {
-    const response = await fetch("/imprint.md")
+const fetchMarkdownContent = async (filename: string, displayName: string): Promise<string> => {
+    const response = await fetch(`/${filename}`)
     const contentType = response.headers.get("content-type")?.toLowerCase() ?? ""
 
     if (
@@ -9,18 +9,21 @@ const fetchImprintContent = async (): Promise<string> => {
         contentType.includes("text/html") ||
         (!contentType.includes("text/markdown") && !contentType.includes("text/plain"))
     ) {
-        throw Error("Imprint content not found")
+        throw Error(`${displayName} content not found`)
     }
     return response.text()
 }
 
-export default function useImprint(): {
+export default function useMarkdown(
+    filename: string,
+    displayName: string
+): {
     data: string | undefined
     isLoading: boolean
     error: unknown
 } {
     return useQuery({
-        queryKey: ["imprint"],
-        queryFn: fetchImprintContent,
+        queryKey: ["markdown", filename],
+        queryFn: async () => fetchMarkdownContent(filename, displayName),
     })
 }

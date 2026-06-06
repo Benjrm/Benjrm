@@ -6,6 +6,7 @@ use {
 pub struct AppData {
     pub db: sea_orm::DbConn,
     pub imprint: StaticFile,
+    pub privacy: StaticFile,
     pub oidc: Oidc,
     pub game_sessions: GameSessions,
 }
@@ -28,6 +29,7 @@ impl AppData {
         };
 
         let imprint = StaticFile::new(&config_dir, "imprint.md", "text/markdown").await;
+        let privacy = StaticFile::new(&config_dir, "privacy.md", "text/markdown").await;
 
         let oidc = Oidc::from_env().await;
 
@@ -36,6 +38,7 @@ impl AppData {
         Self {
             db,
             imprint,
+            privacy,
             oidc,
             game_sessions,
         }
