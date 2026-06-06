@@ -15,7 +15,7 @@ mod core;
 mod test;
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct NewAnswerOrder {
     pub answer: String,
 }
@@ -30,7 +30,7 @@ impl From<NewAnswerOrder> for NewAnswerChoice {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UpdateAnswerOrder {
     pub id: Uuid,
     #[serde(default)]
@@ -108,7 +108,7 @@ impl<'de> Deserialize<'de> for UpdateAnswerOrderEnum {
         D: serde::Deserializer<'de>,
     {
         #[derive(Debug, Clone, Deserialize)]
-        #[serde(rename_all = "camelCase")]
+        #[serde(deny_unknown_fields, rename_all = "camelCase")]
         struct UpdateAnswerOrderDto {
             id: Option<Uuid>,
             answer: Option<String>,

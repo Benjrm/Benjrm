@@ -16,7 +16,7 @@ use {
 };
 
 #[derive(Debug, Clone, Copy, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub enum Position {
     Prev(Uuid),
     Next(Uuid),
@@ -28,7 +28,7 @@ impl Position {
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
-        #[serde(rename_all = "camelCase")]
+        #[serde(deny_unknown_fields, rename_all = "camelCase")]
         struct RawPosition {
             prev: Option<Uuid>,
             next: Option<Uuid>,

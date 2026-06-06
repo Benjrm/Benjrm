@@ -62,19 +62,18 @@ async fn delete_choice_question() {
         question: "Question".into(),
         hidden: true,
         position: None,
-        options: NewQuestionOptions::SingleChoice {
-            options: vec![
-                NewAnswerChoice {
-                    answer: "A".into(),
-                    correct: false,
-                },
-                NewAnswerChoice {
-                    answer: "B".into(),
-                    correct: true,
-                },
-            ],
-        },
+        options: NewQuestionOptions::SingleChoice(vec![
+            NewAnswerChoice {
+                answer: "A".into(),
+                correct: false,
+            },
+            NewAnswerChoice {
+                answer: "B".into(),
+                correct: true,
+            },
+        ]),
     };
+
     let question = quiz
         .clone()
         .create_question(&data.db, new_question)
@@ -104,18 +103,16 @@ async fn delete_quiz_with_choice_questions() {
         question: "Slide".into(),
         hidden: true,
         position: None,
-        options: NewQuestionOptions::SingleChoice {
-            options: vec![
-                NewAnswerChoice {
-                    answer: "A".into(),
-                    correct: false,
-                },
-                NewAnswerChoice {
-                    answer: "B".into(),
-                    correct: true,
-                },
-            ],
-        },
+        options: NewQuestionOptions::SingleChoice(vec![
+            NewAnswerChoice {
+                answer: "A".into(),
+                correct: false,
+            },
+            NewAnswerChoice {
+                answer: "B".into(),
+                correct: true,
+            },
+        ]),
     };
     quiz.clone()
         .create_question(&data.db, new_question)
@@ -163,7 +160,7 @@ async fn change_choice_type() {
                 question: "question".into(),
                 hidden: false,
                 position: None,
-                options: NewQuestionOptions::$from { options },
+                options: NewQuestionOptions::$from(options),
             };
             let question = quiz
                 .clone()
@@ -171,7 +168,7 @@ async fn change_choice_type() {
                 .await
                 .unwrap();
             let question_id = question.model.id;
-            let QuestionOptions::$from { options } = question.options.clone() else {
+            let QuestionOptions::$from(options) = question.options.clone() else {
                 panic!();
             };
 
@@ -189,9 +186,7 @@ async fn change_choice_type() {
                 question: Unset,
                 hidden: Unset,
                 position: None,
-                options: Some(UpdateQuestionOptions::$to {
-                    options: new_options,
-                }),
+                options: Some(UpdateQuestionOptions::$to(new_options)),
             };
             question
                 .update(quiz.clone(), &data.db, update_question)
@@ -206,10 +201,7 @@ async fn change_choice_type() {
                 .await
                 .unwrap();
 
-            let QuestionOptions::$to {
-                options: new_options,
-            } = question.options
-            else {
+            let QuestionOptions::$to(new_options) = question.options else {
                 panic!()
             };
             for i in 0..2 {
@@ -262,9 +254,7 @@ async fn change_slide_to_single_choice() {
         question: Unset,
         hidden: Unset,
         position: None,
-        options: Some(UpdateQuestionOptions::SingleChoice {
-            options: update_options,
-        }),
+        options: Some(UpdateQuestionOptions::SingleChoice(update_options)),
     };
     question
         .update(quiz.clone(), &data.db, update_question)
@@ -278,10 +268,7 @@ async fn change_slide_to_single_choice() {
         .get_answers(&data.db)
         .await
         .unwrap();
-    let QuestionOptions::SingleChoice {
-        options: new_options,
-    } = question.options
-    else {
+    let QuestionOptions::SingleChoice(new_options) = question.options else {
         panic!()
     };
     for i in 0..2 {
@@ -310,7 +297,7 @@ async fn change_single_choice_to_slide() {
         question: "test".into(),
         hidden: false,
         position: None,
-        options: NewQuestionOptions::SingleChoice { options },
+        options: NewQuestionOptions::SingleChoice(options),
     };
     let question = quiz
         .clone()
@@ -342,7 +329,7 @@ async fn change_single_choice_to_slide() {
     assert!(matches!(question.options, QuestionOptions::Slide));
 
     let answers = old_question.get_answers(&data.db).await.unwrap().options;
-    let QuestionOptions::SingleChoice { options } = answers else {
+    let QuestionOptions::SingleChoice(options) = answers else {
         panic!()
     };
     assert!(options.is_empty());
@@ -376,7 +363,7 @@ async fn change_single_choice_to_order_to_single_choice() {
         question: "tt".into(),
         hidden: false,
         position: None,
-        options: NewQuestionOptions::SingleChoice { options },
+        options: NewQuestionOptions::SingleChoice(options),
     };
     let question = quiz
         .clone()
@@ -384,7 +371,7 @@ async fn change_single_choice_to_order_to_single_choice() {
         .await
         .unwrap();
 
-    let QuestionOptions::SingleChoice { options } = question.options.clone() else {
+    let QuestionOptions::SingleChoice(options) = question.options.clone() else {
         panic!();
     };
     let new_options: Vec<_> = options
@@ -400,19 +387,14 @@ async fn change_single_choice_to_order_to_single_choice() {
         question: Unset,
         hidden: Unset,
         position: None,
-        options: Some(UpdateQuestionOptions::Order {
-            options: new_options,
-        }),
+        options: Some(UpdateQuestionOptions::Order(new_options)),
     };
     let question = question
         .update(quiz.clone(), &data.db, update_question)
         .await
         .unwrap();
 
-    let QuestionOptions::Order {
-        options: new_options,
-    } = question.options.clone()
-    else {
+    let QuestionOptions::Order(new_options) = question.options.clone() else {
         panic!();
     };
     for i in 0..options.len() {
@@ -435,19 +417,14 @@ async fn change_single_choice_to_order_to_single_choice() {
         question: Unset,
         hidden: Unset,
         position: None,
-        options: Some(UpdateQuestionOptions::SingleChoice {
-            options: new_options,
-        }),
+        options: Some(UpdateQuestionOptions::SingleChoice(new_options)),
     };
     let question = question
         .update(quiz, &data.db, update_question)
         .await
         .unwrap();
 
-    let QuestionOptions::SingleChoice {
-        options: new_options,
-    } = question.options
-    else {
+    let QuestionOptions::SingleChoice(new_options) = question.options else {
         panic!();
     };
     for i in 0..options.len() {

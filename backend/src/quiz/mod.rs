@@ -27,7 +27,7 @@ impl_err! {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct NewQuiz {
     title: String,
     description: Option<String>,
@@ -36,7 +36,7 @@ pub struct NewQuiz {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UpdateQuiz {
     #[serde(default)]
     title: UpdateValue<String>,
@@ -57,7 +57,7 @@ impl From<NewQuiz> for UpdateQuiz {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct QuizFilter {
     hidden: Option<bool>,
 }
