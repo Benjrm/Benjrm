@@ -17,7 +17,6 @@ use {
 };
 
 pub use api::init;
-
 pub mod answer;
 mod api;
 pub mod core;
@@ -58,30 +57,30 @@ pub struct Question {
 }
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
+#[serde(tag = "type", content = "options", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum QuestionOptions {
     Slide,
-    SingleChoice { options: Vec<AnswerChoiceModel> },
-    MultipleChoice { options: Vec<AnswerChoiceModel> },
-    Order { options: Vec<AnswerOrderModel> },
+    SingleChoice(Vec<AnswerChoiceModel>),
+    MultipleChoice(Vec<AnswerChoiceModel>),
+    Order(Vec<AnswerOrderModel>),
 }
 
 impl QuestionOptions {
     pub fn get_answer_choice_options(self) -> Vec<AnswerChoiceModel> {
         match self {
             Self::Slide => Vec::new(),
-            Self::SingleChoice { options } | Self::MultipleChoice { options } => options,
-            Self::Order { options } => options.into_iter().map(Into::into).collect(),
+            Self::SingleChoice(options) | Self::MultipleChoice(options) => options,
+            Self::Order(options) => options.into_iter().map(Into::into).collect(),
         }
     }
 
     pub fn get_answer_order_options(self) -> Vec<AnswerOrderModel> {
         match self {
             Self::Slide => Vec::new(),
-            Self::SingleChoice { options } | Self::MultipleChoice { options } => {
+            Self::SingleChoice(options) | Self::MultipleChoice(options) => {
                 options.into_iter().map(Into::into).collect()
             }
-            Self::Order { options } => options,
+            Self::Order(options) => options,
         }
     }
 }
@@ -99,12 +98,17 @@ pub struct NewQuestion {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "type", deny_unknown_fields, rename_all = "SCREAMING_SNAKE_CASE")]
+#[serde(
+    tag = "type",
+    content = "options",
+    deny_unknown_fields,
+    rename_all = "SCREAMING_SNAKE_CASE"
+)]
 pub enum NewQuestionOptions {
     Slide,
-    SingleChoice { options: Vec<NewAnswerChoice> },
-    MultipleChoice { options: Vec<NewAnswerChoice> },
-    Order { options: Vec<NewAnswerOrder> },
+    SingleChoice(Vec<NewAnswerChoice>),
+    MultipleChoice(Vec<NewAnswerChoice>),
+    Order(Vec<NewAnswerOrder>),
 }
 
 impl NewQuestionOptions {
@@ -143,18 +147,17 @@ impl From<NewQuestion> for UpdateQuestion {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "type", deny_unknown_fields, rename_all = "SCREAMING_SNAKE_CASE")]
+#[serde(
+    tag = "type",
+    content = "options",
+    deny_unknown_fields,
+    rename_all = "SCREAMING_SNAKE_CASE"
+)]
 pub enum UpdateQuestionOptions {
     Slide,
-    SingleChoice {
-        options: Vec<UpdateAnswerChoiceEnum>,
-    },
-    MultipleChoice {
-        options: Vec<UpdateAnswerChoiceEnum>,
-    },
-    Order {
-        options: Vec<UpdateAnswerOrderEnum>,
-    },
+    SingleChoice(Vec<UpdateAnswerChoiceEnum>),
+    MultipleChoice(Vec<UpdateAnswerChoiceEnum>),
+    Order(Vec<UpdateAnswerOrderEnum>),
 }
 
 impl UpdateQuestionOptions {
@@ -172,15 +175,15 @@ impl From<NewQuestionOptions> for UpdateQuestionOptions {
     fn from(value: NewQuestionOptions) -> Self {
         match value {
             NewQuestionOptions::Slide => Self::Slide,
-            NewQuestionOptions::SingleChoice { options } => Self::SingleChoice {
-                options: options.into_iter().map(Into::into).collect(),
-            },
-            NewQuestionOptions::MultipleChoice { options } => Self::MultipleChoice {
-                options: options.into_iter().map(Into::into).collect(),
-            },
-            NewQuestionOptions::Order { options } => Self::Order {
-                options: options.into_iter().map(Into::into).collect(),
-            },
+            NewQuestionOptions::SingleChoice(options) => {
+                Self::SingleChoice(options.into_iter().map(Into::into).collect())
+            }
+            NewQuestionOptions::MultipleChoice(options) => {
+                Self::MultipleChoice(options.into_iter().map(Into::into).collect())
+            }
+            NewQuestionOptions::Order(options) => {
+                Self::Order(options.into_iter().map(Into::into).collect())
+            }
         }
     }
 }

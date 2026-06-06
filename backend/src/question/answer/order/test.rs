@@ -19,15 +19,13 @@ async fn update_options() {
         question: "Question".into(),
         hidden: true,
         position: None,
-        options: NewQuestionOptions::Order {
-            options: vec![
-                NewAnswerOrder { answer: "A".into() },
-                NewAnswerOrder { answer: "B".into() },
-                NewAnswerOrder {
-                    answer: "Delete".into(),
-                },
-            ],
-        },
+        options: NewQuestionOptions::Order(vec![
+            NewAnswerOrder { answer: "A".into() },
+            NewAnswerOrder { answer: "B".into() },
+            NewAnswerOrder {
+                answer: "Delete".into(),
+            },
+        ]),
     };
 
     let question = quiz
@@ -37,7 +35,7 @@ async fn update_options() {
         .unwrap();
 
     let options = match question.options.clone() {
-        QuestionOptions::Order { options } => options,
+        QuestionOptions::Order(options) => options,
         _ => panic!(),
     };
 
@@ -71,7 +69,7 @@ async fn update_options() {
         question: Unset,
         hidden: Unset,
         position: None,
-        options: Some(UpdateQuestionOptions::Order { options }),
+        options: Some(UpdateQuestionOptions::Order(options)),
     };
 
     let question = question
@@ -80,7 +78,7 @@ async fn update_options() {
         .unwrap();
 
     let inserted_options = match question.options {
-        QuestionOptions::Order { options } => options,
+        QuestionOptions::Order(options) => options,
         _ => panic!(),
     };
 
@@ -105,12 +103,10 @@ pub async fn create_order_question() {
         question: "Question".into(),
         hidden: true,
         position: None,
-        options: NewQuestionOptions::Order {
-            options: vec![
-                NewAnswerOrder { answer: "A".into() },
-                NewAnswerOrder { answer: "B".into() },
-            ],
-        },
+        options: NewQuestionOptions::Order(vec![
+            NewAnswerOrder { answer: "A".into() },
+            NewAnswerOrder { answer: "B".into() },
+        ]),
     };
 
     let question = quiz
@@ -122,7 +118,7 @@ pub async fn create_order_question() {
     assert_eq!(question.model.r#type, QuestionType::Order);
 
     let options = match question.options {
-        QuestionOptions::Order { options } => options,
+        QuestionOptions::Order(options) => options,
         _ => panic!("Type missmatch"),
     };
 
