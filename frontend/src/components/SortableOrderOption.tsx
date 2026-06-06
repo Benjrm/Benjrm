@@ -35,9 +35,13 @@ export default function SortableOrderOption({
         id,
     })
 
+    const cardDragProps = !editable ? { ...attributes, ...listeners } : {}
+    const handleDragProps = editable ? { ...attributes, ...listeners } : {}
+
     return (
         <div
             ref={setNodeRef}
+            {...cardDragProps}
             className={`border-border/20 bg-muted/10 flex cursor-grab items-center gap-3 rounded-2xl border px-4 py-5 shadow-lg backdrop-blur-sm active:cursor-grabbing sm:py-4 ${
                 isDragging
                     ? "z-50 scale-[1.01] opacity-80 shadow-[0_0_40px_rgba(0,242,255,0.18)] ring-2 ring-[#FF8A00]/60"
@@ -50,8 +54,7 @@ export default function SortableOrderOption({
             }}
         >
             <div
-                {...attributes}
-                {...listeners}
+                {...handleDragProps}
                 className="text-muted-foreground/70 -mx-2 flex items-center self-stretch px-2 py-1 sm:-mx-1"
             >
                 <GripVertical className="h-6 w-6 sm:h-5 sm:w-5" />
