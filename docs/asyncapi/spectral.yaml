@@ -1,0 +1,6 @@
+extends: "spectral:asyncapi"
+overrides:
+  - files:
+      - WebSockets.yaml
+    rules:
+      asyncapi-info-license: "off"

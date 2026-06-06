@@ -1,0 +1,85 @@
+asyncapi: 3.1.0
+info:
+  title: Benjrm's WebSocket API
+  description: This is the WebSocket API for Benjrm - a quiz platform for interactive learning and live competition
+  version: 1.0.0
+  contact:
+    name: Benjrm
+    url: "https://benjrm.de"
+    email: 'info@benjrm.de'
+  tags:
+    - name: WebSocket
+      description: WebSocket related commands such as ping and pong
+    - name: Sessions
+
+servers:
+  dev:
+    host: "localhost:8080"
+    protocol: ws
+
+channels:
+  sessionHost:
+    address: "/api/v1/sessions/{session}/ws/host"
+    parameters:
+      session:
+        description: The session code
+    messages:
+      ping:
+        $ref: "#/components/messages/ping"
+      pong:
+        $ref: "#/components/messages/pong"
+    tags:
+      - name: Sessions
+
+operations:
+  sendPing:
+    description: "Send ping command"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/ping"
+    tags:
+      - name: WebSocket
+  
+  receivePong:
+    description: "Receive pong command"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/pong"
+    tags:
+      - name: WebSocket
+
+components:
+  messages:
+    ping:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "ping"
+          payload:
+            type: object
+            properties:
+              id:
+                type: integer
+    
+    pong:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "pong"
+          payload:
+            type: object
+            properties:
+              id:
+                type: integer
+              timestamp:
+                type: string
+                format: date-time
+                example: "2026-06-06T12:48:48.000Z"

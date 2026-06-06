@@ -5,10 +5,12 @@ on:
       - 'main'
     paths:
       - 'docs/openapispec/RestInterface.yaml'
+      - 'docs/asyncapi/WebSockets.yaml'
       - '.github/workflows/spectral.yaml'
   pull_request:
     paths:
       - 'docs/openapispec/RestInterface.yaml'
+      - 'docs/asyncapi/WebSockets.yaml'
       - '.github/workflows/spectral.yaml'
   workflow_dispatch:
 
@@ -24,5 +26,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Install Spectral - An open-source API style guide enforcer and linter.
         run: npm install -g @stoplight/spectral-cli
-      - name: Run spectral lint
-        run: spectral lint docs/openapispec/RestInterface.yaml -f github-actions --fail-severity warn
+      - name: Lint openapispec
+        run: cd docs/openapispec && spectral lint RestInterface.yaml -f github-actions --fail-severity warn
+      - name: Lint asyncapi
+        run: cd docs/asyncapi && spectral lint WebSockets.yaml -f github-actions --fail-severity warn
