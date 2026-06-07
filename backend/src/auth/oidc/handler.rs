@@ -30,7 +30,7 @@ struct State {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct Path {
     path: Option<String>,
 }

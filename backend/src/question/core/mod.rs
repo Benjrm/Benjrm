@@ -71,15 +71,15 @@ impl QuizModel {
 
         let options = match new_question.options {
             NewQuestionOptions::Slide => QuestionOptions::Slide,
-            NewQuestionOptions::SingleChoice { options } => QuestionOptions::SingleChoice {
-                options: question.insert_options(options, &txn, true).await?,
-            },
-            NewQuestionOptions::MultipleChoice { options } => QuestionOptions::MultipleChoice {
-                options: question.insert_options(options, &txn, true).await?,
-            },
-            NewQuestionOptions::Order { options } => QuestionOptions::Order {
-                options: question.insert_options(options, &txn, false).await?,
-            },
+            NewQuestionOptions::SingleChoice(options) => {
+                QuestionOptions::SingleChoice(question.insert_options(options, &txn, true).await?)
+            }
+            NewQuestionOptions::MultipleChoice(options) => {
+                QuestionOptions::MultipleChoice(question.insert_options(options, &txn, true).await?)
+            }
+            NewQuestionOptions::Order(options) => {
+                QuestionOptions::Order(question.insert_options(options, &txn, false).await?)
+            }
         };
 
         self.update_modified(now, &txn).await?;
@@ -172,18 +172,18 @@ impl QuestionModel {
             QuestionType::SingleChoice => {
                 let models = self.find_related(AnswerChoiceEntity).all(conn).await?;
                 let models = sort_linked_items(models).ok_or(QuestionError::CorruptedAnswerList)?;
-                QuestionOptions::SingleChoice { options: models }
+                QuestionOptions::SingleChoice(models)
             }
             QuestionType::MultipleChoice => {
                 let models = self.find_related(AnswerChoiceEntity).all(conn).await?;
                 let models = sort_linked_items(models).ok_or(QuestionError::CorruptedAnswerList)?;
-                QuestionOptions::MultipleChoice { options: models }
+                QuestionOptions::MultipleChoice(models)
             }
             QuestionType::Order => {
                 let models = self.find_related(AnswerChoiceEntity).all(conn).await?;
                 let models = sort_linked_items(models).ok_or(QuestionError::CorruptedAnswerList)?;
                 let models = models.into_iter().map(Into::into).collect();
-                QuestionOptions::Order { options: models }
+                QuestionOptions::Order(models)
             }
         };
 
@@ -268,26 +268,21 @@ impl Question {
             model.r#type = Set(options.r#type());
             self.options = match options {
                 UpdateQuestionOptions::Slide => QuestionOptions::Slide,
-                UpdateQuestionOptions::SingleChoice { options } => QuestionOptions::SingleChoice {
-                    options: UpdateLinkedOptions::new(id, self.options.get_answer_choice_options())
+                UpdateQuestionOptions::SingleChoice(options) => QuestionOptions::SingleChoice(
+                    UpdateLinkedOptions::new(id, self.options.get_answer_choice_options())
                         .update(options, &txn)
                         .await?,
-                },
-                UpdateQuestionOptions::MultipleChoice { options } => {
-                    QuestionOptions::MultipleChoice {
-                        options: UpdateLinkedOptions::new(
-                            id,
-                            self.options.get_answer_choice_options(),
-                        )
+                ),
+                UpdateQuestionOptions::MultipleChoice(options) => QuestionOptions::MultipleChoice(
+                    UpdateLinkedOptions::new(id, self.options.get_answer_choice_options())
                         .update(options, &txn)
                         .await?,
-                    }
-                }
-                UpdateQuestionOptions::Order { options } => QuestionOptions::Order {
-                    options: UpdateLinkedOptions::new(id, self.options.get_answer_order_options())
+                ),
+                UpdateQuestionOptions::Order(options) => QuestionOptions::Order(
+                    UpdateLinkedOptions::new(id, self.options.get_answer_order_options())
                         .update(options, &txn)
                         .await?,
-                },
+                ),
             };
         }
         let model = model.update(&txn).await?;

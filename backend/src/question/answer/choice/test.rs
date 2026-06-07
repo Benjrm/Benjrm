@@ -246,22 +246,20 @@ async fn update_choices() {
         question: "Question".into(),
         hidden: true,
         position: None,
-        options: NewQuestionOptions::MultipleChoice {
-            options: vec![
-                NewAnswerChoice {
-                    answer: "A".into(),
-                    correct: false,
-                },
-                NewAnswerChoice {
-                    answer: "B".into(),
-                    correct: true,
-                },
-                NewAnswerChoice {
-                    answer: "Delete".into(),
-                    correct: true,
-                },
-            ],
-        },
+        options: NewQuestionOptions::MultipleChoice(vec![
+            NewAnswerChoice {
+                answer: "A".into(),
+                correct: false,
+            },
+            NewAnswerChoice {
+                answer: "B".into(),
+                correct: true,
+            },
+            NewAnswerChoice {
+                answer: "Delete".into(),
+                correct: true,
+            },
+        ]),
     };
 
     let question = quiz
@@ -271,7 +269,7 @@ async fn update_choices() {
         .unwrap();
 
     let options = match question.options.clone() {
-        QuestionOptions::MultipleChoice { options } => options,
+        QuestionOptions::MultipleChoice(options) => options,
         _ => panic!(),
     };
 
@@ -312,7 +310,7 @@ async fn update_choices() {
         question: Unset,
         hidden: Unset,
         position: None,
-        options: Some(UpdateQuestionOptions::MultipleChoice { options }),
+        options: Some(UpdateQuestionOptions::MultipleChoice(options)),
     };
 
     let question = question
@@ -321,7 +319,7 @@ async fn update_choices() {
         .unwrap();
 
     let inserted_options = match question.options {
-        QuestionOptions::MultipleChoice { options } => options,
+        QuestionOptions::MultipleChoice(options) => options,
         _ => panic!(),
     };
 
@@ -349,7 +347,7 @@ pub async fn create_choice_question() {
                 question: "Question".into(),
                 hidden: true,
                 position: None,
-                options: NewQuestionOptions::$id { options: vec![] },
+                options: NewQuestionOptions::$id(vec![]),
             };
             let result = quiz.clone().create_question(&data.db, new_question).await;
             assert!(matches!(result, Err(QuestionError::NotEnoughAnswers(_))));
@@ -360,26 +358,24 @@ pub async fn create_choice_question() {
                 question: "Question".into(),
                 hidden: true,
                 position: None,
-                options: NewQuestionOptions::$id {
-                    options: vec![
-                        NewAnswerChoice {
-                            answer: "A".into(),
-                            correct: false,
-                        },
-                        NewAnswerChoice {
-                            answer: "B".into(),
-                            correct: false,
-                        },
-                        NewAnswerChoice {
-                            answer: "C".into(),
-                            correct: false,
-                        },
-                        NewAnswerChoice {
-                            answer: "D".into(),
-                            correct: false,
-                        },
-                    ],
-                },
+                options: NewQuestionOptions::$id(vec![
+                    NewAnswerChoice {
+                        answer: "A".into(),
+                        correct: false,
+                    },
+                    NewAnswerChoice {
+                        answer: "B".into(),
+                        correct: false,
+                    },
+                    NewAnswerChoice {
+                        answer: "C".into(),
+                        correct: false,
+                    },
+                    NewAnswerChoice {
+                        answer: "D".into(),
+                        correct: false,
+                    },
+                ]),
             };
             let result = quiz.clone().create_question(&data.db, new_question).await;
             assert!(matches!(result, Err(QuestionError::NoCorrectAnswer)));
@@ -390,30 +386,28 @@ pub async fn create_choice_question() {
                 question: "Question".into(),
                 hidden: true,
                 position: None,
-                options: NewQuestionOptions::$id {
-                    options: vec![
-                        NewAnswerChoice {
-                            answer: "A".into(),
-                            correct: false,
-                        },
-                        NewAnswerChoice {
-                            answer: "B".into(),
-                            correct: true,
-                        },
-                        NewAnswerChoice {
-                            answer: "C".into(),
-                            correct: false,
-                        },
-                        NewAnswerChoice {
-                            answer: "D".into(),
-                            correct: false,
-                        },
-                        NewAnswerChoice {
-                            answer: "E".into(),
-                            correct: true,
-                        },
-                    ],
-                },
+                options: NewQuestionOptions::$id(vec![
+                    NewAnswerChoice {
+                        answer: "A".into(),
+                        correct: false,
+                    },
+                    NewAnswerChoice {
+                        answer: "B".into(),
+                        correct: true,
+                    },
+                    NewAnswerChoice {
+                        answer: "C".into(),
+                        correct: false,
+                    },
+                    NewAnswerChoice {
+                        answer: "D".into(),
+                        correct: false,
+                    },
+                    NewAnswerChoice {
+                        answer: "E".into(),
+                        correct: true,
+                    },
+                ]),
             };
             let question = quiz
                 .clone()
@@ -425,7 +419,7 @@ pub async fn create_choice_question() {
             assert!(quiz.modified > quiz_modification);
 
             let options = match question.options {
-                QuestionOptions::$id { options } => options,
+                QuestionOptions::$id(options) => options,
                 _ => panic!("Type missmatch"),
             };
 

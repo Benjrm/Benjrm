@@ -6,7 +6,7 @@ pub mod entity;
 mod test;
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct NewAnswerChoice {
     pub answer: String,
     #[serde(default)]
@@ -14,7 +14,7 @@ pub struct NewAnswerChoice {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UpdateAnswerChoice {
     pub id: Uuid,
     #[serde(default)]
@@ -41,7 +41,7 @@ impl<'de> Deserialize<'de> for UpdateAnswerChoiceEnum {
         D: serde::Deserializer<'de>,
     {
         #[derive(Debug, Clone, Deserialize)]
-        #[serde(rename_all = "camelCase")]
+        #[serde(deny_unknown_fields, rename_all = "camelCase")]
         struct UpdateAnswerChoiceDto {
             id: Option<Uuid>,
             answer: Option<String>,

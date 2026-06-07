@@ -592,6 +592,7 @@ dependencies = [
  "paste",
  "sea-orm",
  "serde",
+ "serde-value",
  "serde_json",
  "static-files",
  "thiserror 2.0.18",

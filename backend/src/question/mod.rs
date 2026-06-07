@@ -12,12 +12,12 @@ use {
         update_value::UpdateValue,
     },
     sea_orm::DbErr,
-    serde::{Deserialize, Serialize},
+    serde::{Deserialize, Deserializer, Serialize},
+    std::collections::BTreeMap,
     uuid::Uuid,
 };
 
 pub use api::init;
-
 pub mod answer;
 mod api;
 pub mod core;
@@ -30,7 +30,7 @@ impl_err! {
         #[error("Question not found")]
         NotFound = NOT_FOUND,
         #[error("Internal Server Error")]
-        Database(#[from] DbErr) = INTERNAL_SERVER_ERROR,
+        Database(DbErr) = INTERNAL_SERVER_ERROR,
         #[error("Question belongs to a other quiz")]
         QuestionBelongsToOtherQuiz = NOT_FOUND,
         #[error("Expected at least one correct answer")]
@@ -49,7 +49,7 @@ impl_err! {
 }
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Question {
     #[serde(flatten)]
     pub model: QuestionModel,
@@ -58,76 +58,84 @@ pub struct Question {
 }
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
+#[serde(tag = "type", content = "options", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum QuestionOptions {
     Slide,
-    SingleChoice { options: Vec<AnswerChoiceModel> },
-    MultipleChoice { options: Vec<AnswerChoiceModel> },
-    Order { options: Vec<AnswerOrderModel> },
+    SingleChoice(Vec<AnswerChoiceModel>),
+    MultipleChoice(Vec<AnswerChoiceModel>),
+    Order(Vec<AnswerOrderModel>),
 }
 
 impl QuestionOptions {
     pub fn get_answer_choice_options(self) -> Vec<AnswerChoiceModel> {
         match self {
             Self::Slide => Vec::new(),
-            Self::SingleChoice { options } | Self::MultipleChoice { options } => options,
-            Self::Order { options } => options.into_iter().map(Into::into).collect(),
+            Self::SingleChoice(options) | Self::MultipleChoice(options) => options,
+            Self::Order(options) => options.into_iter().map(Into::into).collect(),
         }
     }
 
     pub fn get_answer_order_options(self) -> Vec<AnswerOrderModel> {
         match self {
             Self::Slide => Vec::new(),
-            Self::SingleChoice { options } | Self::MultipleChoice { options } => {
+            Self::SingleChoice(options) | Self::MultipleChoice(options) => {
                 options.into_iter().map(Into::into).collect()
             }
-            Self::Order { options } => options,
+            Self::Order(options) => options,
         }
     }
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct NewQuestion {
     pub question: String,
     #[serde(default = "bool::default")]
     pub hidden: bool,
-    #[serde(flatten)]
+    #[serde(flatten, deserialize_with = "Position::deserialize_optional")]
     pub position: Option<Position>,
     #[serde(flatten)]
     pub options: NewQuestionOptions,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
+#[serde(
+    tag = "type",
+    content = "options",
+    deny_unknown_fields,
+    rename_all = "SCREAMING_SNAKE_CASE"
+)]
 pub enum NewQuestionOptions {
     Slide,
-    SingleChoice { options: Vec<NewAnswerChoice> },
-    MultipleChoice { options: Vec<NewAnswerChoice> },
-    Order { options: Vec<NewAnswerOrder> },
+    SingleChoice(Vec<NewAnswerChoice>),
+    MultipleChoice(Vec<NewAnswerChoice>),
+    Order(Vec<NewAnswerOrder>),
 }
 
 impl NewQuestionOptions {
     pub fn r#type(&self) -> QuestionType {
         match self {
             Self::Slide => QuestionType::Slide,
-            Self::SingleChoice { .. } => QuestionType::SingleChoice,
-            Self::MultipleChoice { .. } => QuestionType::MultipleChoice,
-            Self::Order { .. } => QuestionType::Order,
+            Self::SingleChoice(_) => QuestionType::SingleChoice,
+            Self::MultipleChoice(_) => QuestionType::MultipleChoice,
+            Self::Order(_) => QuestionType::Order,
         }
     }
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UpdateQuestion {
     #[serde(default)]
     pub question: UpdateValue<String>,
     #[serde(default)]
     pub hidden: UpdateValue<bool>,
-    #[serde(flatten)]
+    #[serde(flatten, deserialize_with = "Position::deserialize_optional")]
     pub position: Option<Position>,
-    #[serde(flatten)]
+    #[serde(
+        flatten,
+        deserialize_with = "UpdateQuestionOptions::deserialize_optional"
+    )]
     pub options: Option<UpdateQuestionOptions>,
 }
 
@@ -143,27 +151,43 @@ impl From<NewQuestion> for UpdateQuestion {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
+#[serde(
+    tag = "type",
+    content = "options",
+    deny_unknown_fields,
+    rename_all = "SCREAMING_SNAKE_CASE"
+)]
 pub enum UpdateQuestionOptions {
     Slide,
-    SingleChoice {
-        options: Vec<UpdateAnswerChoiceEnum>,
-    },
-    MultipleChoice {
-        options: Vec<UpdateAnswerChoiceEnum>,
-    },
-    Order {
-        options: Vec<UpdateAnswerOrderEnum>,
-    },
+    SingleChoice(Vec<UpdateAnswerChoiceEnum>),
+    MultipleChoice(Vec<UpdateAnswerChoiceEnum>),
+    Order(Vec<UpdateAnswerOrderEnum>),
 }
 
 impl UpdateQuestionOptions {
     pub fn r#type(&self) -> QuestionType {
         match self {
             Self::Slide => QuestionType::Slide,
-            Self::SingleChoice { .. } => QuestionType::SingleChoice,
-            Self::MultipleChoice { .. } => QuestionType::MultipleChoice,
-            Self::Order { .. } => QuestionType::Order,
+            Self::SingleChoice(_) => QuestionType::SingleChoice,
+            Self::MultipleChoice(_) => QuestionType::MultipleChoice,
+            Self::Order(_) => QuestionType::Order,
+        }
+    }
+
+    pub fn deserialize_optional<'de, D>(deserializer: D) -> Result<Option<Self>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let map: BTreeMap<serde_value::Value, serde_value::Value> =
+            Deserialize::deserialize(deserializer)?;
+        if map.contains_key(&serde_value::Value::String(String::from("type")))
+            || map.contains_key(&serde_value::Value::String(String::from("options")))
+        {
+            let value = Self::deserialize(serde_value::Value::Map(map))
+                .map_err(serde::de::Error::custom)?;
+            Ok(Some(value))
+        } else {
+            Ok(None)
         }
     }
 }
@@ -172,15 +196,15 @@ impl From<NewQuestionOptions> for UpdateQuestionOptions {
     fn from(value: NewQuestionOptions) -> Self {
         match value {
             NewQuestionOptions::Slide => Self::Slide,
-            NewQuestionOptions::SingleChoice { options } => Self::SingleChoice {
-                options: options.into_iter().map(Into::into).collect(),
-            },
-            NewQuestionOptions::MultipleChoice { options } => Self::MultipleChoice {
-                options: options.into_iter().map(Into::into).collect(),
-            },
-            NewQuestionOptions::Order { options } => Self::Order {
-                options: options.into_iter().map(Into::into).collect(),
-            },
+            NewQuestionOptions::SingleChoice(options) => {
+                Self::SingleChoice(options.into_iter().map(Into::into).collect())
+            }
+            NewQuestionOptions::MultipleChoice(options) => {
+                Self::MultipleChoice(options.into_iter().map(Into::into).collect())
+            }
+            NewQuestionOptions::Order(options) => {
+                Self::Order(options.into_iter().map(Into::into).collect())
+            }
         }
     }
 }
@@ -222,7 +246,7 @@ pub fn sort_linked_items<T: LinkedItem>(mut items: Vec<T>) -> Option<Vec<T>> {
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct QuestionFilter {
     hidden: Option<bool>,
 }
