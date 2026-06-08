@@ -184,7 +184,7 @@ impl UpdateQuestionOptions {
             options: Option<serde_value::Value>,
         }
         let options = UpdateQuestionOptionsDto::deserialize(deserializer)?;
-        
+
         if options.r#type.is_some() || options.options.is_some() {
             let mut map = BTreeMap::new();
             if let Some(r#type) = options.r#type {
