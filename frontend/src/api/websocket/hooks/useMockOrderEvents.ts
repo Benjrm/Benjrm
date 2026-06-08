@@ -5,12 +5,12 @@ const MOCK_QUESTION = {
     id: "mock-order-1",
     question: "Sort these programming languages by year of first release (oldest first).",
     type: "ORDER" as const,
-    options: {
-        fortran: "Fortran",
-        python: "Python",
-        javascript: "JavaScript",
-        rust: "Rust",
-    },
+    options: [
+        { id: "fortran", answer: "Fortran" },
+        { id: "python", answer: "Python" },
+        { id: "javascript", answer: "JavaScript" },
+        { id: "rust", answer: "Rust" },
+    ],
 }
 
 /**

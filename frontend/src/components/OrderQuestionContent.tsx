@@ -48,9 +48,8 @@ export default function OrderQuestionContent({
 
     useSocketEvent("displayQuestion", (payload, timing) => {
         if (payload.type !== "ORDER") return
-        const options = payload.options as Record<string, string>
         setQuestionText(payload.question)
-        setItems(Object.entries(options).map(([id, label]) => ({ id, label })))
+        setItems(payload.options.map((opt) => ({ id: opt.id, label: opt.answer })))
         setSubmitted(false)
         onNextQuestion()
         const elapsedSeconds = Math.floor((Date.now() - new Date(timing).getTime()) / 1000)

@@ -1,0 +1,456 @@
+asyncapi: 2.6.0
+info:
+  title: Benjrm WebSocket API
+  description: |
+    Real-time event contract for Benjrm quiz sessions.
+
+    All messages — in both directions — use the same envelope:
+    ```json
+    { "command": "<event>", "payload": { ... } }
+    ```
+    Server messages additionally carry a `timing` field (ISO 8601 timestamp of when the
+    event was emitted), allowing clients to compensate for network latency when displaying
+    countdowns.
+
+    **Roles**
+    - *Participant* — joins a session, receives questions, submits answers.
+    - *Host* — creates the session, controls quiz flow (start, show question, set quiz).
+
+    Both roles share the same WebSocket connection; access control is enforced server-side
+    based on the authenticated user's role.
+  version: 0.1.0
+  contact:
+    name: Benjrm
+    url: 'https://benjrm.de'
+    email: 'info@benjrm.de'
+
+externalDocs:
+  description: REST API (quizzes & questions CRUD)
+  url: ../openapispec/RestInterface.yaml
+
+servers:
+  development:
+    url: 'ws://localhost:8080/ws/{sessionCode}'
+    protocol: ws
+    description: Local development server
+    variables:
+      sessionCode:
+        description: The short join code identifying the quiz session.
+
+tags:
+  - name: Participant
+    description: Events relevant to quiz participants.
+  - name: Host
+    description: Events relevant to the quiz host.
+
+channels:
+  /ws/{sessionCode}:
+    parameters:
+      sessionCode:
+        description: The short join code identifying the quiz session.
+        schema:
+          type: string
+
+    # Client → Server
+    publish:
+      summary: Messages sent by the client to the server.
+      message:
+        oneOf:
+          - $ref: '#/components/messages/JoinMessage'
+          - $ref: '#/components/messages/AnswerQuestionMessage'
+          - $ref: '#/components/messages/StartMessage'
+          - $ref: '#/components/messages/ShowQuestionMessage'
+          - $ref: '#/components/messages/SetQuizMessage'
+
+    # Server → Client
+    subscribe:
+      summary: Messages sent by the server to the client.
+      message:
+        oneOf:
+          - $ref: '#/components/messages/DisplayQuestionMessage'
+          - $ref: '#/components/messages/QuestionResultMessage'
+          - $ref: '#/components/messages/UpdateLeaderboardMessage'
+          - $ref: '#/components/messages/AddParticipantMessage'
+          - $ref: '#/components/messages/RemoveParticipantMessage'
+
+components:
+
+  # ─── Client → Server messages ────────────────────────────────────────────────
+
+  messages:
+    JoinMessage:
+      name: join
+      title: Join session
+      summary: Participant joins a quiz session under a display name.
+      tags:
+        - name: Participant
+      payload:
+        $ref: '#/components/schemas/JoinEnvelope'
+
+    AnswerQuestionMessage:
+      name: answerQuestion
+      title: Submit answer
+      summary: |
+        Participant submits their answer to the current question.
+        For ORDER questions, `answers` contains option IDs in the participant's chosen order.
+        For SINGLE_CHOICE, exactly one ID. For MULTIPLE_CHOICE, one or more IDs.
+      tags:
+        - name: Participant
+      payload:
+        $ref: '#/components/schemas/AnswerQuestionEnvelope'
+
+    StartMessage:
+      name: start
+      title: Start quiz
+      summary: Host starts the quiz session.
+      tags:
+        - name: Host
+      payload:
+        $ref: '#/components/schemas/StartEnvelope'
+
+    ShowQuestionMessage:
+      name: showQuestion
+      title: Show question
+      summary: Host advances to a specific question.
+      tags:
+        - name: Host
+      payload:
+        $ref: '#/components/schemas/ShowQuestionEnvelope'
+
+    SetQuizMessage:
+      name: setQuiz
+      title: Set quiz
+      summary: Host selects which quiz to use for the session.
+      tags:
+        - name: Host
+      payload:
+        $ref: '#/components/schemas/SetQuizEnvelope'
+
+  # ─── Server → Client messages ────────────────────────────────────────────────
+
+    DisplayQuestionMessage:
+      name: displayQuestion
+      title: Display question
+      summary: Server broadcasts a question to all participants.
+      tags:
+        - name: Participant
+        - name: Host
+      payload:
+        $ref: '#/components/schemas/DisplayQuestionEnvelope'
+
+    QuestionResultMessage:
+      name: questionResult
+      title: Question result
+      summary: Server sends the result of the just-closed question to each participant individually.
+      tags:
+        - name: Participant
+      payload:
+        $ref: '#/components/schemas/QuestionResultEnvelope'
+
+    UpdateLeaderboardMessage:
+      name: updateLeaderboard
+      title: Update leaderboard
+      summary: Server broadcasts the current leaderboard standings.
+      tags:
+        - name: Participant
+        - name: Host
+      payload:
+        $ref: '#/components/schemas/UpdateLeaderboardEnvelope'
+
+    AddParticipantMessage:
+      name: addParticipant
+      title: Participant joined
+      summary: Server notifies the host that a new participant has joined.
+      tags:
+        - name: Host
+      payload:
+        $ref: '#/components/schemas/AddParticipantEnvelope'
+
+    RemoveParticipantMessage:
+      name: removeParticipant
+      title: Participant left
+      summary: Server notifies the host that a participant has left.
+      tags:
+        - name: Host
+      payload:
+        $ref: '#/components/schemas/RemoveParticipantEnvelope'
+
+  # ─── Schemas ─────────────────────────────────────────────────────────────────
+
+  schemas:
+
+    # Shared envelope wrapper
+    ServerEnvelope:
+      type: object
+      description: Wrapper present on every server → client message.
+      required:
+        - command
+        - payload
+        - timing
+      properties:
+        command:
+          type: string
+        payload:
+          type: object
+        timing:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the server emitted the event.
+          example: '2024-01-01T12:00:00.000Z'
+
+    ClientEnvelope:
+      type: object
+      description: Wrapper present on every client → server message.
+      required:
+        - command
+        - payload
+      properties:
+        command:
+          type: string
+        payload:
+          type: object
+
+    # Answer option (shared between question types in display events)
+    DisplayOption:
+      type: object
+      required:
+        - id
+        - answer
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Stable identifier for this option; used as the answer value in `answerQuestion`.
+        answer:
+          type: string
+          example: 'Fortran'
+
+    # Leaderboard entry
+    LeaderboardEntry:
+      type: object
+      required:
+        - name
+        - points
+      properties:
+        name:
+          type: string
+          example: 'Alice'
+        points:
+          type: number
+          example: 1500
+
+    # ── Client → Server envelopes ──
+
+    JoinEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ClientEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [join]
+            payload:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Display name chosen by the participant.
+                  example: 'Alice'
+
+    AnswerQuestionEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ClientEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [answerQuestion]
+            payload:
+              type: object
+              required:
+                - answers
+              properties:
+                answers:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: |
+                    Option IDs representing the participant's answer.
+                    ORDER: IDs in the participant's chosen order.
+                    SINGLE_CHOICE: exactly one ID.
+                    MULTIPLE_CHOICE: one or more IDs.
+                  example: ['uuid-a', 'uuid-b']
+
+    StartEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ClientEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [start]
+            payload:
+              type: object
+
+    ShowQuestionEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ClientEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [showQuestion]
+            payload:
+              type: object
+              required:
+                - question
+              properties:
+                question:
+                  type: string
+                  format: uuid
+                  description: ID of the question to display.
+
+    SetQuizEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ClientEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [setQuiz]
+            payload:
+              type: object
+              required:
+                - quiz
+              properties:
+                quiz:
+                  type: string
+                  format: uuid
+                  description: ID of the quiz to use for the session.
+
+    # ── Server → Client envelopes ──
+
+    DisplayQuestionEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ServerEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [displayQuestion]
+            payload:
+              type: object
+              required:
+                - id
+                - question
+                - type
+                - options
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  description: Question ID (matches the REST API question resource).
+                question:
+                  type: string
+                  example: 'Sort these programming languages by year of first release (oldest first).'
+                type:
+                  type: string
+                  enum: [SINGLE_CHOICE, MULTIPLE_CHOICE, ORDER]
+                  description: |
+                    Determines how the client should render the options and interpret `answerQuestion` answers.
+                    SLIDE questions are not sent over WebSocket (they carry no interactive options).
+                options:
+                  type: array
+                  minItems: 2
+                  items:
+                    $ref: '#/components/schemas/DisplayOption'
+                  description: |
+                    Answer options for this question. The `correct` field is intentionally absent —
+                    correctness is revealed via `questionResult` after the question closes.
+
+    QuestionResultEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ServerEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [questionResult]
+            payload:
+              type: object
+              required:
+                - question
+                - correctAnswer
+                - points
+              properties:
+                question:
+                  type: string
+                  format: uuid
+                  description: ID of the question this result applies to.
+                correctAnswer:
+                  type: string
+                  description: Human-readable correct answer text.
+                  example: 'Fortran, Python, JavaScript, Rust'
+                points:
+                  type: number
+                  description: Points the participant earned for this question.
+                  example: 800
+
+    UpdateLeaderboardEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ServerEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [updateLeaderboard]
+            payload:
+              type: array
+              items:
+                $ref: '#/components/schemas/LeaderboardEntry'
+              description: Full leaderboard, sorted by points descending.
+
+    AddParticipantEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ServerEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [addParticipant]
+            payload:
+              type: object
+              required:
+                - id
+                - name
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                  example: 'Alice'
+
+    RemoveParticipantEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ServerEnvelope'
+        - type: object
+          properties:
+            command:
+              type: string
+              enum: [removeParticipant]
+            payload:
+              type: object
+              required:
+                - id
+                - name
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                  example: 'Alice'
