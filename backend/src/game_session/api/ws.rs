@@ -250,7 +250,7 @@ impl<T: Serialize + Send + 'static> Channel<T> for WsChannel {
             *timing += TimeDelta::milliseconds(ms);
         }
 
-        let message_string = serde_json::to_string(&msg).map_err(WsChannelError::Serializaton)?;
+        let message_string = serde_json::to_string(&msg).map_err(WsChannelError::Serialization)?;
         self.tx
             .text(message_string)
             .await
@@ -270,7 +270,7 @@ impl<T: Serialize + Send + 'static> Channel<T> for WsChannel {
 
 #[derive(Debug)]
 pub enum WsChannelError {
-    Serializaton(serde_json::Error),
+    Serialization(serde_json::Error),
     Tx(actix_ws::Closed),
 }
 

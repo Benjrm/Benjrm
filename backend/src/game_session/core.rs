@@ -97,8 +97,11 @@ impl GameSessions {
             return Err(GameSessionError::Forbidden);
         }
 
-        session.close().await;
         sessions.remove(&code);
+        drop(sessions);
+
+        session.close().await;
+
         Ok(())
     }
 }
