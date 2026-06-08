@@ -2,7 +2,7 @@ use {crate::error::Error, awc::http::StatusCode, serde::Serialize, std::fmt};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct ErrorResponse {
+pub struct ErrorResponse {
     #[serde(skip)]
     pub(super) status: StatusCode,
     pub(super) category: &'static str,

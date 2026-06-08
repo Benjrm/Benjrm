@@ -3,6 +3,11 @@
  * Each key represents a command sent by the server, and its value defines the structure of the data payload associated with that command.
  */
 export interface ServerEvents {
+    error: {
+        category: string
+        error: string
+        message: string
+    }
     ping: {
         id: number
     }
@@ -21,12 +26,15 @@ export interface ServerEvents {
         name: string
         points: number
     }[]
-    addParticipant: {
+    addPlayer: {
         id: string
         name: string
     }
-    removeParticipant: {
+    renamePlayer: {
         id: string
         name: string
+    }
+    removePlayer: {
+        id: string
     }
 }

@@ -5,6 +5,7 @@ import type { ServerEvents } from "@/api/websocket/types/serverEvents.ts"
  */
 export type ServerMessage = {
     [K in keyof ServerEvents]: {
+        id?: number
         command: K
         payload: ServerEvents[K]
         timing: string

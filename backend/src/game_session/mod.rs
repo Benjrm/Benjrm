@@ -1,6 +1,9 @@
 use {
     crate::{
-        auth::User, error::impl_err, game_session::api::ws::WsChannelError, question::Question,
+        auth::User,
+        error::{ErrorResponse, impl_err},
+        game_session::api::ws::WsChannelError,
+        question::Question,
         quiz::Quiz,
     },
     chrono::{DateTime, Utc},
@@ -14,6 +17,7 @@ use {
         },
     },
     tokio::sync::{Mutex, RwLock},
+    uuid::Uuid,
 };
 
 mod api;
@@ -33,6 +37,8 @@ impl_err! {
         CannotGenerateCode = INTERNAL_SERVER_ERROR,
         #[error("Forbidden")]
         Forbidden = FORBIDDEN,
+        #[error("Name already taken")]
+        NameAlreadyTaken = CONFLICT,
     }
 }
 
@@ -43,6 +49,7 @@ pub struct GameSessions {
 pub struct GameSession {
     status: GameSessionStatus,
     host: GameSessionHost,
+    players: Vec<GameSessionPlayer>,
     quiz: Option<Arc<Quiz<Question>>>,
 }
 
@@ -64,6 +71,14 @@ impl From<User> for GameSessionHost {
             channel: None,
         }
     }
+}
+
+#[derive(Serialize)]
+pub struct GameSessionPlayer {
+    id: Uuid,
+    name: Option<String>,
+    #[serde(skip)]
+    channel: Box<dyn Channel<PlayerMessage>>,
 }
 
 #[async_trait::async_trait]
@@ -95,28 +110,45 @@ impl From<WsChannelError> for ChannelError {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Message<T: Serialize> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    id: Option<u64>,
     #[serde(flatten)]
     msg: T,
+    #[serde(skip_serializing_if = "Option::is_none")]
     timing: Option<DateTime<Utc>>,
 }
 
 impl<T: Serialize> From<T> for Message<T> {
     fn from(value: T) -> Self {
         Self {
+            id: None,
             msg: value,
             timing: None,
         }
     }
 }
 
-pub trait Command: Sized {
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct Command<T> {
+    pub id: Option<u64>,
+    #[serde(flatten)]
+    pub command: T,
+}
+
+pub trait CommandTrait: Sized {
     fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error>;
     fn pong(&self) -> Option<(u32, DateTime<Utc>)>;
 }
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
-pub enum HostMessage {}
+pub enum HostMessage {
+    Error(ErrorResponse),
+    AddPlayer { id: Uuid, name: String },
+    RenamePlayer { id: Uuid, name: String },
+    RemovePlayer { id: Uuid },
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(
@@ -127,16 +159,49 @@ pub enum HostMessage {}
 )]
 pub enum HostCommand {
     Pong { id: u32, timestamp: DateTime<Utc> },
+    KickPlayer { id: Uuid },
 }
 
-impl Command for HostCommand {
+impl CommandTrait for Command<HostCommand> {
     fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error> {
         serde_json::from_slice(data)
     }
 
     fn pong(&self) -> Option<(u32, DateTime<Utc>)> {
-        match self {
-            Self::Pong { id, timestamp } => Some((*id, *timestamp)),
+        match self.command {
+            HostCommand::Pong { id, timestamp } => Some((id, timestamp)),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "command", content = "payload", rename_all = "camelCase")]
+pub enum PlayerMessage {
+    Error(ErrorResponse),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(
+    tag = "command",
+    content = "payload",
+    rename_all = "camelCase",
+    deny_unknown_fields
+)]
+pub enum PlayerCommand {
+    Pong { id: u32, timestamp: DateTime<Utc> },
+    SetName { name: String },
+}
+
+impl CommandTrait for Command<PlayerCommand> {
+    fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error> {
+        serde_json::from_slice(data)
+    }
+
+    fn pong(&self) -> Option<(u32, DateTime<Utc>)> {
+        match self.command {
+            PlayerCommand::Pong { id, timestamp } => Some((id, timestamp)),
+            _ => None,
         }
     }
 }

@@ -3,8 +3,9 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            Channel, GameSession, GameSessionError, GameSessionStatus, GameSessions, HostMessage,
-            Message, SessionCode,
+            Channel, Command, GameSession, GameSessionError, GameSessionPlayer, GameSessionStatus,
+            GameSessions, HostCommand, HostMessage, Message, PlayerCommand, PlayerMessage,
+            SessionCode,
         },
         question::{Question, QuestionFilter},
         quiz::Quiz,
@@ -64,6 +65,7 @@ impl GameSessions {
         let game = GameSession {
             status: GameSessionStatus::Waiting,
             host: host.into(),
+            players: Vec::new(),
             quiz,
         };
 
@@ -151,6 +153,111 @@ impl GameSession {
             && let Err(err) = channel.send(msg).await
         {
             log::error!("notify host error: {err:?}");
+        }
+    }
+
+    pub async fn handle_host_cmd(&mut self, cmd: Command<HostCommand>, _payload: SessionCode) {
+        match cmd.command {
+            HostCommand::Pong { .. } => (),
+            HostCommand::KickPlayer { id } => {
+                if let Some(pos) = self.players.iter().position(|v| v.id == id) {
+                    let player = self.players.swap_remove(pos);
+                    player.channel.close().await;
+                    if player.name.is_some() {
+                        self.notify_host(HostMessage::RemovePlayer { id: player.id }.into())
+                            .await;
+                    }
+                }
+            }
+        }
+    }
+
+    pub async fn set_player_channel<T: Channel<PlayerMessage> + 'static>(
+        &mut self,
+        id: Uuid,
+        channel: T,
+    ) {
+        match self.get_player_mut(id) {
+            Some(player) => {
+                let old_channel = std::mem::replace(&mut player.channel, Box::new(channel));
+                old_channel.close().await;
+            }
+            None => {
+                let player = GameSessionPlayer {
+                    id,
+                    name: None,
+                    channel: Box::new(channel),
+                };
+                self.players.push(player);
+            }
+        }
+    }
+
+    pub async fn handle_player_cmd(&mut self, cmd: Command<PlayerCommand>, id: Uuid) {
+        match cmd.command {
+            PlayerCommand::Pong { .. } => (),
+            PlayerCommand::SetName { name } => {
+                let mut name_in_use = false;
+                let mut this_player = None;
+                for player in self.players.iter_mut() {
+                    if player.name.as_ref() == Some(&name) && player.id != id {
+                        name_in_use = true;
+
+                        if this_player.is_some() {
+                            break;
+                        }
+                    }
+
+                    if player.id == id {
+                        this_player = Some(player);
+
+                        if name_in_use {
+                            break;
+                        }
+                    }
+                }
+
+                if let Some(player) = this_player {
+                    if name_in_use {
+                        player
+                            .error(cmd.id, GameSessionError::NameAlreadyTaken)
+                            .await;
+                    } else {
+                        let has_name = player.name.is_some();
+                        player.name = Some(name.clone());
+                        if has_name {
+                            self.notify_host(HostMessage::RenamePlayer { id, name }.into())
+                                .await
+                        } else {
+                            self.notify_host(HostMessage::AddPlayer { id, name }.into())
+                                .await
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn get_player_mut(&mut self, id: Uuid) -> Option<&mut GameSessionPlayer> {
+        self.players.iter_mut().find(|v| v.id == id)
+    }
+}
+
+impl GameSessionPlayer {
+    pub async fn msg(&mut self, msg: Message<PlayerMessage>) {
+        if let Err(err) = self.channel.send(msg).await {
+            log::error!("failed to send message to player {}: {err:?}", self.id)
+        }
+    }
+
+    pub async fn error(&mut self, id: Option<u64>, err: impl Into<Error>) {
+        if id.is_some() {
+            self.msg(Message {
+                id,
+                msg: PlayerMessage::Error(err.into().into()),
+                timing: None,
+            })
+            .await;
         }
     }
 }

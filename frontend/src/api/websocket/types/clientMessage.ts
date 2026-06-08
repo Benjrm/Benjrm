@@ -5,6 +5,7 @@ import type { ClientEvents } from "@/api/websocket/types/clientEvents.ts"
  */
 export type ClientMessage = {
     [K in keyof ClientEvents]: {
+        id?: number
         command: K
         payload: ClientEvents[K]
     }

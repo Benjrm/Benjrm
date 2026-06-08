@@ -9,7 +9,7 @@ import type { Session } from "@/api/session"
 
 /**
  * Hook to get a session by code.
- * Note: GET /api/v1/sessions/{code} is host-only (403 for participants).
+ * Note: GET /api/v1/sessions/{code} is host-only (403 for players).
  * @param code The session code.
  * @returns The session.
  */

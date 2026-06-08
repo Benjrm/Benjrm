@@ -3,5 +3,7 @@ overrides:
   - files:
       # /api/v1/sessions/{session}/ws/host
       - "RestInterface.yaml#/paths/~1api~1v1~1sessions~1%7Bsession%7D~1ws~1host"
+      # /api/v1/sessions/{session}/ws/player
+      - "RestInterface.yaml#/paths/~1api~1v1~1sessions~1%7Bsession%7D~1ws~1player"
     rules:
       operation-success-response: "off"

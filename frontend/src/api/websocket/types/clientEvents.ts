@@ -7,7 +7,7 @@ export interface ClientEvents {
         id: number
         timestamp: string
     }
-    join: {
+    setName: {
         name: string
     }
     answerQuestion: {
@@ -19,5 +19,8 @@ export interface ClientEvents {
     }
     setQuiz: {
         quiz: string
+    }
+    kickPlayer: {
+        id: string
     }
 }
