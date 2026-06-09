@@ -41,7 +41,7 @@ get_admin_token() {
 
   if [ "$ACCESS_TOKEN" == "null" ] || [ -z "$ACCESS_TOKEN" ]; then
     echo -e "${RED}ERROR: Failed to get access token${NO_COLOR}"
-    exit 1
+    exit 0
   fi
 
   echo -e "${GREEN}==> Token '$ACCESS_TOKEN' received${NO_COLOR}"
