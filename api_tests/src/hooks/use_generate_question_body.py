@@ -1,8 +1,15 @@
 import schemathesis
 from hypothesis import strategies as st
 from schemathesis import APIOperation
+from enum import Enum
 
 from .use_question_ids import quiz_id_to_question_ids
+
+class QuestionType(str, Enum):
+    SLIDE = "SLIDE"
+    SINGLE_CHOICE = "SINGLE_CHOICE"
+    MULTIPLE_CHOICE = "MULTIPLE_CHOICE"
+    ORDER ="ORDER"
 
 @schemathesis.hook("before_generate_body")
 def use_generate_question_body(context, strategy):
@@ -21,7 +28,7 @@ def use_generate_question_body(context, strategy):
 
         question_type = draw(
             st.sampled_from(
-                ["SLIDE", "SINGLE_CHOICE", "MULTIPLE_CHOICE", "ORDER"]
+                list(QuestionType)
             )
         )
 
