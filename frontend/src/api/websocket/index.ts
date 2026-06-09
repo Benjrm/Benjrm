@@ -17,12 +17,3 @@ export {
     WebSocketContext,
     websocketService,
 }
-
-// How to import:
-// import { useWebSocket } from "@/api/websocket"
-// import { useHostWebSocket } from "@/api/websocket"
-// import { useSocketEvent } from "@/api/websocket"
-// import { useWebSocketContext } from "@/api/websocket"
-// import { WebSocketContext } from "@/api/websocket"
-// import { webSocketService } from "@/api/websocket"
-// import { useWebSocket, useHostWebSocket, useSocketEvent, useWebSocketContext, WebSocketContext } from "@/api/websocket"

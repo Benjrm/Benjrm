@@ -28,10 +28,12 @@ export default class WebSocketService {
         return null
     }
 
-    private cleanup(): void {
+    private cleanup(ws: WebSocket): void {
         console.log("Disconnected")
-        this.socket = null
-        this.listeners.clear()
+        if (this.socket === ws) {
+            this.socket = null
+        }
+        // Since some components may still be connected and continue to expect messages after the connection is reestablished, we do not remove the listener here.
     }
 
     /**
@@ -45,14 +47,21 @@ export default class WebSocketService {
             return
         }
 
-        this.listeners.clear()
-        this.socket = new WebSocket(url)
+        // Removes the onclose handler to prevent the status of the new socket from being cleared.
+        // Closes the old socket only if a connection to a new one is established.
+        if (this.socket) {
+            this.socket.onclose = null
+            this.socket.close()
+        }
 
-        this.socket.onopen = () => {
+        const ws = new WebSocket(url)
+        this.socket = ws
+
+        ws.onopen = () => {
             console.log("Connected")
         }
 
-        this.socket.onmessage = async (event) => {
+        ws.onmessage = async (event) => {
             try {
                 const message = await WebSocketService.decodeMessageData(event.data)
                 if (message === null) {
@@ -79,11 +88,11 @@ export default class WebSocketService {
             }
         }
 
-        this.socket.onclose = () => {
-            this.cleanup()
+        ws.onclose = () => {
+            this.cleanup(ws)
         }
 
-        this.socket.onerror = (error) => {
+        ws.onerror = (error) => {
             console.error("WebSocket error:", error)
         }
     }
@@ -97,6 +106,7 @@ export default class WebSocketService {
             return
         }
         this.socket.close()
+        this.socket = null
     }
 
     /**

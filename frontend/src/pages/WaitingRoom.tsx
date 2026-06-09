@@ -156,7 +156,7 @@ export default function WaitingRoom(): JSX.Element {
 
                     <div className="mb-4">
                         <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                            {quiz?.title ?? "Kein Titel"}
+                            {quiz?.title ?? "No title"}
                         </h1>
                         <p className="text-muted-foreground mt-1 text-sm">
                             Players joined:{" "}
