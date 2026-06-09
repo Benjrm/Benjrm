@@ -74,7 +74,7 @@ export default class WebSocketService {
                 handlers?.forEach((handler) =>
                     (handler as ServerEventHandler<typeof data.command>)(
                         data.payload,
-                        data.timing,
+                        data.timing ? Date.now() - new Date(data.timing).getTime() : 0,
                         data.id
                     )
                 )

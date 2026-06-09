@@ -23,8 +23,7 @@ export default function useSocketEvent<K extends keyof ServerEvents>(
 
     useEffect(
         () =>
-            websocketService.subscribe(command, (payload, timing, id) => {
-                const elapsedMs = timing ? Date.now() - new Date(timing).getTime() : 0
+            websocketService.subscribe(command, (payload, elapsedMs, id) => {
                 handlerRef.current(payload, elapsedMs, id)
             }),
         [command, websocketService]
