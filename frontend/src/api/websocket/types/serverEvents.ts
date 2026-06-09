@@ -16,6 +16,7 @@ export interface ServerEvents {
         question: string
         type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE"
         options: object
+        secondsToAnswer: number
     }
     questionResult: {
         question: string

@@ -1,19 +1,24 @@
 // frontend/src/pages/WaitingRoom.tsx
 
 import type { JSX } from "react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useSearchParams } from "react-router"
+import { X } from "lucide-react"
 import ProfilePicker from "../components/ProfilePicker"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
-import { useHostWebSocket } from "@/api/websocket"
+import {
+    useHostWebSocket,
+    usePlayerWebSocket,
+    useSocketEvent,
+    useWebSocketContext,
+} from "@/api/websocket"
 import { Button } from "@/shadcn/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
 
 interface Player {
     id: string
     name: string
-    emoji?: string
 }
 
 const AVAILABLE_EMOJIS = [
@@ -45,38 +50,75 @@ const AVAILABLE_EMOJIS = [
 ]
 
 export default function WaitingRoom(): JSX.Element {
-    // get quiz code from url for join session
     const [searchParams] = useSearchParams()
     const code = searchParams.get("code") ?? undefined
 
     const { isLoading: isLoadingSession, isHost, isInvalidCode } = useSessionStatus(code)
-
-    // Fetch quiz data only if host
     const { data: quiz, isLoading: isLoadingQuiz } = useSessionQuiz(isHost ? code : undefined)
 
-    // Connect to the host WebSocket
-    useHostWebSocket(isHost ? code : undefined)
+    // Delay WS connection until role is determined
+    // (which would disconnect mid-render and wipe all event subscriptions via listeners.clear())
+    const wsCode = isLoadingSession ? undefined : code
+    useHostWebSocket(isHost ? wsCode : undefined)
+    usePlayerWebSocket(!isHost ? wsCode : undefined)
 
-    const [players, setPlayers] = useState<Player[]>([
-        { id: "1", name: "Funny Crocodile (you)", emoji: "🦎" },
-        { id: "2", name: "Smart Giraffe", emoji: "🦒" },
-        { id: "3", name: "Big Mouse", emoji: "🐭" },
-        { id: "4", name: "Small Horse", emoji: "🐴" },
-        { id: "5", name: "Funny Crocodile 1", emoji: "🦎" },
-    ])
-    const [name, setName] = useState<string>(players[0].name)
-    const [emoji, setEmoji] = useState<string | undefined>(players[0].emoji)
+    const websocket = useWebSocketContext()
+
+    // Live player list
+    const [players, setPlayers] = useState<Player[]>([])
+
+    useSocketEvent("addPlayer", ({ id, name }) => {
+        setPlayers((prev) => [...prev, { id, name }])
+    })
+    useSocketEvent("renamePlayer", ({ id, name }) => {
+        setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)))
+    })
+    useSocketEvent("removePlayer", ({ id }) => {
+        setPlayers((prev) => prev.filter((p) => p.id !== id))
+    })
+
+    // Player name-setting state
+    const [name, setName] = useState("")
+    const [emoji, setEmoji] = useState<string | undefined>("😀")
     const [isEmojiOpen, setIsEmojiOpen] = useState(false)
+    const [nameSaved, setNameSaved] = useState(false)
+    const [nameError, setNameError] = useState<string | null>(null)
+    const [pendingId, setPendingId] = useState<number | null>(null)
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    useSocketEvent("error", (payload) => {
+        if (pendingId !== null) {
+            if (saveTimeoutRef.current !== null) {
+                clearTimeout(saveTimeoutRef.current)
+                saveTimeoutRef.current = null
+            }
+            setPendingId(null)
+            setNameError(payload.message)
+        }
+    })
+
+    function onSaveName(): void {
+        const trimmed = name.trim()
+        if (!trimmed) return
+        const id = Date.now() % 1_000_000
+        setPendingId(id)
+        setNameError(null)
+        websocket.send({ id, command: "setName", payload: { name: trimmed } })
+        if (saveTimeoutRef.current !== null) clearTimeout(saveTimeoutRef.current)
+        // Server sends no success confirmation to the player
+        saveTimeoutRef.current = setTimeout(() => {
+            saveTimeoutRef.current = null
+            setNameSaved(true)
+            setPendingId(null)
+        }, 1500)
+    }
+
+    function onKickPlayer(playerId: string): void {
+        websocket.send({ command: "kickPlayer", payload: { id: playerId } })
+    }
 
     function onPickEmoji(nextEmoji: string): void {
         setEmoji(nextEmoji)
-        setPlayers((previous) => {
-            const copy = [...previous]
-            if (copy.length > 0) {
-                copy[0] = { ...copy[0], emoji: nextEmoji }
-            }
-            return copy
-        })
         setIsEmojiOpen(false)
     }
 
@@ -117,65 +159,112 @@ export default function WaitingRoom(): JSX.Element {
                 <div className="bg-linear-to-r from-[#00D4E8]/10 via-transparent to-[#FF8A00]/10 p-6 sm:p-8">
                     {!isHost ? (
                         <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
-                            <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm font-semibold tracking-wide">Player Setup</p>
-                                <span className="text-muted-foreground text-xs">
-                                    Tap avatar to choose emoji
-                                </span>
-                            </div>
-
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                                <ProfilePicker
-                                    emoji={emoji}
-                                    name={name}
-                                    onNameChange={setName}
-                                    onOpenEmoji={() => setIsEmojiOpen(true)}
-                                />
-                                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-                                    <Button
-                                        className="border-white/20 bg-[#242424] text-white hover:bg-[#2f2f2f]"
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => {
-                                            // Name generation is implemented in a separate PR.
-                                        }}
-                                    >
-                                        Generate Name
-                                    </Button>
-                                    <Button
-                                        className="border-0 bg-[#00D4E8] font-semibold text-black shadow-[0_0_20px_-6px_rgba(0,212,232,0.75)] hover:bg-[#00BDD0]"
-                                        type="button"
-                                    >
-                                        Save
-                                    </Button>
+                            {nameSaved ? (
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00D4E8]/20 text-xl">
+                                        {emoji ?? "😀"}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold">{name}</p>
+                                        <p className="text-muted-foreground text-xs">
+                                            You&apos;re in! Waiting for the host to start.
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <>
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <p className="text-sm font-semibold tracking-wide">
+                                            Player Setup
+                                        </p>
+                                        <span className="text-muted-foreground text-xs">
+                                            Tap avatar to choose emoji
+                                        </span>
+                                    </div>
+
+                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                                        <ProfilePicker
+                                            emoji={emoji}
+                                            name={name}
+                                            onNameChange={setName}
+                                            onOpenEmoji={() => setIsEmojiOpen(true)}
+                                        />
+                                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+                                            {nameError ? (
+                                                <p className="text-xs text-red-400">{nameError}</p>
+                                            ) : null}
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <Button
+                                                    className="border-white/20 bg-[#242424] text-white hover:bg-[#2f2f2f]"
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        // Name generation is implemented in a separate PR.
+                                                    }}
+                                                >
+                                                    Generate Name
+                                                </Button>
+                                                <Button
+                                                    className="border-0 bg-[#00D4E8] font-semibold text-black shadow-[0_0_20px_-6px_rgba(0,212,232,0.75)] hover:bg-[#00BDD0]"
+                                                    disabled={!name.trim() || pendingId !== null}
+                                                    onClick={() => onSaveName()}
+                                                    type="button"
+                                                >
+                                                    {pendingId !== null ? "Saving…" : "Save"}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     ) : null}
 
-                    <div className="mb-4">
-                        <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                            {quiz?.title ?? "Kein Titel"}
-                        </h1>
-                        <p className="text-muted-foreground mt-1 text-sm">
-                            Players joined:{" "}
-                            <span className="text-foreground font-semibold">{players.length}</span>
-                        </p>
-                    </div>
+                    {isHost ? (
+                        <>
+                            <div className="mb-4">
+                                <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+                                    {quiz?.title ?? "No title"}
+                                </h1>
+                                <p className="text-muted-foreground mt-1 text-sm">
+                                    Players joined:{" "}
+                                    <span className="text-foreground font-semibold">
+                                        {players.length}
+                                    </span>
+                                </p>
+                            </div>
 
-                    <ul className="space-y-2">
-                        {players.map((player) => (
-                            <li
-                                key={player.id}
-                                className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2 dark:bg-black/20"
-                            >
-                                <div className="bg-muted/80 flex h-8 w-8 items-center justify-center rounded-full text-base">
-                                    {player.emoji ?? "🙂"}
-                                </div>
-                                <p className="text-sm font-medium">{player.name}</p>
-                            </li>
-                        ))}
-                    </ul>
+                            <ul className="space-y-2">
+                                {players.map((player) => (
+                                    <li
+                                        key={player.id}
+                                        className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2 dark:bg-black/20"
+                                    >
+                                        <div className="bg-muted/80 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold uppercase">
+                                            {player.name.charAt(0)}
+                                        </div>
+                                        <p className="flex-1 text-sm font-medium">{player.name}</p>
+                                        <Button
+                                            className="h-7 w-7 text-white/50 hover:text-red-400"
+                                            onClick={() => onKickPlayer(player.id)}
+                                            size="icon"
+                                            title={`Kick ${player.name}`}
+                                            type="button"
+                                            variant="ghost"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </li>
+                                ))}
+
+                                {players.length === 0 ? (
+                                    <li className="text-muted-foreground py-4 text-center text-sm">
+                                        No players yet — share the pin!
+                                    </li>
+                                ) : null}
+                            </ul>
+                        </>
+                    ) : null}
 
                     <div className="mt-8 flex items-center justify-center border-t border-white/10 pt-6">
                         {isHost ? (

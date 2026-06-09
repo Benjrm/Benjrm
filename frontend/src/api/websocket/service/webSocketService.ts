@@ -70,7 +70,11 @@ export default class WebSocketService {
                 const data = raw as ServerMessage
                 const handlers = this.listeners.get(data.command)
                 handlers?.forEach((handler) =>
-                    (handler as ServerEventHandler<typeof data.command>)(data.payload, data.timing)
+                    (handler as ServerEventHandler<typeof data.command>)(
+                        data.payload,
+                        data.timing,
+                        data.id
+                    )
                 )
             } catch (error) {
                 console.error("Failed to process WebSocket message:", error)
