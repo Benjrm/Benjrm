@@ -41,10 +41,10 @@ def use_generate_question_body(context, strategy):
         # ------------------------------------
         # OPTIONS
         # ------------------------------------
-        if question_type != "SLIDE":
+        if question_type != QuestionType.SLIDE:
             num_options = draw(st.integers(min_value=2, max_value=4))
 
-            if question_type == "ORDER":
+            if question_type == QuestionType.ORDER:
                 body["options"] = [
                     {"answer": draw(st.text(min_size=1, max_size=100))}
                     for _ in range(num_options)
