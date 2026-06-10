@@ -9,9 +9,9 @@ export interface FetchOptions {
     signal?: AbortSignal
 }
 
-function createFriendlyApiError(): Error {
+function createFriendlyApiError(status = 500): ApiError {
     const message = `The backend is currently unavailable. Please try again later.`
-    return new Error(message)
+    return new ApiError(status, message)
 }
 
 export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise<T> {
@@ -40,9 +40,9 @@ export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise
     if (!res.ok) {
         let error
         try {
-            error = new ApiError(await res.json())
+            error = new ApiError(res.status, await res.json())
         } catch {
-            throw createFriendlyApiError()
+            throw createFriendlyApiError(res.status)
         }
         throw error
     }
@@ -54,13 +54,13 @@ export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise
 
     const contentType = res.headers.get("content-type") ?? ""
     if (!contentType.includes("application/json")) {
-        throw createFriendlyApiError()
+        throw createFriendlyApiError(res.status)
     }
 
     try {
         return JSON.parse(responseText) as T
     } catch {
-        throw createFriendlyApiError()
+        throw createFriendlyApiError(res.status)
     }
 }
 

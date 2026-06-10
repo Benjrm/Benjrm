@@ -24,8 +24,9 @@ import {
     restrictToParentElement,
     getQuestionPreviewText,
 } from "./quiz/quizUtils"
-import useQuizEditor from "@/hooks/useQuizEditor"
+import { PlayQuizButton } from "@/components/PlayQuizButton"
 import { Button } from "@/shadcn/components/ui/button"
+import useQuizEditor from "@/hooks/useQuizEditor"
 import {
     Dialog,
     DialogContent,
@@ -172,6 +173,7 @@ export default function QuizCreator(): JSX.Element {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <PlayQuizButton quizId={quizId} />
                         <Button
                             className="border-border bg-muted/40 hover:bg-muted/70 gap-2 border backdrop-blur-sm"
                             variant="ghost"

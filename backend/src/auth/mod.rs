@@ -37,6 +37,14 @@ pub struct User {
     pub id: Uuid,
 }
 
+impl PartialEq for User {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl Eq for User {}
+
 impl FromRequest for User {
     type Error = actix_web::Error;
     type Future = Ready<Result<Self, Self::Error>>;

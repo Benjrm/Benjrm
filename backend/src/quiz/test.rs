@@ -1,7 +1,11 @@
 use {
     crate::{
         app_data::TestAppData,
-        quiz::{NewQuiz, QuizError, QuizFilter, UpdateQuiz, entity::QuizModel},
+        question::{
+            NewQuestion, NewQuestionOptions, Question, QuestionFilter, QuestionOptions,
+            answer::{choice::NewAnswerChoice, order::NewAnswerOrder},
+        },
+        quiz::{NewQuiz, Quiz, QuizError, QuizFilter, UpdateQuiz, entity::QuizModel},
         update_value::{UpdateOption, UpdateValue},
     },
     chrono::{Duration, Utc},
@@ -165,4 +169,152 @@ async fn test_delete() {
 
     let result = QuizModel::get(&data.db, user, quiz.id).await;
     assert!(matches!(result, Err(QuizError::NotFound)));
+}
+
+#[actix_web::test]
+async fn test_get_complete() {
+    let data = &TestAppData::test().await;
+    let user = data.dummy_user_id().await;
+
+    let quiz = create_one(&data.db, user, Some("Quiz".into()), None, false)
+        .await
+        .unwrap();
+    let quiz_id = quiz.id;
+
+    let questions = vec![
+        NewQuestion {
+            question: "slide".into(),
+            hidden: false,
+            position: None,
+            options: NewQuestionOptions::Slide,
+        },
+        NewQuestion {
+            question: "hidden slide".into(),
+            hidden: true,
+            position: None,
+            options: NewQuestionOptions::Slide,
+        },
+        NewQuestion {
+            question: "single choice".into(),
+            hidden: false,
+            position: None,
+            options: NewQuestionOptions::SingleChoice(vec![
+                NewAnswerChoice {
+                    answer: "true".into(),
+                    correct: true,
+                },
+                NewAnswerChoice {
+                    answer: "false".into(),
+                    correct: false,
+                },
+            ]),
+        },
+        NewQuestion {
+            question: "hidden single choice".into(),
+            hidden: true,
+            position: None,
+            options: NewQuestionOptions::SingleChoice(vec![
+                NewAnswerChoice {
+                    answer: "true".into(),
+                    correct: true,
+                },
+                NewAnswerChoice {
+                    answer: "false".into(),
+                    correct: false,
+                },
+            ]),
+        },
+        NewQuestion {
+            question: "multiple choice".into(),
+            hidden: false,
+            position: None,
+            options: NewQuestionOptions::MultipleChoice(vec![
+                NewAnswerChoice {
+                    answer: "true1".into(),
+                    correct: true,
+                },
+                NewAnswerChoice {
+                    answer: "true2".into(),
+                    correct: true,
+                },
+                NewAnswerChoice {
+                    answer: "false".into(),
+                    correct: false,
+                },
+            ]),
+        },
+        NewQuestion {
+            question: "order".into(),
+            hidden: false,
+            position: None,
+            options: NewQuestionOptions::Order(vec![
+                NewAnswerOrder {
+                    answer: "item1".into(),
+                },
+                NewAnswerOrder {
+                    answer: "item2".into(),
+                },
+                NewAnswerOrder {
+                    answer: "item3".into(),
+                },
+            ]),
+        },
+    ];
+    for question in questions.clone() {
+        quiz.clone()
+            .create_question(&data.db, question)
+            .await
+            .unwrap();
+    }
+
+    let check_get = async |hidden: Option<bool>| {
+        let quiz = Quiz::<Question>::get(&data.db, user, quiz_id, &QuestionFilter { hidden })
+            .await
+            .unwrap();
+
+        assert_eq!(quiz.model.title, "Quiz");
+        assert_eq!(quiz.model.description, None);
+        let mut quiz_question_iter = quiz.questions.into_iter();
+        for question in &questions {
+            if let Some(hidden) = hidden
+                && question.hidden != hidden
+            {
+                continue;
+            }
+
+            let quiz_question = quiz_question_iter.next().unwrap();
+            assert_eq!(question.hidden, quiz_question.model.hidden);
+            assert_eq!(question.question, quiz_question.model.question);
+
+            match (&question.options, quiz_question.options) {
+                (NewQuestionOptions::Slide, QuestionOptions::Slide) => (),
+                (
+                    NewQuestionOptions::SingleChoice(new_options),
+                    QuestionOptions::SingleChoice(options),
+                )
+                | (
+                    NewQuestionOptions::MultipleChoice(new_options),
+                    QuestionOptions::MultipleChoice(options),
+                ) => {
+                    assert_eq!(new_options.len(), options.len());
+                    for (new, current) in new_options.iter().zip(options.iter()) {
+                        assert_eq!(new.answer, current.answer);
+                        assert_eq!(new.correct, current.correct);
+                    }
+                }
+                (NewQuestionOptions::Order(new_options), QuestionOptions::Order(options)) => {
+                    assert_eq!(new_options.len(), options.len());
+                    for (new, current) in new_options.iter().zip(options.iter()) {
+                        assert_eq!(new.answer, current.answer);
+                    }
+                }
+                _ => panic!(),
+            }
+        }
+        assert!(quiz_question_iter.next().is_none());
+    };
+
+    check_get(None).await;
+    check_get(Some(true)).await;
+    check_get(Some(false)).await;
 }

@@ -2,11 +2,11 @@ use {
     crate::{
         error::Error,
         question::{
-            QuestionError, QuestionFilter,
+            Question, QuestionError, QuestionFilter,
             entity::{QuestionColumn, QuestionEntity},
         },
         quiz::{
-            NewQuiz, QuizError, QuizFilter, UpdateQuiz,
+            NewQuiz, Quiz, QuizError, QuizFilter, UpdateQuiz,
             entity::{ActiveQuiz, QuizColumn, QuizEntity, QuizModel},
         },
     },
@@ -120,5 +120,25 @@ impl QuizModel {
         let mut model = self.into_active_model();
         model.modified = Set(date);
         model.update(conn).await
+    }
+}
+
+impl Quiz<Question> {
+    pub async fn get(
+        conn: &impl ConnectionTrait,
+        user: Uuid,
+        quiz: Uuid,
+        question_filter: &QuestionFilter,
+    ) -> Result<Self, Error> {
+        let model = QuizModel::get(conn, user, quiz).await?;
+        let question_models = model.get_questions(conn, question_filter).await?;
+
+        let mut questions = Vec::with_capacity(question_models.len());
+        for question_model in question_models {
+            let question = question_model.get_answers(conn).await?;
+            questions.push(question);
+        }
+
+        Ok(Self { model, questions })
     }
 }

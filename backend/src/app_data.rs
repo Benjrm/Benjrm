@@ -1,5 +1,5 @@
 use {
-    crate::{auth::oidc::Oidc, static_file::StaticFile},
+    crate::{auth::oidc::Oidc, game_session::GameSessions, static_file::StaticFile},
     std::path::PathBuf,
 };
 
@@ -8,6 +8,7 @@ pub struct AppData {
     pub imprint: StaticFile,
     pub privacy: StaticFile,
     pub oidc: Oidc,
+    pub game_sessions: GameSessions,
 }
 
 impl AppData {
@@ -32,11 +33,14 @@ impl AppData {
 
         let oidc = Oidc::from_env().await;
 
+        let game_sessions = GameSessions::new();
+
         Self {
             db,
             imprint,
             privacy,
             oidc,
+            game_sessions,
         }
     }
 }
@@ -44,6 +48,7 @@ impl AppData {
 #[cfg(test)]
 pub struct TestAppData {
     pub db: sea_orm::DbConn,
+    pub game_sessions: GameSessions,
 }
 
 #[cfg(test)]
@@ -62,7 +67,9 @@ impl TestAppData {
             db
         };
 
-        TestAppData { db }
+        let game_sessions = GameSessions::new();
+
+        TestAppData { db, game_sessions }
     }
 
     pub async fn dummy_user_id(&self) -> uuid::Uuid {
@@ -86,6 +93,11 @@ impl TestAppData {
         .unwrap();
 
         user.id
+    }
+
+    pub async fn dummy_user(&self) -> crate::auth::User {
+        let id = self.dummy_user_id().await;
+        crate::auth::User { id }
     }
 }
 

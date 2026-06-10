@@ -8,25 +8,36 @@ export interface ReadonlyMetadata {
 }
 
 export class ApiError extends Error {
+    status: number
+
     category: string
 
     error: string
 
     message: string
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-    constructor(error: any) {
-        if (
+    constructor(
+        status: number,
+        error: string | { category?: string; error?: string; message?: string }
+    ) {
+        if (typeof error === "string") {
+            super(error)
+            this.status = status
+            this.category = "unknown"
+            this.error = "unknown"
+            this.message = error
+        } else if (
             typeof error.category === "string" &&
             typeof error.error === "string" &&
             typeof error.message === "string"
         ) {
             super(error.message)
+            this.status = status
             this.category = error.category
             this.error = error.error
             this.message = error.message
         } else {
-            throw error
+            throw new Error(String(error))
         }
     }
 }

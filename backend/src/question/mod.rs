@@ -258,5 +258,5 @@ pub fn sort_linked_items<T: LinkedItem>(mut items: Vec<T>) -> Option<Vec<T>> {
 #[derive(Deserialize, Debug, Clone, Default)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct QuestionFilter {
-    hidden: Option<bool>,
+    pub hidden: Option<bool>,
 }

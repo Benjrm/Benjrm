@@ -40,7 +40,7 @@ jobs:
           config-file: 'api_tests/schemathesis.toml'
           version: '4.21.0'
           coverage: 'false'
-          args: '--generation-database none'
+          args: '--generation-database none --exclude-tag SchemathesisSkip'
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v7.0.1
         with:

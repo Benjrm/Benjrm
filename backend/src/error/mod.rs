@@ -10,4 +10,5 @@ macros::impl_base_err! {
     Auth(crate::auth::AuthError),
     Quiz(crate::quiz::QuizError),
     Question(crate::question::QuestionError),
+    Session(crate::game_session::GameSessionError),
 }

@@ -1,2 +1,4 @@
 schemathesis-report
 .hypothesis
+.venv
+**/__pycache__

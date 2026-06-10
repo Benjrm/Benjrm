@@ -3,7 +3,6 @@ use {
         AppData,
         auth::User,
         error::Result,
-        not_found_route,
         question::{NewQuestion, QuestionFilter, UpdateQuestion},
         quiz::entity::QuizModel,
     },
@@ -104,19 +103,15 @@ async fn delete(
 
 pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
     cfg.service(
-        web::scope("/quizzes/{quiz}")
-            .service(
-                web::resource("/questions")
-                    .route(web::post().to(create_one))
-                    .route(web::get().to(get_many)),
-            )
-            .service(
-                web::resource("/questions/{question}")
-                    .route(web::get().to(get_one))
-                    .route(web::patch().to(patch))
-                    .route(web::put().to(put))
-                    .route(web::delete().to(delete)),
-            )
-            .default_service(not_found_route()),
+        web::resource("/quizzes/{quiz}/questions")
+            .route(web::post().to(create_one))
+            .route(web::get().to(get_many)),
+    );
+    cfg.service(
+        web::resource("/quizzes/{quiz}/questions/{question}")
+            .route(web::get().to(get_one))
+            .route(web::patch().to(patch))
+            .route(web::put().to(put))
+            .route(web::delete().to(delete)),
     );
 }
