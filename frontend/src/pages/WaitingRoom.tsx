@@ -1,7 +1,7 @@
 // frontend/src/pages/WaitingRoom.tsx
 
 import type { JSX } from "react"
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { useParams } from "react-router"
 import { X } from "lucide-react"
 import ProfilePicker from "../components/ProfilePicker"
@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/compo
 interface Player {
     id: string
     name: string
+    emoji: string | null
 }
 
 const AVAILABLE_EMOJIS = [
@@ -67,11 +68,11 @@ export default function WaitingRoom(): JSX.Element {
     // Live player list
     const [players, setPlayers] = useState<Player[]>([])
 
-    useSocketEvent("addPlayer", ({ id, name }) => {
-        setPlayers((prev) => [...prev, { id, name }])
+    useSocketEvent("addPlayer", ({ id, name, emoji }) => {
+        setPlayers((prev) => [...prev, { id, name, emoji }])
     })
-    useSocketEvent("renamePlayer", ({ id, name }) => {
-        setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)))
+    useSocketEvent("renamePlayer", ({ id, name, emoji }) => {
+        setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, name, emoji } : p)))
     })
     useSocketEvent("removePlayer", ({ id }) => {
         setPlayers((prev) => prev.filter((p) => p.id !== id))
@@ -79,7 +80,9 @@ export default function WaitingRoom(): JSX.Element {
 
     // Player name-setting state
     const [name, setName] = useState("")
-    const [emoji, setEmoji] = useState<string | undefined>("😀")
+    const [emoji, setEmoji] = useState<string>(
+        () => AVAILABLE_EMOJIS[Math.floor(Math.random() * AVAILABLE_EMOJIS.length)]
+    )
     const [isEmojiOpen, setIsEmojiOpen] = useState(false)
     const [nameSaved, setNameSaved] = useState(false)
     const [nameError, setNameError] = useState<string | null>(null)
@@ -106,7 +109,7 @@ export default function WaitingRoom(): JSX.Element {
         const id = Date.now() % 1_000_000
         setPendingId(id)
         setNameError(null)
-        websocket.send({ id, command: "setName", payload: { name: trimmed } })
+        websocket.send({ id, command: "setName", payload: { name: trimmed, emoji } })
     }
 
     function onKickPlayer(playerId: string): void {
@@ -158,7 +161,7 @@ export default function WaitingRoom(): JSX.Element {
                             {nameSaved ? (
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00D4E8]/20 text-xl">
-                                        {emoji ?? "😀"}
+                                        {emoji}
                                     </div>
                                     <div>
                                         <p className="text-sm font-semibold">{name}</p>
@@ -215,7 +218,7 @@ export default function WaitingRoom(): JSX.Element {
                                         className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2 dark:bg-black/20"
                                     >
                                         <div className="bg-muted/80 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold uppercase">
-                                            {player.name.charAt(0)}
+                                            {player.emoji ?? player.name.charAt(0)}
                                         </div>
                                         <p className="flex-1 text-sm font-medium">{player.name}</p>
                                         <Button

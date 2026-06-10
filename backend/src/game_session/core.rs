@@ -189,6 +189,7 @@ impl GameSession {
                 let player = GameSessionPlayer {
                     id,
                     name: None,
+                    emoji: None,
                     channel: Box::new(channel),
                 };
                 self.players.push(player);
@@ -199,7 +200,7 @@ impl GameSession {
     pub async fn handle_player_cmd(&mut self, cmd: Command<PlayerCommand>, id: Uuid) {
         match cmd.command {
             PlayerCommand::Pong { .. } => (),
-            PlayerCommand::SetName { name } => {
+            PlayerCommand::SetName { name, emoji } => {
                 let mut name_in_use = false;
                 let mut this_player = None;
                 for player in self.players.iter_mut() {
@@ -227,14 +228,37 @@ impl GameSession {
                             .await;
                     } else {
                         let has_name = player.name.is_some();
+                        if let Some(emoji) = emoji {
+                            player.emoji = emojis::get(&emoji);
+                            if player.emoji.is_none() {
+                                player.error(cmd.id, GameSessionError::InvalidEmoji).await;
+                                return;
+                            }
+                        } else {
+                            player.emoji = None;
+                        }
                         player.name = Some(name.clone());
                         if has_name {
                             self.host
-                                .msg(HostMessage::RenamePlayer { id, name }.into())
+                                .msg(
+                                    HostMessage::RenamePlayer {
+                                        id,
+                                        name,
+                                        emoji: player.emoji,
+                                    }
+                                    .into(),
+                                )
                                 .await
                         } else {
                             self.host
-                                .msg(HostMessage::AddPlayer { id, name }.into())
+                                .msg(
+                                    HostMessage::AddPlayer {
+                                        id,
+                                        name,
+                                        emoji: player.emoji,
+                                    }
+                                    .into(),
+                                )
                                 .await
                         }
                         player.ok(cmd.id).await;

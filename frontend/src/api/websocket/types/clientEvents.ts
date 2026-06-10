@@ -9,6 +9,7 @@ export interface ClientEvents {
     }
     setName: {
         name: string
+        emoji: string | null
     }
     answerQuestion: {
         answers: string[]

@@ -7,6 +7,7 @@ use {
         quiz::Quiz,
     },
     chrono::{DateTime, Utc},
+    emojis::Emoji,
     serde::{Deserialize, Serialize},
     std::{
         collections::HashMap,
@@ -39,6 +40,8 @@ impl_err! {
         Forbidden = FORBIDDEN,
         #[error("Name already taken")]
         NameAlreadyTaken = CONFLICT,
+        #[error("Invalid Emoji")]
+        InvalidEmoji = BAD_REQUEST,
         #[error("Player not found")]
         PlayerNotFound = NOT_FOUND,
     }
@@ -79,6 +82,7 @@ impl From<User> for GameSessionHost {
 pub struct GameSessionPlayer {
     id: Uuid,
     name: Option<String>,
+    emoji: Option<&'static Emoji>,
     #[serde(skip)]
     channel: Box<dyn Channel<PlayerMessage>>,
 }
@@ -148,9 +152,19 @@ pub trait CommandTrait: Sized {
 pub enum HostMessage {
     Ok,
     Error(ErrorResponse),
-    AddPlayer { id: Uuid, name: String },
-    RenamePlayer { id: Uuid, name: String },
-    RemovePlayer { id: Uuid },
+    AddPlayer {
+        id: Uuid,
+        name: String,
+        emoji: Option<&'static Emoji>,
+    },
+    RenamePlayer {
+        id: Uuid,
+        name: String,
+        emoji: Option<&'static Emoji>,
+    },
+    RemovePlayer {
+        id: Uuid,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -194,7 +208,7 @@ pub enum PlayerMessage {
 )]
 pub enum PlayerCommand {
     Pong { id: u32, timestamp: DateTime<Utc> },
-    SetName { name: String },
+    SetName { name: String, emoji: Option<String> },
 }
 
 impl CommandTrait for Command<PlayerCommand> {

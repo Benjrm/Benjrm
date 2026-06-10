@@ -31,10 +31,12 @@ export interface ServerEvents {
     addPlayer: {
         id: string
         name: string
+        emoji: string | null
     }
     renamePlayer: {
         id: string
         name: string
+        emoji: string | null
     }
     removePlayer: {
         id: string

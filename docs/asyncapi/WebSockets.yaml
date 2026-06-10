@@ -276,6 +276,9 @@ components:
                 format: uuid
               name:
                 type: string
+              emoji:
+                type: string
+                example: "😀"
     
     renamePlayer:
       payload:
@@ -292,6 +295,9 @@ components:
                 format: uuid
               name:
                 type: string
+              emoji:
+                type: string
+                example: "😀"
     
     removePlayer:
       payload:
@@ -341,6 +347,9 @@ components:
             properties:
               name:
                 type: string
+              emoji:
+                type: string
+                example: "😀"
 
     displayQuestion:
       payload:
