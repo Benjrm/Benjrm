@@ -3,9 +3,9 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            Channel, Command, GameSession, GameSessionError, GameSessionPlayer, GameSessionStatus,
-            GameSessions, HostCommand, HostMessage, Message, PlayerCommand, PlayerMessage,
-            SessionCode,
+            Channel, Command, GameSession, GameSessionError, GameSessionHost, GameSessionPlayer,
+            GameSessionStatus, GameSessions, HostCommand, HostMessage, Message, PlayerCommand,
+            PlayerMessage, SessionCode,
         },
         question::{Question, QuestionFilter},
         quiz::Quiz,
@@ -153,14 +153,6 @@ impl GameSession {
         self.host.channel = Some(channel);
     }
 
-    pub async fn notify_host(&mut self, msg: Message<HostMessage>) {
-        if let Some(channel) = &mut self.host.channel
-            && let Err(err) = channel.send(msg).await
-        {
-            log::error!("notify host error: {err:?}");
-        }
-    }
-
     pub async fn handle_host_cmd(&mut self, cmd: Command<HostCommand>, _payload: SessionCode) {
         match cmd.command {
             HostCommand::Pong { .. } => (),
@@ -169,9 +161,15 @@ impl GameSession {
                     let player = self.players.swap_remove(pos);
                     player.channel.close().await;
                     if player.name.is_some() {
-                        self.notify_host(HostMessage::RemovePlayer { id: player.id }.into())
+                        self.host.ok(cmd.id).await;
+                        self.host
+                            .msg(HostMessage::RemovePlayer { id: player.id }.into())
                             .await;
                     }
+                } else {
+                    self.host
+                        .error(cmd.id, GameSessionError::PlayerNotFound)
+                        .await;
                 }
             }
         }
@@ -231,12 +229,15 @@ impl GameSession {
                         let has_name = player.name.is_some();
                         player.name = Some(name.clone());
                         if has_name {
-                            self.notify_host(HostMessage::RenamePlayer { id, name }.into())
+                            self.host
+                                .msg(HostMessage::RenamePlayer { id, name }.into())
                                 .await
                         } else {
-                            self.notify_host(HostMessage::AddPlayer { id, name }.into())
+                            self.host
+                                .msg(HostMessage::AddPlayer { id, name }.into())
                                 .await
                         }
+                        player.ok(cmd.id).await;
                     }
                 }
             }
@@ -248,10 +249,53 @@ impl GameSession {
     }
 }
 
+impl GameSessionHost {
+    pub async fn msg(&mut self, msg: Message<HostMessage>) {
+        if let Some(channel) = &mut self.channel
+            && let Err(err) = channel.send(msg).await
+        {
+            log::error!("notify host error: {err:?}");
+        }
+    }
+
+    pub async fn ok(&mut self, id: Option<u64>) {
+        if id.is_some() {
+            self.msg(Message {
+                id,
+                msg: HostMessage::Ok,
+                timing: None,
+            })
+            .await;
+        }
+    }
+
+    pub async fn error(&mut self, id: Option<u64>, err: impl Into<Error>) {
+        if id.is_some() {
+            self.msg(Message {
+                id,
+                msg: HostMessage::Error(err.into().into()),
+                timing: None,
+            })
+            .await;
+        }
+    }
+}
+
 impl GameSessionPlayer {
     pub async fn msg(&mut self, msg: Message<PlayerMessage>) {
         if let Err(err) = self.channel.send(msg).await {
             log::error!("failed to send message to player {}: {err:?}", self.id)
+        }
+    }
+
+    pub async fn ok(&mut self, id: Option<u64>) {
+        if id.is_some() {
+            self.msg(Message {
+                id,
+                msg: PlayerMessage::Ok,
+                timing: None,
+            })
+            .await;
         }
     }
 

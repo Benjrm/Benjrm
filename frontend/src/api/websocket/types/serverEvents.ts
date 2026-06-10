@@ -8,6 +8,7 @@ export interface ServerEvents {
         error: string
         message: string
     }
+    ok: unknown
     ping: {
         id: number
     }

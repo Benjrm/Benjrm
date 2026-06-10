@@ -39,6 +39,8 @@ impl_err! {
         Forbidden = FORBIDDEN,
         #[error("Name already taken")]
         NameAlreadyTaken = CONFLICT,
+        #[error("Player not found")]
+        PlayerNotFound = NOT_FOUND,
     }
 }
 
@@ -144,6 +146,7 @@ pub trait CommandTrait: Sized {
 #[derive(Debug, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 pub enum HostMessage {
+    Ok,
     Error(ErrorResponse),
     AddPlayer { id: Uuid, name: String },
     RenamePlayer { id: Uuid, name: String },
@@ -178,6 +181,7 @@ impl CommandTrait for Command<HostCommand> {
 #[derive(Debug, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 pub enum PlayerMessage {
+    Ok,
     Error(ErrorResponse),
 }
 

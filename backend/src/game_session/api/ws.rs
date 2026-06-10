@@ -120,7 +120,8 @@ async fn remove_player_ws(
         let player = session.players.swap_remove(player_pos);
         if player.name.is_some() {
             session
-                .notify_host(HostMessage::RemovePlayer { id: player_id }.into())
+                .host
+                .msg(HostMessage::RemovePlayer { id: player_id }.into())
                 .await
         }
     }

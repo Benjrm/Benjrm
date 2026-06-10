@@ -24,6 +24,8 @@ channels:
       session:
         description: The session code
     messages:
+      ok:
+        $ref: "#/components/messages/ok"
       error:
         $ref: "#/components/messages/error"
       ping:
@@ -47,6 +49,8 @@ channels:
       session:
         description: The session code
     messages:
+      ok:
+        $ref: "#/components/messages/ok"
       error:
         $ref: "#/components/messages/error"
       ping:
@@ -61,6 +65,22 @@ channels:
       - name: Sessions
 
 operations:
+  sendHostOk:
+    description: "Send ok command"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/ok"
+  
+  sendPlayerOk:
+    description: "Send ok command"
+    action: send
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/ok"
+  
   sendHostError:
     description: "Send error command"
     action: send
@@ -179,6 +199,16 @@ operations:
 
 components:
   messages:
+    ok:
+      payload:
+        type: object
+        properties:
+          id:
+            type: integer
+          command:
+            type: string
+            const: "ok"
+    
     error:
       payload:
         type: object

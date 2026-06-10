@@ -84,14 +84,17 @@ export default function WaitingRoom(): JSX.Element {
     const [nameSaved, setNameSaved] = useState(false)
     const [nameError, setNameError] = useState<string | null>(null)
     const [pendingId, setPendingId] = useState<number | null>(null)
-    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    useSocketEvent("error", (payload) => {
-        if (pendingId !== null) {
-            if (saveTimeoutRef.current !== null) {
-                clearTimeout(saveTimeoutRef.current)
-                saveTimeoutRef.current = null
-            }
+    useSocketEvent("ok", (payload, timing, id) => {
+        if (pendingId === id) {
+            setPendingId(null)
+            // TODO: add command specific response handling when there are more commands (maybe add it globally)
+            setNameSaved(true)
+        }
+    })
+
+    useSocketEvent("error", (payload, timing, id) => {
+        if (pendingId === id) {
             setPendingId(null)
             setNameError(payload.message)
         }
@@ -104,13 +107,6 @@ export default function WaitingRoom(): JSX.Element {
         setPendingId(id)
         setNameError(null)
         websocket.send({ id, command: "setName", payload: { name: trimmed } })
-        if (saveTimeoutRef.current !== null) clearTimeout(saveTimeoutRef.current)
-        // Server sends no success confirmation to the player
-        saveTimeoutRef.current = setTimeout(() => {
-            saveTimeoutRef.current = null
-            setNameSaved(true)
-            setPendingId(null)
-        }, 1500)
     }
 
     function onKickPlayer(playerId: string): void {
