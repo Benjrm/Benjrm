@@ -1,0 +1,48 @@
+name: API Testing with Schemathesis
+run-name: API Testing with Schemathesis on ${{ github.event_name }} by ${{ github.actor }}
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'docs/openapispec/**'
+      - 'backend/**'
+      - '.github/workflows/schemathesis.yaml'
+      - 'api_tests/**'
+  pull_request:
+    paths:
+      - 'docs/openapispec/**'
+      - 'backend/**'
+      - '.github/workflows/schemathesis.yaml'
+      - 'api_tests/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    permissions:
+      # Because the action needs to comment on the PR with the coverage summary powered
+      # by [TraceCov](https://docs.tracecov.sh/) we need to give it write permissions to pull requests.
+      pull-requests: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create .env from template
+        run: cp .env.example .env
+      - name: Docker Compose Action
+        uses: hoverkraft-tech/compose-action@v2.6.0
+        with:
+          compose-file: 'compose.dev.yaml'
+      - uses: schemathesis/action@v3
+        env:
+          PYTHONPATH: ${{ github.workspace }}/api_tests
+        with:
+          schema: 'docs/openapispec/RestInterface.yaml'
+          config-file: 'api_tests/schemathesis.toml'
+          version: '4.21.0'
+          coverage: 'false'
+          args: '--generation-database none'
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          path: schemathesis-report/
+          name: schemathesis-results

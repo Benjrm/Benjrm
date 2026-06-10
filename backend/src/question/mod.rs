@@ -34,7 +34,7 @@ impl_err! {
         #[error("Question belongs to a other quiz")]
         QuestionBelongsToOtherQuiz = NOT_FOUND,
         #[error("Expected at least one correct answer")]
-        NoCorrectAnswer = BAD_REQUEST,
+        NoCorrectAnswer = UNPROCESSABLE_ENTITY,
         #[error("Can't sort questions, corrupted list")]
         CorruptedQuestionList = INTERNAL_SERVER_ERROR,
         #[error("Can't sort answers, corrupted list")]
@@ -44,7 +44,7 @@ impl_err! {
         #[error("Duplicate answer id of `{0}`")]
         DuplicateAnswerId(Uuid) = BAD_REQUEST,
         #[error("At least a number of {0} answer(s) is required")]
-        NotEnoughAnswers(usize) = BAD_REQUEST,
+        NotEnoughAnswers(usize) = UNPROCESSABLE_ENTITY,
     }
 }
 
@@ -178,11 +178,21 @@ impl UpdateQuestionOptions {
     where
         D: Deserializer<'de>,
     {
-        let map: BTreeMap<serde_value::Value, serde_value::Value> =
-            Deserialize::deserialize(deserializer)?;
-        if map.contains_key(&serde_value::Value::String(String::from("type")))
-            || map.contains_key(&serde_value::Value::String(String::from("options")))
-        {
+        #[derive(Deserialize)]
+        struct UpdateQuestionOptionsDto {
+            r#type: Option<serde_value::Value>,
+            options: Option<serde_value::Value>,
+        }
+        let options = UpdateQuestionOptionsDto::deserialize(deserializer)?;
+
+        if options.r#type.is_some() || options.options.is_some() {
+            let mut map = BTreeMap::new();
+            if let Some(r#type) = options.r#type {
+                map.insert(serde_value::Value::String("type".into()), r#type);
+            }
+            if let Some(options) = options.options {
+                map.insert(serde_value::Value::String("options".into()), options);
+            }
             let value = Self::deserialize(serde_value::Value::Map(map))
                 .map_err(serde::de::Error::custom)?;
             Ok(Some(value))
