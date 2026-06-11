@@ -7,6 +7,6 @@ export type ClientMessage = {
     [K in keyof ClientEvents]: {
         id?: number
         command: K
-        payload: ClientEvents[K]
+        payload?: ClientEvents[K]
     }
 }[keyof ClientEvents]

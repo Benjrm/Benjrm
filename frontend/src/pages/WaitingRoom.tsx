@@ -15,6 +15,7 @@ import {
 } from "@/api/websocket"
 import { Button } from "@/shadcn/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
+import StartQuizButton from "@/components/StartQuizButton.tsx"
 
 interface Player {
     id: string
@@ -255,13 +256,7 @@ export default function WaitingRoom(): JSX.Element {
 
                     <div className="mt-8 flex items-center justify-center border-t border-white/10 pt-6">
                         {isHost ? (
-                            <Button
-                                className="rounded-xl border-0 bg-[#00D4E8] px-8 py-5 text-sm font-bold tracking-wide text-black uppercase shadow-[0_0_20px_-5px_rgba(0,212,232,0.6)] transition-all hover:bg-[#00BDD0]"
-                                size="lg"
-                                type="button"
-                            >
-                                Start Game
-                            </Button>
+                            <StartQuizButton />
                         ) : (
                             <p className="text-muted-foreground text-sm font-medium">
                                 Waiting for host to start the game
