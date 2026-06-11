@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 import questionAdapterImpl from "@/api/questions/adapter/questionAdapterImpl"
-import type { QuestionApiRequest } from "@/api/questions/types/question.api.ts"
 import useQuestionQueueStorage from "@/api/questions/hooks/useQuestionQueueStorage.ts"
 import { ApiError } from "@/api/utils"
+import type { QuestionRequest } from "@/api/questions/types/question.api.new.ts"
 
 export const QueueOpEnum = {
     CREATE: "create",
@@ -30,14 +30,14 @@ type Action =
     | {
           type: "upsertCreate"
           questionId: string
-          payload: QuestionApiRequest
+          payload: QuestionRequest
           quizId?: string
       }
     | { type: "upsertReorder"; order: string[]; quizId?: string }
     | {
           type: "upsertUpdate"
           questionId: string
-          payload: Partial<QuestionApiRequest>
+          payload: Partial<QuestionRequest>
           quizId?: string
       }
 
@@ -103,9 +103,9 @@ export interface UseQuestionChangeQueueReturn {
     cleanup: (isUsed: (id: string) => Promise<boolean>) => void
     flush: () => Promise<{ items: QueueItem[]; idMap: Record<string, string> }>
     removeQuestion: (questionId: string) => void
-    upsertCreate: (questionId: string, payload: QuestionApiRequest) => void
+    upsertCreate: (questionId: string, payload: QuestionRequest) => void
     upsertReorder: (order: string[]) => void
-    upsertUpdate: (questionId: string, payload: Partial<QuestionApiRequest>) => void
+    upsertUpdate: (questionId: string, payload: Partial<QuestionRequest>) => void
     pendingCount: number
     isFlushing: boolean
     lastError: QuestionQueueError | null
@@ -129,7 +129,7 @@ type ProcessResult =
     | { status: "skipped"; reason?: string }
 
 async function processCreateOp(item: QueueItem): Promise<ProcessResult> {
-    const req = item.payload as QuestionApiRequest
+    const req = item.payload as QuestionRequest
     const created = await questionAdapterImpl.createQuestion(item.quizId, req)
     return { status: "success", createdId: created.id }
 }
@@ -141,7 +141,7 @@ async function processUpdateOp(item: QueueItem): Promise<ProcessResult> {
         return { status: "skipped", reason: "unresolved_temp_id" }
     }
 
-    const req = item.payload as Partial<QuestionApiRequest>
+    const req = item.payload as Partial<QuestionRequest>
     await questionAdapterImpl.updateQuestion(item.quizId, item.questionId, req)
     return { status: "success" }
 }
@@ -222,7 +222,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
     }, [])
 
     const upsertCreate = useCallback(
-        (questionId: string, payload: QuestionApiRequest) => {
+        (questionId: string, payload: QuestionRequest) => {
             dispatch({ type: "upsertCreate", questionId, payload, quizId })
         },
         [quizId]
@@ -236,7 +236,7 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
     )
 
     const upsertUpdate = useCallback(
-        (questionId: string, payload: Partial<QuestionApiRequest>) => {
+        (questionId: string, payload: Partial<QuestionRequest>) => {
             dispatch({ type: "upsertUpdate", questionId, payload, quizId })
         },
         [quizId]

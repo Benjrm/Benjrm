@@ -2,16 +2,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { UseMutationResult } from "@tanstack/react-query"
 import questionAdapterImpl from "@/api/questions/adapter/questionAdapterImpl.ts"
 import questionKeys from "@/api/questions/utils/questionKeys.ts"
-import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api.ts"
+import type { QuestionRequest, QuestionResponse } from "@/api/questions/types/question.api.new.ts"
 
 interface UpdateQuestionArgs {
     questionId: string
-    request: Partial<QuestionApiRequest>
+    request: Partial<QuestionRequest>
 }
 
 export default function useUpdateQuestion(
     quizId?: string
-): UseMutationResult<QuestionApiResponse, Error, UpdateQuestionArgs> {
+): UseMutationResult<QuestionResponse, Error, UpdateQuestionArgs> {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async (args: UpdateQuestionArgs) => {

@@ -19,10 +19,10 @@ import useQuestionChangeQueue, {
     QueueOpEnum,
 } from "@/hooks/useQuestionChangeQueue"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
-import type { QuestionApiRequest } from "@/api/questions/types/question.api.ts"
 import { getQuiz } from "@/api/quiz"
 import { ApiError } from "@/api/utils"
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
+import type { QuestionRequest } from "@/api/questions/types/question.api.new.ts"
 
 export interface QuestionError {
     missingQuestion: boolean
@@ -67,7 +67,7 @@ export interface UseQuizEditorResult {
     discardChanges: () => void
     flush: () => Promise<{ items: unknown[]; idMap: Record<string, string> } | null>
     upsertReorder: (order: string[]) => void
-    upsertUpdate: (id: string, payload: Partial<QuestionApiRequest>) => void
+    upsertUpdate: (id: string, payload: Partial<QuestionRequest>) => void
     deleteQuizMutation: ReturnType<typeof useDeleteQuiz>
     hasInitializedQuestions: boolean
 }
