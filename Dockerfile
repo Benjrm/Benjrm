@@ -1,4 +1,7 @@
 FROM node:26-alpine AS frontend
+LABEL org.opencontainers.image.source=https://github.com/Benjrm/Benjrm
+LABEL org.opencontainers.image.description="Benjrm - a quiz platform for interactive learning and live competition"
+
 WORKDIR /app/frontend
 
 COPY frontend/package*.json /app/frontend/
