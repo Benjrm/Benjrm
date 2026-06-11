@@ -794,6 +794,14 @@ paths:
               operationId: getSessionHostWs
               parameters:
                 session: '$response.body#/code'
+            ConnectPlayerWs:
+              operationId: getSessionPlayerWs
+              parameters:
+                session: '$response.body#/code'
+            GetPlayers:
+              operationId: getSessionPlayers
+              parameters:
+                session: '$response.body#/code'
         '400':
           description: Bad Request
           content:
@@ -859,6 +867,11 @@ paths:
                 session: '$response.body#/code'
             DeleteSession:
               operationId: deleteSessionWithQuiz
+              parameters:
+                quizId: '$request.path.quizId'
+                session: '$response.body#/code'
+            GetPlayers:
+              operationId: getSessionPlayersWithQuiz
               parameters:
                 quizId: '$request.path.quizId'
                 session: '$response.body#/code'
@@ -1047,6 +1060,60 @@ paths:
         - Sessions
         - Quizzes
         - Questions
+        - SchemathesisSkip
+  
+  /api/v1/sessions/{session}/players:
+    get:
+      summary: Get the players currently in the session
+      operationId: getSessionPlayers
+      description: 'Get the players currently in the session'
+      parameters:
+        - name: session
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/SessionCode'
+      responses:
+        '200':
+          description: Players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionPlayer'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Sessions
         - SchemathesisSkip
   
   /api/v1/sessions/{session}/ws/host:
@@ -1316,6 +1383,66 @@ paths:
         - Sessions
         - Quizzes
         - Questions
+        - Dummy
+  
+  /api/v1/quizzes/{quizId}/sessions/{session}/players:
+    get:
+      summary: Get the players currently in the session
+      operationId: getSessionPlayersWithQuiz
+      description: 'Get the players currently in the session'
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: session
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/SessionCode'
+      responses:
+        '200':
+          description: Players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionPlayer'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Sessions
         - Dummy
 
 components:
@@ -1822,4 +1949,20 @@ components:
         quiz:
           type: string
           format: uuid
+          nullable: true
+    
+    SessionPlayer:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Only included if the request comes from the host
+        name:
+          type: string
+        emoji:
+          type: string
+          example: "😀"
           nullable: true
