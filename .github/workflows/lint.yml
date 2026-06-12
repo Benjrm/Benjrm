@@ -97,5 +97,5 @@ jobs:
         run: cargo clippy --all-features --tests --release -- --deny warnings
         working-directory: 'backend'
       - name: Check formatting
-        run: cargo fmt --check
+        run: cargo fmt --all --check
         working-directory: 'backend'

@@ -39,6 +39,9 @@ If you want to run the backend directly using `cargo run` but still want to use 
   OIDC_ISSUER_URL="http://localhost:8088/realms/benjrm"
   ```
 
+### Code linting
+
+To run the checks performed by the pipelines locally, you can run `sh check.sh`.
 
 ## CVE-2023-49092
 
