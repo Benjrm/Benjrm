@@ -73,3 +73,17 @@ export type QuestionResponse =
     | OrderQuestionResponse
     | SingleChoiceQuestionResponse
     | MultipleChoiceQuestionResponse
+
+export type QuestionOption =
+    | OrderQuestionOptionResponse
+    | SingleChoiceQuestionOptionResponse
+    | MultipleChoiceQuestionOptionResponse
+
+export type QuestionType = QuestionRequest["type"]
+
+export const questionTypes = [
+    "SINGLE_CHOICE",
+    "MULTIPLE_CHOICE",
+    "SLIDE",
+    "ORDER",
+] as const satisfies readonly QuestionType[]
