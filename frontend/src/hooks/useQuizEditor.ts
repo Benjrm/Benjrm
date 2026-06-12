@@ -21,7 +21,6 @@ import useQuestionChangeQueue, {
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
 import { getQuiz } from "@/api/quiz"
 import { ApiError } from "@/api/utils"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 import type { QuestionRequest } from "@/api/questions/types/question.api.new.ts"
 
 export interface QuestionError {
@@ -146,14 +145,14 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
             validationError.missingQuestion = true
         }
 
-        if (question.type !== QuestionTypeEnum.SLIDE) {
+        if (question.type !== "SLIDE") {
             for (let oi = 0; oi < question.options.length; oi += 1) {
                 if (!question.options[oi].answer.trim()) {
                     validationError.missingAnswers.push(oi)
                 }
             }
             if (
-                question.type !== QuestionTypeEnum.ORDER &&
+                question.type !== "ORDER" &&
                 !question.options.some((o) => (o as { correct?: boolean }).correct)
             ) {
                 validationError.missingCorrectAnswer = true
@@ -178,7 +177,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
             const validationRes = validateQuestion(questions[qi])
             if (validationRes) {
                 if (validationRes.missingQuestion) {
-                    if (questions[qi].type === QuestionTypeEnum.SLIDE) {
+                    if (questions[qi].type === "SLIDE") {
                         return `Slide ${qi + 1} is missing the text.`
                     }
                     return `Question ${qi + 1} is missing the question text.`
@@ -445,8 +444,8 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
 
     const toggleOptionCorrect = (index: number) => {
         if (
-            currentQuestion.type === QuestionTypeEnum.ORDER ||
-            currentQuestion.type === QuestionTypeEnum.SLIDE
+            currentQuestion.type === "ORDER" ||
+            currentQuestion.type === "SLIDE"
         )
             return
 
@@ -555,11 +554,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     }
 
     const handleAddOption = () => {
-        if (currentQuestion.type === QuestionTypeEnum.SLIDE) return
+        if (currentQuestion.type === "SLIDE") return
 
         markUnsavedChanges()
         const newOption =
-            currentQuestion.type === QuestionTypeEnum.ORDER
+            currentQuestion.type === "ORDER"
                 ? { id: tempId(), answer: "" }
                 : { id: tempId(), answer: "", correct: false }
         const updatedQuestion = {
