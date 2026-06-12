@@ -1,0 +1,146 @@
+{
+    "common": {
+        "buttons": {
+            "viewAll": "View All",
+            "cancel": "Cancel",
+            "delete": "Delete"
+        },
+        "footer": {
+            "allRightsReserved": "All Rights Reserved.",
+            "imprint": "Impressum",
+            "privacyPolicy": "Privacy Policy",
+            "termsAndConditions": "Terms and Conditions"
+        },
+        "header": {
+            "home": "Home",
+            "profilePlaceholder": "Profile placeholder",
+            "toggleMenu": "Toggle menu",
+            "signIn": "SIGN IN",
+            "logout": "Logout"
+        }
+    },
+    "dashboard": {
+        "loadingQuizzes": "Loading quizzes...",
+        "quizzesError": "Quizzes could not be loaded right now.",
+        "hero": {
+            "inputCodeAria": "Input Code",
+            "codePlaceholder": "Code",
+            "joinViaCode": "Join via Code",
+            "startGame": "START GAME",
+            "addQuiz": "Add Quiz",
+            "imageAlt": "People celebrating"
+        },
+        "discover": {
+            "title": "Discover",
+            "recentQuizzes": "Most Recent Quizzes",
+            "yourQuizzes": "Your Quizzes",
+            "addQuiz": "Add Quiz"
+        }
+    },
+    "quiz": {
+        "modal": {
+            "editTitle": "Edit quiz",
+            "createTitle": "Create a new Quiz",
+            "editDescription": "Update title and description.",
+            "createDescription": "Enter a title and optional description."
+        },
+        "form": {
+            "saveError": "The quiz could not be saved right now. Please try again later.",
+            "missingIdError": "Missing quiz id for edit",
+            "createButton": "Create Quiz",
+            "creating": "Creating...",
+            "saving": "Saving...",
+            "saveChangesButton": "Save changes",
+            "titleLabel": "Title *",
+            "titlePlaceholder": "e.g. Math Quiz",
+            "descriptionLabel": "Description",
+            "descriptionPlaceholder": "Optional description for your quiz...",
+            "cancel": "Cancel"
+        },
+        "card": {
+            "noDescription": "No description available yet.",
+            "editQuiz": "Edit Quiz"
+        },
+        "playButton": {
+            "starting": "Starting...",
+            "play": "Play Quiz"
+        }
+    },
+    "quizEditor": {
+        "toasts": {
+            "loadingQuiz": "Loading quiz...",
+            "loadingQuestions": "Loading questions...",
+            "loadQuestionsError": "Failed to load questions.",
+            "unsavedChanges": "There are still unsaved changes. Click Save Quiz to save them.",
+            "deleteError": "Quiz could not be deleted. Please try again."
+        },
+        "header": {
+            "editTitle": "Edit title",
+            "editDescription": "Edit description",
+            "settings": "Settings",
+            "discardChanges": "Discard Changes",
+            "saving": "Saving...",
+            "saveQuiz": "Save Quiz",
+            "deleteQuiz": "Delete Quiz"
+        },
+        "deleteModal": {
+            "title": "Delete Quiz?",
+            "description": "This action cannot be undone. Are you sure you want to delete the quiz?"
+        },
+        "editor": {
+            "slide": "Slide",
+            "question": "Question",
+            "of": "of",
+            "usePlainInput": "Use Plain Input",
+            "useMarkdownEditor": "Use Markdown Editor",
+            "selectType": "Select type",
+            "slidePlaceholderMd": "Type your slide content here (Markdown supported)...",
+            "questionPlaceholderMd": "Type your question here (Markdown supported)...",
+            "slidePlaceholder": "Type your slide content here...",
+            "questionPlaceholder": "Type your question here...",
+            "fieldRequired": "This field is required",
+            "untitledSlide": "Untitled slide",
+            "untitledQuestion": "Untitled question",
+            "untitledQuiz": "Untitled"
+        },
+        "sidebar": {
+            "questions": "Questions",
+            "addQuestion": "Add Question"
+        },
+        "settings": {
+            "livePreview": "Live Preview",
+            "slideContent": "Slide Content",
+            "question": "Question",
+            "typeMarkdownHere": "*Type your markdown here...*",
+            "typeQuestionHere": "Type your question..."
+        },
+        "options": {
+            "item": "Item",
+            "addItem": "Add Item",
+            "option": "Option",
+            "addOption": "Add Option"
+        },
+        "validation": {
+            "createQuizFirst": "Please create or open a quiz first so the questions can be saved in the adapter.",
+            "addAtLeastOne": "Add at least one question before saving.",
+            "slideMissingText": "Slide {{index}} is missing the text.",
+            "questionMissingText": "Question {{index}} is missing the question text.",
+            "optionEmpty": "Question {{questionIndex}}, option {{optionIndex}} is empty.",
+            "needsCorrectAnswer": "Question {{index}} needs at least one correct answer.",
+            "unknownError": "Question {{index}} has an unknown validation error",
+            "missingQuestionText": "The question text is missing.",
+            "optionIsEmpty": "Option {{index}} is empty.",
+            "oneCorrectRequired": "At least one correct answer is required."
+        }
+    },
+    "landing": {
+        "newFeaturesLive": "New Features Live",
+        "engageAndLearn": "Engage and learn",
+        "with": "with",
+        "subtitle": "HOST AND PLAY FUN AND INTERACTIVE QUIZZES",
+        "gamePinPlaceholder": "ENTER GAME PIN",
+        "playButton": "PLAY",
+        "imageAlt": "Students participating in a quiz",
+        "imageText": "Quiz together, learn forever."
+    }
+}

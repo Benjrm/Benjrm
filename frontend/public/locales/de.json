@@ -1,0 +1,146 @@
+{
+    "common": {
+        "buttons": {
+            "viewAll": "Alle ansehen",
+            "cancel": "Abbrechen",
+            "delete": "Löschen"
+        },
+        "footer": {
+            "allRightsReserved": "Alle Rechte vorbehalten.",
+            "imprint": "Impressum",
+            "privacyPolicy": "Datenschutzerklärung",
+            "termsAndConditions": "Allgemeine Geschäftsbedingungen"
+        },
+        "header": {
+            "home": "Startseite",
+            "profilePlaceholder": "Profil-Platzhalter",
+            "toggleMenu": "Menü umschalten",
+            "signIn": "ANMELDEN",
+            "logout": "Abmelden"
+        }
+    },
+    "dashboard": {
+        "loadingQuizzes": "Lade Quizze...",
+        "quizzesError": "Quizze konnten derzeit nicht geladen werden.",
+        "hero": {
+            "inputCodeAria": "Code eingeben",
+            "codePlaceholder": "Code",
+            "joinViaCode": "Mit Code beitreten",
+            "startGame": "SPIEL STARTEN",
+            "addQuiz": "Quiz hinzufügen",
+            "imageAlt": "Feiernde Menschen"
+        },
+        "discover": {
+            "title": "Entdecken",
+            "recentQuizzes": "Neueste Quizze",
+            "yourQuizzes": "Deine Quizze",
+            "addQuiz": "Quiz hinzufügen"
+        }
+    },
+    "quiz": {
+        "modal": {
+            "editTitle": "Quiz bearbeiten",
+            "createTitle": "Neues Quiz erstellen",
+            "editDescription": "Titel und Beschreibung aktualisieren.",
+            "createDescription": "Gib einen Titel und optional eine Beschreibung ein."
+        },
+        "form": {
+            "saveError": "Das Quiz konnte derzeit nicht gespeichert werden. Bitte versuche es später erneut.",
+            "missingIdError": "Quiz-ID für die Bearbeitung fehlt",
+            "createButton": "Quiz erstellen",
+            "creating": "Erstelle...",
+            "saving": "Speichere...",
+            "saveChangesButton": "Änderungen speichern",
+            "titleLabel": "Titel *",
+            "titlePlaceholder": "z.B. Mathe-Quiz",
+            "descriptionLabel": "Beschreibung",
+            "descriptionPlaceholder": "Optionale Beschreibung für dein Quiz...",
+            "cancel": "Abbrechen"
+        },
+        "card": {
+            "noDescription": "Noch keine Beschreibung verfügbar.",
+            "editQuiz": "Quiz bearbeiten"
+        },
+        "playButton": {
+            "starting": "Startet...",
+            "play": "Quiz spielen"
+        }
+    },
+    "quizEditor": {
+        "toasts": {
+            "loadingQuiz": "Lade Quiz...",
+            "loadingQuestions": "Lade Fragen...",
+            "loadQuestionsError": "Fragen konnten nicht geladen werden.",
+            "unsavedChanges": "Es gibt noch ungespeicherte Änderungen. Klicke auf 'Quiz speichern', um sie zu sichern.",
+            "deleteError": "Das Quiz konnte nicht gelöscht werden. Bitte versuche es erneut."
+        },
+        "header": {
+            "editTitle": "Titel bearbeiten",
+            "editDescription": "Beschreibung bearbeiten",
+            "settings": "Einstellungen",
+            "discardChanges": "Änderungen verwerfen",
+            "saving": "Speichert...",
+            "saveQuiz": "Quiz speichern",
+            "deleteQuiz": "Quiz löschen"
+        },
+        "deleteModal": {
+            "title": "Quiz löschen?",
+            "description": "Diese Aktion kann nicht rückgängig gemacht werden. Bist du sicher, dass du das Quiz löschen möchtest?"
+        },
+        "editor": {
+            "slide": "Folie",
+            "question": "Frage",
+            "of": "von",
+            "usePlainInput": "Einfaches Textfeld nutzen",
+            "useMarkdownEditor": "Markdown-Editor nutzen",
+            "selectType": "Typ auswählen",
+            "slidePlaceholderMd": "Gib hier deinen Folieninhalt ein (Markdown unterstützt)...",
+            "questionPlaceholderMd": "Gib hier deine Frage ein (Markdown unterstützt)...",
+            "slidePlaceholder": "Gib hier deinen Folieninhalt ein...",
+            "questionPlaceholder": "Gib hier deine Frage ein...",
+            "fieldRequired": "Dieses Feld ist erforderlich",
+            "untitledSlide": "Unbenannte Folie",
+            "untitledQuestion": "Unbenannte Frage",
+            "untitledQuiz": "Unbenannt"
+        },
+        "sidebar": {
+            "questions": "Fragen",
+            "addQuestion": "Frage hinzufügen"
+        },
+        "settings": {
+            "livePreview": "Live Vorschau",
+            "slideContent": "Folieninhalt",
+            "question": "Frage",
+            "typeMarkdownHere": "*Gib hier dein Markdown ein...*",
+            "typeQuestionHere": "Gib hier deine Frage ein..."
+        },
+        "options": {
+            "item": "Element",
+            "addItem": "Element hinzufügen",
+            "option": "Option",
+            "addOption": "Option hinzufügen"
+        },
+        "validation": {
+            "createQuizFirst": "Bitte erstelle oder öffne zuerst ein Quiz, damit die Fragen gespeichert werden können.",
+            "addAtLeastOne": "Füge mindestens eine Frage hinzu, bevor du speicherst.",
+            "slideMissingText": "Folie {{index}} fehlt der Text.",
+            "questionMissingText": "Frage {{index}} fehlt der Fragetext.",
+            "optionEmpty": "Frage {{questionIndex}}, Option {{optionIndex}} ist leer.",
+            "needsCorrectAnswer": "Frage {{index}} benötigt mindestens eine richtige Antwort.",
+            "unknownError": "Frage {{index}} hat einen unbekannten Validierungsfehler.",
+            "missingQuestionText": "Der Fragetext fehlt.",
+            "optionIsEmpty": "Option {{index}} ist leer.",
+            "oneCorrectRequired": "Es ist mindestens eine richtige Antwort erforderlich."
+        }
+    },
+    "landing": {
+        "newFeaturesLive": "Neue Funktionen online",
+        "engageAndLearn": "Spiele und lerne",
+        "with": "mit",
+        "subtitle": "HOSTEN UND SPIELEN VON INTERAKTIVEN QUIZZES",
+        "gamePinPlaceholder": "SPIEL-PIN EINGEBEN",
+        "playButton": "SPIELEN",
+        "imageAlt": "Lernende, die an einem Quiz teilnehmen",
+        "imageText": "Zusammen quizzen, gemeinsam lernen."
+    }
+}
