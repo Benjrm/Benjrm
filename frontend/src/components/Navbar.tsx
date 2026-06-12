@@ -2,7 +2,7 @@
 
 import type { JSX } from "react"
 import { NavLink } from "react-router"
-import LoginLink from "@/auth/components/LoginLink.tsx"
+import AuthAction from "@/auth/components/AuthAction.tsx"
 import ThemeToggle from "@/components/ThemeToggle.tsx"
 
 export default function Navbar(): JSX.Element {
@@ -20,7 +20,7 @@ export default function Navbar(): JSX.Element {
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2 sm:gap-3">
-                    <LoginLink />
+                    <AuthAction />
                     <ThemeToggle />
                 </div>
             </div>

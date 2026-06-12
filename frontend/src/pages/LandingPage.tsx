@@ -8,12 +8,13 @@ import { Button } from "@/shadcn/components/ui/button"
 
 export default function LandingPage(): JSX.Element {
     const navigate = useNavigate()
-    const [code, setCode] = useState<string>("")
+    const [digits, setDigits] = useState<string>("")
+
+    const displayCode = digits.length > 4 ? `${digits.slice(0, 4)}-${digits.slice(4)}` : digits
 
     function onJoinClick(): void {
-        const trimmed = code.trim().replaceAll("-", "")
-        if (!trimmed) return
-        navigate(`/play/${encodeURIComponent(trimmed)}`)
+        if (!digits) return
+        navigate(`/play/${encodeURIComponent(digits)}`)
     }
 
     return (
@@ -46,11 +47,14 @@ export default function LandingPage(): JSX.Element {
                             <Input
                                 aria-label="Enter Game PIN"
                                 className="bg-background border-border placeholder:text-muted-foreground/70 h-12 w-full text-center text-lg font-bold tracking-widest transition-all focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#00F2FF] sm:h-14 sm:text-xl"
-                                onChange={(e) => setCode(e.target.value)}
+                                inputMode="numeric"
                                 onKeyDown={(e) => e.key === "Enter" && onJoinClick()}
                                 placeholder="ENTER GAME PIN"
                                 type="text"
-                                value={code}
+                                value={displayCode}
+                                onChange={(e) =>
+                                    setDigits(e.target.value.replace(/\D/g, "").slice(0, 8))
+                                }
                             />
                             <Button
                                 className="h-12 w-full cursor-pointer bg-black px-8 text-base font-bold text-white transition-colors hover:bg-gray-800 sm:h-14 sm:w-auto sm:px-12 sm:text-lg dark:bg-white dark:text-black dark:hover:bg-gray-200"

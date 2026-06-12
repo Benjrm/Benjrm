@@ -166,47 +166,6 @@ export default function WaitingRoom(): JSX.Element {
 
             <div className="dark:text-foreground overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl dark:border-white/10 dark:bg-[#111318]">
                 <div className="bg-linear-to-r from-[#00D4E8]/10 via-transparent to-[#FF8A00]/10 p-6 sm:p-8">
-                    {!isHost ? (
-                        <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
-                            {nameSaved ? (
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00D4E8]/20 text-xl">
-                                        {emoji}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold">{name}</p>
-                                        <p className="text-muted-foreground text-xs">
-                                            You&apos;re in! Waiting for the host to start.
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="mb-4 flex items-center justify-between">
-                                        <p className="text-sm font-semibold tracking-wide">
-                                            Player Setup
-                                        </p>
-                                        <span className="text-muted-foreground text-xs">
-                                            Tap avatar to choose emoji
-                                        </span>
-                                    </div>
-
-                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                                        <ProfilePicker
-                                            emoji={emoji}
-                                            name={name}
-                                            nameError={nameError}
-                                            onNameChange={setName}
-                                            onOpenEmoji={() => setIsEmojiOpen(true)}
-                                            onSaveName={() => onSaveName()}
-                                            pending={pendingId != null}
-                                        />
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    ) : null}
-
                     {isHost ? (
                         <>
                             <div className="mb-4">
@@ -251,7 +210,46 @@ export default function WaitingRoom(): JSX.Element {
                                 ) : null}
                             </ul>
                         </>
-                    ) : null}
+                    ) : (
+                        <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
+                            {nameSaved ? (
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00D4E8]/20 text-xl">
+                                        {emoji}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold">{name}</p>
+                                        <p className="text-muted-foreground text-xs">
+                                            You&apos;re in! Waiting for the host to start.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <p className="text-sm font-semibold tracking-wide">
+                                            Player Setup
+                                        </p>
+                                        <span className="text-muted-foreground text-xs">
+                                            Tap avatar to choose emoji
+                                        </span>
+                                    </div>
+
+                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                                        <ProfilePicker
+                                            emoji={emoji}
+                                            name={name}
+                                            nameError={nameError}
+                                            onNameChange={setName}
+                                            onOpenEmoji={() => setIsEmojiOpen(true)}
+                                            onSaveName={() => onSaveName()}
+                                            pending={pendingId != null}
+                                        />
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
 
                     <div className="mt-8 flex items-center justify-center border-t border-white/10 pt-6">
                         {isHost ? (
@@ -262,11 +260,12 @@ export default function WaitingRoom(): JSX.Element {
                             >
                                 Start Game
                             </Button>
-                        ) : (
+                        ) : null}
+                        {!isHost && nameSaved ? (
                             <p className="text-muted-foreground text-sm font-medium">
                                 Waiting for host to start the game
                             </p>
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </div>
