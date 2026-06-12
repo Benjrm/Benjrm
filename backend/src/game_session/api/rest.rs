@@ -1,7 +1,7 @@
 use {
     crate::{
         AppData,
-        auth::{OptionalUser, User},
+        auth::User,
         error::Result,
         game_session::{GameSessionError, GameSessionPlayer, SessionCode, api::NewSession},
     },
@@ -152,53 +152,36 @@ async fn get_quiz_with_quiz_id(
 }
 
 fn player_list_response(
-    user: &OptionalUser,
+    user: &User,
     host: &User,
     players: &[GameSessionPlayer],
-) -> HttpResponse {
-    match user {
-        OptionalUser::Some(user) if user == host => {
-            #[derive(Serialize)]
-            struct Player {
-                id: Uuid,
-                name: String,
-                emoji: Option<&'static Emoji>,
-            }
-            let mut res_players = Vec::new();
-            for player in players {
-                if let Some(name) = &player.name {
-                    res_players.push(Player {
-                        id: player.id,
-                        name: name.clone(),
-                        emoji: player.emoji,
-                    })
-                }
-            }
-            HttpResponse::Ok().json(res_players)
-        }
-        _ => {
-            #[derive(Serialize)]
-            struct Player {
-                name: String,
-                emoji: Option<&'static Emoji>,
-            }
-            let mut res_players = Vec::new();
-            for player in players {
-                if let Some(name) = &player.name {
-                    res_players.push(Player {
-                        name: name.clone(),
-                        emoji: player.emoji,
-                    })
-                }
-            }
-            HttpResponse::Ok().json(res_players)
+) -> Result<HttpResponse> {
+    if user != host {
+        return Err(GameSessionError::Forbidden.into());
+    }
+
+    #[derive(Serialize)]
+    struct Player {
+        id: Uuid,
+        name: String,
+        emoji: Option<&'static Emoji>,
+    }
+    let mut res_players = Vec::new();
+    for player in players {
+        if let Some(name) = &player.name {
+            res_players.push(Player {
+                id: player.id,
+                name: name.clone(),
+                emoji: player.emoji,
+            })
         }
     }
+    Ok(HttpResponse::Ok().json(res_players))
 }
 
 async fn get_players(
     app_data: web::Data<AppData>,
-    user: OptionalUser,
+    user: User,
     code: web::Path<SessionCode>,
 ) -> Result<HttpResponse> {
     let session = app_data
@@ -207,16 +190,12 @@ async fn get_players(
         .await?;
 
     let session = session.lock().await;
-    Ok(player_list_response(
-        &user,
-        &session.host.user,
-        &session.players,
-    ))
+    player_list_response(&user, &session.host.user, &session.players)
 }
 
 async fn get_players_with_quiz(
     app_data: web::Data<AppData>,
-    user: OptionalUser,
+    user: User,
     path: web::Path<(Uuid, SessionCode)>,
 ) -> Result<HttpResponse> {
     let (quiz_id, code) = path.into_inner();
@@ -227,11 +206,7 @@ async fn get_players_with_quiz(
         Some(quiz) if quiz.model.id == quiz_id => (),
         _ => return Err(GameSessionError::InvalidCode.into()),
     }
-    Ok(player_list_response(
-        &user,
-        &session.host.user,
-        &session.players,
-    ))
+    player_list_response(&user, &session.host.user, &session.players)
 }
 
 pub fn init(cfg: &mut actix_web::web::ServiceConfig) {

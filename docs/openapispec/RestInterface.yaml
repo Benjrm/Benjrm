@@ -1954,12 +1954,12 @@ components:
     SessionPlayer:
       type: object
       required:
+        - id
         - name
       properties:
         id:
           type: string
           format: uuid
-          description: Only included if the request comes from the host
         name:
           type: string
         emoji:
