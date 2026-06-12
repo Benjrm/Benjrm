@@ -5,8 +5,9 @@ import tempId from "@/utils/tempId"
 import { QueueOpEnum } from "@/hooks/useQuestionChangeQueue"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
+import type { QuestionRequest, QuestionType } from "@/api/questions/types/question.api.new.ts"
 
-export function getQuestionPreviewText(text: string | undefined, type?: string): string {
+export function getQuestionPreviewText(text: string | undefined, type?: QuestionType): string {
     const firstLine =
         text
             ?.split("\n")
@@ -17,7 +18,7 @@ export function getQuestionPreviewText(text: string | undefined, type?: string):
         .replace(/[*_~`]/g, "")
         .replace(/\[(.*?)\]\(.*?\)/g, "$1")
         .trim()
-    return cleaned || (type === QuestionTypeEnum.SLIDE ? "Untitled slide" : "Untitled question")
+    return cleaned || (type === "SLIDE" ? "Untitled slide" : "Untitled question")
 }
 
 export function createEmptyQuestion(): Question {
@@ -28,15 +29,15 @@ export function createEmptyQuestion(): Question {
             { id: tempId(), answer: "", correct: false },
             { id: tempId(), answer: "", correct: false },
         ],
-        type: QuestionTypeEnum.MULTIPLE_CHOICE,
+        type: "MULTIPLE_CHOICE",
         hidden: false,
     }
 }
 
-export function questionToRequest(question: Question): QuestionApiRequest {
+export function questionToRequest(question: Question): QuestionRequest {
     const getOptions = () => {
-        if (question.type === QuestionTypeEnum.SLIDE) return []
-        if (question.type === QuestionTypeEnum.ORDER)
+        if (question.type === "SLIDE") return []
+        if (question.type === "ORDER")
             return question.options.map((opt) => ({ answer: opt.answer }))
         return question.options.map((opt) => ({
             answer: opt.answer,
@@ -170,11 +171,7 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
     return draftQuestions
 }
 
-export interface QuizDraftStorage {
-    questions: Question[]
-    currentQuestionIndex: number
-    savedAt: string
-}
+
 
 export const restrictToVerticalAxis: Modifier = ({ transform }) => ({
     ...transform,
