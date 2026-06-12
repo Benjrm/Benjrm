@@ -1,3 +1,6 @@
+/**
+ * @deprecated
+ */
 export const QuestionTypeEnum = {
     SINGLE_CHOICE: "SINGLE_CHOICE",
     MULTIPLE_CHOICE: "MULTIPLE_CHOICE",
@@ -5,4 +8,7 @@ export const QuestionTypeEnum = {
     ORDER: "ORDER",
 } as const
 
+/**
+ * @deprecated
+ */
 export type QuestionType = (typeof QuestionTypeEnum)[keyof typeof QuestionTypeEnum]

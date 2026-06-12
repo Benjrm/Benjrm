@@ -17,6 +17,9 @@ import type {
     OrderAnswerResponse,
 } from "@/api/questions/types/orderAnswerRequest.ts"
 
+/**
+ * @deprecated
+ */
 export interface QuestionApiRequest {
     question: string
     type: QuestionType
@@ -28,6 +31,9 @@ export interface QuestionApiRequest {
         | (SingleChoiceAnswerRequest | MultipleChoiceAnswerRequest | OrderAnswerRequest)[]
 }
 
+/**
+ * @deprecated
+ */
 export interface QuestionApiResponse
     extends Omit<QuestionApiRequest, "prev" | "next" | "options">, Identifier, ReadonlyMetadata {
     options:
