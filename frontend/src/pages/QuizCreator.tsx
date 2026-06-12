@@ -287,8 +287,7 @@ export default function QuizCreator(): JSX.Element {
                                                       <span className="text-lg">⋮⋮</span>
                                                   </div>
                                                   <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
-                                                      {activeQuestion.type ===
-                                                      "SLIDE"
+                                                      {activeQuestion.type === "SLIDE"
                                                           ? "Slide"
                                                           : "Question"}
                                                   </span>
