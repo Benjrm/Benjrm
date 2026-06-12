@@ -3,8 +3,10 @@
 import type { JSX } from "react"
 import OrderOptions from "./OrderOptions"
 import StandardOptions from "./StandardOptions"
-import type { QuestionOption, Question } from "@/types/question"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
+import type {
+    QuestionOption,
+    QuestionType,
+} from "@/api/questions/types/question.api.new.ts"
 
 interface QuestionAnswerOptionsProps {
     onAddOption: () => void
@@ -13,7 +15,7 @@ interface QuestionAnswerOptionsProps {
     onToggleCorrect: (index: number) => void
     onReorderOptions: (activeId: string, overId: string) => void
     options: QuestionOption[]
-    type?: Question["type"]
+    type?: QuestionType
     errorMissingAnswers: number[]
 }
 
@@ -27,7 +29,7 @@ export default function QuestionAnswerOptions({
     type,
     errorMissingAnswers,
 }: QuestionAnswerOptionsProps): JSX.Element {
-    if (type === QuestionTypeEnum.ORDER) {
+    if (type === "ORDER") {
         return (
             <OrderOptions
                 errorMissingAnswers={errorMissingAnswers}
