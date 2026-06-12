@@ -4,11 +4,14 @@ import type { JSX } from "react"
 import { useState } from "react"
 import { NavLink } from "react-router"
 import { Menu, UserCircle2, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import ThemeToggle from "./ThemeToggle"
+import LanguageSwitcher from "./LanguageSwitcher"
 import NavItem from "./NavItem"
 import LogoutButton from "@/auth/components/LogoutButton.tsx"
 
 export default function NavbarMain(): JSX.Element {
+    const { t } = useTranslation()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     return (
@@ -26,15 +29,16 @@ export default function NavbarMain(): JSX.Element {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden items-center gap-6 md:flex">
-                        <NavItem to="/dashboard">Home</NavItem>
+                        <NavItem to="/dashboard">{t("common.header.home")}</NavItem>
                     </nav>
                 </div>
                 {/* Right side (Theme, Profile, Mobile Menu Toggle) */}
                 <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+                    <LanguageSwitcher />
                     <ThemeToggle />
 
                     <div
-                        aria-label="Profile placeholder"
+                        aria-label={t("common.header.profilePlaceholder")}
                         className="bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 sm:h-9 sm:w-9"
                         role="img"
                     >
@@ -45,7 +49,7 @@ export default function NavbarMain(): JSX.Element {
 
                     {/* Hamburger Menu Toggle (Mobile) */}
                     <button
-                        aria-label="Toggle menu"
+                        aria-label={t("common.header.toggleMenu")}
                         className="text-muted-foreground hover:text-foreground p-1 transition-colors md:hidden"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         type="button"
@@ -69,7 +73,7 @@ export default function NavbarMain(): JSX.Element {
                             onClick={() => setIsMobileMenuOpen(false)}
                             to="/dashboard"
                         >
-                            Home
+                            {t("common.header.home")}
                         </NavItem>
                     </nav>
                 </div>

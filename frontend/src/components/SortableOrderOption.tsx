@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/sortable"
 import { GripVertical } from "lucide-react"
 import type { JSX } from "react"
 
+import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 import { Input } from "@/shadcn/components/ui/input"
 
@@ -31,6 +32,7 @@ export default function SortableOrderOption({
     editable = false,
     error,
 }: SortableOrderOptionProps): JSX.Element {
+    const { t } = useTranslation()
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id,
     })
@@ -75,7 +77,7 @@ export default function SortableOrderOption({
                     />
                     {error ? (
                         <div className="absolute right-0 bottom-0 mx-2 mb-1 text-sm font-medium text-red-500">
-                            This field is required
+                            {t("quizEditor.editor.fieldRequired")}
                         </div>
                     ) : null}
                 </div>
@@ -92,7 +94,7 @@ export default function SortableOrderOption({
                     type="button"
                     variant="ghost"
                 >
-                    Remove
+                    {t("common.buttons.delete")}
                 </Button>
             ) : null}
         </div>

@@ -1,6 +1,7 @@
 // frontend/src/components/PlayQuizButton.tsx
 
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 import useCreateSession from "@/api/session/hooks/useCreateSession"
 import { Button } from "@/shadcn/components/ui/button"
 import { cn } from "@/shadcn/lib/utils"
@@ -11,6 +12,7 @@ export interface PlayQuizButtonProps {
 }
 
 export function PlayQuizButton({ quizId, className }: PlayQuizButtonProps): JSX.Element {
+    const { t } = useTranslation()
     const createSessionMutation = useCreateSession()
 
     const handlePlayQuiz = (): void => {
@@ -28,7 +30,9 @@ export function PlayQuizButton({ quizId, className }: PlayQuizButtonProps): JSX.
                 className
             )}
         >
-            {createSessionMutation.isPending ? "Starting..." : "Play Quiz"}
+            {createSessionMutation.isPending
+                ? t("quiz.playButton.starting")
+                : t("quiz.playButton.play")}
         </Button>
     )
 }

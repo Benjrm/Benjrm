@@ -5,6 +5,7 @@ import type { JSX } from "react"
 import { useState } from "react"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
+import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 import QuestionItem from "@/components/QuestionItem.tsx"
 import { ScrollArea } from "@/shadcn/components/ui/scroll-area"
@@ -27,6 +28,7 @@ export default function QuestionSidebar({
     questionIds,
     questions,
 }: QuestionSidebarProps): JSX.Element {
+    const { t } = useTranslation()
     const [isMobileOpen, setIsMobileOpen] = useState(false)
 
     return (
@@ -41,7 +43,7 @@ export default function QuestionSidebar({
                 >
                     <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase">
                         <span className="h-2 w-2 animate-pulse rounded-full bg-[#FF8A00]" />
-                        Questions ({questions.length})
+                        {t("quizEditor.sidebar.questions")} ({questions.length})
                     </span>
 
                     <ChevronDown
@@ -80,7 +82,7 @@ export default function QuestionSidebar({
                             type="button"
                         >
                             <Plus className="h-4 w-4" />
-                            Add Question
+                            {t("quizEditor.sidebar.addQuestion")}
                         </Button>
                     </div>
                 ) : null}
@@ -90,7 +92,7 @@ export default function QuestionSidebar({
                 <div className="mb-5">
                     <div className="inline-flex items-center gap-2 rounded-full border border-[#FF8A00]/20 bg-[#FF8A00]/10 px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-[#FF8A00] uppercase">
                         <span className="h-2 w-2 animate-pulse rounded-full bg-[#FF8A00]" />
-                        Questions
+                        {t("quizEditor.sidebar.questions")}
                     </div>
                 </div>
 
@@ -117,7 +119,7 @@ export default function QuestionSidebar({
                     type="button"
                 >
                     <Plus className="h-4 w-4" />
-                    Add Question
+                    {t("quizEditor.sidebar.addQuestion")}
                 </Button>
             </div>
         </aside>

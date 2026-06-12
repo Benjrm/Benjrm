@@ -1,6 +1,7 @@
 // frontend/src/components/GameHeroSection.tsx
 import type { JSX } from "react"
 import { PlusSquare } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Input } from "@/shadcn/components/ui/input"
 import { Button } from "@/shadcn/components/ui/button"
 
@@ -9,6 +10,8 @@ interface GameHeroSectionProps {
 }
 
 export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps): JSX.Element {
+    const { t } = useTranslation()
+
     return (
         <section className="w-full">
             {/* Container */}
@@ -18,20 +21,20 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                     {/* Code Input */}
                     <div className="max-w-xs space-y-2">
                         <Input
-                            aria-label="Input Code"
+                            aria-label={t("dashboard.hero.inputCodeAria")}
                             className="dark:text-foreground dark:placeholder:text-muted-foreground rounded-xl border-slate-200 bg-slate-50 px-4 py-5 text-base font-medium text-slate-900 transition-all placeholder:text-slate-500 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#00F2FF] dark:border-white/10 dark:bg-[#1C2028]"
-                            placeholder="Code"
+                            placeholder={t("dashboard.hero.codePlaceholder")}
                             type="text"
                         />
                         <p className="dark:text-muted-foreground pl-1 text-sm text-slate-500">
-                            Join via Code
+                            {t("dashboard.hero.joinViaCode")}
                         </p>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="flex flex-wrap items-center gap-3">
                         <Button className="flex items-center gap-2 rounded-xl border-0 bg-[#00D4E8] px-6 py-5 text-sm font-bold tracking-wide text-black uppercase shadow-[0_0_20px_-5px_rgba(0,212,232,0.5)] transition-all hover:bg-[#00BDD0]">
-                            START GAME
+                            {t("dashboard.hero.startGame")}
                             <svg fill="currentColor" height="10" viewBox="0 0 24 24" width="10">
                                 <path d="M5 3L19 12L5 21V3Z" />
                             </svg>
@@ -42,7 +45,7 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                             onClick={onAddQuizClick}
                             type="button"
                         >
-                            <span>Add Quiz</span>
+                            <span>{t("dashboard.hero.addQuiz")}</span>
                             <PlusSquare className="h-4 w-4 shrink-0 text-white/85" />
                         </Button>
                     </div>
@@ -51,7 +54,7 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                 {/* Right Side: Image */}
                 <div className="relative min-h-56 flex-1 lg:min-h-0">
                     <img
-                        alt="People celebrating"
+                        alt={t("dashboard.hero.imageAlt")}
                         className="absolute inset-0 h-full w-full object-cover"
                         src="/pictures/happy_people.jpg"
                     />

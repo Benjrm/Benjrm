@@ -2,8 +2,11 @@
 
 import type { JSX } from "react"
 import { NavLink } from "react-router"
+import { useTranslation } from "react-i18next"
 
 export default function Footer(): JSX.Element {
+    const { t } = useTranslation()
+
     return (
         <footer className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 mt-auto border-t backdrop-blur">
             <div className="mx-auto flex flex-col items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-6 md:flex-row">
@@ -20,7 +23,7 @@ export default function Footer(): JSX.Element {
 
                 {/* Center: Copyright text */}
                 <div className="text-muted-foreground shrink-0 text-center text-sm font-medium">
-                    &copy; {new Date().getFullYear()} Benjrm. All Rights Reserved.
+                    &copy; {new Date().getFullYear()} Benjrm. {t("common.footer.allRightsReserved")}
                 </div>
 
                 {/* Right side: Links */}
@@ -29,19 +32,19 @@ export default function Footer(): JSX.Element {
                         className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
                         to="/imprint"
                     >
-                        Impressum
+                        {t("common.footer.imprint")}
                     </NavLink>
                     <NavLink
                         className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
                         to="/privacy"
                     >
-                        Privacy Policy
+                        {t("common.footer.privacyPolicy")}
                     </NavLink>
                     <NavLink
                         className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
                         to="/terms"
                     >
-                        Terms and Conditions
+                        {t("common.footer.termsAndConditions")}
                     </NavLink>
                 </nav>
             </div>

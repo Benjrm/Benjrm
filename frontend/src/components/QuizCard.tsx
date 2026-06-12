@@ -2,6 +2,7 @@
 
 import type { JSX } from "react"
 import { Link } from "react-router"
+import { useTranslation } from "react-i18next"
 import type { Quiz } from "@/api/quiz"
 import { PlayQuizButton } from "@/components/PlayQuizButton"
 
@@ -10,6 +11,8 @@ interface QuizCardProps {
 }
 
 export default function QuizCard({ quiz }: QuizCardProps): JSX.Element {
+    const { t } = useTranslation()
+
     return (
         <article className="group border-border bg-card text-card-foreground overflow-hidden rounded-2xl border shadow-[0_18px_40px_rgba(15,23,42,0.12)] transition-transform duration-300 hover:-translate-y-1 dark:shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
             <div className="relative h-48 overflow-hidden">
@@ -25,7 +28,7 @@ export default function QuizCard({ quiz }: QuizCardProps): JSX.Element {
                 <div className="space-y-2">
                     <h3 className="text-card-foreground text-lg font-medium">{quiz.title}</h3>
                     <p className="text-muted-foreground text-sm leading-6">
-                        {quiz.description ?? "No description available yet."}
+                        {quiz.description ?? t("quiz.card.noDescription")}
                     </p>
                 </div>
 
@@ -33,7 +36,7 @@ export default function QuizCard({ quiz }: QuizCardProps): JSX.Element {
                     className="border-border bg-background/70 text-foreground hover:bg-muted inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors"
                     to={`/quiz/${quiz.id}`}
                 >
-                    Edit Quiz
+                    {t("quiz.card.editQuiz")}
                 </Link>
                 <PlayQuizButton className="mx-4 rounded-full" quizId={quiz.id} />
             </div>

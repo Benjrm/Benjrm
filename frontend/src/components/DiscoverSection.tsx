@@ -2,6 +2,7 @@
 
 import type { JSX } from "react"
 import { PlusSquare } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import QuizCard from "@/components/QuizCard"
 import CategoryHeader from "@/components/CategoryHeader"
 import type { Quiz } from "@/api/quiz"
@@ -18,6 +19,7 @@ export default function DiscoverSection({
     loading,
     onCreateQuizClick,
 }: DiscoverSectionProps): JSX.Element {
+    const { t } = useTranslation()
     const recentQuizzes = [...quizzes]
         .sort(
             (firstQuiz, secondQuiz) =>
@@ -27,9 +29,15 @@ export default function DiscoverSection({
 
     return (
         <section className="w-full space-y-10">
-            <p className="text-md font-bold tracking-widest text-[#FF8A00] uppercase">Discover</p>
+            <p className="text-md font-bold tracking-widest text-[#FF8A00] uppercase">
+                {t("dashboard.discover.title")}
+            </p>
 
-            <CategoryHeader description="Most Recent Quizzes" title="Your Quizzes" to="/quizzes" />
+            <CategoryHeader
+                description={t("dashboard.discover.recentQuizzes")}
+                title={t("dashboard.discover.yourQuizzes")}
+                to="/quizzes"
+            />
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
                 <Button
@@ -37,7 +45,7 @@ export default function DiscoverSection({
                     onClick={onCreateQuizClick}
                 >
                     <PlusSquare className="h-12 w-12" />
-                    <span className="tracking-wide">Add Quiz</span>
+                    <span className="tracking-wide">{t("dashboard.discover.addQuiz")}</span>
                 </Button>
 
                 {!loading &&

@@ -2,6 +2,7 @@
 
 import type { JSX } from "react"
 import { Check, Trash2, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import getAnswerVisuals from "../utils/answerVisuals"
 import { Textarea } from "@/shadcn/components/ui/textarea"
 import { Button } from "@/shadcn/components/ui/button"
@@ -37,6 +38,7 @@ export default function AnswerCard({
     index,
     error,
 }: AnswerCardProps): JSX.Element {
+    const { t } = useTranslation()
     // If any visual prop is provided, use provided (with defaults). Otherwise, derive from index when available.
     const hasProvidedVisuals = icon != null || accent != null || glow != null
     let visuals: { accent: string; glow: string; icon: string }
@@ -97,7 +99,7 @@ export default function AnswerCard({
 
                         {error ? (
                             <div className="absolute right-0 bottom-0 left-0 mx-2 mb-1 text-sm font-medium text-red-500">
-                                This field is required
+                                {t("quizEditor.editor.fieldRequired")}
                             </div>
                         ) : null}
                     </div>
@@ -113,7 +115,7 @@ export default function AnswerCard({
                             variant="ghost"
                         >
                             <Trash2 className="h-3.5 w-3.5" />
-                            Delete
+                            {t("common.buttons.delete")}
                         </Button>
                     ) : null}
 

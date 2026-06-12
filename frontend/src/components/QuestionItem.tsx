@@ -2,6 +2,7 @@ import { CSS } from "@dnd-kit/utilities"
 import { useSortable } from "@dnd-kit/sortable"
 import { GripVertical, Trash2 } from "lucide-react"
 import type { MouseEvent, KeyboardEvent, ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@shadcn/components/ui/button.tsx"
 import { getQuestionPreviewText } from "@/pages/quiz/quizUtils"
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
@@ -25,6 +26,7 @@ export default function QuestionItem({
     index,
     activeIndex,
 }: QuestionProps): ReactNode {
+    const { t } = useTranslation()
     const active = index === activeIndex
 
     const { attributes, isDragging, listeners, setNodeRef, transform, transition } = useSortable({
@@ -108,7 +110,9 @@ export default function QuestionItem({
                         />
 
                         <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
-                            {question.type === QuestionTypeEnum.SLIDE ? "Slide" : "Question"}{" "}
+                            {question.type === QuestionTypeEnum.SLIDE
+                                ? t("quizEditor.editor.slide")
+                                : t("quizEditor.editor.question")}{" "}
                             {index + 1}
                         </span>
                     </div>
@@ -127,7 +131,7 @@ export default function QuestionItem({
 
                 {/* Title */}
                 <p className="mb-4 line-clamp-2 min-h-10 text-sm font-semibold">
-                    {getQuestionPreviewText(question.question, question.type)}
+                    {getQuestionPreviewText(question.question, question.type, t)}
                 </p>
 
                 {/* Preview */}

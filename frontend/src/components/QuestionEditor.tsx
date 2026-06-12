@@ -3,6 +3,7 @@
 import type { JSX } from "react"
 import { useState, useEffect } from "react"
 import MDEditor from "@uiw/react-md-editor"
+import { useTranslation } from "react-i18next"
 import QuestionAnswerOptions from "./QuestionAnswerOptions"
 import {
     Select,
@@ -45,6 +46,7 @@ export default function QuestionEditor({
     onToggleCorrect,
     onReorderOptions,
 }: QuestionEditorProps): JSX.Element {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const [isMdEditor, setIsMdEditor] = useState(() => {
         const saved = localStorage.getItem("preferredEditorMode")
@@ -73,8 +75,10 @@ export default function QuestionEditor({
                     <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                             <div className="text-muted-foreground text-sm font-medium tracking-wide">
-                                {question.type === QuestionTypeEnum.SLIDE ? "Slide" : "Question"}{" "}
-                                {questionIndex + 1} of {totalQuestions}
+                                {question.type === QuestionTypeEnum.SLIDE
+                                    ? t("quizEditor.editor.slide")
+                                    : t("quizEditor.editor.question")}{" "}
+                                {questionIndex + 1} {t("quizEditor.editor.of")} {totalQuestions}
                             </div>
                             <Button
                                 className="h-7 px-3 text-xs"
@@ -82,7 +86,9 @@ export default function QuestionEditor({
                                 size="sm"
                                 variant="outline"
                             >
-                                {isMdEditor ? "Use Plain Input" : "Use Markdown Editor"}
+                                {isMdEditor
+                                    ? t("quizEditor.editor.usePlainInput")
+                                    : t("quizEditor.editor.useMarkdownEditor")}
                             </Button>
                         </div>
 
@@ -93,7 +99,7 @@ export default function QuestionEditor({
                             }
                         >
                             <SelectTrigger className="bg-background/70 border-border w-52 backdrop-blur-sm">
-                                <SelectValue placeholder="Select type" />
+                                <SelectValue placeholder={t("quizEditor.editor.selectType")} />
                             </SelectTrigger>
 
                             <SelectContent>
@@ -135,8 +141,8 @@ export default function QuestionEditor({
                                     textareaProps={{
                                         placeholder:
                                             question.type === QuestionTypeEnum.SLIDE
-                                                ? "Type your slide content here (Markdown supported)..."
-                                                : "Type your question here (Markdown supported)...",
+                                                ? t("quizEditor.editor.slidePlaceholderMd")
+                                                : t("quizEditor.editor.questionPlaceholderMd"),
                                     }}
                                 />
                             </div>
@@ -155,14 +161,14 @@ export default function QuestionEditor({
                                 }
                                 placeholder={
                                     question.type === QuestionTypeEnum.SLIDE
-                                        ? "Type your slide content here..."
-                                        : "Type your question here..."
+                                        ? t("quizEditor.editor.slidePlaceholder")
+                                        : t("quizEditor.editor.questionPlaceholder")
                                 }
                             />
                         )}
                         {questionError.missingQuestion ? (
                             <div className="absolute right-0 bottom-0 left-0 mx-2 mb-1 text-sm font-medium text-red-500">
-                                This field is required
+                                {t("quizEditor.editor.fieldRequired")}
                             </div>
                         ) : null}
                     </div>

@@ -15,6 +15,7 @@ import {
     useSensors,
 } from "@dnd-kit/core"
 
+import { useTranslation } from "react-i18next"
 import CreateQuizModal from "../components/CreateQuizModal"
 import QuestionEditor from "../components/QuestionEditor"
 import QuestionSidebar from "../components/QuestionSidebar"
@@ -38,6 +39,7 @@ import {
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 export default function QuizCreator(): JSX.Element {
+    const { t } = useTranslation()
     const params = useParams()
     const quizId = params.id ?? params.quizId
     const navigate = useNavigate()
@@ -80,7 +82,7 @@ export default function QuizCreator(): JSX.Element {
 
     useEffect(() => {
         if (isLoading && quizId) {
-            toast.loading("Loading quiz...", { id: "quiz-loading" })
+            toast.loading(t("quizEditor.toasts.loadingQuiz"), { id: "quiz-loading" })
         } else {
             toast.dismiss("quiz-loading")
             if (error && quizId) {
@@ -88,29 +90,29 @@ export default function QuizCreator(): JSX.Element {
                 toast.error(msg, { id: "quiz-error" })
             }
         }
-    }, [isLoading, error, quizId])
+    }, [isLoading, error, quizId, t])
 
     useEffect(() => {
         if (isLoadingQuestions && quizId && !hasInitializedQuestions) {
-            toast.loading("Loading questions...", { id: "questions-loading" })
+            toast.loading(t("quizEditor.toasts.loadingQuestions"), { id: "questions-loading" })
         } else {
             toast.dismiss("questions-loading")
             if (questionLoadError) {
-                toast.error("Failed to load questions.", { id: "questions-error" })
+                toast.error(t("quizEditor.toasts.loadQuestionsError"), { id: "questions-error" })
             }
         }
-    }, [isLoadingQuestions, questionLoadError, quizId, hasInitializedQuestions])
+    }, [isLoadingQuestions, questionLoadError, quizId, hasInitializedQuestions, t])
 
     useEffect(() => {
         if (hasUnsavedChanges) {
-            toast.warning("There are still unsaved changes. Click Save Quiz to save them.", {
+            toast.warning(t("quizEditor.toasts.unsavedChanges"), {
                 id: "unsaved-changes",
                 duration: Infinity,
             })
         } else {
             toast.dismiss("unsaved-changes")
         }
-    }, [hasUnsavedChanges])
+    }, [hasUnsavedChanges, t])
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -129,7 +131,7 @@ export default function QuizCreator(): JSX.Element {
             setIsConfirmOpen(false)
             navigate("/dashboard")
         } catch {
-            toast.error("Quiz could not be deleted. Please try again.")
+            toast.error(t("quizEditor.toasts.deleteError"))
         }
     }
 
@@ -146,7 +148,7 @@ export default function QuizCreator(): JSX.Element {
                         <div className="flex items-center gap-3">
                             <h1 className="text-4xl font-extrabold md:text-5xl">{quizTitle}</h1>
                             <Button
-                                aria-label="Edit title"
+                                aria-label={t("quizEditor.header.editTitle")}
                                 className="text-muted-foreground hover:text-foreground p-2"
                                 onClick={() => setIsEditModalOpen(true)}
                                 type="button"
@@ -161,7 +163,7 @@ export default function QuizCreator(): JSX.Element {
                                 {quizDescription}
                             </p>
                             <Button
-                                aria-label="Edit description"
+                                aria-label={t("quizEditor.header.editDescription")}
                                 className="text-muted-foreground hover:text-foreground p-2"
                                 onClick={() => setIsEditModalOpen(true)}
                                 type="button"
@@ -179,7 +181,7 @@ export default function QuizCreator(): JSX.Element {
                             variant="ghost"
                         >
                             <Settings className="h-4 w-4" />
-                            Settings
+                            {t("quizEditor.header.settings")}
                         </Button>
 
                         {hasUnsavedChanges ? (
@@ -188,7 +190,7 @@ export default function QuizCreator(): JSX.Element {
                                 onClick={discardChanges}
                                 variant="outline"
                             >
-                                Discard Changes
+                                {t("quizEditor.header.discardChanges")}
                             </Button>
                         ) : null}
 
@@ -204,7 +206,9 @@ export default function QuizCreator(): JSX.Element {
                                     .catch(() => {})
                             }}
                         >
-                            {isSavingQuestions ? "Saving..." : "Save Quiz"}
+                            {isSavingQuestions
+                                ? t("quizEditor.header.saving")
+                                : t("quizEditor.header.saveQuiz")}
                         </Button>
 
                         {quizId ? (
@@ -214,22 +218,21 @@ export default function QuizCreator(): JSX.Element {
                                 variant="ghost"
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Quiz
+                                {t("quizEditor.header.deleteQuiz")}
                             </Button>
                         ) : null}
                         <Dialog onOpenChange={setIsConfirmOpen} open={isConfirmOpen}>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>Delete Quiz?</DialogTitle>
+                                    <DialogTitle>{t("quizEditor.deleteModal.title")}</DialogTitle>
                                     <DialogDescription>
-                                        This action cannot be undone. Are you sure you want to
-                                        delete the quiz?
+                                        {t("quizEditor.deleteModal.description")}
                                     </DialogDescription>
                                 </DialogHeader>
 
                                 <DialogFooter>
                                     <Button onClick={handleConfirmClose} variant="outline">
-                                        Abbrechen
+                                        {t("common.buttons.cancel")}
                                     </Button>
                                     <Button
                                         className="bg-red-600 text-white hover:bg-red-700"
@@ -237,7 +240,7 @@ export default function QuizCreator(): JSX.Element {
                                             handleDelete().catch(() => {})
                                         }}
                                     >
-                                        Löschen
+                                        {t("common.buttons.delete")}
                                     </Button>
                                 </DialogFooter>
                             </DialogContent>
@@ -290,15 +293,16 @@ export default function QuizCreator(): JSX.Element {
                                                   <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
                                                       {activeQuestion.type ===
                                                       QuestionTypeEnum.SLIDE
-                                                          ? "Slide"
-                                                          : "Question"}
+                                                          ? t("quizEditor.editor.slide")
+                                                          : t("quizEditor.editor.question")}
                                                   </span>
                                               </div>
 
                                               <p className="mb-4 line-clamp-2 min-h-10 text-sm font-semibold">
                                                   {getQuestionPreviewText(
                                                       activeQuestion.question,
-                                                      activeQuestion.type
+                                                      activeQuestion.type,
+                                                      t
                                                   )}
                                               </p>
 

@@ -1,4 +1,5 @@
 import type { Modifier } from "@dnd-kit/core"
+import type { TFunction } from "i18next"
 import type { Question } from "@/types/question"
 import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api"
 import tempId from "@/utils/tempId"
@@ -6,7 +7,11 @@ import { QueueOpEnum } from "@/hooks/useQuestionChangeQueue"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
-export function getQuestionPreviewText(text: string | undefined, type?: string): string {
+export function getQuestionPreviewText(
+    text: string | undefined,
+    type?: string,
+    t?: TFunction
+): string {
     const firstLine =
         text
             ?.split("\n")
@@ -17,6 +22,15 @@ export function getQuestionPreviewText(text: string | undefined, type?: string):
         .replace(/[*_~`]/g, "")
         .replace(/\[(.*?)\]\(.*?\)/g, "$1")
         .trim()
+
+    if (t) {
+        return (
+            cleaned ||
+            (type === QuestionTypeEnum.SLIDE
+                ? t("quizEditor.editor.untitledSlide")
+                : t("quizEditor.editor.untitledQuestion"))
+        )
+    }
     return cleaned || (type === QuestionTypeEnum.SLIDE ? "Untitled slide" : "Untitled question")
 }
 
