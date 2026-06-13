@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router"
 import { X } from "lucide-react"
 import { Toaster, toast } from "sonner"
 import ProfilePicker from "../components/ProfilePicker"
+import GamePinForm from "@/components/GamePinForm"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import useSessionPlayers from "@/api/session/hooks/useSessionPlayers"
@@ -138,7 +139,7 @@ export default function WaitingRoom(): JSX.Element {
             return undefined
         }
         const unsub = websocket.onConnect(() => {
-            const id = Date.now() % 1_000_000
+            const id = Math.floor(Math.random() * 2 ** 31)
             setPendingId(id)
             websocket.send({
                 id,
@@ -210,7 +211,7 @@ export default function WaitingRoom(): JSX.Element {
 
     if (isInvalidCode || !code) {
         return (
-            <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center py-24">
+            <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-6 py-24">
                 <div className="w-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">
                     <h1 className="text-base font-bold">Quiz lobby not found</h1>
                     <p className="mt-1 text-sm">
@@ -219,6 +220,11 @@ export default function WaitingRoom(): JSX.Element {
                         Please check the invitation code and try again.
                     </p>
                 </div>
+                <GamePinForm
+                    onJoin={(digits) => {
+                        navigate(`/play/${encodeURIComponent(digits)}`)
+                    }}
+                />
             </section>
         )
     }

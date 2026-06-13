@@ -3,19 +3,14 @@
 import { useState } from "react"
 import type { JSX } from "react"
 import { useNavigate } from "react-router"
-import { Input } from "@/shadcn/components/ui/input"
-import { Button } from "@/shadcn/components/ui/button"
+import GamePinForm from "@/components/GamePinForm"
+import { getSession } from "@/api/session"
+import { ApiError } from "@/api/utils"
 
 export default function LandingPage(): JSX.Element {
     const navigate = useNavigate()
-    const [digits, setDigits] = useState<string>("")
-
-    const displayCode = digits.length > 4 ? `${digits.slice(0, 4)}-${digits.slice(4)}` : digits
-
-    function onJoinClick(): void {
-        if (!digits) return
-        navigate(`/play/${encodeURIComponent(digits)}`)
-    }
+    const [isPending, setIsPending] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     return (
         <div className="bg-background text-foreground flex flex-col">
@@ -42,28 +37,34 @@ export default function LandingPage(): JSX.Element {
                             </p>
                         </div>
 
-                        {/* Game PIN — stacks vertically on mobile, row on sm+ */}
-                        <div className="bg-muted/50 border-border flex flex-col items-center gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-sm sm:flex-row sm:p-8">
-                            <Input
-                                aria-label="Enter Game PIN"
-                                className="bg-background border-border placeholder:text-muted-foreground/70 h-12 w-full text-center text-lg font-bold tracking-widest transition-all focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#00F2FF] sm:h-14 sm:text-xl"
-                                inputMode="numeric"
-                                onKeyDown={(e) => e.key === "Enter" && onJoinClick()}
-                                placeholder="ENTER GAME PIN"
-                                type="text"
-                                value={displayCode}
-                                onChange={(e) =>
-                                    setDigits(e.target.value.replace(/\D/g, "").slice(0, 8))
+                        <GamePinForm
+                            error={error}
+                            isPending={isPending}
+                            onJoin={async (digits) => {
+                                setError(null)
+                                setIsPending(true)
+                                try {
+                                    await getSession(Number(digits))
+                                    navigate(`/play/${encodeURIComponent(digits)}`)
+                                } catch (err) {
+                                    if (!(err instanceof ApiError)) {
+                                        setError("Something went wrong. Please try again.")
+                                        return
+                                    }
+                                    if (err.status === 404) {
+                                        setError(
+                                            "No lobby found with this code. Please check and try again."
+                                        )
+                                    } else {
+                                        // 401 (unauthenticated) or 403 (not the host) — the session
+                                        // exists or we can't verify; let WaitingRoom handle it.
+                                        navigate(`/play/${encodeURIComponent(digits)}`)
+                                    }
+                                } finally {
+                                    setIsPending(false)
                                 }
-                            />
-                            <Button
-                                className="h-12 w-full cursor-pointer bg-black px-8 text-base font-bold text-white transition-colors hover:bg-gray-800 sm:h-14 sm:w-auto sm:px-12 sm:text-lg dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                                onClick={() => onJoinClick()}
-                                size="lg"
-                            >
-                                PLAY
-                            </Button>
-                        </div>
+                            }}
+                        />
                     </div>
 
                     {/* Right Column */}
