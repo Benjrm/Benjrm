@@ -117,7 +117,7 @@ const QuizForm: FC<QuizFormProps> = ({
 
             <DialogFooter>
                 <Button disabled={isLoading} onClick={onClose} type="button" variant="outline">
-                    {t("quiz.form.cancel")}
+                    {t("common.buttons.cancel")}
                 </Button>
                 <Button disabled={isLoading} type="submit">
                     {buttonText}

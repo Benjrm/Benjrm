@@ -6,10 +6,10 @@
     "scripts": {
         "dev": "vite --port 5173 --strictPort",
         "build": "tsc -b && vite build",
-        "lint": "prettier --check . && eslint .",
+        "lint": "prettier --check . && eslint . && node scripts/check-locales.ts",
         "lint:fix": "eslint . --fix && prettier --write .",
         "preview": "vite preview",
-        "type:check": "tsc --noEmit",
+        "type:check": "tsc -b",
         "format": "prettier --write .",
         "format:check": "prettier --check ."
     },

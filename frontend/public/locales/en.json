@@ -3,7 +3,9 @@
         "buttons": {
             "viewAll": "View All",
             "cancel": "Cancel",
-            "delete": "Delete"
+            "delete": "Delete",
+            "correct": "Correct",
+            "wrong": "Wrong"
         },
         "footer": {
             "allRightsReserved": "All Rights Reserved.",
@@ -54,8 +56,7 @@
             "titleLabel": "Title *",
             "titlePlaceholder": "e.g. Math Quiz",
             "descriptionLabel": "Description",
-            "descriptionPlaceholder": "Optional description for your quiz...",
-            "cancel": "Cancel"
+            "descriptionPlaceholder": "Optional description for your quiz..."
         },
         "card": {
             "noDescription": "No description available yet.",
@@ -110,7 +111,6 @@
         "settings": {
             "livePreview": "Live Preview",
             "slideContent": "Slide Content",
-            "question": "Question",
             "typeMarkdownHere": "*Type your markdown here...*",
             "typeQuestionHere": "Type your question..."
         },
@@ -118,7 +118,8 @@
             "item": "Item",
             "addItem": "Add Item",
             "option": "Option",
-            "addOption": "Add Option"
+            "addOption": "Add Option",
+            "answerPlaceholder": "Answer"
         },
         "validation": {
             "createQuizFirst": "Please create or open a quiz first so the questions can be saved in the adapter.",

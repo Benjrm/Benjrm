@@ -1,4 +1,5 @@
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 import getAnswerVisuals from "../utils/answerVisuals"
 import type { QuestionOption, Question } from "@/types/question"
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
@@ -9,6 +10,8 @@ interface Props {
 }
 
 export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element {
+    const { t } = useTranslation()
+
     if (type === QuestionTypeEnum.ORDER) {
         return (
             <div className="space-y-3">
@@ -31,7 +34,7 @@ export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element
                         </div>
 
                         <span className="text-card-foreground text-[15px] font-bold tracking-tight">
-                            {option.answer || `Item ${index + 1}`}
+                            {option.answer || `${t("quizEditor.options.item")} ${index + 1}`}
                         </span>
                     </div>
                 ))}
@@ -75,12 +78,12 @@ export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element
                         </span>
 
                         <span className="relative z-10 line-clamp-2 text-[11px] leading-4 font-semibold text-slate-700 dark:text-white">
-                            {option.answer || "Answer"}
+                            {option.answer || t("quizEditor.options.answerPlaceholder")}
                         </span>
 
                         {isCorrect ? (
                             <span className="relative z-10 mt-2 rounded-full border border-emerald-500/25 bg-emerald-500/15 px-2 py-0.5 text-[8px] font-bold tracking-[0.2em] text-emerald-700 uppercase dark:text-emerald-200">
-                                Correct
+                                {t("common.buttons.correct")}
                             </span>
                         ) : null}
                     </div>

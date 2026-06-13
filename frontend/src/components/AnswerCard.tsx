@@ -136,7 +136,7 @@ export default function AnswerCard({
                             ) : (
                                 <X className="h-3.5 w-3.5" />
                             )}
-                            {correct ? "Correct" : "Wrong"}
+                            {correct ? t("common.buttons.correct") : t("common.buttons.wrong")}
                         </Button>
                     ) : null}
                 </div>

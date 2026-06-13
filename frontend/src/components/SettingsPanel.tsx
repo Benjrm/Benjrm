@@ -36,7 +36,7 @@ export default function SettingsPanel({ question }: SettingsPanelProps): JSX.Ele
                             <div className="text-[10px] font-bold tracking-[0.2em] text-[#FF8A00] uppercase">
                                 {question.type === QuestionTypeEnum.SLIDE
                                     ? t("quizEditor.settings.slideContent")
-                                    : t("quizEditor.settings.question")}
+                                    : t("quizEditor.editor.question")}
                             </div>
                             {question.type === QuestionTypeEnum.SLIDE ? (
                                 <div className="mt-2 text-left text-xs leading-5 text-slate-900 dark:text-white">

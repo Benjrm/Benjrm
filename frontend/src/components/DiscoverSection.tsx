@@ -45,7 +45,7 @@ export default function DiscoverSection({
                     onClick={onCreateQuizClick}
                 >
                     <PlusSquare className="h-12 w-12" />
-                    <span className="tracking-wide">{t("dashboard.discover.addQuiz")}</span>
+                    <span className="tracking-wide">{t("dashboard.hero.addQuiz")}</span>
                 </Button>
 
                 {!loading &&

@@ -1,4 +1,5 @@
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 import getAnswerVisuals from "@/utils/answerVisuals"
 
 interface AnswerOptionProps {
@@ -18,6 +19,7 @@ export default function AnswerOption({
     icon,
     onSelect,
 }: AnswerOptionProps): JSX.Element {
+    const { t } = useTranslation()
     let visuals = { accent: color, icon }
     if (icon == null && color == null) {
         visuals = getAnswerVisuals(index)
@@ -47,7 +49,9 @@ export default function AnswerOption({
                 {visuals.icon}
             </div>
 
-            <div className="text-base font-bold">{text || `Option ${index + 1}`}</div>
+            <div className="text-base font-bold">
+                {text || `${t("quizEditor.options.option")} ${index + 1}`}
+            </div>
         </button>
     )
 }

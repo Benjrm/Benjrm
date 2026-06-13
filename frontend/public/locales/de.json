@@ -3,7 +3,9 @@
         "buttons": {
             "viewAll": "Alle ansehen",
             "cancel": "Abbrechen",
-            "delete": "Löschen"
+            "delete": "Löschen",
+            "correct": "Richtig",
+            "wrong": "Falsch"
         },
         "footer": {
             "allRightsReserved": "Alle Rechte vorbehalten.",
@@ -54,8 +56,7 @@
             "titleLabel": "Titel *",
             "titlePlaceholder": "z.B. Mathe-Quiz",
             "descriptionLabel": "Beschreibung",
-            "descriptionPlaceholder": "Optionale Beschreibung für dein Quiz...",
-            "cancel": "Abbrechen"
+            "descriptionPlaceholder": "Optionale Beschreibung für dein Quiz..."
         },
         "card": {
             "noDescription": "Noch keine Beschreibung verfügbar.",
@@ -110,7 +111,6 @@
         "settings": {
             "livePreview": "Live Vorschau",
             "slideContent": "Folieninhalt",
-            "question": "Frage",
             "typeMarkdownHere": "*Gib hier dein Markdown ein...*",
             "typeQuestionHere": "Gib hier deine Frage ein..."
         },
@@ -118,7 +118,8 @@
             "item": "Element",
             "addItem": "Element hinzufügen",
             "option": "Option",
-            "addOption": "Option hinzufügen"
+            "addOption": "Option hinzufügen",
+            "answerPlaceholder": "Antwort"
         },
         "validation": {
             "createQuizFirst": "Bitte erstelle oder öffne zuerst ein Quiz, damit die Fragen gespeichert werden können.",
