@@ -64,7 +64,7 @@ export default function WaitingRoom(): JSX.Element {
               })(String(code))
             : undefined
 
-    const { isLoading: isLoadingSession, isHost, isInvalidCode } = useSessionStatus(code)
+    const { isLoading: isLoadingSession, isHost, isPlayer, isInvalidCode } = useSessionStatus(code)
     const { data: quiz, isLoading: isLoadingQuiz } = useSessionQuiz(isHost ? code : undefined)
     const { data: initialPlayers } = useSessionPlayers(isHost ? code : undefined)
 
@@ -152,6 +152,30 @@ export default function WaitingRoom(): JSX.Element {
         }
     }, [wsCode, isHost, storageKey, websocket])
 
+    // Track the player WS connection outcome so we can show "not found" when an unauthenticated
+    // user enters an invalid code (the REST endpoint always returns 401 for unauthenticated users
+    // regardless of code validity, so WS is the only reliable check).
+    // Storing the code alongside the result lets the derived value reset to `undefined` automatically
+    // when wsCode changes, without a synchronous setState inside the effect body.
+    const [wsConnectionState, setWsConnectionState] = useState<{
+        code: number | undefined
+        connected: boolean | undefined
+    }>({ code: undefined, connected: undefined })
+    const wsConnected = wsConnectionState.code === wsCode ? wsConnectionState.connected : undefined
+    useEffect(() => {
+        if (!wsCode || !isPlayer) return undefined
+        const unsubOpen = websocket.onConnect(() => {
+            setWsConnectionState({ code: wsCode, connected: true })
+        })
+        const unsubFail = websocket.onConnectFail(() => {
+            setWsConnectionState({ code: wsCode, connected: false })
+        })
+        return (): void => {
+            unsubOpen()
+            unsubFail()
+        }
+    }, [wsCode, isPlayer, websocket])
+
     const navigate = useNavigate()
 
     useSocketEvent("kick", () => {
@@ -184,7 +208,7 @@ export default function WaitingRoom(): JSX.Element {
     function onSaveName(): void {
         const trimmed = name.trim()
         if (!trimmed) return
-        const id = Date.now() % 1_000_000
+        const id = Math.floor(Math.random() * 2 ** 31)
         setPendingId(id)
         setNameError(null)
         websocket.send({ id, command: "setName", payload: { name: trimmed, emoji } })
@@ -200,7 +224,7 @@ export default function WaitingRoom(): JSX.Element {
         setIsEmojiOpen(false)
     }
 
-    if (isLoadingSession || isLoadingQuiz) {
+    if (isLoadingSession || isLoadingQuiz || (isPlayer && wsConnected === undefined)) {
         return (
             <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-4 py-24">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
@@ -209,7 +233,7 @@ export default function WaitingRoom(): JSX.Element {
         )
     }
 
-    if (isInvalidCode || !code) {
+    if (isInvalidCode || !code || (isPlayer && wsConnected === false)) {
         return (
             <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-6 py-24">
                 <div className="w-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">
