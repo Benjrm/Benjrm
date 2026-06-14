@@ -12,6 +12,12 @@ export interface Session {
     quiz?: string
 }
 
+export interface SessionPlayer {
+    id: string
+    name: string
+    emoji: string | null
+}
+
 export function getSessionErrorMessage(error: Error | null | undefined): string | null {
     if (!error) return null
     return error.message || "The quiz session could not be started right now. Please try again."
@@ -31,4 +37,8 @@ export async function deleteSession(code: number): Promise<void> {
 
 export async function getSessionQuiz(code: number): Promise<Quiz> {
     return apiGet<Quiz>(`/sessions/${code}/quiz`)
+}
+
+export async function getSessionPlayers(code: number): Promise<SessionPlayer[]> {
+    return apiGet<SessionPlayer[]>(`/sessions/${code}/players`)
 }

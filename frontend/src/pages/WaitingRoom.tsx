@@ -1,12 +1,15 @@
 // frontend/src/pages/WaitingRoom.tsx
 
 import type { JSX } from "react"
-import { useState } from "react"
-import { useParams } from "react-router"
+import { useEffect, useRef, useState } from "react"
+import { useNavigate, useParams } from "react-router"
 import { X } from "lucide-react"
+import { Toaster, toast } from "sonner"
 import ProfilePicker from "../components/ProfilePicker"
+import GamePinForm from "@/components/GamePinForm"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
+import useSessionPlayers from "@/api/session/hooks/useSessionPlayers"
 import {
     useHostWebSocket,
     usePlayerWebSocket,
@@ -62,8 +65,9 @@ export default function WaitingRoom(): JSX.Element {
               })(String(code))
             : undefined
 
-    const { isLoading: isLoadingSession, isHost, isInvalidCode } = useSessionStatus(code)
+    const { isLoading: isLoadingSession, isHost, isPlayer, isInvalidCode } = useSessionStatus(code)
     const { data: quiz, isLoading: isLoadingQuiz } = useSessionQuiz(isHost ? code : undefined)
+    const { data: initialPlayers } = useSessionPlayers(isHost ? code : undefined)
 
     // Delay WS connection until role is determined
     // (which would disconnect mid-render and wipe all event subscriptions via listeners.clear())
@@ -73,8 +77,15 @@ export default function WaitingRoom(): JSX.Element {
 
     const websocket = useWebSocketContext()
 
-    // Live player list
+    // Live player list — seeded from the REST endpoint on mount so state survives a reload
     const [players, setPlayers] = useState<Player[]>([])
+    const playersInitialized = useRef(false)
+    useEffect(() => {
+        if (initialPlayers && !playersInitialized.current) {
+            playersInitialized.current = true
+            setPlayers(initialPlayers)
+        }
+    }, [initialPlayers])
 
     useSocketEvent("addPlayer", ({ id, name, emoji }) => {
         setPlayers((prev) => [...prev, { id, name, emoji }])
@@ -86,15 +97,99 @@ export default function WaitingRoom(): JSX.Element {
         setPlayers((prev) => prev.filter((p) => p.id !== id))
     })
 
-    // Player name-setting state
-    const [name, setName] = useState("")
-    const [emoji, setEmoji] = useState<string>(
-        () => AVAILABLE_EMOJIS[Math.floor(Math.random() * AVAILABLE_EMOJIS.length)]
-    )
+    // sessionStorage key scoped to this session code.
+    const storageKey = code !== undefined ? `waitingRoom:${code}` : null
+
+    // Player name-setting state — lazy initialisers read from sessionStorage so a reload
+    // restores the pre-filled form without calling setState inside an effect.
+    const [name, setName] = useState<string>(() => {
+        if (!storageKey) return ""
+        try {
+            const raw = sessionStorage.getItem(storageKey)
+            return raw ? (JSON.parse(raw) as { name: string }).name : ""
+        } catch {
+            return ""
+        }
+    })
+    const [emoji, setEmoji] = useState<string>(() => {
+        const fallback = AVAILABLE_EMOJIS[Math.floor(Math.random() * AVAILABLE_EMOJIS.length)]
+        if (!storageKey) return fallback
+        try {
+            const raw = sessionStorage.getItem(storageKey)
+            return raw ? (JSON.parse(raw) as { emoji: string }).emoji : fallback
+        } catch {
+            return fallback
+        }
+    })
     const [isEmojiOpen, setIsEmojiOpen] = useState(false)
     const [nameSaved, setNameSaved] = useState(false)
     const [nameError, setNameError] = useState<string | null>(null)
     const [pendingId, setPendingId] = useState<number | null>(null)
+
+    // Once the WebSocket is open, automatically re-send setName so the server
+    // recognises the player without them having to type their name again.
+    // Reads directly from sessionStorage inside the effect to avoid ref-during-render.
+    useEffect(() => {
+        if (!wsCode || isHost || !storageKey) return undefined
+        const savedRaw = sessionStorage.getItem(storageKey)
+        if (!savedRaw) return undefined
+        let saved: { name: string; emoji: string }
+        try {
+            saved = JSON.parse(savedRaw) as { name: string; emoji: string }
+        } catch {
+            return undefined
+        }
+        const unsub = websocket.onConnect(() => {
+            const id = Math.floor(Math.random() * 2 ** 31)
+            setPendingId(id)
+            websocket.send({
+                id,
+                command: "setName",
+                payload: { name: saved.name, emoji: saved.emoji },
+            })
+        })
+        return (): void => {
+            unsub()
+        }
+    }, [wsCode, isHost, storageKey, websocket])
+
+    // Track the player WS connection outcome so we can show "not found" when an unauthenticated
+    // user enters an invalid code (the REST endpoint always returns 401 for unauthenticated users
+    // regardless of code validity, so WS is the only reliable check).
+    // Storing the code alongside the result lets the derived value reset to `undefined` automatically
+    // when wsCode changes, without a synchronous setState inside the effect body.
+    const [wsConnectionState, setWsConnectionState] = useState<{
+        code: number | undefined
+        connected: boolean | undefined
+    }>({ code: undefined, connected: undefined })
+    const wsConnected = wsConnectionState.code === wsCode ? wsConnectionState.connected : undefined
+    useEffect(() => {
+        if (!wsCode || !isPlayer) return undefined
+        const unsubOpen = websocket.onConnect(() => {
+            setWsConnectionState({ code: wsCode, connected: true })
+        })
+        const unsubFail = websocket.onConnectFail(() => {
+            setWsConnectionState({ code: wsCode, connected: false })
+        })
+        return (): void => {
+            unsubOpen()
+            unsubFail()
+        }
+    }, [wsCode, isPlayer, websocket])
+
+    const navigate = useNavigate()
+
+    useSocketEvent("kick", () => {
+        if (storageKey) sessionStorage.removeItem(storageKey)
+        toast.error("You have been removed from the lobby by the host.")
+        setTimeout(async () => {
+            try {
+                await navigate("/")
+            } catch {
+                // ignore navigation errors
+            }
+        }, 2000)
+    })
 
     useSocketEvent("ok", (_payload, _timing, id) => {
         if (pendingId === id) {
@@ -114,10 +209,11 @@ export default function WaitingRoom(): JSX.Element {
     function onSaveName(): void {
         const trimmed = name.trim()
         if (!trimmed) return
-        const id = Date.now() % 1_000_000
+        const id = Math.floor(Math.random() * 2 ** 31)
         setPendingId(id)
         setNameError(null)
         websocket.send({ id, command: "setName", payload: { name: trimmed, emoji } })
+        if (storageKey) sessionStorage.setItem(storageKey, JSON.stringify({ name: trimmed, emoji }))
     }
 
     function onKickPlayer(playerId: string): void {
@@ -129,7 +225,7 @@ export default function WaitingRoom(): JSX.Element {
         setIsEmojiOpen(false)
     }
 
-    if (isLoadingSession || isLoadingQuiz) {
+    if (isLoadingSession || isLoadingQuiz || (isPlayer && wsConnected === undefined)) {
         return (
             <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-4 py-24">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
@@ -138,9 +234,9 @@ export default function WaitingRoom(): JSX.Element {
         )
     }
 
-    if (isInvalidCode || !code) {
+    if (isInvalidCode || !code || (isPlayer && wsConnected === false)) {
         return (
-            <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center py-24">
+            <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-6 py-24">
                 <div className="w-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">
                     <h1 className="text-base font-bold">Quiz lobby not found</h1>
                     <p className="mt-1 text-sm">
@@ -149,6 +245,11 @@ export default function WaitingRoom(): JSX.Element {
                         Please check the invitation code and try again.
                     </p>
                 </div>
+                <GamePinForm
+                    onJoin={(digits) => {
+                        navigate(`/play/${encodeURIComponent(digits)}`)
+                    }}
+                />
             </section>
         )
     }
@@ -167,47 +268,6 @@ export default function WaitingRoom(): JSX.Element {
 
             <div className="dark:text-foreground overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl dark:border-white/10 dark:bg-[#111318]">
                 <div className="bg-linear-to-r from-[#00D4E8]/10 via-transparent to-[#FF8A00]/10 p-6 sm:p-8">
-                    {!isHost ? (
-                        <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
-                            {nameSaved ? (
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00D4E8]/20 text-xl">
-                                        {emoji}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold">{name}</p>
-                                        <p className="text-muted-foreground text-xs">
-                                            You&apos;re in! Waiting for the host to start.
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="mb-4 flex items-center justify-between">
-                                        <p className="text-sm font-semibold tracking-wide">
-                                            Player Setup
-                                        </p>
-                                        <span className="text-muted-foreground text-xs">
-                                            Tap avatar to choose emoji
-                                        </span>
-                                    </div>
-
-                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                                        <ProfilePicker
-                                            emoji={emoji}
-                                            name={name}
-                                            nameError={nameError}
-                                            onNameChange={setName}
-                                            onOpenEmoji={() => setIsEmojiOpen(true)}
-                                            onSaveName={() => onSaveName()}
-                                            pending={pendingId != null}
-                                        />
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    ) : null}
-
                     {isHost ? (
                         <>
                             <div className="mb-4">
@@ -252,7 +312,46 @@ export default function WaitingRoom(): JSX.Element {
                                 ) : null}
                             </ul>
                         </>
-                    ) : null}
+                    ) : (
+                        <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
+                            {nameSaved ? (
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00D4E8]/20 text-xl">
+                                        {emoji}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold">{name}</p>
+                                        <p className="text-muted-foreground text-xs">
+                                            You&apos;re in!.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <p className="text-sm font-semibold tracking-wide">
+                                            Player Setup
+                                        </p>
+                                        <span className="text-muted-foreground text-xs">
+                                            Tap avatar to choose emoji
+                                        </span>
+                                    </div>
+
+                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                                        <ProfilePicker
+                                            emoji={emoji}
+                                            name={name}
+                                            nameError={nameError}
+                                            onNameChange={setName}
+                                            onOpenEmoji={() => setIsEmojiOpen(true)}
+                                            onSaveName={() => onSaveName()}
+                                            pending={pendingId != null}
+                                        />
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
 
                     <div className="mt-8 flex items-center justify-center border-t border-white/10 pt-6">
                         {isHost ? (
@@ -265,6 +364,8 @@ export default function WaitingRoom(): JSX.Element {
                     </div>
                 </div>
             </div>
+
+            <Toaster richColors />
 
             <Dialog onOpenChange={setIsEmojiOpen} open={isEmojiOpen}>
                 <DialogContent className="border-white/10 bg-[#111318] text-white sm:max-w-lg">

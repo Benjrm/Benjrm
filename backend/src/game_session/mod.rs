@@ -229,6 +229,7 @@ impl CommandTrait for Command<HostCommand> {
 pub enum PlayerMessage {
     Ok,
     Error(ErrorResponse),
+    Kick,
     Start,
     DisplayQuestion(Arc<DisplayQuestionMessage>),
 }

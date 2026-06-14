@@ -41,7 +41,7 @@ const ProfilePicker: FC<ProfilePickerProps> = ({
                 </p>
                 {nameError ? <p className="text-xs text-red-400">{nameError}</p> : null}
             </div>
-            <div className="flex flex-row gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                     aria-label="Choose player name"
                     className="border-white/10 bg-black/20 text-base"
@@ -51,7 +51,7 @@ const ProfilePicker: FC<ProfilePickerProps> = ({
                     value={name}
                 />
                 <Button
-                    className="border-0 bg-[#00D4E8] font-semibold text-black shadow-[0_0_20px_-6px_rgba(0,212,232,0.75)] hover:bg-[#00BDD0]"
+                    className="w-full border-0 bg-[#00D4E8] font-semibold text-black shadow-[0_0_20px_-6px_rgba(0,212,232,0.75)] hover:bg-[#00BDD0] sm:w-auto"
                     disabled={!name.trim() || pending}
                     onClick={onSaveName}
                     type="button"
