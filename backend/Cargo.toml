@@ -21,6 +21,7 @@ log = "0.4.29"
 migration = { path = "../database-migrator" }
 oauth2 = "4.4.2"
 openidconnect = "3.5.0"
+openssl = { version = "0.10", features = ["vendored"] }
 paste = "1.0.15"
 rand = "0.10.1"
 sea-orm = { version = "1.1.20", features = ["runtime-tokio-rustls", "sqlx-postgres", "sqlx-sqlite", "uuid"] }
