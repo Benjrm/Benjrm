@@ -30,7 +30,7 @@ RUN --mount=type=cache,target=/app/backend/target/ \
 # we have to use debian instead of alpine because we rely on openssl and openssl can cause segfaults on alpine.
 # the requirement for openssl might be removed in the future.
 FROM debian:12.13 AS final
-LABEL org.opencontainers.image.source=https://github.com/NiborDev/Benjrm-workflow
+LABEL org.opencontainers.image.source=https://github.com/Benjrm/Benjrm
 LABEL org.opencontainers.image.description="Benjrm - a quiz platform for interactive learning and live competition"
 
 WORKDIR /config
