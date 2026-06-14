@@ -2,7 +2,6 @@
 
 import type { JSX } from "react"
 import { useState, useEffect } from "react"
-import { Edit2, Settings, Trash2 } from "lucide-react"
 import { useParams, useNavigate } from "react-router"
 import { toast, Toaster } from "sonner"
 import {
@@ -24,18 +23,9 @@ import {
     restrictToParentElement,
     getQuestionPreviewText,
 } from "./quiz/quizUtils"
-import { PlayQuizButton } from "@/components/PlayQuizButton"
-import { Button } from "@/shadcn/components/ui/button"
 import useQuizEditor from "@/hooks/useQuizEditor"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/shadcn/components/ui/dialog"
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
+import QuizCreatorHeader from "@/components/QuizCreatorHeader.tsx"
 
 export default function QuizCreator(): JSX.Element {
     const params = useParams()
@@ -135,115 +125,24 @@ export default function QuizCreator(): JSX.Element {
 
     const handleEditSuccess = (): void => setIsEditModalOpen(false)
 
-    const handleConfirmClose = () => setIsConfirmOpen(false)
-
     return (
         <div className="bg-background text-foreground flex flex-col overflow-hidden px-4 py-6 sm:px-8 lg:absolute lg:inset-0">
             <div className="flex w-full flex-1 flex-col overflow-hidden">
-                {/* Header */}
-                <header className="mb-6 flex shrink-0 flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-4xl font-extrabold md:text-5xl">{quizTitle}</h1>
-                            <Button
-                                aria-label="Edit title"
-                                className="text-muted-foreground hover:text-foreground p-2"
-                                onClick={() => setIsEditModalOpen(true)}
-                                type="button"
-                                variant="ghost"
-                            >
-                                <Edit2 className="h-5 w-5" />
-                            </Button>
-                        </div>
-
-                        <div className="mt-3 flex items-start gap-3">
-                            <p className="max-w-2xl text-base whitespace-pre-wrap">
-                                {quizDescription}
-                            </p>
-                            <Button
-                                aria-label="Edit description"
-                                className="text-muted-foreground hover:text-foreground p-2"
-                                onClick={() => setIsEditModalOpen(true)}
-                                type="button"
-                                variant="ghost"
-                            >
-                                <Edit2 className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <PlayQuizButton quizId={quizId} />
-                        <Button
-                            className="border-border bg-muted/40 hover:bg-muted/70 gap-2 border backdrop-blur-sm"
-                            variant="ghost"
-                        >
-                            <Settings className="h-4 w-4" />
-                            Settings
-                        </Button>
-
-                        {hasUnsavedChanges ? (
-                            <Button
-                                disabled={isSavingQuestions}
-                                onClick={discardChanges}
-                                variant="outline"
-                            >
-                                Discard Changes
-                            </Button>
-                        ) : null}
-
-                        <Button
-                            className="bg-[#00F2FF] font-bold text-black hover:bg-[#00d8e4]"
-                            disabled={isSavingQuestions || (quizId ? isLoadingQuestions : false)}
-                            onClick={() => {
-                                handleSaveQuestions()
-                                    .then((res) => {
-                                        if (res.error) setSaveError(res.error)
-                                        else setSaveError(null)
-                                    })
-                                    .catch(() => {})
-                            }}
-                        >
-                            {isSavingQuestions ? "Saving..." : "Save Quiz"}
-                        </Button>
-
-                        {quizId ? (
-                            <Button
-                                className="bg-red-600 text-white hover:bg-red-700"
-                                onClick={() => setIsConfirmOpen(true)}
-                                variant="ghost"
-                            >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Quiz
-                            </Button>
-                        ) : null}
-                        <Dialog onOpenChange={setIsConfirmOpen} open={isConfirmOpen}>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Delete Quiz?</DialogTitle>
-                                    <DialogDescription>
-                                        This action cannot be undone. Are you sure you want to
-                                        delete the quiz?
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <DialogFooter>
-                                    <Button onClick={handleConfirmClose} variant="outline">
-                                        Abbrechen
-                                    </Button>
-                                    <Button
-                                        className="bg-red-600 text-white hover:bg-red-700"
-                                        onClick={() => {
-                                            handleDelete().catch(() => {})
-                                        }}
-                                    >
-                                        Löschen
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                </header>
+                <QuizCreatorHeader
+                    discardChanges={discardChanges}
+                    handleDelete={handleDelete}
+                    handleSaveQuestions={handleSaveQuestions}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    isConfirmOpen={isConfirmOpen}
+                    isLoadingQuestions={isLoadingQuestions}
+                    isSavingQuestions={isSavingQuestions}
+                    quizDescription={quizDescription}
+                    quizId={quizId}
+                    quizTitle={quizTitle}
+                    setIsConfirmOpen={setIsConfirmOpen}
+                    setIsEditModalOpen={setIsEditModalOpen}
+                    setSaveError={setSaveError}
+                />
 
                 {saveError ? (
                     <div className="text-black-950 dark:text-white-200 mb-6 rounded-2xl border border-red-400 bg-red-50 px-4 py-3 text-sm font-medium shadow-sm dark:border-red-400/30 dark:bg-red-500/10">
