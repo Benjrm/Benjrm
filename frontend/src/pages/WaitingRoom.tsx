@@ -10,12 +10,7 @@ import GamePinForm from "@/components/GamePinForm"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import useSessionPlayers from "@/api/session/hooks/useSessionPlayers"
-import {
-    useHostWebSocket,
-    usePlayerWebSocket,
-    useSocketEvent,
-    useWebSocketContext,
-} from "@/api/websocket"
+import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import { Button } from "@/shadcn/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
 import StartQuizButton from "@/components/StartQuizButton.tsx"
@@ -71,9 +66,8 @@ export default function WaitingRoom(): JSX.Element {
 
     // Delay WS connection until role is determined
     // (which would disconnect mid-render and wipe all event subscriptions via listeners.clear())
+    // WS connection is managed by PlayLayout; wsCode is only used for tracking connection state.
     const wsCode = isLoadingSession ? undefined : code
-    useHostWebSocket(isHost ? wsCode : undefined)
-    usePlayerWebSocket(!isHost ? wsCode : undefined)
 
     const websocket = useWebSocketContext()
 
@@ -189,6 +183,12 @@ export default function WaitingRoom(): JSX.Element {
                 // ignore navigation errors
             }
         }, 2000)
+    })
+
+    useSocketEvent("start", () => {
+        if (code && !isHost) {
+            navigate(`/play/${code}/game`)
+        }
     })
 
     useSocketEvent("ok", (_payload, _timing, id) => {
@@ -355,7 +355,14 @@ export default function WaitingRoom(): JSX.Element {
 
                     <div className="mt-8 flex items-center justify-center border-t border-white/10 pt-6">
                         {isHost ? (
-                            <StartQuizButton />
+                            <StartQuizButton
+                                onStart={() => {
+                                    if (code)
+                                        navigate(`/play/${code}/host`, {
+                                            state: { playerCount: players.length },
+                                        })
+                                }}
+                            />
                         ) : (
                             <p className="text-muted-foreground text-sm font-medium">
                                 Waiting for host to start the game

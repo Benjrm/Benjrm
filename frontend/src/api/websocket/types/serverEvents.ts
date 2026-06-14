@@ -12,12 +12,13 @@ export interface ServerEvents {
     ping: {
         id: number
     }
+    start: object
     displayQuestion: {
         id: string
         question: string
-        type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE"
-        options: object
-        secondsToAnswer: number
+        seconds: number | null
+        type: "SLIDE" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "ORDER"
+        options: { answer: string }[]
     }
     questionResult: {
         question: string
@@ -41,5 +42,4 @@ export interface ServerEvents {
     removePlayer: {
         id: string
     }
-    kick: unknown
 }

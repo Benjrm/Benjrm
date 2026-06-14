@@ -1,19 +1,19 @@
 import type { ReactNode } from "react"
 import { Button } from "@/shadcn/components/ui/button"
-import { useHostWebSocket, useWebSocketContext } from "@/api/websocket"
+import { useWebSocketContext } from "@/api/websocket"
 
 interface StartQuizButtonProps {
-    code?: number
+    onStart?: () => void
 }
 
-export default function StartQuizButton({ code }: StartQuizButtonProps): ReactNode {
-    useHostWebSocket(code)
+export default function StartQuizButton({ onStart }: StartQuizButtonProps): ReactNode {
     const websocketService = useWebSocketContext()
 
     const handleOnClick = () => {
         websocketService.send({
             command: "start",
         })
+        onStart?.()
     }
 
     return (

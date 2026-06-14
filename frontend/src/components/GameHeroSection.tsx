@@ -11,13 +11,14 @@ interface GameHeroSectionProps {
 }
 
 export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps): JSX.Element {
-    const [code, setCode] = useState("")
+    const [digits, setDigits] = useState("")
     const navigate = useNavigate()
 
+    const displayCode = digits.length > 4 ? `${digits.slice(0, 4)}-${digits.slice(4)}` : digits
+
     function onJoinClick(): void {
-        const trimmed = code.trim().replaceAll("-", "")
-        if (!trimmed) return
-        navigate(`/play/${encodeURIComponent(trimmed)}`)
+        if (!digits) return
+        navigate(`/play/${encodeURIComponent(digits)}`)
     }
 
     return (
@@ -31,11 +32,14 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                         <Input
                             aria-label="Input Code"
                             className="dark:text-foreground dark:placeholder:text-muted-foreground rounded-xl border-slate-200 bg-slate-50 px-4 py-5 text-base font-medium text-slate-900 transition-all placeholder:text-slate-500 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#00F2FF] dark:border-white/10 dark:bg-[#1C2028]"
-                            onChange={(e) => setCode(e.target.value)}
+                            inputMode="numeric"
                             onKeyDown={(e) => e.key === "Enter" && onJoinClick()}
                             placeholder="Code"
                             type="text"
-                            value={code}
+                            value={displayCode}
+                            onChange={(e) =>
+                                setDigits(e.target.value.replace(/\D/g, "").slice(0, 8))
+                            }
                         />
                         <p className="dark:text-muted-foreground pl-1 text-sm text-slate-500">
                             Join via Code
