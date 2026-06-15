@@ -65,13 +65,13 @@ export default function HostDashboard(): JSX.Element {
     )
 
     useSocketEvent(
-        "updateLeaderboard",
+        "displayLeaderboard",
         useCallback((payload) => {
             setLeaderboard(
-                payload.map((entry, idx) => ({
+                payload.leaderboard.map((entry, idx) => ({
                     id: String(idx),
                     name: entry.name,
-                    points: entry.points,
+                    points: entry.totalPoints,
                 }))
             )
         }, [])

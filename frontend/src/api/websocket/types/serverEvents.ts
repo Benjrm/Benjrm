@@ -12,7 +12,6 @@ export interface ServerEvents {
     ping: {
         id: number
     }
-    start: object
     displayQuestion: {
         id: string
         question: string

@@ -14,11 +14,12 @@ const MOCK_QUESTIONS = [
         question: "What is the capital of France?",
         seconds: 30,
         type: "SINGLE_CHOICE" as const,
+        totalQuestions: 3,
         options: [
-            { answer: "London" },
-            { answer: "Berlin" },
-            { answer: "Paris" },
-            { answer: "Madrid" },
+            { id: "a1", answer: "London" },
+            { id: "a2", answer: "Berlin" },
+            { id: "a3", answer: "Paris" },
+            { id: "a4", answer: "Madrid" },
         ],
     },
     {
@@ -26,41 +27,57 @@ const MOCK_QUESTIONS = [
         question: "How many planets are in our solar system?",
         seconds: 30,
         type: "SINGLE_CHOICE" as const,
-        options: [{ answer: "7" }, { answer: "8" }, { answer: "9" }, { answer: "10" }],
+        totalQuestions: 3,
+        options: [
+            { id: "b1", answer: "7" },
+            { id: "b2", answer: "8" },
+            { id: "b3", answer: "9" },
+            { id: "b4", answer: "10" },
+        ],
     },
     {
         id: "q3",
         question: "Which language runs in a web browser?",
         seconds: 30,
         type: "SINGLE_CHOICE" as const,
+        totalQuestions: 3,
         options: [
-            { answer: "Java" },
-            { answer: "C++" },
-            { answer: "Python" },
-            { answer: "JavaScript" },
+            { id: "c1", answer: "Java" },
+            { id: "c2", answer: "C++" },
+            { id: "c3", answer: "Python" },
+            { id: "c4", answer: "JavaScript" },
         ],
     },
 ]
 
 const MOCK_LEADERBOARDS = [
-    [
-        { name: "Funny Crocodile", points: 950 },
-        { name: "Tall Giraffe", points: 750 },
-        { name: "Doctor Mouse", points: 600 },
-        { name: "Captain Penguin", points: 400 },
-    ],
-    [
-        { name: "Funny Crocodile", points: 1850 },
-        { name: "Doctor Mouse", points: 1550 },
-        { name: "Tall Giraffe", points: 1400 },
-        { name: "Captain Penguin", points: 900 },
-    ],
-    [
-        { name: "Doctor Mouse", points: 2600 },
-        { name: "Funny Crocodile", points: 2500 },
-        { name: "Tall Giraffe", points: 2000 },
-        { name: "Captain Penguin", points: 1500 },
-    ],
+    {
+        isFinal: false,
+        leaderboard: [
+            { id: "p1", name: "Funny Crocodile", emoji: "🐊", totalPoints: 950, points: 950 },
+            { id: "p2", name: "Tall Giraffe", emoji: "🦒", totalPoints: 750, points: 750 },
+            { id: "p3", name: "Doctor Mouse", emoji: "🐭", totalPoints: 600, points: 600 },
+            { id: "p4", name: "Captain Penguin", emoji: "🐧", totalPoints: 400, points: 400 },
+        ],
+    },
+    {
+        isFinal: false,
+        leaderboard: [
+            { id: "p1", name: "Funny Crocodile", emoji: "🐊", totalPoints: 1850, points: 900 },
+            { id: "p3", name: "Doctor Mouse", emoji: "🐭", totalPoints: 1550, points: 950 },
+            { id: "p2", name: "Tall Giraffe", emoji: "🦒", totalPoints: 1400, points: 650 },
+            { id: "p4", name: "Captain Penguin", emoji: "🐧", totalPoints: 900, points: 500 },
+        ],
+    },
+    {
+        isFinal: true,
+        leaderboard: [
+            { id: "p3", name: "Doctor Mouse", emoji: "🐭", totalPoints: 2600, points: 1050 },
+            { id: "p1", name: "Funny Crocodile", emoji: "🐊", totalPoints: 2500, points: 650 },
+            { id: "p2", name: "Tall Giraffe", emoji: "🦒", totalPoints: 2000, points: 600 },
+            { id: "p4", name: "Captain Penguin", emoji: "🐧", totalPoints: 1500, points: 600 },
+        ],
+    },
 ]
 
 const MOCK_QUIZ_TITLE = "Mock Quiz — Dev Preview"
@@ -93,7 +110,7 @@ export default function useMockHostEvents(enabled: boolean): MockHostEventsResul
         }, afterPlayers)
 
         const initialLeaderboardTimer = setTimeout(() => {
-            ws.simulateReceive("updateLeaderboard", MOCK_LEADERBOARDS[0])
+            ws.simulateReceive("displayLeaderboard", MOCK_LEADERBOARDS[0])
         }, afterPlayers + 800)
 
         return () => {
@@ -108,7 +125,7 @@ export default function useMockHostEvents(enabled: boolean): MockHostEventsResul
 
         const nextLeaderboard = MOCK_LEADERBOARDS[nextIdx]
         if (nextLeaderboard) {
-            ws.simulateReceive("updateLeaderboard", nextLeaderboard)
+            ws.simulateReceive("displayLeaderboard", nextLeaderboard)
         }
 
         const nextQuestion = MOCK_QUESTIONS[nextIdx]

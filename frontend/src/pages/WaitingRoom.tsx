@@ -5,10 +5,10 @@ import { useNavigate, useParams } from "react-router"
 import GamePinForm from "@/components/GamePinForm"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
-import { useHostWebSocket, usePlayerWebSocket } from "@/api/websocket"
 import { useGameSession } from "@/hooks/useGameSession"
 import Lobby from "@/components/Lobby"
 import GameScreen from "@/components/GameScreen"
+import HostGameScreen from "@/components/HostGameScreen"
 
 export default function WaitingRoom(): JSX.Element {
     const navigate = useNavigate()
@@ -84,15 +84,32 @@ export default function WaitingRoom(): JSX.Element {
         )
     }
 
+    if (isHost) {
+        return (
+            <HostGameScreen
+                codeWithDash={codeWithDash}
+                currentQuestion={session.currentQuestion}
+                currentQuestionIndex={session.currentQuestionIndex}
+                gameState={session.gameState}
+                isFinalLeaderboard={session.isFinalLeaderboard}
+                leaderboard={session.leaderboard}
+                onEndGame={session.sendEndGame}
+                onNextQuestion={session.sendNextQuestion}
+                players={session.players}
+                questionExpiresAt={session.questionExpiresAt}
+                quizTitle={quiz?.title}
+                totalQuestions={session.totalQuestions}
+            />
+        )
+    }
+
     return (
         <GameScreen
             currentQuestion={session.currentQuestion}
             currentQuestionIndex={session.currentQuestionIndex}
             gameState={session.gameState}
             isFinalLeaderboard={session.isFinalLeaderboard}
-            isHost={isHost}
             leaderboard={session.leaderboard}
-            onEndGame={session.sendEndGame}
             onNextQuestion={session.sendNextQuestion}
             onSendAnswer={session.sendAnswer}
             playerName={session.name || undefined}

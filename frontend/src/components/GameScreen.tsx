@@ -43,11 +43,9 @@ interface GameScreenProps {
     questionExpiresAt: number | null
     leaderboard: LeaderboardEntry[] | null
     isFinalLeaderboard: boolean
-    isHost: boolean
     playerName: string | undefined
     onNextQuestion: () => void
     onSendAnswer: (answer: string | string[]) => void
-    onEndGame: () => void
 }
 
 export default function GameScreen({
@@ -59,11 +57,9 @@ export default function GameScreen({
     questionExpiresAt,
     leaderboard,
     isFinalLeaderboard,
-    isHost,
     playerName,
     onNextQuestion,
     onSendAnswer,
-    onEndGame,
 }: GameScreenProps): JSX.Element | null {
     const navigate = useNavigate()
 
@@ -84,7 +80,7 @@ export default function GameScreen({
                     key={currentQuestion.id}
                     content={currentQuestion.text}
                     currentSlide={currentQuestionIndex + 1}
-                    isHost={isHost}
+                    isHost={false}
                     onNextQuestion={onNextQuestion}
                     playerName={playerName}
                     totalSlides={totalQuestions}
@@ -97,7 +93,7 @@ export default function GameScreen({
                 <OrderQuestionContent
                     key={currentQuestion.id}
                     currentQuestionIndex={currentQuestionIndex}
-                    isHost={isHost}
+                    isHost={false}
                     onNextQuestion={onNextQuestion}
                     onSendAnswer={(ids) => onSendAnswer(ids)}
                     options={currentQuestion.options}
@@ -113,7 +109,7 @@ export default function GameScreen({
             <QuestionCardContent
                 key={currentQuestionIndex}
                 currentQuestionIndex={currentQuestionIndex}
-                isHost={isHost}
+                isHost={false}
                 onNextQuestion={onNextQuestion}
                 onSendAnswer={onSendAnswer}
                 options={currentQuestion.options}
@@ -164,39 +160,16 @@ export default function GameScreen({
                     </div>
                 ) : null}
 
-                {isHost ? (
+                {isFinalLeaderboard ? (
                     <div className="mt-8 flex justify-center">
-                        {isFinalLeaderboard ? (
-                            <Button
-                                className="bg-red-500 px-8 py-6 text-lg font-bold text-white hover:bg-red-600"
-                                onClick={() => {
-                                    onEndGame()
-                                    navigate("/dashboard")
-                                }}
-                            >
-                                End Game & Exit
-                            </Button>
-                        ) : (
-                            <Button
-                                className="bg-[#00D4E8] px-8 py-6 text-lg font-bold text-black hover:bg-[#00BDD0]"
-                                onClick={onNextQuestion}
-                            >
-                                Next Question
-                            </Button>
-                        )}
+                        <Button
+                            className="bg-red-500 px-8 py-6 text-lg font-bold text-white hover:bg-red-600"
+                            onClick={async () => navigate("/")}
+                        >
+                            Leave Game
+                        </Button>
                     </div>
-                ) : (
-                    isFinalLeaderboard && (
-                        <div className="mt-8 flex justify-center">
-                            <Button
-                                className="bg-red-500 px-8 py-6 text-lg font-bold text-white hover:bg-red-600"
-                                onClick={async () => navigate("/")}
-                            >
-                                Leave Game
-                            </Button>
-                        </div>
-                    )
-                )}
+                ) : null}
             </div>
         )
     }

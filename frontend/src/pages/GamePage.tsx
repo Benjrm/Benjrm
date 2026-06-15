@@ -44,7 +44,7 @@ export default function GamePage(): JSX.Element {
 
     function onSubmitAnswer(): void {
         if (answered || selectedAnswers.length === 0) return
-        websocket.send({ command: "answerQuestion", payload: { answers: selectedAnswers } })
+        websocket.send({ command: "answerQuestion", payload: { answer: selectedAnswers } })
         setAnswered(true)
     }
 
