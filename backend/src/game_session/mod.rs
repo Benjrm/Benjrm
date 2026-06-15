@@ -58,8 +58,6 @@ impl_err! {
         QuestionNotFound = NOT_FOUND,
         #[error("No players")]
         NoPlayers = BAD_REQUEST,
-        #[error("Quiz already started")]
-        SessionAlreadyStarted = BAD_REQUEST,
     }
 }
 

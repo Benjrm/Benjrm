@@ -4,10 +4,10 @@ use {crate::error::Error, awc::http::StatusCode, serde::Serialize, std::fmt};
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
     #[serde(skip)]
-    pub(super) status: StatusCode,
-    pub(super) category: &'static str,
-    pub(super) error: &'static str,
-    pub(super) message: String,
+    pub status: StatusCode,
+    pub category: &'static str,
+    pub error: &'static str,
+    pub message: String,
 }
 
 impl From<&Error> for ErrorResponse {
