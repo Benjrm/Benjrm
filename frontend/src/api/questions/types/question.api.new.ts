@@ -45,7 +45,6 @@ export type QuestionRequest =
 
 interface BaseQuestionResponse extends Identifier, ReadonlyMetadata {}
 
-type RemoveReadonlyMetadata<T> = Omit<T, keyof ReadonlyMetadata>
 type RemoveNextAndPrev<T> = Omit<T, "next" | "prev">
 type RemoveOptions<T> = Omit<T, "options">
 
@@ -78,10 +77,14 @@ export type QuestionResponse =
     | SingleChoiceQuestionResponse
     | MultipleChoiceQuestionResponse
 
-export interface Question extends RemoveReadonlyMetadata<QuestionResponse> {
-    created: Date
-    modified: Date
-}
+type WithDates<T> = T extends unknown
+    ? Omit<T, keyof ReadonlyMetadata> & {
+          created: Date
+          modified: Date
+      }
+    : never
+
+export type Question = WithDates<QuestionResponse>
 
 export type QuestionOption =
     | OrderQuestionOptionResponse
