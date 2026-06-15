@@ -75,6 +75,8 @@ impl_err! {
         TimeUp = BAD_REQUEST,
         #[error("No question to answer")]
         NoCurrentQuestion = BAD_REQUEST,
+        #[error("No question left")]
+        NoQuestionLeft = BAD_REQUEST,
     }
 }
 
@@ -218,7 +220,7 @@ pub enum HostMessage {
     },
     DisplayQuestion(Arc<DisplayQuestionMessage>),
     DisplayLeaderboard {
-        leaderboard: Vec<LeaderboardEntry>,
+        leaderboard: Arc<Vec<LeaderboardEntry>>,
         is_final: bool,
     },
 }
@@ -228,7 +230,7 @@ pub enum HostMessage {
 pub struct LeaderboardEntry {
     pub id: Uuid,
     pub name: String,
-    pub emoji: Option<String>,
+    pub emoji: Option<&'static Emoji>,
     pub total_points: u32,
     pub points: u32,
 }

@@ -216,41 +216,16 @@ impl GameSession {
                     .await;
                 self.host.ok(cmd.id).await;
             }
-            HostCommand::NextQuestion => {
-                if matches!(self.status, GameSessionStatus::Question { .. }) {
-                    let is_final = self.end_question().await;
-                    if !is_final {
-                        match self.next_question(None, arc).await {
-                            Ok(()) => self.host.ok(cmd.id).await,
-                            Err(err) => self.host.error(cmd.id, err).await,
-                        }
-                    }
-                } else if let GameSessionStatus::Leaderboard { idx } = self.status {
-                    let has_next = self
-                        .quiz
-                        .as_ref()
-                        .map(|q| q.questions.get(idx + 1).is_some())
-                        .unwrap_or(false);
-                    if has_next {
-                        match self.next_question(None, arc).await {
-                            Ok(()) => self.host.ok(cmd.id).await,
-                            Err(err) => self.host.error(cmd.id, err).await,
-                        }
-                    } else {
-                        self.send_final_leaderboard().await;
-                    }
-                } else {
-                    match self.next_question(None, arc).await {
-                        Ok(()) => self.host.ok(cmd.id).await,
-                        Err(err) => self.host.error(cmd.id, err).await,
-                    }
-                }
-            }
+            HostCommand::NextQuestion => match self.next_question(None, arc).await {
+                Ok(()) => self.host.ok(cmd.id).await,
+                Err(err) => self.host.error(cmd.id, err).await,
+            },
             HostCommand::ShowQuestion { id } => match self.next_question(Some(id), arc).await {
                 Ok(()) => self.host.ok(cmd.id).await,
                 Err(err) => self.host.error(cmd.id, err).await,
             },
             HostCommand::EndGame => {
+                self.end_question(Some(true)).await;
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
                     .await;
                 self.status = GameSessionStatus::Closed;
@@ -264,15 +239,19 @@ impl GameSession {
         id: Option<Uuid>,
         arc: Arc<Mutex<Self>>,
     ) -> Result<(), GameSessionError> {
-        match self.status {
+        match &mut self.status {
             GameSessionStatus::Closed => return Err(GameSessionError::InvalidCode),
             GameSessionStatus::Waiting => return Err(GameSessionError::NotStarted),
-            GameSessionStatus::Started
-            | GameSessionStatus::Question { .. }
-            | GameSessionStatus::Leaderboard { .. } => (),
+            GameSessionStatus::Started | GameSessionStatus::Leaderboard { .. } => (),
+            GameSessionStatus::Question { abort_handle, .. } => {
+                if let Some(abort_handle) = abort_handle.take() {
+                    abort_handle.abort();
+                }
+                self.end_question(None).await;
+            }
         }
 
-        let quiz = self.quiz.as_ref().ok_or(GameSessionError::QuizMissing)?;
+        let quiz = self.quiz.clone().ok_or(GameSessionError::QuizMissing)?;
 
         let question = if let Some(id) = id {
             quiz.questions
@@ -281,12 +260,11 @@ impl GameSession {
                 .ok_or(GameSessionError::QuestionNotFound)?
         } else {
             let question = match self.status {
-                GameSessionStatus::Question { idx, .. }
-                | GameSessionStatus::Leaderboard { idx } => idx + 1,
+                GameSessionStatus::Leaderboard { idx } => idx + 1,
                 _ => 0,
             };
             if question >= quiz.questions.len() {
-                return Err(GameSessionError::QuestionNotFound);
+                return Err(GameSessionError::NoQuestionLeft);
             }
             question
         };
@@ -306,7 +284,7 @@ impl GameSession {
                         && *idx == question
                         && session.players.len() > *answers
                     {
-                        session.end_question().await;
+                        session.end_question(None).await;
                     }
                 })
             });
@@ -318,7 +296,10 @@ impl GameSession {
         };
 
         let total_questions = quiz.questions.len();
-        let question = Arc::new(DisplayQuestionMessage::new(&quiz.questions[question], total_questions));
+        let question = Arc::new(DisplayQuestionMessage::new(
+            &quiz.questions[question],
+            total_questions,
+        ));
 
         self.host
             .msg(Message {
@@ -486,7 +467,7 @@ impl GameSession {
                             if let Some(handle) = abort_handle {
                                 handle.abort();
                             }
-                            self.end_question().await;
+                            self.end_question(None).await;
                         }
                     }
                     Err(err) => player.error(cmd.id, err).await,
@@ -510,53 +491,61 @@ impl GameSession {
         execute_futures(iterator).await
     }
 
-    pub async fn end_question(&mut self) -> bool {
+    pub async fn end_question(&mut self, is_final: Option<bool>) {
         let GameSessionStatus::Question { idx, .. } = &self.status else {
-            return false;
+            return;
         };
         let Some(quiz) = &self.quiz else {
-            return false;
+            return;
         };
 
+        let is_final = is_final.unwrap_or(*idx + 1 >= quiz.questions.len());
         let question = &quiz.questions[*idx];
         let correct_answers = Arc::new(question.options.correct_answer_list());
 
         let mut leaderboard = Vec::with_capacity(self.players.len());
 
-        let iterator = self.players.iter_mut().map(|player| {
+        let iterator = self.players.iter_mut().filter_map(|player| {
             let points = player.apply_points(question.model.id);
-            leaderboard.push(LeaderboardEntry {
-                id: player.id,
-                name: player.name.clone().unwrap_or_default(),
-                emoji: player.emoji.map(|e| e.to_string()),
-                total_points: player.points,
-                points,
-            });
+            // a player without name isn't joined
+            player.name.clone().map(|name| {
+                leaderboard.push(LeaderboardEntry {
+                    id: player.id,
+                    name,
+                    emoji: player.emoji,
+                    total_points: player.points,
+                    points,
+                });
 
-            let correct_answers = Arc::clone(&correct_answers);
-            async move {
-                player
-                    .msg(Message::from(&PlayerMessage::QuestionResult {
-                        question: question.model.id,
-                        correct_answers,
-                        total_points: player.points,
-                        points,
-                    }))
-                    .await;
-            }
+                let correct_answers = Arc::clone(&correct_answers);
+                async move {
+                    player
+                        .msg(Message::from(&PlayerMessage::QuestionResult {
+                            question: question.model.id,
+                            correct_answers,
+                            total_points: player.points,
+                            points,
+                        }))
+                        .await;
+                }
+            })
         });
         execute_futures(iterator).await;
 
         leaderboard.sort();
-        let is_final = *idx + 1 >= quiz.questions.len();
-
         self.status = GameSessionStatus::Leaderboard { idx: *idx };
 
-        if is_final {
-            let leaderboard_arc = Arc::new(leaderboard.clone());
+        let leaderboard = Arc::new(leaderboard);
+        self.host
+            .msg(Message::from(&HostMessage::DisplayLeaderboard {
+                leaderboard: Arc::clone(&leaderboard),
+                is_final,
+            }))
+            .await;
 
+        if is_final {
             let player_iterator = self.players.iter_mut().map(|player| {
-                let leaderboard = Arc::clone(&leaderboard_arc);
+                let leaderboard = Arc::clone(&leaderboard);
                 async move {
                     player
                         .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
@@ -567,52 +556,7 @@ impl GameSession {
                 }
             });
             execute_futures(player_iterator).await;
-
-            self.host
-                .msg(Message::from(&HostMessage::DisplayLeaderboard {
-                    leaderboard,
-                    is_final,
-                }))
-                .await;
         }
-
-        is_final
-    }
-
-    async fn send_final_leaderboard(&mut self) {
-        let mut leaderboard: Vec<LeaderboardEntry> = self
-            .players
-            .iter()
-            .map(|player| LeaderboardEntry {
-                id: player.id,
-                name: player.name.clone().unwrap_or_default(),
-                emoji: player.emoji.map(|e| e.to_string()),
-                total_points: player.points,
-                points: 0,
-            })
-            .collect();
-        leaderboard.sort();
-        let leaderboard_arc = Arc::new(leaderboard.clone());
-
-        let player_iterator = self.players.iter_mut().map(|player| {
-            let leaderboard = Arc::clone(&leaderboard_arc);
-            async move {
-                player
-                    .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
-                        leaderboard,
-                        is_final: true,
-                    }))
-                    .await;
-            }
-        });
-        execute_futures(player_iterator).await;
-
-        self.host
-            .msg(Message::from(&HostMessage::DisplayLeaderboard {
-                leaderboard,
-                is_final: true,
-            }))
-            .await;
     }
 }
 
