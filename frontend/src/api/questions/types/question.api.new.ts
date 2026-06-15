@@ -45,26 +45,29 @@ export type QuestionRequest =
 
 interface BaseQuestionResponse extends Identifier, ReadonlyMetadata {}
 
+type RemoveNextAndPrev<T> = Omit<T, "next" | "prev">
+type RemoveOptions<T> = Omit<T, "options">
+
 interface SlideQuestionResponse
-    extends BaseQuestionResponse, Omit<SlideQuestionRequest, "prev" | "next"> {}
+    extends BaseQuestionResponse, RemoveNextAndPrev<SlideQuestionRequest> {}
 
 interface OrderQuestionOptionResponse extends Identifier, OrderQuestionOptionRequest {}
 interface OrderQuestionResponse
-    extends BaseQuestionResponse, Omit<OrderQuestionRequest, "options" | "next" | "prev"> {
+    extends BaseQuestionResponse, RemoveNextAndPrev<RemoveOptions<OrderQuestionRequest>> {
     options: OrderQuestionOptionResponse[]
 }
 
 interface SingleChoiceQuestionOptionResponse
     extends Identifier, SingleChoiceQuestionOptionRequest {}
 interface SingleChoiceQuestionResponse
-    extends BaseQuestionResponse, Omit<SingleChoiceQuestionRequest, "options" | "next" | "prev"> {
+    extends BaseQuestionResponse, RemoveNextAndPrev<RemoveOptions<SingleChoiceQuestionRequest>> {
     options: SingleChoiceQuestionOptionResponse[]
 }
 
 interface MultipleChoiceQuestionOptionResponse
     extends Identifier, MultipleChoiceQuestionOptionRequest {}
 interface MultipleChoiceQuestionResponse
-    extends BaseQuestionResponse, Omit<MultipleChoiceQuestionRequest, "options" | "prev" | "next"> {
+    extends BaseQuestionResponse, RemoveNextAndPrev<RemoveOptions<MultipleChoiceQuestionRequest>> {
     options: MultipleChoiceQuestionOptionResponse[]
 }
 
