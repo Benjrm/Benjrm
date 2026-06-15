@@ -1,11 +1,10 @@
 import type { Modifier } from "@dnd-kit/core"
-import type { Question } from "@/types/question"
-import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api"
+import type { Question as QuestionOld } from "@/types/question"
+import type { QuestionApiRequest } from "@/api/questions/types/question.api"
 import tempId from "@/utils/tempId"
-import { QueueOpEnum } from "@/hooks/useQuestionChangeQueue"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
-import type { QuestionRequest, QuestionType } from "@/api/questions/types/question.api.new.ts"
+import { QueueOpEnum } from "@/hooks/useQuestionChangeQueue"
+import type { Question, QuestionType } from "@/api/questions/types/question.api.new.ts"
 
 export function getQuestionPreviewText(text: string | undefined, type?: QuestionType): string {
     const firstLine =
@@ -25,58 +24,26 @@ export function createEmptyQuestion(): Question {
     return {
         id: tempId(),
         question: "",
+        created: new Date(),
+        modified: new Date(),
+        type: "MULTIPLE_CHOICE",
         options: [
             { id: tempId(), answer: "", correct: false },
             { id: tempId(), answer: "", correct: false },
         ],
-        type: "MULTIPLE_CHOICE",
         hidden: false,
     }
 }
 
-export function questionToRequest(question: Question): QuestionRequest {
-    const getOptions = () => {
-        if (question.type === "SLIDE") return []
-        if (question.type === "ORDER")
-            return question.options.map((opt) => ({ answer: opt.answer }))
-        return question.options.map((opt) => ({
-            answer: opt.answer,
-            correct: Boolean((opt as { correct?: boolean }).correct),
-        }))
-    }
-
-    return {
-        question: question.question,
-        type: question.type,
-        hidden: question.hidden,
-        options: getOptions(),
-    }
-}
-
-export function responseToQuestion(response: QuestionApiResponse): Question {
-    const optionsRaw = Array.isArray(response.options) ? response.options : []
-
-    const options = optionsRaw.map((opt) => ({
-        id: String(opt.id ?? tempId()),
-        answer: String(opt.answer ?? ""),
-        correct: Boolean((opt as { correct?: boolean }).correct),
-    }))
-
-    return {
-        id: String(response.id ?? tempId()),
-        question: String(response.question ?? ""),
-        type: response.type ?? QuestionTypeEnum.MULTIPLE_CHOICE,
-        hidden: Boolean(response.hidden),
-        options,
-    }
-}
-
-export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueItem[]): Question[] {
+export function applyQueueToQuestions(
+    baseQuestions: QuestionOld[],
+    queue: QueueItem[]
+): QuestionOld[] {
     if (queue.length === 0) return baseQuestions
 
     let draftQuestions = [...baseQuestions]
 
-    const applyRequest = (question: Question, request: QuestionApiRequest): Question => {
+    const applyRequest = (question: QuestionOld, request: QuestionApiRequest): QuestionOld => {
         const nextOptions = Array.isArray(request.options)
             ? (
                   request.options as {
@@ -108,7 +75,7 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
             const orderSet = new Set(order)
             const orderedQuestions = order
                 .map((questionId) => draftQuestions.find((q) => q.id === questionId))
-                .filter((question): question is Question => Boolean(question))
+                .filter((question): question is QuestionOld => Boolean(question))
             const remainingQuestions = draftQuestions.filter(
                 (question) => !orderSet.has(question.id)
             )
