@@ -1,14 +1,17 @@
-import type { QuestionRequest, QuestionResponse } from "@/api/questions/types/question.api.new.ts"
+import type {
+    Question,
+    QuestionRequest,
+} from "@/api/questions/types/question.api.new.ts"
 
 export interface QuestionAdapter {
-    createQuestion: (quizId: string, request: QuestionRequest) => Promise<QuestionResponse>
-    getQuestions: (quizId: string) => Promise<QuestionResponse[]>
-    getQuestion: (quizId: string, questionId: string) => Promise<QuestionResponse>
+    createQuestion: (quizId: string, request: QuestionRequest) => Promise<Question>
+    getQuestions: (quizId: string) => Promise<Question[]>
+    getQuestion: (quizId: string, questionId: string) => Promise<Question>
     updateQuestion: (
         quizId: string,
         questionId: string,
         request: Partial<QuestionRequest>
-    ) => Promise<QuestionResponse>
+    ) => Promise<Question>
     deleteQuestion: (quizId: string, questionId: string) => Promise<void>
     reorderQuestions: (quizId: string, order: string[]) => Promise<void>
 }

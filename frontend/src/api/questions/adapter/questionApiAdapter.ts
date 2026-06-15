@@ -1,12 +1,18 @@
 import type { QuestionAdapter } from "@/api/questions/adapter/questionAdapter.ts"
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/api/client.ts"
-import type { QuestionRequest, QuestionResponse } from "@/api/questions/types/question.api.new.ts"
+import type {
+    Question,
+    QuestionRequest,
+    QuestionResponse,
+} from "@/api/questions/types/question.api.new.ts"
+import toQuestion from "@/api/questions/mapper/question.mapper.ts"
 
 export default class QuestionApiAdapter implements QuestionAdapter {
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
     // eslint-disable-next-line class-methods-use-this
-    async createQuestion(quizId: string, request: QuestionRequest): Promise<QuestionResponse> {
-        return apiPost<QuestionResponse>(`/quizzes/${quizId}/questions`, request)
+    async createQuestion(quizId: string, request: QuestionRequest): Promise<Question> {
+        const dto = await apiPost<QuestionResponse>(`/quizzes/${quizId}/questions`, request)
+        return toQuestion(dto)
     }
 
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
@@ -17,14 +23,16 @@ export default class QuestionApiAdapter implements QuestionAdapter {
 
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
     // eslint-disable-next-line class-methods-use-this
-    async getQuestions(quizId: string): Promise<QuestionResponse[]> {
-        return apiGet(`/quizzes/${quizId}/questions`)
+    async getQuestions(quizId: string): Promise<Question[]> {
+        const dtos = await apiGet<QuestionResponse[]>(`/quizzes/${quizId}/questions`)
+        return dtos.map(toQuestion)
     }
 
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
     // eslint-disable-next-line class-methods-use-this
-    async getQuestion(quizId: string, questionId: string): Promise<QuestionResponse> {
-        return apiGet(`/quizzes/${quizId}/questions/${questionId}`)
+    async getQuestion(quizId: string, questionId: string): Promise<Question> {
+        const dto = await apiGet<QuestionResponse>(`/quizzes/${quizId}/questions/${questionId}`)
+        return toQuestion(dto)
     }
 
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
@@ -33,8 +41,12 @@ export default class QuestionApiAdapter implements QuestionAdapter {
         quizId: string,
         questionId: string,
         request: Partial<QuestionRequest>
-    ): Promise<QuestionResponse> {
-        return apiPatch(`/quizzes/${quizId}/questions/${questionId}`, request)
+    ): Promise<Question> {
+        const dto = await apiPatch<QuestionResponse>(
+            `/quizzes/${quizId}/questions/${questionId}`,
+            request
+        )
+        return toQuestion(dto)
     }
 
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
