@@ -1,16 +1,176 @@
 use {
     crate::{
         app_data::TestAppData,
+        auth::User,
         error::Error,
-        game_session::{Channel, ChannelError, GameSessionError, HostMessage, Message},
+        game_session::{
+            Channel, ChannelError, Command, DisplayQuestionMessage, GameSession, GameSessionError,
+            HostCommand, HostMessage, Message, PlayerCommand, PlayerMessage,
+            api::ws::WsChannelError,
+        },
+        question::{
+            NewQuestion, NewQuestionOptions, Question,
+            answer::{choice::NewAnswerChoice, order::NewAnswerOrder},
+        },
         quiz::{QuizError, test::create_one},
     },
+    actix_ws::Closed,
+    serde::Serialize,
     std::sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
     },
+    tokio::sync::{Mutex, mpsc},
     uuid::Uuid,
 };
+
+struct DummyChanel<T> {
+    id: u64,
+    closed: Arc<AtomicBool>,
+    sender: mpsc::Sender<T>,
+}
+
+impl<T: Serialize + Sync + Send + Clone> DummyChanel<T> {
+    pub fn new() -> (Self, Arc<AtomicBool>, mpsc::Receiver<T>) {
+        let (sender, receiver) = mpsc::channel(10);
+        let closed = Arc::new(AtomicBool::new(false));
+        let _self = Self {
+            id: <Self as Channel<T>>::generate_id(),
+            closed: closed.clone(),
+            sender,
+        };
+        (_self, closed, receiver)
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: Serialize + Sync + Send + Clone> Channel<T> for DummyChanel<T> {
+    async fn send(&mut self, msg: Message<'_, T>) -> Result<(), ChannelError> {
+        match self.closed.load(Ordering::Relaxed) {
+            true => Err(WsChannelError::Tx(Closed).into()),
+            false => self
+                .sender
+                .send(msg.msg.clone())
+                .await
+                .map_err(|_| WsChannelError::Tx(Closed).into()),
+        }
+    }
+    async fn close(self: Box<Self>) {
+        self.closed.store(true, Ordering::Relaxed);
+    }
+    fn id(&self) -> u64 {
+        self.id
+    }
+}
+
+lazy_static::lazy_static! {
+    static ref DUMMY_CHOICE_ANSWERS: Vec<NewAnswerChoice> = vec![
+        NewAnswerChoice { answer: "correct1".into(), correct: true},
+        NewAnswerChoice { answer: "correct2".into(), correct: true},
+        NewAnswerChoice { answer: "wrong1".into(), correct: false},
+        NewAnswerChoice { answer: "wrong2".into(), correct: false},
+    ];
+    static ref DUMMY_ORDER_ANSWERS: Vec<NewAnswerOrder> = vec![
+        NewAnswerOrder { answer: "item 1".into()},
+        NewAnswerOrder { answer: "item 2".into()},
+        NewAnswerOrder { answer: "item 3".into(), },
+        NewAnswerOrder { answer: "item 4".into(), },
+    ];
+
+    static ref DUMMY_QUESTIONS: Vec<NewQuestion> = vec![
+        NewQuestion {
+            question: "slide".into(),
+            hidden: false,
+            position: None,
+            options: NewQuestionOptions::Slide,
+        },
+        NewQuestion {
+            question: "single choice".into(),
+            hidden: false,
+            position: None,
+            options: NewQuestionOptions::SingleChoice(DUMMY_CHOICE_ANSWERS.clone()),
+        },
+        NewQuestion {
+            question: "multiple choice".into(),
+            hidden: false,
+            position: None,
+            options: NewQuestionOptions::MultipleChoice(DUMMY_CHOICE_ANSWERS.clone()),
+        },
+        NewQuestion {
+            question: "order".into(),
+            hidden: false,
+            position: None,
+            options: NewQuestionOptions::Order(DUMMY_ORDER_ANSWERS.clone()),
+        }
+    ];
+}
+
+async fn dummy_session(
+    data: &TestAppData,
+    user: &User,
+    with_quiz: bool,
+) -> (u32, Arc<Mutex<GameSession>>) {
+    let quiz = match with_quiz {
+        true => {
+            let quiz = create_one(&data.db, user.id, Some("test quiz".into()), None, false)
+                .await
+                .unwrap();
+            for question in &*DUMMY_QUESTIONS {
+                quiz.clone()
+                    .create_question(&data.db, question.clone())
+                    .await
+                    .unwrap();
+            }
+            Some(quiz.id)
+        }
+        false => None,
+    };
+    data.game_sessions
+        .create_session(&data.db, user.clone(), quiz)
+        .await
+        .unwrap()
+}
+
+async fn dummy_player(
+    session: &mut GameSession,
+    host_rx: &mut mpsc::Receiver<HostMessage>,
+    name: &str,
+) -> (Uuid, mpsc::Receiver<PlayerMessage>) {
+    let player = Uuid::new_v4();
+    let (player_channel, _, mut player_rx) = DummyChanel::new();
+    session
+        .set_player_channel(player, player_channel)
+        .await
+        .unwrap();
+
+    session
+        .handle_player_cmd(
+            Command {
+                id: Some(1),
+                command: PlayerCommand::SetName {
+                    name: name.into(),
+                    emoji: None,
+                },
+            },
+            player,
+        )
+        .await;
+    assert!(matches!(player_rx.recv().await.unwrap(), PlayerMessage::Ok));
+    match host_rx.recv().await.unwrap() {
+        HostMessage::AddPlayer {
+            id,
+            name: player_name,
+            emoji,
+        } => {
+            assert_eq!(id, player);
+            assert_eq!(player_name, name);
+            assert_eq!(emoji, None);
+        }
+        _ => panic!(),
+    }
+
+    (player, player_rx)
+}
 
 #[actix_web::test]
 async fn create_get_session() {
@@ -18,11 +178,7 @@ async fn create_get_session() {
     let user = data.dummy_user().await;
 
     {
-        let (code, _) = data
-            .game_sessions
-            .create_session(&data.db, user.clone(), None)
-            .await
-            .unwrap();
+        let (code, _) = dummy_session(&data, &user, false).await;
         let session = data.game_sessions.get_session(code).await.unwrap();
         let session = session.lock().await;
         assert_eq!(session.host.user.id, user.id);
@@ -57,39 +213,18 @@ async fn check_set_host_channel() {
     let data = TestAppData::test().await;
     let user = data.dummy_user().await;
 
-    let closed = Arc::new(AtomicBool::new(false));
-    let closed2 = Arc::new(AtomicBool::new(false));
-    struct DummyChanel(u64, Arc<AtomicBool>);
-    #[async_trait::async_trait]
-    impl Channel<HostMessage> for DummyChanel {
-        async fn send(&mut self, _msg: Message<'_, HostMessage>) -> Result<(), ChannelError> {
-            Ok(())
-        }
-        async fn close(self: Box<Self>) {
-            self.1.store(true, Ordering::Relaxed);
-        }
-        fn id(&self) -> u64 {
-            self.0
-        }
-    }
-
-    let (_, session) = data
-        .game_sessions
-        .create_session(&data.db, user.clone(), None)
-        .await
-        .unwrap();
+    let (_, session) = dummy_session(&data, &user, false).await;
     let mut session = session.lock().await;
 
     session.check_set_host_channel(&user).unwrap();
-    session
-        .set_host_channel(DummyChanel(DummyChanel::generate_id(), closed.clone()))
-        .await;
+    let (channel1, closed1, _) = DummyChanel::new();
+    session.set_host_channel(channel1).await;
     session.check_set_host_channel(&user).unwrap();
-    assert!(!closed.load(Ordering::Relaxed));
-    session
-        .set_host_channel(DummyChanel(DummyChanel::generate_id(), closed2.clone()))
-        .await;
-    assert!(closed.load(Ordering::Relaxed));
+    assert!(!closed1.load(Ordering::Relaxed));
+
+    let (channel2, closed2, _) = DummyChanel::new();
+    session.set_host_channel(channel2).await;
+    assert!(closed1.load(Ordering::Relaxed));
     assert!(!closed2.load(Ordering::Relaxed));
 
     let user2 = data.dummy_user().await;
@@ -127,11 +262,7 @@ async fn delete_session() {
     let user = data.dummy_user().await;
     let wrong_user = data.dummy_user().await;
 
-    let (code, _) = data
-        .game_sessions
-        .create_session(&data.db, user.clone(), None)
-        .await
-        .unwrap();
+    let (code, _) = dummy_session(&data, &user, false).await;
 
     assert!(matches!(
         data.game_sessions.delete_session(&wrong_user, code).await,
@@ -147,4 +278,336 @@ async fn delete_session() {
         data.game_sessions.get_session(code).await,
         Err(GameSessionError::InvalidCode)
     ));
+}
+
+#[actix_web::test]
+async fn join() {
+    let data = TestAppData::test().await;
+    let user = data.dummy_user().await;
+
+    let (code, session) = dummy_session(&data, &user, false).await;
+    let mut session = session.lock().await;
+
+    let (host_channel, _, mut host_rx) = DummyChanel::new();
+    let player = Uuid::new_v4();
+    let (player_channel, player_closed, mut player_rx) = DummyChanel::new();
+
+    {
+        session.set_host_channel(host_channel).await;
+        session
+            .set_player_channel(player, player_channel)
+            .await
+            .unwrap();
+
+        session
+            .handle_player_cmd(
+                Command {
+                    id: Some(1),
+                    command: PlayerCommand::SetName {
+                        name: "cool name".into(),
+                        emoji: Some("😀".into()),
+                    },
+                },
+                player,
+            )
+            .await;
+        assert!(matches!(player_rx.recv().await.unwrap(), PlayerMessage::Ok));
+        match host_rx.recv().await.unwrap() {
+            HostMessage::AddPlayer { id, name, emoji } => {
+                assert_eq!(id, player);
+                assert_eq!(name, "cool name");
+                assert_eq!(emoji, Some(emojis::get("😀").unwrap()));
+            }
+            _ => panic!(),
+        }
+    }
+
+    {
+        let player2 = Uuid::new_v4();
+        let (player2_channel, _, mut player2_rx) = DummyChanel::new();
+        session
+            .set_player_channel(player2, player2_channel)
+            .await
+            .unwrap();
+
+        session
+            .handle_player_cmd(
+                Command {
+                    id: Some(1),
+                    command: PlayerCommand::SetName {
+                        name: "cool name".into(),
+                        emoji: Some("😀".into()),
+                    },
+                },
+                player2,
+            )
+            .await;
+        match player2_rx.recv().await.unwrap() {
+            PlayerMessage::Error(err) => assert_eq!(err.error, "name_already_taken"),
+            _ => panic!(),
+        }
+    }
+
+    {
+        session
+            .handle_host_cmd(
+                Command {
+                    id: Some(2),
+                    command: HostCommand::KickPlayer { id: player },
+                },
+                code,
+            )
+            .await;
+
+        assert!(matches!(host_rx.recv().await.unwrap(), HostMessage::Ok));
+        assert!(matches!(
+            player_rx.recv().await.unwrap(),
+            PlayerMessage::Kick
+        ));
+        assert!(player_closed.load(Ordering::Relaxed));
+    }
+}
+
+#[actix_web::test]
+async fn rename_player() {
+    let data = TestAppData::test().await;
+    let user = data.dummy_user().await;
+
+    let (_, session) = dummy_session(&data, &user, false).await;
+    let mut session = session.lock().await;
+
+    let (host_channel, _, mut host_rx) = DummyChanel::new();
+    session.set_host_channel(host_channel).await;
+
+    let (player, mut player_rx) = dummy_player(&mut session, &mut host_rx, "name").await;
+    session
+        .handle_player_cmd(
+            Command {
+                id: Some(1),
+                command: PlayerCommand::SetName {
+                    name: "name2".into(),
+                    emoji: Some("😀".into()),
+                },
+            },
+            player,
+        )
+        .await;
+    assert!(matches!(player_rx.recv().await.unwrap(), PlayerMessage::Ok));
+    match host_rx.recv().await.unwrap() {
+        HostMessage::RenamePlayer { id, name, emoji } => {
+            assert_eq!(id, player);
+            assert_eq!(name, "name2");
+            assert_eq!(emoji, Some(emojis::get("😀").unwrap()));
+        }
+        _ => panic!(),
+    }
+}
+
+#[actix_web::test]
+async fn start() {
+    let data = TestAppData::test().await;
+    let user = data.dummy_user().await;
+
+    {
+        let (code, session) = dummy_session(&data, &user, false).await;
+        let mut session = session.lock().await;
+
+        let (channel, _, mut rx) = DummyChanel::new();
+        session.set_host_channel(channel).await;
+
+        session
+            .handle_host_cmd(
+                Command {
+                    id: Some(1),
+                    command: HostCommand::Start,
+                },
+                code,
+            )
+            .await;
+        match rx.recv().await.unwrap() {
+            HostMessage::Error(err) => assert_eq!(err.error, "quiz_missing"),
+            _ => panic!(),
+        }
+    }
+
+    {
+        let (code, session) = dummy_session(&data, &user, true).await;
+        let mut session = session.lock().await;
+
+        let (channel, _, mut rx) = DummyChanel::new();
+        session.set_host_channel(channel).await;
+
+        session
+            .handle_host_cmd(
+                Command {
+                    id: Some(1),
+                    command: HostCommand::Start,
+                },
+                code,
+            )
+            .await;
+        match rx.recv().await.unwrap() {
+            HostMessage::Error(err) => assert_eq!(err.error, "no_players"),
+            _ => panic!(),
+        }
+
+        let player = Uuid::new_v4();
+        let (player_channel, _, mut player_rx) = DummyChanel::new();
+        session
+            .set_player_channel(player, player_channel)
+            .await
+            .unwrap();
+
+        session
+            .handle_host_cmd(
+                Command {
+                    id: Some(2),
+                    command: HostCommand::Start,
+                },
+                code,
+            )
+            .await;
+        match rx.recv().await.unwrap() {
+            HostMessage::Error(err) => assert_eq!(err.error, "no_players"),
+            _ => panic!(),
+        }
+
+        session
+            .handle_player_cmd(
+                Command {
+                    id: None,
+                    command: PlayerCommand::SetName {
+                        name: "test".into(),
+                        emoji: None,
+                    },
+                },
+                player,
+            )
+            .await;
+        match rx.recv().await.unwrap() {
+            HostMessage::AddPlayer { id, name, emoji } => {
+                assert_eq!(id, player);
+                assert_eq!(name, "test");
+                assert_eq!(emoji, None);
+            }
+            _ => panic!(),
+        }
+
+        session
+            .handle_host_cmd(
+                Command {
+                    id: Some(2),
+                    command: HostCommand::Start,
+                },
+                code,
+            )
+            .await;
+        assert!(matches!(rx.recv().await.unwrap(), HostMessage::Ok));
+        assert!(matches!(
+            player_rx.recv().await.unwrap(),
+            PlayerMessage::Start
+        ));
+
+        let player2 = Uuid::new_v4();
+        let (player2_channel, _, _) = DummyChanel::new();
+        assert!(matches!(
+            session.set_player_channel(player2, player2_channel).await,
+            Err(GameSessionError::AlreadyStarted)
+        ));
+
+        session
+            .handle_host_cmd(
+                Command {
+                    id: Some(2),
+                    command: HostCommand::Start,
+                },
+                code,
+            )
+            .await;
+        match rx.recv().await.unwrap() {
+            HostMessage::Error(err) => assert_eq!(err.error, "already_started"),
+            _ => panic!(),
+        }
+    }
+}
+
+#[actix_web::test]
+async fn show_question() {
+    let data = TestAppData::test().await;
+    let user = data.dummy_user().await;
+
+    let (code, session) = dummy_session(&data, &user, true).await;
+    let mut session = session.lock().await;
+
+    let (channel, _, mut rx) = DummyChanel::new();
+    session.set_host_channel(channel).await;
+
+    let (_, mut player_rx) = dummy_player(&mut session, &mut rx, "player name").await;
+    session
+        .handle_host_cmd(
+            Command {
+                id: Some(1),
+                command: HostCommand::Start,
+            },
+            code,
+        )
+        .await;
+    assert!(matches!(rx.recv().await.unwrap(), HostMessage::Ok));
+    assert!(matches!(
+        player_rx.recv().await.unwrap(),
+        PlayerMessage::Start
+    ));
+
+    let quiz = session.quiz.clone().unwrap();
+    let mut check_question_command = async |command: HostCommand, expected: &Question| {
+        fn check_question(
+            host: Arc<DisplayQuestionMessage>,
+            player: Arc<DisplayQuestionMessage>,
+            expected: &Question,
+        ) {
+            assert_eq!(host.id, expected.model.id);
+            assert_eq!(host.question, expected.model.question);
+            assert_eq!(player.id, expected.model.id);
+            assert_eq!(player.question, expected.model.question);
+        }
+
+        session
+            .handle_host_cmd(
+                Command {
+                    id: Some(2),
+                    command,
+                },
+                code,
+            )
+            .await;
+
+        let host_question = match rx.recv().await.unwrap() {
+            HostMessage::DisplayQuestion(question) => question,
+            _ => panic!(),
+        };
+        assert!(matches!(rx.recv().await.unwrap(), HostMessage::Ok));
+        let player_question = match player_rx.recv().await.unwrap() {
+            PlayerMessage::DisplayQuestion(question) => question,
+            _ => panic!(),
+        };
+
+        check_question(host_question, player_question, expected);
+    };
+
+    check_question_command(HostCommand::NextQuestion, &quiz.questions[0]).await;
+    check_question_command(HostCommand::NextQuestion, &quiz.questions[1]).await;
+    check_question_command(
+        HostCommand::ShowQuestion {
+            id: quiz.questions[0].model.id,
+        },
+        &quiz.questions[0],
+    )
+    .await;
+    check_question_command(
+        HostCommand::ShowQuestion {
+            id: quiz.questions[2].model.id,
+        },
+        &quiz.questions[2],
+    )
+    .await;
 }

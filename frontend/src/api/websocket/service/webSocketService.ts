@@ -189,4 +189,18 @@ export default class WebSocketService {
             this.listeners.get(command)?.delete(handler as AnyServerEventHandler)
         }
     }
+
+    /**
+     * Dev-only: fires a server event directly through the listener pipeline without a real socket.
+     * Used by mock hooks to simulate server messages.
+     */
+    public simulateReceive<K extends keyof ServerEvents>(
+        command: K,
+        payload: ServerEvents[K]
+    ): void {
+        const handlers = this.listeners.get(command)
+        handlers?.forEach((handler) =>
+            (handler as ServerEventHandler<K>)(payload, undefined, undefined)
+        )
+    }
 }

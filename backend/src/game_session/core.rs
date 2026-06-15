@@ -192,14 +192,14 @@ impl GameSession {
             HostCommand::Start => {
                 let check_error = || {
                     if !matches!(self.status, GameSessionStatus::Waiting) {
-                        return Err(GameSessionError::SessionAlreadyStarted);
+                        return Err(GameSessionError::AlreadyStarted);
                     }
 
                     if self.quiz.is_none() {
                         return Err(GameSessionError::QuizMissing);
                     }
 
-                    if self.players.is_empty() {
+                    if self.players.is_empty() || !self.players.iter().any(|x| x.name.is_some()) {
                         return Err(GameSessionError::NoPlayers);
                     }
 

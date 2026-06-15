@@ -26,8 +26,6 @@ export default function WaitingRoom(): JSX.Element {
     const { data: quiz, isLoading: isLoadingQuiz } = useSessionQuiz(isHost ? code : undefined)
 
     const wsCode = isLoadingSession ? undefined : code
-    useHostWebSocket(isHost ? wsCode : undefined)
-    usePlayerWebSocket(!isHost ? wsCode : undefined)
 
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null
     const session = useGameSession({ code, wsCode, isHost, isPlayer, storageKey })

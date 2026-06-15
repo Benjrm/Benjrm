@@ -14,6 +14,9 @@ import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
 import Quizzes from "@/pages/Quizzes.tsx"
 import InfoSlide from "@/pages/InfoSlide.tsx"
+import GamePage from "@/pages/GamePage.tsx"
+import HostDashboard from "@/pages/HostDashboard.tsx"
+import PlayLayout from "@/layouts/PlayLayout.tsx"
 
 const routes: RouteObject[] = [
     {
@@ -46,7 +49,12 @@ const routes: RouteObject[] = [
             },
             {
                 path: "/play/:code",
-                element: <WaitingRoom />,
+                element: <PlayLayout />,
+                children: [
+                    { index: true, element: <WaitingRoom /> },
+                    { path: "game", element: <GamePage /> },
+                    { path: "host", element: <HostDashboard /> },
+                ],
             },
         ],
     },

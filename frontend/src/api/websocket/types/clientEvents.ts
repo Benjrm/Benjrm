@@ -17,7 +17,7 @@ export interface ClientEvents {
     start: object
     nextQuestion: object
     showQuestion: {
-        question: string
+        id: string
     }
     setQuiz: {
         quiz: string

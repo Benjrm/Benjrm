@@ -185,7 +185,7 @@ impl<'a, T: Serialize> From<&'a T> for Message<'a, T> {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Command<T> {
     pub id: Option<u64>,
@@ -198,7 +198,7 @@ pub trait CommandTrait: Sized {
     fn pong(&self) -> Option<(u32, DateTime<Utc>)>;
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 pub enum HostMessage {
     Ok,
@@ -253,7 +253,7 @@ impl PartialOrd for LeaderboardEntry {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(
     tag = "command",
     content = "payload",
@@ -282,7 +282,7 @@ impl CommandTrait for Command<HostCommand> {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 pub enum PlayerMessage {
     Ok,
@@ -303,7 +303,7 @@ pub enum PlayerMessage {
     },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(
     tag = "command",
     content = "payload",
