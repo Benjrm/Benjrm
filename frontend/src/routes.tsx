@@ -12,7 +12,6 @@ import WaitingRoom from "./pages/WaitingRoom"
 import DownloadableMarkdown from "./components/DownloadableMarkdown"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
-import Leaderboard from "@/quiz/leaderboard/components/Leaderboard.tsx"
 import SingleChoiceQuestion from "@/pages/SingleChoiceQuestion.tsx"
 import Quizzes from "@/pages/Quizzes.tsx"
 import InfoSlide from "@/pages/InfoSlide.tsx"
@@ -44,12 +43,6 @@ const routes: RouteObject[] = [
                 element: (
                     <ErrorPage message="The page you are looking for does not exist." title="404" />
                 ),
-            },
-            {
-                // Introduced in #28 only for testing purposes
-                // TODO: remove when the actual gameplay gets implemented
-                path: "/leaderboard",
-                element: <Leaderboard />,
             },
             {
                 path: "/auth/login",

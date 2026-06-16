@@ -172,6 +172,7 @@ export default function WaitingRoom(): JSX.Element {
     }, [wsCode, isPlayer, websocket])
 
     const navigate = useNavigate()
+    const [pendingStartId, setPendingStartId] = useState<number | null>(null)
 
     useSocketEvent("kick", () => {
         if (storageKey) sessionStorage.removeItem(storageKey)
@@ -194,8 +195,13 @@ export default function WaitingRoom(): JSX.Element {
     useSocketEvent("ok", (_payload, _timing, id) => {
         if (pendingId === id) {
             setPendingId(null)
-            // TODO: add command specific response handling when there are more commands (maybe add it globally)
             setNameSaved(true)
+        }
+        if (pendingStartId === id && code) {
+            setPendingStartId(null)
+            navigate(`/play/${code}/host`, {
+                state: { playerCount: players.length },
+            })
         }
     })
 
@@ -203,6 +209,10 @@ export default function WaitingRoom(): JSX.Element {
         if (pendingId === id) {
             setPendingId(null)
             setNameError(payload.message)
+        }
+        if (pendingStartId === id) {
+            setPendingStartId(null)
+            toast.error(payload.message ?? "Failed to start the quiz.")
         }
     })
 
@@ -217,13 +227,10 @@ export default function WaitingRoom(): JSX.Element {
     }
 
     const handleStartQuiz = useCallback(() => {
-        websocket.send({ command: "start" })
-        if (code) {
-            navigate(`/play/${code}/host`, {
-                state: { playerCount: players.length },
-            })
-        }
-    }, [websocket, code, navigate, players.length])
+        const id = Math.floor(Math.random() * 2 ** 31)
+        setPendingStartId(id)
+        websocket.send({ id, command: "start" })
+    }, [websocket])
 
     function onKickPlayer(playerId: string): void {
         websocket.send({ command: "kickPlayer", payload: { id: playerId } })
@@ -363,7 +370,12 @@ export default function WaitingRoom(): JSX.Element {
                     )}
 
                     <div className="mt-8 flex items-center justify-center border-t border-white/10 pt-6">
-                        {isHost ? <StartQuizButton onStartQuiz={handleStartQuiz} /> : null}
+                        {isHost ? (
+                            <StartQuizButton
+                                disabled={players.length === 0 || pendingStartId !== null}
+                                onStartQuiz={handleStartQuiz}
+                            />
+                        ) : null}
                         {!isHost && nameSaved ? (
                             <p className="text-muted-foreground text-sm font-medium">
                                 Waiting for host to start the game

@@ -12,6 +12,7 @@ import type { DragEndEvent } from "@dnd-kit/core"
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import type { ServerEvents } from "@/api/websocket/types/serverEvents"
+import CountdownDisplay from "@/components/CountdownDisplay"
 import QuestionContainer from "@/components/QuestionContainer"
 import AnswerOption from "@/components/AnswerOption"
 import SortableOrderOption from "@/components/SortableOrderOption"
@@ -105,13 +106,7 @@ export default function GamePage(): JSX.Element {
                     <span className="text-muted-foreground text-sm font-bold">
                         Question {questionIndex}
                     </span>
-                    {timeLeft !== null ? (
-                        <span
-                            className={`text-sm font-black ${timeLeft <= 5 ? "text-red-400" : "text-[#FF8A00]"}`}
-                        >
-                            {timeLeft > 0 ? `${timeLeft}s` : "Time's up!"}
-                        </span>
-                    ) : null}
+                    <CountdownDisplay timeLeft={timeLeft} variant="player" />
                 </div>
 
                 <QuestionContainer question={question.question} />

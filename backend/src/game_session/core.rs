@@ -181,8 +181,10 @@ impl GameSession {
                         return Err(GameSessionError::AlreadyStarted);
                     }
 
-                    if self.quiz.is_none() {
-                        return Err(GameSessionError::QuizMissing);
+                    let quiz = self.quiz.as_ref().ok_or(GameSessionError::QuizMissing)?;
+
+                    if quiz.questions.is_empty() {
+                        return Err(GameSessionError::NoQuestions);
                     }
 
                     if self.players.is_empty() || !self.players.iter().any(|x| x.name.is_some()) {

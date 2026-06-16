@@ -1,5 +1,6 @@
 import type { JSX } from "react"
 import type { Answer } from "@/types/quiz"
+import CountdownDisplay from "@/components/CountdownDisplay"
 
 interface QuestionPanelProps {
     question: string
@@ -32,11 +33,7 @@ export default function QuestionPanel({
                 <h3 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
                     Current Question
                 </h3>
-                {timeLeft !== null ? (
-                    <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-bold tracking-tight text-[#FF8A00] shadow-[0_0_15px_rgba(255,138,0,0.2)]">
-                        {timeLeft > 0 ? `${timeLeft}s left` : "Time's up!"}
-                    </div>
-                ) : null}
+                <CountdownDisplay timeLeft={timeLeft} variant="host" />
             </div>
 
             <div className="my-10">

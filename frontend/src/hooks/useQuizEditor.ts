@@ -40,6 +40,7 @@ export interface UseQuizEditorResult {
     bigQuestionError: string | null
     isLoadingQuestions: boolean
     questionLoadError: unknown
+    isQuizPlayable: boolean
     questions: Question[]
     currentQuestionIndex: number
     handleSelectQuestion: (n: number) => void
@@ -577,6 +578,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         })
     }
 
+    const isQuizPlayable =
+        hasInitializedQuestions &&
+        questions.length > 0 &&
+        questions.every((q) => validateQuestion(q) === null)
+
     return {
         quiz,
         quizTitle,
@@ -587,6 +593,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         bigQuestionError,
         isLoadingQuestions,
         questionLoadError,
+        isQuizPlayable,
         questions,
         currentQuestionIndex,
         handleSelectQuestion,

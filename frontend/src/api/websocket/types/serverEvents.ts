@@ -1,3 +1,5 @@
+import type { QuestionType } from "@/api/questions/types/questionType"
+
 /**
  * Maps server commands to their respective payload types.
  * Each key represents a command sent by the server, and its value defines the structure of the data payload associated with that command.
@@ -17,7 +19,7 @@ export interface ServerEvents {
         id: string
         question: string
         seconds: number | null
-        type: "SLIDE" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "ORDER"
+        type: QuestionType
         options: { answer: string }[]
     }
     questionResult: {

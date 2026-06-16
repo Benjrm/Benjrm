@@ -58,6 +58,8 @@ impl_err! {
         QuestionNotFound = NOT_FOUND,
         #[error("No players")]
         NoPlayers = BAD_REQUEST,
+        #[error("Quiz has no questions")]
+        NoQuestions = BAD_REQUEST,
     }
 }
 

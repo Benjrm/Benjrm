@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import type { JSX } from "react"
 import { useLocation, useParams, useSearchParams } from "react-router"
+import { toast } from "sonner"
 
 import useSocketEvent from "@/api/websocket/hooks/useSocketEvent"
 import useWebSocketContext from "@/api/websocket/hooks/useWebSocketContext"
@@ -43,20 +44,33 @@ export default function HostDashboard(): JSX.Element {
     const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([])
     const [timeLeft, setTimeLeft] = useCountdown(null)
 
+    // Error listener to catch backend rejections
+    useSocketEvent(
+        "error",
+        useCallback((payload) => {
+            console.error("WebSocket Error:", payload)
+            toast.error(payload.message ?? "An error occurred communicating with the server.")
+        }, [])
+    )
+
     useSocketEvent(
         "displayQuestion",
         useCallback(
             (payload) => {
                 setCurrentQuestion((prev) => prev + 1)
                 setCurrentQuestionText(payload.question)
-                setAnswers(
-                    payload.options.map((opt, idx) => ({
-                        id: opt.answer,
-                        text: opt.answer,
-                        color: ANSWER_COLORS[idx]?.color ?? "#888",
-                        icon: ANSWER_COLORS[idx]?.icon ?? "?",
-                    }))
-                )
+                if (payload.type === "SLIDE") {
+                    setAnswers([])
+                } else {
+                    setAnswers(
+                        payload.options.map((opt, idx) => ({
+                            id: `${payload.id}-${idx}`,
+                            text: opt.answer,
+                            color: ANSWER_COLORS[idx]?.color ?? "#888",
+                            icon: ANSWER_COLORS[idx]?.icon ?? "?",
+                        }))
+                    )
+                }
                 setTimeLeft(payload.seconds)
             },
             [setTimeLeft]
@@ -88,11 +102,19 @@ export default function HostDashboard(): JSX.Element {
     const mock = useMockHostEvents(isMock)
 
     // Automatically show the first question when the host dashboard mounts.
+    // Uses onConnect so the send waits for the socket to be OPEN rather than throwing
+    // if the component mounts while the connection is still being established.
     const hasRequestedFirstQuestion = useRef(false)
     useEffect(() => {
-        if (hasRequestedFirstQuestion.current || isMock) return
-        hasRequestedFirstQuestion.current = true
-        ws.send({ command: "nextQuestion" })
+        if (isMock || hasRequestedFirstQuestion.current) return undefined
+        const sendFirstQuestion = (): void => {
+            if (hasRequestedFirstQuestion.current) return
+            hasRequestedFirstQuestion.current = true
+
+            const id = Math.floor(Math.random() * 2 ** 31)
+            ws.send({ id, command: "nextQuestion" })
+        }
+        return ws.onConnect(sendFirstQuestion)
     }, [ws, isMock])
 
     const handleNextQuestion = useCallback(() => {
@@ -100,7 +122,9 @@ export default function HostDashboard(): JSX.Element {
             mock.handleNextQuestion()
             return
         }
-        ws.send({ command: "nextQuestion" })
+
+        const id = Math.floor(Math.random() * 2 ** 31)
+        ws.send({ id, command: "nextQuestion" })
     }, [mock, ws])
 
     return (
