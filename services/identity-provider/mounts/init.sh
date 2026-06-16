@@ -32,6 +32,11 @@ ACCESS_TOKEN=""
 get_admin_token() {
   echo -e "${BLUE}==> Getting admin token...${NO_COLOR}"
 
+  if [ -z "$KC_BOOTSTRAP_ADMIN_USERNAME" ] && [ -z "$KC_BOOTSTRAP_ADMIN_PASSWORD" ]; then
+    echo -e "${YELLOW}WARNING: KC_BOOTSTRAP_ADMIN_USERNAME and KC_BOOTSTRAP_ADMIN_PASSWORD are not set. Skipping Keycloak initialization.${NO_COLOR}"
+    exit 0
+  fi
+
   ACCESS_TOKEN=$(curl -s -X POST "$KEYCLOAK_URL/realms/master/protocol/openid-connect/token" \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d "client_id=admin-cli" \
@@ -41,7 +46,7 @@ get_admin_token() {
 
   if [ "$ACCESS_TOKEN" == "null" ] || [ -z "$ACCESS_TOKEN" ]; then
     echo -e "${RED}ERROR: Failed to get access token${NO_COLOR}"
-    exit 0
+    exit 1
   fi
 
   echo -e "${GREEN}==> Token '$ACCESS_TOKEN' received${NO_COLOR}"
