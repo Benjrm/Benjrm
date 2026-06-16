@@ -7,11 +7,13 @@ import useWebSocketContext from "@/api/websocket/hooks/useWebSocketContext"
 import useMockHostEvents from "@/api/websocket/hooks/useMockHostEvents"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import useQuestions from "@/api/questions/hooks/useQuestions"
+import useCountdown from "@/hooks/useCountdown"
 
 import DashboardHeader from "@/components/DashboardHeader"
 import QuestionPanel from "@/components/QuestionPanel"
-import SidebarLeaderboard from "@/components/SidebarLeaderboard"
-import type { Answer, LeaderboardEntry } from "@/types/quiz"
+import HostDashboardSidebar from "@/components/HostDashboardSidebar"
+import type { Answer } from "@/types/quiz"
+import type { LeaderboardItem } from "@/quiz/leaderboard/api/leaderboardItem"
 
 const ANSWER_COLORS = [
     { color: "#2d4cc9", icon: "▲" },
@@ -38,30 +40,27 @@ export default function HostDashboard(): JSX.Element {
     const [currentQuestion, setCurrentQuestion] = useState(0)
     const [currentQuestionText, setCurrentQuestionText] = useState("")
     const [answers, setAnswers] = useState<Answer[]>([])
-    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-    const [timeLeft, setTimeLeft] = useState<number | null>(null)
-
-    useEffect(() => {
-        if (timeLeft === null || timeLeft <= 0) return undefined
-        const id = setTimeout(() => setTimeLeft((t) => (t !== null && t > 0 ? t - 1 : 0)), 1000)
-        return () => clearTimeout(id)
-    }, [timeLeft])
+    const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([])
+    const [timeLeft, setTimeLeft] = useCountdown(null)
 
     useSocketEvent(
         "displayQuestion",
-        useCallback((payload) => {
-            setCurrentQuestion((prev) => prev + 1)
-            setCurrentQuestionText(payload.question)
-            setAnswers(
-                payload.options.map((opt, idx) => ({
-                    id: opt.answer,
-                    text: opt.answer,
-                    color: ANSWER_COLORS[idx]?.color ?? "#888",
-                    icon: ANSWER_COLORS[idx]?.icon ?? "?",
-                }))
-            )
-            setTimeLeft(payload.seconds)
-        }, [])
+        useCallback(
+            (payload) => {
+                setCurrentQuestion((prev) => prev + 1)
+                setCurrentQuestionText(payload.question)
+                setAnswers(
+                    payload.options.map((opt, idx) => ({
+                        id: opt.answer,
+                        text: opt.answer,
+                        color: ANSWER_COLORS[idx]?.color ?? "#888",
+                        icon: ANSWER_COLORS[idx]?.icon ?? "?",
+                    }))
+                )
+                setTimeLeft(payload.seconds)
+            },
+            [setTimeLeft]
+        )
     )
 
     useSocketEvent(
@@ -123,7 +122,7 @@ export default function HostDashboard(): JSX.Element {
                         totalQuestions={totalQuestions}
                     />
 
-                    <SidebarLeaderboard entries={leaderboard} onNext={handleNextQuestion} />
+                    <HostDashboardSidebar entries={leaderboard} onNext={handleNextQuestion} />
                 </div>
             </div>
         </div>
