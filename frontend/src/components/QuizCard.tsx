@@ -2,8 +2,8 @@
 
 import type { JSX } from "react"
 import { Link } from "react-router"
-import type { Quiz } from "@/api/quiz"
 import { PlayQuizButton } from "@/components/PlayQuizButton"
+import type { Quiz } from "@/api/quizzes/quizzes.types.ts"
 
 interface QuizCardProps {
     quiz: Quiz
