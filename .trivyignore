@@ -1,2 +1,8 @@
 # Only affected if using external identity provider (as mentioned in the README)
 GHSA-82j2-j2ch-gfr8
+
+# Only affected if the dev server is running on Windows and the sensitive file exists in an NTFS volume
+or the dev server is running on Windows and the sensitive file exists in a volume that 8.3 short name generation is
+# enabled (it is enabled by default on system volumes)
+# see: https://github.com/advisories/GHSA-fx2h-pf6j-xcff
+CVE-2026-53571
