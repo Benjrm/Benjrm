@@ -77,6 +77,8 @@ impl_err! {
         NoCurrentQuestion = BAD_REQUEST,
         #[error("No question left")]
         NoQuestionLeft = BAD_REQUEST,
+        #[error("Quiz has no questions")]
+        NoQuestions = BAD_REQUEST,
     }
 }
 

@@ -150,7 +150,7 @@ export default function Lobby({
                         {isHost ? (
                             <StartQuizButton
                                 disabled={pendingStartId !== null}
-                                onClick={onStartGame}
+                                onStartQuiz={onStartGame}
                             />
                         ) : (
                             <p className="text-muted-foreground text-sm font-medium">

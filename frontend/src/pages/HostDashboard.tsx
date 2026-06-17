@@ -1,130 +1,129 @@
-import { useState, useCallback, useEffect, useRef } from "react"
 import type { JSX } from "react"
-import { useLocation, useParams, useSearchParams } from "react-router"
-
-import useSocketEvent from "@/api/websocket/hooks/useSocketEvent"
-import useWebSocketContext from "@/api/websocket/hooks/useWebSocketContext"
-import useMockHostEvents from "@/api/websocket/hooks/useMockHostEvents"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { useNavigate, useParams } from "react-router"
+import { toast } from "sonner"
+import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
+import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
-import useQuestions from "@/api/questions/hooks/useQuestions"
-import useCountdown from "@/hooks/useCountdown"
-
-import DashboardHeader from "@/components/DashboardHeader"
-import QuestionPanel from "@/components/QuestionPanel"
-import HostDashboardSidebar from "@/components/HostDashboardSidebar"
-import type { Answer } from "@/types/quiz"
-import type { LeaderboardItem } from "@/quiz/leaderboard/api/leaderboardItem"
-
-const ANSWER_COLORS = [
-    { color: "#2d4cc9", icon: "▲" },
-    { color: "#ffa602", icon: "◆" },
-    { color: "#11c8d4", icon: "●" },
-    { color: "#ff4949", icon: "■" },
-] as const
+import HostGameScreen from "@/components/HostGameScreen"
+import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
+import type { SessionPlayer } from "@/api/session"
 
 export default function HostDashboard(): JSX.Element {
     const codeParam = useParams().code
     const code = codeParam !== null ? Number(codeParam) || undefined : undefined
-    const [searchParams] = useSearchParams()
-    const isMock = searchParams.get("mock") === "true"
-    const location = useLocation()
-    const initialPlayerCount = (location.state as { playerCount?: number } | null)?.playerCount ?? 0
-
-    const { data: quiz } = useSessionQuiz(code)
-    const { data: questions } = useQuestions(quiz?.id)
-    const totalQuestions = questions?.length ?? 0
-
+    const navigate = useNavigate()
     const ws = useWebSocketContext()
 
-    const [playersCount, setPlayersCount] = useState(initialPlayerCount)
-    const [currentQuestion, setCurrentQuestion] = useState(0)
-    const [currentQuestionText, setCurrentQuestionText] = useState("")
-    const [answers, setAnswers] = useState<Answer[]>([])
-    const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([])
-    const [timeLeft, setTimeLeft] = useCountdown(null)
+    const { isLoading: isSessionLoading, isHost } = useSessionStatus(code)
+    const { data: quiz } = useSessionQuiz(code)
+
+    const codeWithDash =
+        code !== undefined
+            ? ((s) => {
+                  const mid = Math.floor(s.length / 2)
+                  return `${s.slice(0, mid)}-${s.slice(mid)}`
+              })(String(code).padStart(8, "0"))
+            : undefined
+
+    useEffect(() => {
+        if (!isSessionLoading && !isHost) {
+            navigate(`/play/${codeParam ?? ""}`, { replace: true })
+        }
+    }, [isSessionLoading, isHost, navigate, codeParam])
+
+    const [gameState, setGameState] = useState<GameState>("playing")
+    const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(null)
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
+    const [totalQuestions, setTotalQuestions] = useState(0)
+    const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(null)
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
+    const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
+    const [players, setPlayers] = useState<SessionPlayer[]>([])
+
+    useSocketEvent("displayQuestion", (payload, timing) => {
+        setGameState("question")
+        setCurrentQuestion({
+            id: payload.id,
+            type: payload.type,
+            text: payload.question,
+            options: (payload.options ?? []).map((opt: { id: string; answer: string }) => ({
+                id: opt.id,
+                text: opt.answer,
+            })),
+            seconds: payload.seconds ?? null,
+        })
+        const startedAt = timing ? new Date(timing).getTime() : Date.now()
+        setQuestionExpiresAt(payload.seconds ? startedAt + payload.seconds * 1000 : null)
+        setTotalQuestions(payload.totalQuestions)
+        setCurrentQuestionIndex((prev) => prev + 1)
+    })
+
+    // handlerRef pattern ensures totalQuestions/currentQuestionIndex are always fresh
+    useSocketEvent("displayLeaderboard", (payload) => {
+        setLeaderboard(payload.leaderboard)
+        const isLastByIndex = totalQuestions > 0 && currentQuestionIndex >= totalQuestions - 1
+        setIsFinalLeaderboard(payload.isFinal || isLastByIndex)
+        setGameState("leaderboard")
+    })
+
+    useSocketEvent("addPlayer", ({ id, name, emoji }) => {
+        setPlayers((prev) => [...prev, { id, name, emoji }])
+    })
+    useSocketEvent("renamePlayer", ({ id, name, emoji }) => {
+        setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, name, emoji } : p)))
+    })
+    useSocketEvent("removePlayer", ({ id }) => {
+        const leaving = players.find((p) => p.id === id)
+        if (leaving) toast(`${leaving.emoji ? `${leaving.emoji} ` : ""}${leaving.name} has left`)
+        setPlayers((prev) => prev.filter((p) => p.id !== id))
+    })
+
+    useSocketEvent("gameEnded", () => {
+        navigate("/")
+    })
 
     useSocketEvent(
-        "displayQuestion",
-        useCallback(
-            (payload) => {
-                setCurrentQuestion((prev) => prev + 1)
-                setCurrentQuestionText(payload.question)
-                setAnswers(
-                    payload.options.map((opt, idx) => ({
-                        id: opt.answer,
-                        text: opt.answer,
-                        color: ANSWER_COLORS[idx]?.color ?? "#888",
-                        icon: ANSWER_COLORS[idx]?.icon ?? "?",
-                    }))
-                )
-                setTimeLeft(payload.seconds)
-            },
-            [setTimeLeft]
-        )
-    )
-
-    useSocketEvent(
-        "displayLeaderboard",
+        "error",
         useCallback((payload) => {
-            setLeaderboard(
-                payload.leaderboard.map((entry, idx) => ({
-                    id: String(idx),
-                    name: entry.name,
-                    points: entry.totalPoints,
-                }))
-            )
+            toast.error(payload.message ?? "An error occurred")
         }, [])
     )
 
-    useSocketEvent(
-        "addPlayer",
-        useCallback(() => setPlayersCount((prev) => prev + 1), [])
-    )
-
-    useSocketEvent(
-        "removePlayer",
-        useCallback(() => setPlayersCount((prev) => Math.max(0, prev - 1)), [])
-    )
-
-    const mock = useMockHostEvents(isMock)
-
-    // Automatically show the first question when the host dashboard mounts.
+    // Send the first question as soon as the WebSocket is ready
     const hasRequestedFirstQuestion = useRef(false)
     useEffect(() => {
-        if (hasRequestedFirstQuestion.current || isMock) return
-        hasRequestedFirstQuestion.current = true
-        ws.send({ command: "nextQuestion" })
-    }, [ws, isMock])
-
-    const handleNextQuestion = useCallback(() => {
-        if (mock) {
-            mock.handleNextQuestion()
-            return
+        if (hasRequestedFirstQuestion.current) return undefined
+        const sendFirstQuestion = (): void => {
+            if (hasRequestedFirstQuestion.current) return
+            hasRequestedFirstQuestion.current = true
+            ws.send({ command: "nextQuestion" })
         }
+        return ws.onConnect(sendFirstQuestion)
+    }, [ws])
+
+    const sendNextQuestion = useCallback((): void => {
         ws.send({ command: "nextQuestion" })
-    }, [mock, ws])
+    }, [ws])
+
+    const sendEndGame = useCallback((): void => {
+        ws.send({ command: "endGame" })
+    }, [ws])
 
     return (
-        <div className="bg-background text-foreground min-h-screen overflow-x-hidden px-4 py-8 sm:px-8">
-            <div className="mx-auto w-full max-w-7xl">
-                <DashboardHeader
-                    playersCount={playersCount}
-                    quizTitle={quiz?.title ?? mock?.quizTitle ?? ""}
-                    roomPin={codeParam ?? ""}
-                />
-
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
-                    <QuestionPanel
-                        answers={answers}
-                        currentQuestion={currentQuestion}
-                        question={currentQuestionText}
-                        timeLeft={timeLeft}
-                        totalQuestions={totalQuestions}
-                    />
-
-                    <HostDashboardSidebar entries={leaderboard} onNext={handleNextQuestion} />
-                </div>
-            </div>
-        </div>
+        <HostGameScreen
+            codeWithDash={codeWithDash}
+            currentQuestion={currentQuestion}
+            currentQuestionIndex={currentQuestionIndex}
+            gameState={gameState}
+            isFinalLeaderboard={isFinalLeaderboard}
+            leaderboard={leaderboard}
+            onEndGame={sendEndGame}
+            onNextQuestion={sendNextQuestion}
+            players={players}
+            questionExpiresAt={questionExpiresAt}
+            quizTitle={quiz?.title}
+            totalQuestions={totalQuestions}
+        />
     )
 }

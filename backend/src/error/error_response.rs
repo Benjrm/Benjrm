@@ -16,10 +16,7 @@ impl From<&Error> for ErrorResponse {
             status: value.status(),
             category: value.category(),
             error: value.error(),
-            #[cfg(not(debug_assertions))]
             message: value.to_string(),
-            #[cfg(debug_assertions)]
-            message: format!("{value:?}"),
         }
     }
 }

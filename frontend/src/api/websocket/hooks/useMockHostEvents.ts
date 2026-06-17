@@ -99,7 +99,12 @@ export default function useMockHostEvents(enabled: boolean): MockHostEventsResul
         if (!enabled) return undefined
 
         const playerTimers = MOCK_PLAYERS.map((p, i) =>
-            setTimeout(() => ws.simulateReceive("addPlayer", p), 200 + i * 400)
+            setTimeout(
+                () => {
+                    ws.simulateReceive("addPlayer", p)
+                },
+                200 + i * 400
+            )
         )
 
         const afterPlayers = 200 + MOCK_PLAYERS.length * 400 + 300

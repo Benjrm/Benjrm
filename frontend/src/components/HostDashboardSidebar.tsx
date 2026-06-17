@@ -25,11 +25,15 @@ export default function HostDashboardSidebar({
         <aside className="flex flex-col gap-6">
             <div className="bg-muted/30 border-border flex-1 rounded-3xl border p-5 shadow-xl backdrop-blur-sm">
                 <h4 className="mb-4 text-lg font-black tracking-tight">Leaderboard</h4>
-                <ol className="max-h-[45vh] space-y-3 overflow-auto pr-1">
-                    {leaderboardItems.map((item) => (
-                        <LeaderboardItem key={`${item.ranking}-${item.name}`} {...item} />
-                    ))}
-                </ol>
+                {leaderboardItems.length > 0 ? (
+                    <ol className="max-h-[45vh] space-y-3 overflow-auto pr-1">
+                        {leaderboardItems.map((item) => (
+                            <li key={`${item.ranking}-${item.name}`}>
+                                <LeaderboardItem {...item} />
+                            </li>
+                        ))}
+                    </ol>
+                ) : null}
             </div>
 
             <div className="mt-auto">

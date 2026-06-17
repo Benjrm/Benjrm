@@ -11,6 +11,7 @@ export interface LeaderboardProps {
 
 export default function Leaderboard({ items, title = "Leaderboard" }: LeaderboardProps): ReactNode {
     const leaderboardItemPropsList = getLeaderboardItemPropsList(items)
+    if (leaderboardItemPropsList.length === 0) return null
     return (
         <div className="bg-card text-card-foreground border-border mx-auto flex w-full max-w-xl flex-col gap-4 rounded-xl border p-6 shadow-sm">
             <h1 className="text-center text-3xl font-extrabold uppercase sm:text-4xl lg:text-5xl">

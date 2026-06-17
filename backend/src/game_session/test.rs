@@ -364,6 +364,10 @@ async fn join() {
             )
             .await;
 
+        match host_rx.recv().await.unwrap() {
+            HostMessage::RemovePlayer { id } => assert_eq!(id, player),
+            x => panic!("invalid message: {x:?}"),
+        }
         assert!(matches!(host_rx.recv().await.unwrap(), HostMessage::Ok));
         assert!(matches!(
             player_rx.recv().await.unwrap(),
@@ -542,6 +546,53 @@ async fn start() {
             x => panic!("invalid message: {x:?}"),
         }
     }
+}
+
+#[actix_web::test]
+async fn kick_on_start() {
+    let data = TestAppData::test().await;
+    let user = data.dummy_user().await;
+
+    let (code, session) = dummy_session(&data, &user, true).await;
+    let mut session = session.lock().await;
+
+    let (host_channel, _, mut host_rx) = DummyChanel::new();
+    session.set_host_channel(host_channel).await;
+
+    let (_, mut player1_rx) = dummy_player(&mut session, &mut host_rx, "test").await;
+    let player2 = Uuid::new_v4();
+    let (player2_channel, player2_closed, mut player2_rx) = DummyChanel::new();
+    session
+        .set_player_channel(player2, player2_channel)
+        .await
+        .unwrap();
+
+    session
+        .handle_host_cmd(
+            Command {
+                id: Some(1),
+                command: HostCommand::Start,
+            },
+            code,
+        )
+        .await;
+    assert!(matches!(host_rx.recv().await.unwrap(), HostMessage::Ok));
+    assert!(matches!(
+        player1_rx.recv().await.unwrap(),
+        PlayerMessage::Start
+    ));
+    assert!(matches!(
+        player2_rx.recv().await.unwrap(),
+        PlayerMessage::Kick
+    ));
+    assert!(player2_closed.load(Ordering::Relaxed));
+
+    let player3 = Uuid::new_v4();
+    let (player3_channel, _, _) = DummyChanel::new();
+    assert!(matches!(
+        session.set_player_channel(player3, player3_channel).await,
+        Err(GameSessionError::AlreadyStarted)
+    ));
 }
 
 #[actix_web::test]

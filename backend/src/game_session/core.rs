@@ -178,11 +178,11 @@ impl GameSession {
                     player.msg(Message::from(&PlayerMessage::Kick)).await;
                     player.channel.close().await;
                     if player.name.is_some() {
-                        self.host.ok(cmd.id).await;
                         self.host
                             .msg(Message::from(&HostMessage::RemovePlayer { id: player.id }))
                             .await;
                     }
+                    self.host.ok(cmd.id).await;
                 } else {
                     self.host
                         .error(cmd.id, GameSessionError::PlayerNotFound)
@@ -195,8 +195,10 @@ impl GameSession {
                         return Err(GameSessionError::AlreadyStarted);
                     }
 
-                    if self.quiz.is_none() {
-                        return Err(GameSessionError::QuizMissing);
+                    let quiz = self.quiz.as_ref().ok_or(GameSessionError::QuizMissing)?;
+
+                    if quiz.questions.is_empty() {
+                        return Err(GameSessionError::NoQuestions);
                     }
 
                     if self.players.is_empty() || !self.players.iter().any(|x| x.name.is_some()) {
@@ -209,6 +211,17 @@ impl GameSession {
                 if let Err(err) = check_error() {
                     self.host.error(cmd.id, err).await;
                     return;
+                }
+
+                let mut i = 0;
+                while i < self.players.len() {
+                    if self.players[i].name.is_none() {
+                        let mut player = self.players.swap_remove(i);
+                        player.msg(Message::from(&PlayerMessage::Kick)).await;
+                        player.channel.close().await;
+                    } else {
+                        i += 1;
+                    }
                 }
 
                 self.status = GameSessionStatus::Started;
@@ -487,6 +500,7 @@ impl GameSession {
         let iterator = self
             .players
             .iter_mut()
+            .filter(|player| player.name.is_some())
             .map(|player| player.msg(msg.clone()));
         execute_futures(iterator).await
     }
