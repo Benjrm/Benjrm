@@ -56,6 +56,7 @@ interface GameScreenProps {
     leaderboard: LeaderboardEntry[] | null
     isFinalLeaderboard: boolean
     playerName: string | undefined
+    playerEmoji: string | undefined
     onNextQuestion: () => void
     onSendAnswer: (answer: string | string[]) => void
 }
@@ -70,6 +71,7 @@ export default function GameScreen({
     leaderboard,
     isFinalLeaderboard,
     playerName,
+    playerEmoji,
     onNextQuestion,
     onSendAnswer,
 }: GameScreenProps): JSX.Element {
@@ -126,6 +128,7 @@ export default function GameScreen({
                         currentSlide={currentQuestionIndex + 1}
                         isHost={false}
                         onNextQuestion={onNextQuestion}
+                        playerEmoji={playerEmoji}
                         playerName={playerName}
                         totalSlides={totalQuestions}
                     />
@@ -141,6 +144,7 @@ export default function GameScreen({
                         onNextQuestion={onNextQuestion}
                         onSendAnswer={(ids) => onSendAnswer(ids)}
                         options={currentQuestion.options}
+                        playerEmoji={playerEmoji}
                         playerName={playerName}
                         questionExpiresAt={questionExpiresAt}
                         questionText={currentQuestion.text}
@@ -158,6 +162,7 @@ export default function GameScreen({
                     onNextQuestion={onNextQuestion}
                     onSendAnswer={onSendAnswer}
                     options={currentQuestion.options}
+                    playerEmoji={playerEmoji}
                     playerName={playerName}
                     questionExpiresAt={questionExpiresAt}
                     questionText={currentQuestion.text}

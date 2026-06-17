@@ -52,7 +52,6 @@ export default function HostDashboard(): JSX.Element {
     const gameEndedRef = useRef(false)
 
     const sendEndGame = useCallback((): void => {
-        if (gameEndedRef.current) return
         gameEndedRef.current = true
         ws.send({ command: "endGame" })
     }, [ws])

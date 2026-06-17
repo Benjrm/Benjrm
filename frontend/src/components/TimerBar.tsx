@@ -16,14 +16,11 @@ export default function TimerBar({
     if (timeLeft === null || totalSeconds === null || totalSeconds <= 0) return null
 
     const progress = Math.max(0, Math.min(100, (timeLeft / totalSeconds) * 100))
-    let indicatorClassName: string
-    if (progress > 60) {
-        indicatorClassName = "bg-[#00D4E8]"
-    } else if (progress > 30) {
-        indicatorClassName = "bg-amber-400"
-    } else {
-        indicatorClassName = "bg-red-500"
-    }
+    const indicatorClassName = (() => {
+        if (progress > 60) return "bg-[#00D4E8]"
+        if (progress > 30) return "bg-amber-400"
+        return "bg-red-500"
+    })()
 
     return (
         <ProgressBar

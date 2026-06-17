@@ -1,7 +1,8 @@
 import type { ReactNode } from "react"
 import { motion } from "framer-motion"
 import { Avatar, AvatarFallback } from "@shadcn/components/ui/avatar"
-import getRankingClassName from "@/quiz/leaderboard/utils/getRankingClassName.ts"
+import getRankingClassName from "@/quiz/leaderboard/utils/getRankingClassName"
+import getRankingDisplay from "@/quiz/leaderboard/utils/getRankingDisplay"
 
 export interface LeaderboardItemProps {
     ranking: number
@@ -15,11 +16,6 @@ export default function LeaderboardItem(leaderboardItemProps: LeaderboardItemPro
     const rankingClassName = getRankingClassName(ranking)
     const initials = name.substring(0, 2).toUpperCase()
 
-    let medal: string | null = null
-    if (ranking === 1) medal = "🥇"
-    else if (ranking === 2) medal = "🥈"
-    else if (ranking === 3) medal = "🥉"
-
     return (
         <motion.div
             layout
@@ -30,9 +26,7 @@ export default function LeaderboardItem(leaderboardItemProps: LeaderboardItemPro
             layoutId={name}
             transition={{ layout: { type: "spring", stiffness: 300, damping: 30 }, duration: 0.3 }}
         >
-            <div className="text-center text-lg font-black">
-                {medal ?? <span className="text-muted-foreground text-sm">#{ranking}</span>}
-            </div>
+            <div className="text-center text-lg font-black">{getRankingDisplay(ranking)}</div>
             <Avatar>
                 <AvatarFallback>{avatar ?? initials}</AvatarFallback>
             </Avatar>

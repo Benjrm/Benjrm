@@ -3,24 +3,9 @@ import { useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/shadcn/components/ui/button"
 import { Avatar, AvatarFallback } from "@shadcn/components/ui/avatar"
+import getRankingDisplay from "@/quiz/leaderboard/utils/getRankingDisplay"
+import getRankingClassName from "@/quiz/leaderboard/utils/getRankingClassName"
 import type { LeaderboardEntry } from "@/hooks/useGameSession"
-
-function getRankColor(ranking: number): string {
-    if (ranking === 1)
-        return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700"
-    if (ranking === 2)
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 border-orange-300 dark:border-orange-700"
-    if (ranking === 3)
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border-purple-300 dark:border-purple-700"
-    return "bg-card text-card-foreground border-border"
-}
-
-function getMedal(rank: number): string | null {
-    if (rank === 1) return "🥇"
-    if (rank === 2) return "🥈"
-    if (rank === 3) return "🥉"
-    return null
-}
 
 interface LeaderboardAnimationScreenProps {
     leaderboard: LeaderboardEntry[]
@@ -53,14 +38,13 @@ export default function LeaderboardAnimationScreen({
                 <AnimatePresence>
                     {sorted.map((entry, i) => {
                         const rank = i + 1
-                        const medal = getMedal(rank)
                         const initials = entry.name.substring(0, 2).toUpperCase()
 
                         return (
                             <motion.div
                                 key={entry.id}
                                 animate={{ opacity: 1, x: 0 }}
-                                className={`mb-3 grid grid-cols-[2.5rem_3rem_1fr_auto] items-center gap-3 rounded-2xl border p-4 text-base font-semibold shadow-sm ${getRankColor(rank)}`}
+                                className={`mb-3 grid grid-cols-[2.5rem_3rem_1fr_auto] items-center gap-3 rounded-2xl border p-4 text-base font-semibold shadow-sm ${getRankingClassName(rank)}`}
                                 initial={{ opacity: 0, x: -60 }}
                                 transition={{
                                     opacity: { delay: i * 0.08, duration: 0.35 },
@@ -68,11 +52,9 @@ export default function LeaderboardAnimationScreen({
                                 }}
                             >
                                 <div className="text-center text-xl">
-                                    {medal ?? (
-                                        <span className="text-muted-foreground text-sm font-bold">
-                                            #{rank}
-                                        </span>
-                                    )}
+                                    <span className="text-muted-foreground text-sm font-bold">
+                                        {getRankingDisplay(rank)}
+                                    </span>
                                 </div>
                                 <Avatar>
                                     <AvatarFallback>{entry.emoji ?? initials}</AvatarFallback>

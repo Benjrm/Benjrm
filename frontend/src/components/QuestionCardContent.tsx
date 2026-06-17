@@ -21,6 +21,7 @@ export interface QuestionCardContentProps {
     secondsToAnswer: number | null
     questionExpiresAt?: number | null
     playerName?: string
+    playerEmoji?: string
     isHost: boolean
     currentQuestionIndex: number
     totalQuestions: number
@@ -35,6 +36,7 @@ export default function QuestionCardContent({
     secondsToAnswer,
     questionExpiresAt,
     playerName,
+    playerEmoji,
     isHost,
     currentQuestionIndex,
     totalQuestions,
@@ -90,6 +92,7 @@ export default function QuestionCardContent({
             <div className="mx-auto flex max-w-md flex-col gap-6">
                 <QuestionHeader
                     currentQuestion={currentQuestionIndex + 1}
+                    playerEmoji={playerEmoji}
                     playerName={playerName ?? (isHost ? "Host" : "Player")}
                     remainingTime={timeLeft}
                     totalQuestions={totalQuestions}

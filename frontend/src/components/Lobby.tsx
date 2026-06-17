@@ -1,6 +1,7 @@
 import type { JSX } from "react"
 import { X } from "lucide-react"
 import { Toaster } from "sonner"
+import GamePinBadge from "@/components/GamePinBadge"
 import ProfilePicker from "@/components/ProfilePicker"
 import StartQuizButton from "@/components/StartQuizButton"
 import { Button } from "@/shadcn/components/ui/button"
@@ -56,9 +57,7 @@ export default function Lobby({
                     <span className="h-2 w-2 animate-pulse rounded-full bg-[#FF8A00]" />
                     Waiting Lobby
                 </div>
-                <p className="text-muted-foreground text-sm">
-                    Game Pin: {codeWithDash ?? "No active PIN"}
-                </p>
+                <GamePinBadge codeWithDash={codeWithDash} />
             </div>
 
             <div className="dark:text-foreground overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl dark:border-white/10 dark:bg-[#111318]">

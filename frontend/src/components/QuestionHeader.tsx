@@ -2,6 +2,7 @@ import type { JSX } from "react"
 
 interface QuestionHeaderProps {
     playerName: string
+    playerEmoji?: string
     currentQuestion: number
     totalQuestions: number
     remainingTime: number | null
@@ -9,6 +10,7 @@ interface QuestionHeaderProps {
 
 export default function QuestionHeader({
     playerName,
+    playerEmoji,
     currentQuestion,
     totalQuestions,
     remainingTime,
@@ -22,12 +24,12 @@ export default function QuestionHeader({
 
     return (
         <div className="flex flex-col items-center justify-center gap-3">
-            <div className="bg-muted/40 rounded-full px-4 py-2 text-sm font-bold">{playerName}</div>
+            <div className="bg-muted/40 rounded-full px-4 py-2 text-sm font-bold">
+                {playerEmoji ? `${playerEmoji} ${playerName}` : playerName}
+            </div>
 
             <div className="text-muted-foreground flex w-full items-center justify-between px-2 text-sm font-bold">
-                <div>
-                    {formattedTime !== null ? `Time: ${formattedTime}` : "Waiting for timer..."}
-                </div>
+                <div>{formattedTime !== null ? `Time: ${formattedTime}` : null}</div>
 
                 <div>
                     {currentQuestion} / {totalQuestions}

@@ -22,9 +22,10 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { Button } from "@/shadcn/components/ui/button"
 import TimerBar from "@/components/TimerBar"
+import QuestionHeader from "@/components/QuestionHeader"
 import { restrictToVerticalAxis, restrictToParentElement } from "@/pages/quiz/quizUtils"
 
-export interface Option {
+interface Option {
     id: string
     text: string
 }
@@ -35,6 +36,7 @@ export interface OrderQuestionContentProps {
     onNextQuestion?: () => void
     options?: Option[]
     playerName?: string
+    playerEmoji?: string
     questionText?: string
     secondsToAnswer?: number | null
     questionExpiresAt?: number | null
@@ -77,6 +79,7 @@ export default function OrderQuestionContent({
     onNextQuestion,
     options = [],
     playerName,
+    playerEmoji,
     questionText = "Ordne die Elemente in die richtige Reihenfolge",
     secondsToAnswer = null,
     questionExpiresAt = null,
@@ -153,24 +156,13 @@ export default function OrderQuestionContent({
     return (
         <div className="flex w-full flex-col items-center p-4">
             <div className="bg-card text-card-foreground w-full max-w-2xl rounded-2xl border p-6 shadow-xl">
-                {/* Header (Fortschritt & Timer) */}
-                <div className="border-border mb-4 flex items-center justify-between border-b pb-4">
-                    <span className="text-muted-foreground font-semibold">
-                        Question {currentQuestionIndex + 1} of {totalQuestions}
-                    </span>
-                    {timeLeft !== null && (
-                        <span
-                            className={`font-bold ${
-                                timeLeft <= 5 ? "animate-pulse text-red-500" : "text-[#00D4E8]"
-                            }`}
-                        >
-                            {timeLeft}s
-                        </span>
-                    )}
-                    {playerName ? (
-                        <span className="text-foreground font-semibold">{playerName}</span>
-                    ) : null}
-                </div>
+                <QuestionHeader
+                    currentQuestion={currentQuestionIndex + 1}
+                    playerEmoji={playerEmoji}
+                    playerName={playerName ?? (isHost ? "Host" : "Player")}
+                    remainingTime={timeLeft}
+                    totalQuestions={totalQuestions}
+                />
 
                 <TimerBar
                     className="mb-6"

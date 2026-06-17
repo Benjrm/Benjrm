@@ -27,13 +27,14 @@ export default function GamePage(): JSX.Element {
     }, [gameActive, navigate, codeParam])
 
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null
-    const playerName = useMemo(() => {
-        if (!storageKey) return undefined
+    const { playerName, playerEmoji } = useMemo(() => {
+        if (!storageKey) return { playerName: undefined, playerEmoji: undefined }
         try {
             const raw = sessionStorage.getItem(storageKey)
-            return raw ? (JSON.parse(raw) as { name: string }).name : undefined
+            const parsed = raw ? (JSON.parse(raw) as { name: string; emoji: string }) : null
+            return { playerName: parsed?.name, playerEmoji: parsed?.emoji }
         } catch {
-            return undefined
+            return { playerName: undefined, playerEmoji: undefined }
         }
     }, [storageKey])
 
@@ -90,11 +91,18 @@ export default function GamePage(): JSX.Element {
         if (storageKey) sessionStorage.removeItem(storageKey)
         const pending = pendingFinalLeaderboardRef.current
         if (pending) {
-            // Show final podium — don't remove gameActive yet or the guard effect redirects away
+            // First signal: show the final podium. Clear buffer so the next gameEnded navigates away.
+            pendingFinalLeaderboardRef.current = null
             setLeaderboard(pending)
             setIsFinalLeaderboard(true)
             setGameState(GameStateEnum.LEADERBOARD)
+        } else if (isFinalLeaderboard) {
+            // Second signal: host ended the game after players saw the podium — navigate away cleanly
+            if (code !== undefined) sessionStorage.removeItem(`gameActive:${code}`)
+            navigate("/")
         } else {
+            // Host ended game early (before last question finished)
+            if (code !== undefined) sessionStorage.removeItem(`gameActive:${code}`)
             setHostEndedGame(true)
         }
     })
@@ -140,6 +148,7 @@ export default function GamePage(): JSX.Element {
                 leaderboard={leaderboard}
                 onNextQuestion={() => undefined}
                 onSendAnswer={sendAnswer}
+                playerEmoji={playerEmoji}
                 playerName={playerName}
                 questionExpiresAt={questionExpiresAt}
                 questionResult={questionResult}

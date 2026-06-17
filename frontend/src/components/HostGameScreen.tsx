@@ -4,6 +4,7 @@ import { useNavigate } from "react-router"
 import { Toaster } from "sonner"
 import { Button } from "@/shadcn/components/ui/button"
 import HostDashboardSidebar from "@/components/HostDashboardSidebar"
+import GamePinBadge from "@/components/GamePinBadge"
 import Leaderboard from "@/quiz/leaderboard/components/Leaderboard"
 import MarkdownPageComponent from "@/components/markdown/MarkdownPageComponent"
 import { GameStateEnum } from "@/hooks/useGameSession"
@@ -128,11 +129,7 @@ export default function HostGameScreen({
                     ) : null}
                 </div>
                 <div className="flex items-center gap-4">
-                    {codeWithDash ? (
-                        <div className="bg-muted text-foreground rounded-xl border px-4 py-2 text-sm font-semibold">
-                            Room Pin: {codeWithDash}
-                        </div>
-                    ) : null}
+                    <GamePinBadge codeWithDash={codeWithDash} />
                     <span className="text-muted-foreground text-sm font-medium">
                         {players.length} players
                     </span>
