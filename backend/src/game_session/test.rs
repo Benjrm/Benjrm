@@ -553,13 +553,14 @@ async fn kick_on_start() {
     let data = TestAppData::test().await;
     let user = data.dummy_user().await;
 
-    let (code, session) = dummy_session(&data, &user, true).await;
-    let mut session = session.lock().await;
+    let (code, session_arc) = dummy_session(&data, &user, true).await;
+    let mut session = session_arc.lock().await;
 
     let (host_channel, _, mut host_rx) = DummyChanel::new();
     session.set_host_channel(host_channel).await;
 
-    let (_, mut player1_rx) = dummy_player(&mut session, &mut host_rx, "test").await;
+    let (_, mut player1_rx) =
+        dummy_player(&mut session, session_arc.clone(), &mut host_rx, "test").await;
     let player2 = Uuid::new_v4();
     let (player2_channel, player2_closed, mut player2_rx) = DummyChanel::new();
     session
@@ -573,6 +574,7 @@ async fn kick_on_start() {
                 id: Some(1),
                 command: HostCommand::Start,
             },
+            session_arc.clone(),
             code,
         )
         .await;
