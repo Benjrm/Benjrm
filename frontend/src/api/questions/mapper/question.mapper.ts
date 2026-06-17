@@ -3,6 +3,7 @@ import type {
     QuestionRequest,
     QuestionResponse,
 } from "@/api/questions/types/question.api.new.ts"
+import assertNever from "@/utils/assertNever.ts"
 
 export default function toQuestion(dto: QuestionResponse): Question {
     return {
@@ -10,10 +11,6 @@ export default function toQuestion(dto: QuestionResponse): Question {
         created: new Date(dto.created),
         modified: new Date(dto.modified),
     }
-}
-
-function assertNever(x: never): never {
-    throw new Error(`Unsupported question type: ${JSON.stringify(x)}`)
 }
 
 export function toQuestionRequest(question: Question): QuestionRequest {
