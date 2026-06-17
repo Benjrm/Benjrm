@@ -1,4 +1,4 @@
-import { quizKeys } from "@/api/queries.ts"
+import { quizKeys } from "@/api/quizzes/quizzes.queries.ts"
 
 const questionKeys = {
     key: "questions" as const,

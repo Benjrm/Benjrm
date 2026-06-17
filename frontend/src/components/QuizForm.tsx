@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { DialogFooter } from "@/shadcn/components/ui/dialog"
 import { Button } from "@/shadcn/components/ui/button"
 import { Label } from "@/shadcn/components/ui/label"
-import { useCreateQuiz, useUpdateQuiz } from "@/api/queries"
+import { useCreateQuiz, useUpdateQuiz } from "@/api/quizzes/quizzes.queries.ts"
 
 function getReadableQuizMutationError(): string {
     return "The quiz could not be saved right now. Please try again later."
@@ -45,7 +45,7 @@ const QuizForm: FC<QuizFormProps> = ({
             if (mode === "create") {
                 const quiz = await createMutation.mutateAsync({
                     title,
-                    description: description || undefined,
+                    description: description || null,
                     hidden: false,
                 })
 
@@ -62,7 +62,7 @@ const QuizForm: FC<QuizFormProps> = ({
 
                 const updated = await updateMutation.mutateAsync({
                     title,
-                    description: description || undefined,
+                    description: description || null,
                     hidden: false,
                 })
 

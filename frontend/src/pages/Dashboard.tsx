@@ -5,7 +5,7 @@ import { toast, Toaster } from "sonner"
 import GameHeroSection from "../components/GameHeroSection"
 import DiscoverSection from "../components/DiscoverSection"
 import CreateQuizModal from "../components/CreateQuizModal"
-import { useQuizzes } from "@/api/queries"
+import { useQuizzes } from "@/api/quizzes/quizzes.queries.ts"
 
 export default function Dashboard(): JSX.Element {
     const [isCreateQuizOpen, setIsCreateQuizOpen] = useState(false)

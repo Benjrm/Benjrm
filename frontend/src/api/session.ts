@@ -1,7 +1,8 @@
 // frontend/src/api/session.ts
 
 import { apiPost, apiGet, apiDelete } from "@/api/client"
-import type { Quiz } from "@/api/quiz"
+import toQuiz from "@/api/quizzes/quizzes.mapper.ts"
+import type { Quiz, QuizDto } from "@/api/quizzes/quizzes.types.ts"
 
 export interface CreateSessionInput {
     quiz: string
@@ -36,7 +37,8 @@ export async function deleteSession(code: number): Promise<void> {
 }
 
 export async function getSessionQuiz(code: number): Promise<Quiz> {
-    return apiGet<Quiz>(`/sessions/${code}/quiz`)
+    const dto = await apiGet<QuizDto>(`/sessions/${code}/quiz`)
+    return toQuiz(dto)
 }
 
 export async function getSessionPlayers(code: number): Promise<SessionPlayer[]> {
