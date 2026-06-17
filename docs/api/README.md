@@ -113,3 +113,9 @@ For detailed documentation please refer to [Schemathesis' official documentation
 2. Running `pipenv update` in the `api_tests` directory to lock and install the dependencies.
 3. Run `pipenv shell` to spawn a shell within the virtual environment.
 4. Run `schemathesis run ../docs/openapispec/RestInterface.yaml --exclude-tag SchemathesisSkip`
+
+### Limitations of Schemathesis
+
+When creating a session using `POST /api/v1/sessions`, the API allows a quiz id in the body to directly create a session with a quiz. But OpenAPI spec does not support links pointing into the body of a request, so there is no way to tell Schemathesis to insert a valid quiz id there. Simply ignoring this would mean that Schemathesis would never create a session with a quiz and therefore would never be able to test the route `GET /api/v1/sessions/{session}/quiz`. To allow Schemathesis to test this route, the operations from `/api/v1/sessions` can also be performed on the path `/api/v1/quizzes/{quizId}/sessions`. This way Schemathesis can insert the quiz id into the path instead of the body.
+
+Logically, it would be enough to only add `POST /api/v1/quizzes/{quizId}/sessions`, but Schemathesis can't understand the CRUD-relationships if the create path is `/api/v1/quizzes/{quizId}/sessions` and the read, update and delete path is `/api/v1/sessions/{session}`. This causes Schemathesis to first test read, update and delete and then test create.

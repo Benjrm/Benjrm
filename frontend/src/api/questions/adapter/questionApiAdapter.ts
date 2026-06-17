@@ -3,13 +3,18 @@ import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/ty
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/api/client.ts"
 
 export default class QuestionApiAdapter implements QuestionAdapter {
+    private static getApiPayload(request: Partial<QuestionApiRequest>) {
+        return request.type === "SLIDE" ? (({ options, ...rest }) => rest)(request) : request
+    }
+
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
     // eslint-disable-next-line class-methods-use-this
     async createQuestion(
         quizId: string,
         request: QuestionApiRequest
     ): Promise<QuestionApiResponse> {
-        return apiPost<QuestionApiResponse>(`/quizzes/${quizId}/questions`, request)
+        const payload = QuestionApiAdapter.getApiPayload(request)
+        return apiPost<QuestionApiResponse>(`/quizzes/${quizId}/questions`, payload)
     }
 
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
@@ -37,7 +42,8 @@ export default class QuestionApiAdapter implements QuestionAdapter {
         questionId: string,
         request: Partial<QuestionApiRequest>
     ): Promise<QuestionApiResponse> {
-        return apiPatch(`/quizzes/${quizId}/questions/${questionId}`, request)
+        const payload = QuestionApiAdapter.getApiPayload(request)
+        return apiPatch(`/quizzes/${quizId}/questions/${questionId}`, payload)
     }
 
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties

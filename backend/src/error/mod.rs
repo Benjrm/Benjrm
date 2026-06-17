@@ -2,7 +2,7 @@ mod actix;
 mod error_response;
 mod macros;
 
-pub(crate) use macros::impl_err;
+pub(crate) use {error_response::ErrorResponse, macros::impl_err};
 
 pub type Result<T> = std::result::Result<T, Error>;
 

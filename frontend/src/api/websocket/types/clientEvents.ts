@@ -7,17 +7,22 @@ export interface ClientEvents {
         id: number
         timestamp: string
     }
-    join: {
+    setName: {
         name: string
+        emoji: string | null
     }
     answerQuestion: {
         answers: string[]
     }
     start: object
+    nextQuestion: object
     showQuestion: {
-        question: string
+        id: string
     }
     setQuiz: {
         quiz: string
+    }
+    kickPlayer: {
+        id: string
     }
 }
