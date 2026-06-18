@@ -18,7 +18,7 @@ export default function GamePinForm({ onJoin, isPending, error }: GamePinFormPro
 
     function handleJoin(): void {
         if (!digits || isPending) return
-        onJoin(digits)
+        onJoin(digits.padStart(8, "0"))
     }
 
     return (

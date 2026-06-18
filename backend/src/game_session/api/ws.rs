@@ -142,7 +142,7 @@ impl WsChannel {
     pub fn new<
         Cmd: CommandTrait + 'static,
         Payload: Copy + 'static,
-        HandleCmd: AsyncFn(&mut GameSession, Cmd, Payload) + Send + 'static,
+        HandleCmd: AsyncFn(&mut GameSession, Cmd, Arc<Mutex<GameSession>>, Payload) + Send + 'static,
         HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, Payload) + Send + 'static,
     >(
         rx: MessageStream,
@@ -179,7 +179,7 @@ impl WsChannel {
 async fn ws_listener<
     Cmd: CommandTrait,
     Payload: Copy,
-    HandleCmd: AsyncFn(&mut GameSession, Cmd, Payload) + Send,
+    HandleCmd: AsyncFn(&mut GameSession, Cmd, Arc<Mutex<GameSession>>, Payload) + Send,
     HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, Payload) + Send,
 >(
     mut rx: MessageStream,
@@ -242,8 +242,13 @@ async fn ws_listener<
                         ring_delta.insert(time_delta);
                         time_delta_ms.store(ring_delta.avg().num_milliseconds(), Ordering::Relaxed);
                     } else {
-                        let mut session = session.lock().await;
-                        handle_cmd(&mut session, cmd, payload).await;
+                        handle_cmd(
+                            &mut *session.lock().await,
+                            cmd,
+                            Arc::clone(&session),
+                            payload,
+                        )
+                        .await;
                     }
                 }
                 Some(Err(err)) => {

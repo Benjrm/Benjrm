@@ -12,6 +12,7 @@ info:
       description: WebSocket related commands such as ping and pong
     - name: Sessions
     - name: Questions
+    - name: Leaderboard
 
 servers:
   dev_8080:
@@ -52,6 +53,10 @@ channels:
         $ref: "#/components/messages/showQuestion"
       displayQuestion:
         $ref: "#/components/messages/displayQuestion"
+      displayLeaderboard:
+        $ref: "#/components/messages/displayLeaderboard"
+      endGame:
+        $ref: "#/components/messages/endGame"
     tags:
       - name: Sessions
   
@@ -77,6 +82,12 @@ channels:
         $ref: "#/components/messages/start"
       displayQuestion:
         $ref: "#/components/messages/displayQuestion"
+      answerQuestion:
+        $ref: "#/components/messages/answerQuestion"
+      questionResult:
+        $ref: "#/components/messages/questionResult"
+      displayLeaderboard:
+        $ref: "#/components/messages/displayLeaderboard"
     tags:
       - name: Sessions
 
@@ -272,6 +283,56 @@ operations:
       - $ref: "#/channels/sessionPlayer/messages/displayQuestion"
     tags:
       - name: Questions
+  
+  receiveAnswerQuestion:
+    description: "Receive answerQuestion command from player"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/answerQuestion"
+    tags:
+      - name: Questions
+  
+  sendQuestionResult:
+    description: "Send questionResult command to Player"
+    action: send
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/questionResult"
+    tags:
+      - name: Questions
+  
+  sendDisplayLeaderboardToHost:
+    description: "Send displayLeaderboard command to Host"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/displayLeaderboard"
+    tags:
+      - name: Leaderboard
+  
+  sendDisplayLeaderboardToPlayer:
+    description: "Send displayLeaderboard command to Player"
+    action: send
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/displayLeaderboard"
+    tags:
+      - name: Leaderboard
+  
+  receiveEndGame:
+    description: "Receive endGame command from host"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/endGame"
+    tags:
+      - name: Sessions
 
 components:
   messages:
@@ -486,6 +547,74 @@ components:
                     format: uint32
                     nullable: true
               - $ref: "#/components/schemas/DisplayQuestionOptions"
+    
+    answerQuestion:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "answerQuestion"
+          payload:
+            type: object
+            properties:
+              answer:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+    
+    questionResult:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "questionResult"
+          payload:
+            type: object
+            properties:
+              question:
+                type: string
+                format: uuid
+              correctAnswers:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+              points:
+                type: integer
+                format: uint32
+                description: "Points received for the current question"
+              totalPoints:
+                type: integer
+                format: uint32
+    
+    displayLeaderboard:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "displayLeaderboard"
+          payload:
+            type: object
+            properties:
+              leaderboard:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+              isFinal:
+                type: boolean
+                description: "Whether this leaderboard is the final quiz result"
+    
+    endGame:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "endGame"
   
   schemas:
     DisplayQuestionOptions:
@@ -553,7 +682,31 @@ components:
     AnswerOption:
       type: object
       required:
+        - id
         - answer
       properties:
+        id:
+          type: string
+          format: uuid
         answer:
           type: string
+    
+    LeaderboardEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        emoji:
+          type: string
+          example: "😀"
+          nullable: true
+        total_points:
+          type: integer
+          format: uint32
+        points:
+          type: integer
+          format: uint32
+          description: "Points received for the current question"

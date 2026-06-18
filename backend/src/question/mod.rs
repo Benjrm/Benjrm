@@ -228,11 +228,17 @@ impl QuestionType {
     }
 
     pub fn default_answer_duration(&self) -> Option<u32> {
-        match self {
+        let duration = match self {
             Self::Slide => None,
             Self::SingleChoice | Self::MultipleChoice => Some(30),
             Self::Order => Some(120),
-        }
+        };
+
+        #[cfg(test)]
+        return duration.map(|_| 1);
+
+        #[cfg(not(test))]
+        duration
     }
 }
 

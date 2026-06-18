@@ -14,23 +14,30 @@ export interface ServerEvents {
     ping: {
         id: number
     }
-    start: object
     displayQuestion: {
         id: string
         question: string
-        seconds: number | null
         type: QuestionType
-        options: { answer: string }[]
+        options: { id: string; answer: string }[]
+        seconds: number | null
+        totalQuestions: number
     }
     questionResult: {
         question: string
-        correctAnswer: string
+        correctAnswers: string[]
+        totalPoints: number
         points: number
     }
-    updateLeaderboard: {
-        name: string
-        points: number
-    }[]
+    displayLeaderboard: {
+        leaderboard: {
+            id: string
+            name: string
+            emoji: string | null
+            totalPoints: number
+            points: number
+        }[]
+        isFinal: boolean
+    }
     addPlayer: {
         id: string
         name: string
@@ -45,4 +52,6 @@ export interface ServerEvents {
         id: string
     }
     kick: unknown
+    start: unknown
+    gameEnded: unknown
 }

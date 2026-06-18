@@ -12,7 +12,7 @@ export interface ClientEvents {
         emoji: string | null
     }
     answerQuestion: {
-        answers: string[]
+        answer: string[]
     }
     start: object
     nextQuestion: object
@@ -25,4 +25,5 @@ export interface ClientEvents {
     kickPlayer: {
         id: string
     }
+    endGame: object
 }

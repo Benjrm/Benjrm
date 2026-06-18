@@ -12,7 +12,6 @@ import WaitingRoom from "./pages/WaitingRoom"
 import DownloadableMarkdown from "./components/DownloadableMarkdown"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
-import SingleChoiceQuestion from "@/pages/SingleChoiceQuestion.tsx"
 import Quizzes from "@/pages/Quizzes.tsx"
 import InfoSlide from "@/pages/InfoSlide.tsx"
 import GamePage from "@/pages/GamePage.tsx"
@@ -81,10 +80,6 @@ const routes: RouteObject[] = [
                     {
                         path: ":quizId",
                         element: <QuizCreator />,
-                    },
-                    {
-                        path: "play",
-                        element: <SingleChoiceQuestion />,
                     },
                 ],
             },

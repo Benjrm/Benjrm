@@ -15,7 +15,7 @@ export default function getRankingClassName(ranking: number): string {
     } else if (ranking === 3) {
         result = `${baseClasses} bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border-purple-300 dark:border-purple-700 hover:shadow-purple-500/30`
     } else {
-        result = `${baseClasses} bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 hover:shadow-gray-500/20`
+        result = `${baseClasses} bg-card text-card-foreground border-border hover:shadow-muted/50`
     }
     rankingClassNameCache.set(ranking, result)
     return result

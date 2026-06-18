@@ -189,6 +189,20 @@ export default class WebSocketService {
     }
 
     /**
+     * Dev-only: dispatches a fake server event directly to all registered listeners,
+     * bypassing the real WebSocket connection. Used by mock hooks in development.
+     */
+    public simulateReceive<K extends keyof ServerEvents>(
+        command: K,
+        payload: ServerEvents[K]
+    ): void {
+        const handlers = this.listeners.get(command)
+        handlers?.forEach((handler) =>
+            (handler as ServerEventHandler<K>)(payload, undefined, undefined)
+        )
+    }
+
+    /**
      * Subscribes a handler function to a specific server command. The handler will be invoked whenever a message with the specified command is received from the server.
      * @param command The server command to subscribe to.
      * @param handler The handler method to invoke when a message with the specified command is received from the server.
