@@ -1,5 +1,7 @@
 import type { JSX } from "react"
-import { X } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { Maximize2, Minimize2, QrCode, Users, X } from "lucide-react"
+import QRCode from "react-qr-code"
 import { Toaster } from "sonner"
 import GamePinBadge from "@/components/GamePinBadge"
 import ProfilePicker from "@/components/ProfilePicker"
@@ -50,6 +52,29 @@ export default function Lobby({
     onCloseEmoji,
     onStartGame,
 }: LobbyProps): JSX.Element {
+    const [hostTab, setHostTab] = useState<"players" | "qr">("players")
+    const [isFullscreen, setIsFullscreen] = useState(false)
+    const qrFullscreenRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const onFullscreenChange = () => setIsFullscreen(document.fullscreenElement !== null)
+        document.addEventListener("fullscreenchange", onFullscreenChange)
+        return () => document.removeEventListener("fullscreenchange", onFullscreenChange)
+    }, [])
+
+    const toggleFullscreen = () => {
+        if (!isFullscreen) {
+            qrFullscreenRef.current?.requestFullscreen().catch(() => {})
+        } else {
+            document.exitFullscreen().catch(() => {})
+        }
+    }
+
+    const joinUrl =
+        codeWithDash !== undefined
+            ? `${window.location.origin}/play/${codeWithDash.replace("-", "")}`
+            : ""
+
     return (
         <section className="mx-auto w-full max-w-4xl py-8">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -64,46 +89,130 @@ export default function Lobby({
                 <div className="bg-linear-to-r from-[#00D4E8]/10 via-transparent to-[#FF8A00]/10 p-6 sm:p-8">
                     {isHost ? (
                         <>
-                            <div className="mb-4">
-                                <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                                    {quiz?.title ?? "No title"}
-                                </h1>
-                                <p className="text-muted-foreground mt-1 text-sm">
-                                    Players joined:{" "}
-                                    <span className="text-foreground font-semibold">
-                                        {players.length}
-                                    </span>
-                                </p>
+                            <div className="mb-4 flex items-start justify-between gap-4">
+                                <div>
+                                    <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+                                        {quiz?.title ?? "No title"}
+                                    </h1>
+                                    <p className="text-muted-foreground mt-1 text-sm">
+                                        Players joined:{" "}
+                                        <span className="text-foreground font-semibold">
+                                            {players.length}
+                                        </span>
+                                    </p>
+                                </div>
+
+                                <div className="flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-black/10 p-1 dark:bg-black/20">
+                                    <button
+                                        onClick={() => setHostTab("players")}
+                                        type="button"
+                                        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                            hostTab === "players"
+                                                ? "bg-[#00D4E8] text-black"
+                                                : "text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        <Users className="h-3.5 w-3.5" />
+                                        Players
+                                    </button>
+                                    <button
+                                        onClick={() => setHostTab("qr")}
+                                        type="button"
+                                        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                            hostTab === "qr"
+                                                ? "bg-[#00D4E8] text-black"
+                                                : "text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        <QrCode className="h-3.5 w-3.5" />
+                                        QR Code
+                                    </button>
+                                </div>
                             </div>
 
-                            <ul className="space-y-2">
-                                {players.map((player) => (
-                                    <li
-                                        key={player.id}
-                                        className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2 dark:bg-black/20"
-                                    >
-                                        <div className="bg-muted/80 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold uppercase">
-                                            {player.emoji ?? player.name.charAt(0)}
-                                        </div>
-                                        <p className="flex-1 text-sm font-medium">{player.name}</p>
-                                        <Button
-                                            className="h-7 w-7 text-white/50 hover:text-red-400"
-                                            onClick={() => onKickPlayer(player.id)}
-                                            size="icon"
-                                            title={`Kick ${player.name}`}
-                                            type="button"
-                                            variant="ghost"
+                            {hostTab === "players" ? (
+                                <ul className="space-y-2">
+                                    {players.map((player) => (
+                                        <li
+                                            key={player.id}
+                                            className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2 dark:bg-black/20"
                                         >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </li>
-                                ))}
-                                {players.length === 0 ? (
-                                    <li className="text-muted-foreground py-4 text-center text-sm">
-                                        No players yet — share the pin!
-                                    </li>
-                                ) : null}
-                            </ul>
+                                            <div className="bg-muted/80 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold uppercase">
+                                                {player.emoji ?? player.name.charAt(0)}
+                                            </div>
+                                            <p className="flex-1 text-sm font-medium">
+                                                {player.name}
+                                            </p>
+                                            <Button
+                                                className="h-7 w-7 text-white/50 hover:text-red-400"
+                                                onClick={() => onKickPlayer(player.id)}
+                                                size="icon"
+                                                title={`Kick ${player.name}`}
+                                                type="button"
+                                                variant="ghost"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </li>
+                                    ))}
+                                    {players.length === 0 ? (
+                                        <li className="text-muted-foreground py-4 text-center text-sm">
+                                            No players yet — share the pin!
+                                        </li>
+                                    ) : null}
+                                </ul>
+                            ) : (
+                                <div className="flex flex-col items-center gap-4 py-2">
+                                    <div
+                                        ref={qrFullscreenRef}
+                                        className={`flex flex-col items-center gap-6 rounded-2xl bg-white p-4 ${
+                                            isFullscreen
+                                                ? "h-screen w-screen justify-center rounded-none p-12"
+                                                : ""
+                                        }`}
+                                    >
+                                        <QRCode size={isFullscreen ? 420 : 200} value={joinUrl} />
+                                        {isFullscreen ? (
+                                            <>
+                                                <div className="text-center">
+                                                    <p className="text-2xl font-black tracking-widest text-black">
+                                                        {codeWithDash}
+                                                    </p>
+                                                    <p className="mt-1 font-mono text-sm text-gray-500">
+                                                        {joinUrl}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    className="flex items-center gap-1.5 text-sm text-gray-400 transition-colors hover:text-gray-600"
+                                                    onClick={toggleFullscreen}
+                                                    type="button"
+                                                >
+                                                    <Minimize2 className="h-4 w-4" />
+                                                    Exit fullscreen
+                                                </button>
+                                            </>
+                                        ) : null}
+                                    </div>
+                                    {!isFullscreen && (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <p className="text-muted-foreground max-w-xs text-center text-xs">
+                                                Scan to join at{" "}
+                                                <span className="text-foreground font-mono font-semibold">
+                                                    {joinUrl}
+                                                </span>
+                                            </p>
+                                            <button
+                                                className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs transition-colors"
+                                                onClick={toggleFullscreen}
+                                                type="button"
+                                            >
+                                                <Maximize2 className="h-3.5 w-3.5" />
+                                                Show fullscreen
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
