@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-    REGISTRY: ghcr.io
-    IMAGE_NAME: benjrm/benjrm
+  REGISTRY: ghcr.io
+  IMAGE_NAME: benjrm/benjrm
 
 jobs:
   # build and push the docker image for each platform
