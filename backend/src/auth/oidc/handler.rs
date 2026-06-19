@@ -8,7 +8,10 @@ use {
         },
         error::Error as AppError,
         question::entity::{QuestionColumn, QuestionEntity},
-        quiz::{QuizError, QuizFilter, entity::{QuizColumn, QuizEntity, QuizModel}},
+        quiz::{
+            QuizError, QuizFilter,
+            entity::{QuizColumn, QuizEntity, QuizModel},
+        },
     },
     actix_session::Session,
     actix_web::{HttpResponse, web},
@@ -281,9 +284,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(get_user))
             .route(web::delete().to(delete_user)),
     );
-    cfg.service(
-        web::resource("/user/data-summary").route(web::get().to(get_data_summary)),
-    );
+    cfg.service(web::resource("/user/data-summary").route(web::get().to(get_data_summary)));
 
     #[cfg(debug_assertions)]
     cfg.service(web::resource("/login/dummy/{id}").route(web::get().to(dummy_login)));
