@@ -8,10 +8,12 @@ import ThemeToggle from "@/components/ThemeToggle"
 import NavItem from "@/components/NavItem"
 import AuthAction from "@/auth/components/AuthAction"
 import useAuthUser from "@/auth/hooks/useAuthUser"
+import ProfileModal from "@/components/ProfileModal"
 
 export default function Navbar(): JSX.Element {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-    const { data: isAuthenticated } = useAuthUser()
+    const [isProfileOpen, setIsProfileOpen] = useState(false)
+    const { data: user } = useAuthUser()
 
     return (
         <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
@@ -30,7 +32,7 @@ export default function Navbar(): JSX.Element {
                     {/* Desktop Navigation */}
                     <nav className="hidden items-center gap-6 md:flex">
                         <NavItem to="/">Home</NavItem>
-                        {isAuthenticated ? <NavItem to="/dashboard">Dashboard</NavItem> : null}
+                        {user ? <NavItem to="/dashboard">Dashboard</NavItem> : null}
                     </nav>
                 </div>
 
@@ -38,14 +40,22 @@ export default function Navbar(): JSX.Element {
                 <div className="flex shrink-0 items-center gap-2 sm:gap-4">
                     <ThemeToggle />
 
-                    {isAuthenticated ? (
-                        <div
-                            aria-label="Profile"
-                            className="bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 sm:h-9 sm:w-9"
-                            role="img"
-                        >
-                            <UserCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
-                        </div>
+                    {user ? (
+                        <>
+                            <button
+                                aria-label="Open profile"
+                                className="bg-muted text-muted-foreground hover:text-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 transition-colors sm:h-9 sm:w-9"
+                                onClick={() => setIsProfileOpen(true)}
+                                type="button"
+                            >
+                                <UserCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                            </button>
+                            <ProfileModal
+                                isOpen={isProfileOpen}
+                                keycloakAccountUrl={user.keycloakAccountUrl}
+                                onClose={() => setIsProfileOpen(false)}
+                            />
+                        </>
                     ) : null}
 
                     <AuthAction />
@@ -73,7 +83,7 @@ export default function Navbar(): JSX.Element {
                         <NavItem isMobile onClick={() => setIsMobileMenuOpen(false)} to="/">
                             Home
                         </NavItem>
-                        {isAuthenticated ? (
+                        {user ? (
                             <NavItem
                                 isMobile
                                 onClick={() => setIsMobileMenuOpen(false)}

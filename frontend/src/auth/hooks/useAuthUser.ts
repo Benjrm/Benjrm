@@ -1,13 +1,18 @@
 import { useQuery } from "@tanstack/react-query"
 import type { UseQueryResult } from "@tanstack/react-query"
 
-export default function useAuthUser(): UseQueryResult<boolean> {
+export interface AuthUser {
+    id: string
+    keycloakAccountUrl: string
+}
+
+export default function useAuthUser(): UseQueryResult<AuthUser> {
     return useQuery({
         queryKey: ["authUser"],
         queryFn: async () => {
             const res = await fetch("/auth/user")
             if (!res.ok) throw new Error("Not authenticated")
-            return true
+            return res.json() as Promise<AuthUser>
         },
         retry: false,
     })

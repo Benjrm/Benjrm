@@ -91,6 +91,14 @@ impl Oidc {
     fn to_public_idp_url(&self, url: Url) -> Url {
         Self::to_public_idp_url_inner(url, &self.public_idp_url)
     }
+
+    pub fn account_url(&self) -> String {
+        let mut url = self.issuer_url.clone();
+        url.path_segments_mut()
+            .expect("OIDC_ISSUER_URL must be a valid base URL")
+            .push("account");
+        url.to_string()
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
