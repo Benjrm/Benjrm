@@ -1,6 +1,6 @@
 import type { JSX } from "react"
 import { useEffect, useRef, useState } from "react"
-import { Maximize2, Minimize2, QrCode, Users, X } from "lucide-react"
+import { Maximize2, Minimize2, X } from "lucide-react"
 import QRCode from "react-qr-code"
 import { Toaster } from "sonner"
 import GamePinBadge from "@/components/GamePinBadge"
@@ -52,7 +52,6 @@ export default function Lobby({
     onCloseEmoji,
     onStartGame,
 }: LobbyProps): JSX.Element {
-    const [hostTab, setHostTab] = useState<"players" | "qr">("players")
     const [isFullscreen, setIsFullscreen] = useState(false)
     const qrFullscreenRef = useRef<HTMLDivElement>(null)
 
@@ -101,37 +100,64 @@ export default function Lobby({
                                         </span>
                                     </p>
                                 </div>
-
-                                <div className="flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-black/10 p-1 dark:bg-black/20">
-                                    <button
-                                        onClick={() => setHostTab("players")}
-                                        type="button"
-                                        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                                            hostTab === "players"
-                                                ? "bg-[#00D4E8] text-black"
-                                                : "text-muted-foreground hover:text-foreground"
-                                        }`}
-                                    >
-                                        <Users className="h-3.5 w-3.5" />
-                                        Players
-                                    </button>
-                                    <button
-                                        onClick={() => setHostTab("qr")}
-                                        type="button"
-                                        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                                            hostTab === "qr"
-                                                ? "bg-[#00D4E8] text-black"
-                                                : "text-muted-foreground hover:text-foreground"
-                                        }`}
-                                    >
-                                        <QrCode className="h-3.5 w-3.5" />
-                                        QR Code
-                                    </button>
-                                </div>
                             </div>
 
-                            {hostTab === "players" ? (
-                                <ul className="space-y-2">
+                            <div className="flex flex-col gap-6 md:flex-row md:items-start">
+                                {/* QR code — first on mobile, right on desktop */}
+                                <div className="order-1 flex flex-col items-center gap-3 md:order-2">
+                                    <div
+                                        ref={qrFullscreenRef}
+                                        className={`flex flex-col items-center gap-6 rounded-2xl bg-white p-4 ${
+                                            isFullscreen
+                                                ? "h-screen w-screen justify-center rounded-none p-12"
+                                                : ""
+                                        }`}
+                                    >
+                                        <QRCode size={isFullscreen ? 420 : 200} value={joinUrl} />
+                                        {isFullscreen ? (
+                                            <>
+                                                <div className="text-center">
+                                                    <p className="text-2xl font-black tracking-widest text-black">
+                                                        {codeWithDash}
+                                                    </p>
+                                                    <p className="mt-1 font-mono text-sm text-gray-500">
+                                                        {joinUrl}
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    className="gap-2"
+                                                    onClick={toggleFullscreen}
+                                                    variant="outline"
+                                                >
+                                                    <Minimize2 className="h-4 w-4" />
+                                                    Exit fullscreen
+                                                </Button>
+                                            </>
+                                        ) : null}
+                                    </div>
+                                    {!isFullscreen && (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <p className="text-muted-foreground max-w-xs text-center text-xs">
+                                                Scan to join at{" "}
+                                                <span className="text-foreground font-mono font-semibold">
+                                                    {joinUrl}
+                                                </span>
+                                            </p>
+                                            <Button
+                                                className="gap-2"
+                                                onClick={toggleFullscreen}
+                                                size="sm"
+                                                variant="outline"
+                                            >
+                                                <Maximize2 className="h-4 w-4" />
+                                                Show fullscreen
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Player list — second on mobile, left on desktop */}
+                                <ul className="order-2 flex-1 space-y-2 md:order-1">
                                     {players.map((player) => (
                                         <li
                                             key={player.id}
@@ -161,58 +187,7 @@ export default function Lobby({
                                         </li>
                                     ) : null}
                                 </ul>
-                            ) : (
-                                <div className="flex flex-col items-center gap-4 py-2">
-                                    <div
-                                        ref={qrFullscreenRef}
-                                        className={`flex flex-col items-center gap-6 rounded-2xl bg-white p-4 ${
-                                            isFullscreen
-                                                ? "h-screen w-screen justify-center rounded-none p-12"
-                                                : ""
-                                        }`}
-                                    >
-                                        <QRCode size={isFullscreen ? 420 : 200} value={joinUrl} />
-                                        {isFullscreen ? (
-                                            <>
-                                                <div className="text-center">
-                                                    <p className="text-2xl font-black tracking-widest text-black">
-                                                        {codeWithDash}
-                                                    </p>
-                                                    <p className="mt-1 font-mono text-sm text-gray-500">
-                                                        {joinUrl}
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    className="flex items-center gap-1.5 text-sm text-gray-400 transition-colors hover:text-gray-600"
-                                                    onClick={toggleFullscreen}
-                                                    type="button"
-                                                >
-                                                    <Minimize2 className="h-4 w-4" />
-                                                    Exit fullscreen
-                                                </button>
-                                            </>
-                                        ) : null}
-                                    </div>
-                                    {!isFullscreen && (
-                                        <div className="flex flex-col items-center gap-2">
-                                            <p className="text-muted-foreground max-w-xs text-center text-xs">
-                                                Scan to join at{" "}
-                                                <span className="text-foreground font-mono font-semibold">
-                                                    {joinUrl}
-                                                </span>
-                                            </p>
-                                            <button
-                                                className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs transition-colors"
-                                                onClick={toggleFullscreen}
-                                                type="button"
-                                            >
-                                                <Maximize2 className="h-3.5 w-3.5" />
-                                                Show fullscreen
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            </div>
                         </>
                     ) : (
                         <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
