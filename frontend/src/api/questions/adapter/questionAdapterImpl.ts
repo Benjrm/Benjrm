@@ -1,6 +1,6 @@
-import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api.ts"
 import type { QuestionAdapter } from "@/api/questions/adapter/questionAdapter.ts"
 import QuestionApiAdapter from "@/api/questions/adapter/questionApiAdapter.ts"
+import type { Question, QuestionRequest } from "@/api/questions/questions.types.ts"
 
 class QuestionAdapterImpl implements QuestionAdapter {
     private service: QuestionAdapter
@@ -9,26 +9,23 @@ class QuestionAdapterImpl implements QuestionAdapter {
         this.service = service
     }
 
-    async createQuestion(
-        quizId: string,
-        request: QuestionApiRequest
-    ): Promise<QuestionApiResponse> {
+    async createQuestion(quizId: string, request: QuestionRequest): Promise<Question> {
         return this.service.createQuestion(quizId, request)
     }
 
-    async getQuestions(quizId: string): Promise<QuestionApiResponse[]> {
+    async getQuestions(quizId: string): Promise<Question[]> {
         return this.service.getQuestions(quizId)
     }
 
-    async getQuestion(quizId: string, questionId: string): Promise<QuestionApiResponse> {
+    async getQuestion(quizId: string, questionId: string): Promise<Question> {
         return this.service.getQuestion(quizId, questionId)
     }
 
     async updateQuestion(
         quizId: string,
         questionId: string,
-        request: Partial<QuestionApiRequest>
-    ): Promise<QuestionApiResponse> {
+        request: Partial<QuestionRequest>
+    ): Promise<Question> {
         return this.service.updateQuestion(quizId, questionId, request)
     }
 

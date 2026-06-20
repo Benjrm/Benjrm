@@ -1,0 +1,69 @@
+import type {
+    Question,
+    QuestionRequest,
+    QuestionResponse,
+} from "@/api/questions/questions.types.ts"
+import assertNever from "@/utils/assertNever"
+
+/**
+ * Converts a question's api response object to the question domain model used within the frontend application.
+ * @param dto The question's api response object
+ * @returns The question domain model used within the frontend application.
+ */
+export function toQuestion(dto: QuestionResponse): Question {
+    return {
+        ...dto,
+        created: new Date(dto.created),
+        modified: new Date(dto.modified),
+    }
+}
+
+/**
+ * Converts a question's domain model used within the frontend application to the question's api request object, which can be sent to the backend when creating or updating a question.
+ * @param question The question domain model used within the frontend application.
+ * @returns The question's api request object, which can be sent to the backend when creating or updating a question.
+ */
+export function questionToRequest(question: Question): QuestionRequest {
+    switch (question.type) {
+        case "SLIDE":
+            return {
+                type: question.type,
+                question: question.question,
+                hidden: question.hidden,
+            }
+
+        case "ORDER":
+            return {
+                type: question.type,
+                question: question.question,
+                hidden: question.hidden,
+                options: question.options.map((option) => ({
+                    answer: option.answer,
+                })),
+            }
+
+        case "SINGLE_CHOICE":
+            return {
+                type: question.type,
+                question: question.question,
+                hidden: question.hidden,
+                options: question.options.map((option) => ({
+                    answer: option.answer,
+                    correct: option.correct,
+                })),
+            }
+
+        case "MULTIPLE_CHOICE":
+            return {
+                type: question.type,
+                question: question.question,
+                hidden: question.hidden,
+                options: question.options.map((option) => ({
+                    answer: option.answer,
+                    correct: option.correct,
+                })),
+            }
+        default:
+            return assertNever(question)
+    }
+}
