@@ -6,20 +6,18 @@ import { Input } from "@/shadcn/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
 import { Separator } from "@/shadcn/components/ui/separator"
 import useDeleteAccount from "@/api/user/useDeleteAccount"
-import useUserDataSummary from "@/api/user/useUserDataSummary"
 
 interface ProfileModalProps {
     isOpen: boolean
     onClose: () => void
-    keycloakAccountUrl: string
+    accountUrl: string | null
 }
 
 const CONFIRM_PHRASE = "DELETE"
 
-const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, keycloakAccountUrl }) => {
+const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, accountUrl }) => {
     const [confirmText, setConfirmText] = useState("")
     const { mutate: deleteAccount, isPending } = useDeleteAccount()
-    const { data: summary } = useUserDataSummary(isOpen)
 
     const canDelete = confirmText === CONFIRM_PHRASE && !isPending
 
@@ -39,13 +37,6 @@ const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, keycloakAccountU
         }
     }
 
-    const quizLabel = summary
-        ? `${summary.quizCount} ${summary.quizCount === 1 ? "quiz" : "quizzes"}`
-        : "Quizzes"
-    const questionLabel = summary
-        ? `${summary.questionCount} ${summary.questionCount === 1 ? "question" : "questions"}`
-        : "Questions"
-
     return (
         <Dialog onOpenChange={handleOpenChange} open={isOpen}>
             <DialogContent>
@@ -54,26 +45,29 @@ const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, keycloakAccountU
                 </DialogHeader>
 
                 <div className="flex flex-col gap-6">
-                    <div className="flex flex-col gap-3">
-                        <div>
-                            <p className="text-sm font-medium">Account Settings</p>
-                            <p className="text-muted-foreground mt-1 text-sm">
-                                Edit your username, email, and password in Keycloak.
-                            </p>
+                    {accountUrl !== null && (
+                        <div className="flex flex-col gap-3">
+                            <div>
+                                <p className="text-sm font-medium">Account Settings</p>
+                                <p className="text-muted-foreground mt-1 text-sm">
+                                    Edit your username, email, and password in your identity
+                                    provider.
+                                </p>
+                            </div>
+                            <Button
+                                className="w-full gap-2"
+                                variant="outline"
+                                onClick={() =>
+                                    window.open(accountUrl, "_blank", "noopener,noreferrer")
+                                }
+                            >
+                                Open Account Settings
+                                <ExternalLink className="h-4 w-4" />
+                            </Button>
                         </div>
-                        <Button
-                            className="w-full gap-2"
-                            variant="outline"
-                            onClick={() =>
-                                window.open(keycloakAccountUrl, "_blank", "noopener,noreferrer")
-                            }
-                        >
-                            Open Account Settings
-                            <ExternalLink className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    )}
 
-                    <Separator />
+                    {accountUrl !== null && <Separator />}
 
                     <div className="flex flex-col gap-3">
                         <div>
@@ -86,8 +80,7 @@ const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, keycloakAccountU
                         <div className="bg-destructive/5 border-destructive/20 rounded-md border p-3">
                             <p className="text-sm font-medium">Deletion includes:</p>
                             <ul className="text-muted-foreground mt-1.5 list-inside list-disc space-y-0.5 text-sm">
-                                <li>{quizLabel}</li>
-                                <li>{questionLabel}</li>
+                                <li>All your quizzes and questions</li>
                                 <li>Account history</li>
                             </ul>
                         </div>

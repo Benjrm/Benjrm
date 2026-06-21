@@ -7,11 +7,7 @@ use {
             oidc::error::Error,
         },
         error::Error as AppError,
-        question::entity::{QuestionColumn, QuestionEntity},
-        quiz::{
-            QuizError, QuizFilter,
-            entity::{QuizColumn, QuizEntity, QuizModel},
-        },
+        quiz::{QuizError, QuizFilter, entity::QuizModel},
     },
     actix_session::Session,
     actix_web::{HttpResponse, web},
@@ -19,8 +15,8 @@ use {
     oauth2::{CsrfToken, PkceCodeVerifier},
     openidconnect::Nonce,
     sea_orm::{
-        ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, EntityTrait,
-        PaginatorTrait, QueryFilter, SqlErr,
+        ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter,
+        SqlErr, TransactionTrait,
     },
     serde::{Deserialize, Serialize},
     uuid::Uuid,
@@ -148,75 +144,58 @@ async fn logout(data: web::Data<AppData>, session: Session) -> HttpResponse {
 #[serde(rename_all = "camelCase")]
 struct UserResponse {
     id: Uuid,
-    keycloak_account_url: String,
+    account_url: Option<String>,
 }
 
 async fn get_user(user: User, data: web::Data<AppData>) -> HttpResponse {
     HttpResponse::Ok().json(UserResponse {
         id: user.id,
-        keycloak_account_url: data.oidc.account_url(),
+        account_url: data.oidc.account_url(),
     })
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct DeleteConfirmation {
+    confirmation: String,
 }
 
 async fn delete_user(
     data: web::Data<AppData>,
     session: Session,
     user: User,
+    body: web::Json<DeleteConfirmation>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let quizzes = QuizModel::get_many(&data.db, user.id, &QuizFilter { hidden: None })
+    if body.confirmation != "DELETE" {
+        return Ok(HttpResponse::UnprocessableEntity().finish());
+    }
+
+    let txn = data
+        .db
+        .begin()
+        .await
+        .map_err(|e| AppError::from(QuizError::from(e)))?;
+
+    let quizzes = QuizModel::get_many(&txn, user.id, &QuizFilter { hidden: None })
         .await
         .map_err(AppError::from)?;
 
     for quiz in quizzes {
-        quiz.delete(&data.db).await?;
+        quiz.delete(&txn).await?;
     }
 
     UserEntity::delete_by_id(user.id)
-        .exec(&data.db)
+        .exec(&txn)
+        .await
+        .map_err(|e| AppError::from(QuizError::from(e)))?;
+
+    txn.commit()
         .await
         .map_err(|e| AppError::from(QuizError::from(e)))?;
 
     session.purge();
 
     Ok(HttpResponse::NoContent().finish())
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct DataSummary {
-    quiz_count: u64,
-    question_count: u64,
-}
-
-async fn get_data_summary(
-    user: User,
-    data: web::Data<AppData>,
-) -> Result<HttpResponse, actix_web::Error> {
-    let quiz_ids: Vec<Uuid> = QuizEntity::find()
-        .filter(QuizColumn::User.eq(user.id))
-        .all(&data.db)
-        .await
-        .map_err(|e| AppError::from(QuizError::from(e)))?
-        .into_iter()
-        .map(|q| q.id)
-        .collect();
-
-    let quiz_count = quiz_ids.len() as u64;
-
-    let question_count = if quiz_ids.is_empty() {
-        0
-    } else {
-        QuestionEntity::find()
-            .filter(QuestionColumn::Quiz.is_in(quiz_ids))
-            .count(&data.db)
-            .await
-            .map_err(|e| AppError::from(QuizError::from(e)))?
-    };
-
-    Ok(HttpResponse::Ok().json(DataSummary {
-        quiz_count,
-        question_count,
-    }))
 }
 
 #[cfg(debug_assertions)]
@@ -284,7 +263,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(get_user))
             .route(web::delete().to(delete_user)),
     );
-    cfg.service(web::resource("/user/data-summary").route(web::get().to(get_data_summary)));
 
     #[cfg(debug_assertions)]
     cfg.service(web::resource("/login/dummy/{id}").route(web::get().to(dummy_login)));

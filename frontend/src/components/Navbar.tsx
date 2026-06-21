@@ -51,8 +51,8 @@ export default function Navbar(): JSX.Element {
                                 <UserCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
                             </button>
                             <ProfileModal
+                                accountUrl={user.accountUrl}
                                 isOpen={isProfileOpen}
-                                keycloakAccountUrl={user.keycloakAccountUrl}
                                 onClose={() => setIsProfileOpen(false)}
                             />
                         </>

@@ -3,7 +3,7 @@ import type { UseQueryResult } from "@tanstack/react-query"
 
 export interface AuthUser {
     id: string
-    keycloakAccountUrl: string
+    accountUrl: string | null
 }
 
 export default function useAuthUser(): UseQueryResult<AuthUser> {
