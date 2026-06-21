@@ -1,0 +1,91 @@
+name: CI Pipeline
+run-name: CI Pipeline for ${{ github.event_name }} by @${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release/**'
+    tags:
+      - 'v*'
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+# Cancel running workflows, after a new one is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check_api_changes:
+    name: Detect API Changes
+    runs-on: ubuntu-24.04
+    outputs:
+      schemathesis: ${{ steps.filter.outputs.schemathesis }}
+      spectral: ${{ steps.filter.outputs.spectral }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            schemathesis:
+              - 'docs/openapispec/**'
+              - 'backend/**'
+              - '.github/workflows/schemathesis.yaml'
+              - 'api_tests/**'
+            spectral:
+              - 'docs/openapispec/RestInterface.yaml'
+              - 'docs/asyncapi/WebSockets.yaml'
+              - '.github/workflows/spectral.yaml'
+
+  lint:
+    name: Linting
+    uses: ./.github/workflows/lint.yaml
+
+  security:
+    name: Security Scans
+    uses: ./.github/workflows/security.yaml
+    secrets: inherit
+
+  tests:
+    name: Tests
+    uses: ./.github/workflows/tests.yaml
+
+  api_lint:
+    name: API Linting (Spectral)
+    needs: check_api_changes
+    if: needs.check_api_changes.outputs.spectral == 'true' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/spectral.yaml
+
+  api_tests:
+    name: API Tests (Schemathesis)
+    needs: check_api_changes
+    if: needs.check_api_changes.outputs.schemathesis == 'true' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/schemathesis.yaml
+
+  build_container:
+    name: Build & Push Container
+    needs: [lint, security, tests, api_lint, api_tests]
+    # runs only if all jobs succeed or are skipped, and if not a pull request
+    if: >
+      always() && 
+      !contains(needs.*.result, 'failure') && 
+      !contains(needs.*.result, 'cancelled') &&
+      github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build_push_container.yaml
+    secrets: inherit
