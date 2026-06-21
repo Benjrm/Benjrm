@@ -4,8 +4,8 @@ import type { JSX } from "react"
 import { PlusSquare } from "lucide-react"
 import QuizCard from "@/components/QuizCard"
 import CategoryHeader from "@/components/CategoryHeader"
-import type { Quiz } from "@/api/quiz"
 import { Button } from "@/shadcn/components/ui/button"
+import type { Quiz } from "@/api/quizzes/quizzes.types.ts"
 
 interface DiscoverSectionProps {
     quizzes: Quiz[]

@@ -1,20 +1,7 @@
 name: API Testing with Schemathesis
 run-name: API Testing with Schemathesis on ${{ github.event_name }} by ${{ github.actor }}
 on:
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'docs/openapispec/**'
-      - 'backend/**'
-      - '.github/workflows/schemathesis.yaml'
-      - 'api_tests/**'
-  pull_request:
-    paths:
-      - 'docs/openapispec/**'
-      - 'backend/**'
-      - '.github/workflows/schemathesis.yaml'
-      - 'api_tests/**'
+  workflow_call:
   workflow_dispatch:
 
 jobs:

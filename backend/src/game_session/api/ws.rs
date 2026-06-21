@@ -103,7 +103,11 @@ async fn get_player_ws(
         GameSession::handle_player_cmd,
         remove_player_ws,
     );
-    session.set_player_channel(id, channel).await;
+
+    session
+        .set_player_channel(id, channel)
+        .await
+        .map_err(Error::from)?;
 
     Ok(res)
 }
@@ -121,7 +125,7 @@ async fn remove_player_ws(
         if player.name.is_some() {
             session
                 .host
-                .msg(HostMessage::RemovePlayer { id: player_id }.into())
+                .msg(Message::from(&HostMessage::RemovePlayer { id: player_id }))
                 .await
         }
     }
@@ -138,7 +142,7 @@ impl WsChannel {
     pub fn new<
         Cmd: CommandTrait + 'static,
         Payload: Copy + 'static,
-        HandleCmd: AsyncFn(&mut GameSession, Cmd, Payload) + Send + 'static,
+        HandleCmd: AsyncFn(&mut GameSession, Cmd, Arc<Mutex<GameSession>>, Payload) + Send + 'static,
         HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, Payload) + Send + 'static,
     >(
         rx: MessageStream,
@@ -175,7 +179,7 @@ impl WsChannel {
 async fn ws_listener<
     Cmd: CommandTrait,
     Payload: Copy,
-    HandleCmd: AsyncFn(&mut GameSession, Cmd, Payload) + Send,
+    HandleCmd: AsyncFn(&mut GameSession, Cmd, Arc<Mutex<GameSession>>, Payload) + Send,
     HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, Payload) + Send,
 >(
     mut rx: MessageStream,
@@ -238,8 +242,13 @@ async fn ws_listener<
                         ring_delta.insert(time_delta);
                         time_delta_ms.store(ring_delta.avg().num_milliseconds(), Ordering::Relaxed);
                     } else {
-                        let mut session = session.lock().await;
-                        handle_cmd(&mut session, cmd, payload).await;
+                        handle_cmd(
+                            &mut *session.lock().await,
+                            cmd,
+                            Arc::clone(&session),
+                            payload,
+                        )
+                        .await;
                     }
                 }
                 Some(Err(err)) => {
@@ -312,8 +321,8 @@ struct PingCommand {
 }
 
 #[async_trait::async_trait]
-impl<T: Serialize + Send + 'static> Channel<T> for WsChannel {
-    async fn send(&mut self, mut msg: Message<T>) -> Result<(), ChannelError> {
+impl<T: Serialize + Sync + 'static> Channel<T> for WsChannel {
+    async fn send(&mut self, mut msg: Message<'_, T>) -> Result<(), ChannelError> {
         if let Some(timing) = &mut msg.timing {
             let ms = self.time_delta_ms.load(Ordering::Relaxed);
             *timing += TimeDelta::milliseconds(ms);

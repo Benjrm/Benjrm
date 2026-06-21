@@ -1,59 +1,20 @@
 // frontend/src/pages/WaitingRoom.tsx
 
 import type { JSX } from "react"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router"
-import { X } from "lucide-react"
-import { Toaster, toast } from "sonner"
-import ProfilePicker from "../components/ProfilePicker"
+import { toast } from "sonner"
 import GamePinForm from "@/components/GamePinForm"
+import Lobby from "@/components/Lobby"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import useSessionPlayers from "@/api/session/hooks/useSessionPlayers"
-import {
-    useHostWebSocket,
-    usePlayerWebSocket,
-    useSocketEvent,
-    useWebSocketContext,
-} from "@/api/websocket"
-import { Button } from "@/shadcn/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
-
-interface Player {
-    id: string
-    name: string
-    emoji: string | null
-}
-
-const AVAILABLE_EMOJIS = [
-    "😀",
-    "😃",
-    "😄",
-    "😁",
-    "😉",
-    "😍",
-    "🤩",
-    "😎",
-    "🦁",
-    "🦒",
-    "🐭",
-    "🐶",
-    "🐱",
-    "🐼",
-    "🐸",
-    "🦎",
-    "🦕",
-    "🦖",
-    "🦄",
-    "🐴",
-    "🐳",
-    "🐵",
-    "🦊",
-    "🦉",
-    "🌟",
-]
+import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
+import { AVAILABLE_EMOJIS } from "@/hooks/useGameSession"
+import type { Player } from "@/hooks/useGameSession"
 
 export default function WaitingRoom(): JSX.Element {
+    const navigate = useNavigate()
     const codeParam = useParams().code
     const code = codeParam !== null ? Number(codeParam) || undefined : undefined
     const codeWithDash =
@@ -61,46 +22,18 @@ export default function WaitingRoom(): JSX.Element {
             ? ((s) => {
                   const mid = Math.floor(s.length / 2)
                   return `${s.slice(0, mid)}-${s.slice(mid)}`
-              })(String(code))
+              })(String(code).padStart(8, "0"))
             : undefined
 
     const { isLoading: isLoadingSession, isHost, isPlayer, isInvalidCode } = useSessionStatus(code)
     const { data: quiz, isLoading: isLoadingQuiz } = useSessionQuiz(isHost ? code : undefined)
     const { data: initialPlayers } = useSessionPlayers(isHost ? code : undefined)
 
-    // Delay WS connection until role is determined
-    // (which would disconnect mid-render and wipe all event subscriptions via listeners.clear())
-    const wsCode = isLoadingSession ? undefined : code
-    useHostWebSocket(isHost ? wsCode : undefined)
-    usePlayerWebSocket(!isHost ? wsCode : undefined)
+    const ws = useWebSocketContext()
 
-    const websocket = useWebSocketContext()
-
-    // Live player list — seeded from the REST endpoint on mount so state survives a reload
-    const [players, setPlayers] = useState<Player[]>([])
-    const playersInitialized = useRef(false)
-    useEffect(() => {
-        if (initialPlayers && !playersInitialized.current) {
-            playersInitialized.current = true
-            setPlayers(initialPlayers)
-        }
-    }, [initialPlayers])
-
-    useSocketEvent("addPlayer", ({ id, name, emoji }) => {
-        setPlayers((prev) => [...prev, { id, name, emoji }])
-    })
-    useSocketEvent("renamePlayer", ({ id, name, emoji }) => {
-        setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, name, emoji } : p)))
-    })
-    useSocketEvent("removePlayer", ({ id }) => {
-        setPlayers((prev) => prev.filter((p) => p.id !== id))
-    })
-
-    // sessionStorage key scoped to this session code.
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null
 
-    // Player name-setting state — lazy initialisers read from sessionStorage so a reload
-    // restores the pre-filled form without calling setState inside an effect.
+    // Player identity
     const [name, setName] = useState<string>(() => {
         if (!storageKey) return ""
         try {
@@ -124,59 +57,103 @@ export default function WaitingRoom(): JSX.Element {
     const [nameSaved, setNameSaved] = useState(false)
     const [nameError, setNameError] = useState<string | null>(null)
     const [pendingId, setPendingId] = useState<number | null>(null)
+    const [pendingStartId, setPendingStartId] = useState<number | null>(null)
 
-    // Once the WebSocket is open, automatically re-send setName so the server
-    // recognises the player without them having to type their name again.
-    // Reads directly from sessionStorage inside the effect to avoid ref-during-render.
+    // Player list (used by host to display joined players)
+    const [players, setPlayers] = useState<Player[]>([])
+    const playersInitialized = useRef(false)
     useEffect(() => {
-        if (!wsCode || isHost || !storageKey) return undefined
-        const savedRaw = sessionStorage.getItem(storageKey)
-        if (!savedRaw) return undefined
-        let saved: { name: string; emoji: string }
-        try {
-            saved = JSON.parse(savedRaw) as { name: string; emoji: string }
-        } catch {
-            return undefined
+        if (initialPlayers && !playersInitialized.current) {
+            playersInitialized.current = true
+            setPlayers(initialPlayers)
         }
-        const unsub = websocket.onConnect(() => {
-            const id = Math.floor(Math.random() * 2 ** 31)
-            setPendingId(id)
-            websocket.send({
-                id,
-                command: "setName",
-                payload: { name: saved.name, emoji: saved.emoji },
-            })
-        })
-        return (): void => {
-            unsub()
-        }
-    }, [wsCode, isHost, storageKey, websocket])
+    }, [initialPlayers])
 
-    // Track the player WS connection outcome so we can show "not found" when an unauthenticated
-    // user enters an invalid code (the REST endpoint always returns 401 for unauthenticated users
-    // regardless of code validity, so WS is the only reliable check).
-    // Storing the code alongside the result lets the derived value reset to `undefined` automatically
-    // when wsCode changes, without a synchronous setState inside the effect body.
-    const [wsConnectionState, setWsConnectionState] = useState<{
-        code: number | undefined
-        connected: boolean | undefined
-    }>({ code: undefined, connected: undefined })
-    const wsConnected = wsConnectionState.code === wsCode ? wsConnectionState.connected : undefined
+    // WS connection tracking (player role only — determines when lobby is ready to show)
+    const [wsConnected, setWsConnected] = useState<boolean | undefined>(undefined)
     useEffect(() => {
-        if (!wsCode || !isPlayer) return undefined
-        const unsubOpen = websocket.onConnect(() => {
-            setWsConnectionState({ code: wsCode, connected: true })
-        })
-        const unsubFail = websocket.onConnectFail(() => {
-            setWsConnectionState({ code: wsCode, connected: false })
-        })
+        if (!isPlayer) return undefined
+        const unsubOpen = ws.onConnect(() => setWsConnected(true))
+        const unsubFail = ws.onConnectFail(() => setWsConnected(false))
         return (): void => {
             unsubOpen()
             unsubFail()
         }
-    }, [wsCode, isPlayer, websocket])
+    }, [isPlayer, ws])
 
-    const navigate = useNavigate()
+    // Re-send saved name after WS reconnects
+    const nameSavedRef = useRef(nameSaved)
+    useEffect(() => {
+        nameSavedRef.current = nameSaved
+    }, [nameSaved])
+    useEffect(() => {
+        if (!storageKey || isHost) return undefined
+        const unsub = ws.onConnect((): void => {
+            if (!nameSavedRef.current) return
+            const savedRaw = sessionStorage.getItem(storageKey)
+            if (!savedRaw) return
+            try {
+                const saved = JSON.parse(savedRaw) as { name: string; emoji: string }
+                ws.send({ command: "setName", payload: { name: saved.name, emoji: saved.emoji } })
+            } catch {
+                // ignore malformed sessionStorage data
+            }
+        })
+        return unsub
+    }, [storageKey, isHost, ws])
+
+    // Player list socket events
+    useSocketEvent("addPlayer", ({ id, name: playerName, emoji: playerEmoji }) => {
+        setPlayers((prev) => [...prev, { id, name: playerName, emoji: playerEmoji }])
+    })
+    useSocketEvent("renamePlayer", ({ id, name: playerName, emoji: playerEmoji }) => {
+        setPlayers((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, name: playerName, emoji: playerEmoji } : p))
+        )
+    })
+    useSocketEvent("removePlayer", ({ id }) => {
+        if (isHost) {
+            const leaving = players.find((p) => p.id === id)
+            if (leaving) {
+                toast(
+                    `${leaving.emoji ? `${leaving.emoji} ` : ""}${leaving.name} has left the room`
+                )
+            }
+        }
+        setPlayers((prev) => prev.filter((p) => p.id !== id))
+    })
+
+    // Game started: players navigate to game page
+    useSocketEvent("start", () => {
+        if (!isPlayer) return
+        if (code !== undefined) sessionStorage.setItem(`gameActive:${code}`, "1")
+        navigate(`/play/${codeParam ?? ""}/game`)
+    })
+
+    // Server acknowledgements
+    useSocketEvent("ok", (_payload, _timing, id) => {
+        if (id === pendingId) {
+            setPendingId(null)
+            setNameSaved(true)
+        } else if (id === pendingStartId) {
+            setPendingStartId(null)
+            navigate(`/play/${codeParam ?? ""}/host`, {
+                state: { players },
+            })
+        }
+    })
+
+    useSocketEvent("error", (payload, _timing, id) => {
+        if (id === pendingId) {
+            setPendingId(null)
+            setNameError(payload.message)
+        } else if (id === pendingStartId) {
+            setPendingStartId(null)
+            toast.error(payload.message || "Failed to start the game")
+        } else {
+            toast.error(payload.message || "Something went wrong")
+        }
+    })
 
     useSocketEvent("kick", () => {
         if (storageKey) sessionStorage.removeItem(storageKey)
@@ -190,39 +167,38 @@ export default function WaitingRoom(): JSX.Element {
         }, 2000)
     })
 
-    useSocketEvent("ok", (_payload, _timing, id) => {
-        if (pendingId === id) {
-            setPendingId(null)
-            // TODO: add command specific response handling when there are more commands (maybe add it globally)
-            setNameSaved(true)
-        }
-    })
-
-    useSocketEvent("error", (payload, _timing, id) => {
-        if (pendingId === id) {
-            setPendingId(null)
-            setNameError(payload.message)
-        }
-    })
-
-    function onSaveName(): void {
+    // Actions
+    const onSaveName = useCallback((): void => {
         const trimmed = name.trim()
         if (!trimmed) return
         const id = Math.floor(Math.random() * 2 ** 31)
         setPendingId(id)
         setNameError(null)
-        websocket.send({ id, command: "setName", payload: { name: trimmed, emoji } })
+        ws.send({ id, command: "setName", payload: { name: trimmed, emoji } })
         if (storageKey) sessionStorage.setItem(storageKey, JSON.stringify({ name: trimmed, emoji }))
-    }
+    }, [name, emoji, storageKey, ws])
 
-    function onKickPlayer(playerId: string): void {
-        websocket.send({ command: "kickPlayer", payload: { id: playerId } })
-    }
+    const onKickPlayer = useCallback(
+        (playerId: string): void => {
+            ws.send({ command: "kickPlayer", payload: { id: playerId } })
+        },
+        [ws]
+    )
 
-    function onPickEmoji(nextEmoji: string): void {
+    const onPickEmoji = useCallback((nextEmoji: string): void => {
         setEmoji(nextEmoji)
         setIsEmojiOpen(false)
-    }
+    }, [])
+
+    const onStartGame = useCallback((): void => {
+        if (players.length === 0) {
+            toast.error("Waiting for players to join...")
+            return
+        }
+        const id = Math.floor(Math.random() * 2 ** 31)
+        setPendingStartId(id)
+        ws.send({ id, command: "start" })
+    }, [players.length, ws])
 
     if (isLoadingSession || isLoadingQuiz || (isPlayer && wsConnected === undefined)) {
         return (
@@ -254,145 +230,25 @@ export default function WaitingRoom(): JSX.Element {
     }
 
     return (
-        <section className="mx-auto w-full max-w-4xl py-8">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                <div className="inline-flex w-max items-center gap-2 rounded-full border border-[#FF8A00]/20 bg-[#FF8A00]/10 px-3 py-1.5 text-xs font-bold tracking-widest text-[#FF8A00] uppercase">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#FF8A00]" />
-                    Waiting Lobby
-                </div>
-                <p className="text-muted-foreground text-sm">
-                    Game Pin: {codeWithDash ?? "No active PIN"}
-                </p>
-            </div>
-
-            <div className="dark:text-foreground overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl dark:border-white/10 dark:bg-[#111318]">
-                <div className="bg-linear-to-r from-[#00D4E8]/10 via-transparent to-[#FF8A00]/10 p-6 sm:p-8">
-                    {isHost ? (
-                        <>
-                            <div className="mb-4">
-                                <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                                    {quiz?.title ?? "No title"}
-                                </h1>
-                                <p className="text-muted-foreground mt-1 text-sm">
-                                    Players joined:{" "}
-                                    <span className="text-foreground font-semibold">
-                                        {players.length}
-                                    </span>
-                                </p>
-                            </div>
-
-                            <ul className="space-y-2">
-                                {players.map((player) => (
-                                    <li
-                                        key={player.id}
-                                        className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2 dark:bg-black/20"
-                                    >
-                                        <div className="bg-muted/80 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold uppercase">
-                                            {player.emoji ?? player.name.charAt(0)}
-                                        </div>
-                                        <p className="flex-1 text-sm font-medium">{player.name}</p>
-                                        <Button
-                                            className="h-7 w-7 text-white/50 hover:text-red-400"
-                                            onClick={() => onKickPlayer(player.id)}
-                                            size="icon"
-                                            title={`Kick ${player.name}`}
-                                            type="button"
-                                            variant="ghost"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </li>
-                                ))}
-
-                                {players.length === 0 ? (
-                                    <li className="text-muted-foreground py-4 text-center text-sm">
-                                        No players yet — share the pin!
-                                    </li>
-                                ) : null}
-                            </ul>
-                        </>
-                    ) : (
-                        <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
-                            {nameSaved ? (
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00D4E8]/20 text-xl">
-                                        {emoji}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold">{name}</p>
-                                        <p className="text-muted-foreground text-xs">
-                                            You&apos;re in!.
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="mb-4 flex items-center justify-between">
-                                        <p className="text-sm font-semibold tracking-wide">
-                                            Player Setup
-                                        </p>
-                                        <span className="text-muted-foreground text-xs">
-                                            Tap avatar to choose emoji
-                                        </span>
-                                    </div>
-
-                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                                        <ProfilePicker
-                                            emoji={emoji}
-                                            name={name}
-                                            nameError={nameError}
-                                            onNameChange={setName}
-                                            onOpenEmoji={() => setIsEmojiOpen(true)}
-                                            onSaveName={() => onSaveName()}
-                                            pending={pendingId != null}
-                                        />
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
-
-                    <div className="mt-8 flex items-center justify-center border-t border-white/10 pt-6">
-                        {isHost ? (
-                            <Button
-                                className="rounded-xl border-0 bg-[#00D4E8] px-8 py-5 text-sm font-bold tracking-wide text-black uppercase shadow-[0_0_20px_-5px_rgba(0,212,232,0.6)] transition-all hover:bg-[#00BDD0]"
-                                size="lg"
-                                type="button"
-                            >
-                                Start Game
-                            </Button>
-                        ) : null}
-                        {!isHost && nameSaved ? (
-                            <p className="text-muted-foreground text-sm font-medium">
-                                Waiting for host to start the game
-                            </p>
-                        ) : null}
-                    </div>
-                </div>
-            </div>
-
-            <Toaster richColors />
-
-            <Dialog onOpenChange={setIsEmojiOpen} open={isEmojiOpen}>
-                <DialogContent className="border-white/10 bg-[#111318] text-white sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>Choose profile emoji</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
-                        {AVAILABLE_EMOJIS.map((em) => (
-                            <button
-                                key={em}
-                                aria-label={`Select emoji ${em}`}
-                                className="hover:bg-muted/70 flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-black/20 text-xl transition"
-                                onClick={() => onPickEmoji(em)}
-                                type="button"
-                            >
-                                {em}
-                            </button>
-                        ))}
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </section>
+        <Lobby
+            codeWithDash={codeWithDash}
+            emoji={emoji}
+            isEmojiOpen={isEmojiOpen}
+            isHost={isHost}
+            name={name}
+            nameError={nameError}
+            nameSaved={nameSaved}
+            onCloseEmoji={setIsEmojiOpen}
+            onKickPlayer={onKickPlayer}
+            onNameChange={setName}
+            onOpenEmoji={() => setIsEmojiOpen(true)}
+            onPickEmoji={onPickEmoji}
+            onSaveName={onSaveName}
+            onStartGame={onStartGame}
+            pendingId={pendingId}
+            pendingStartId={pendingStartId}
+            players={players}
+            quiz={quiz}
+        />
     )
 }

@@ -6,15 +6,20 @@ info:
   contact:
     name: Benjrm
     url: "https://benjrm.de"
-    email: 'info@benjrm.de'
+    email: "info@benjrm.de"
   tags:
     - name: WebSocket
       description: WebSocket related commands such as ping and pong
     - name: Sessions
+    - name: Questions
+    - name: Leaderboard
 
 servers:
-  dev:
+  dev_8080:
     host: "localhost:8080"
+    protocol: ws
+  dev_80:
+    host: "localhost"
     protocol: ws
 
 channels:
@@ -40,6 +45,18 @@ channels:
         $ref: "#/components/messages/removePlayer"
       kickPlayer:
         $ref: "#/components/messages/kickPlayer"
+      start:
+        $ref: "#/components/messages/start"
+      nextQuestion:
+        $ref: "#/components/messages/nextQuestion"
+      showQuestion:
+        $ref: "#/components/messages/showQuestion"
+      displayQuestion:
+        $ref: "#/components/messages/displayQuestion"
+      displayLeaderboard:
+        $ref: "#/components/messages/displayLeaderboard"
+      endGame:
+        $ref: "#/components/messages/endGame"
     tags:
       - name: Sessions
   
@@ -61,6 +78,16 @@ channels:
         $ref: "#/components/messages/setName"
       kick:
         $ref: "#/components/messages/kick"
+      start:
+        $ref: "#/components/messages/start"
+      displayQuestion:
+        $ref: "#/components/messages/displayQuestion"
+      answerQuestion:
+        $ref: "#/components/messages/answerQuestion"
+      questionResult:
+        $ref: "#/components/messages/questionResult"
+      displayLeaderboard:
+        $ref: "#/components/messages/displayLeaderboard"
     tags:
       - name: Sessions
 
@@ -186,7 +213,7 @@ operations:
       - $ref: "#/channels/sessionPlayer/messages/setName"
     tags:
       - name: Sessions
-  
+
   sendKick:
     description: "Send kick command to player"
     action: send
@@ -194,6 +221,116 @@ operations:
       $ref: "#/channels/sessionPlayer"
     messages:
       - $ref: "#/channels/sessionPlayer/messages/kick"
+    tags:
+      - name: Sessions
+  
+  receiveStart:
+    description: "Receive start command from host"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/start"
+    tags:
+      - name: Sessions
+  
+  sendStart:
+    description: "Send start command to player"
+    action: send
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/start"
+    tags:
+      - name: Sessions
+  
+  receiveNextQuestion:
+    description: "Receive nextQuestion command from host"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/nextQuestion"
+    tags:
+      - name: Questions
+
+  receiveShowQuestion:
+    description: "Receive showQuestion command from host"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/showQuestion"
+    tags:
+      - name: Questions
+
+  sendDisplayQuestionToHost:
+    description: "Send displayQuestion command to Host"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/displayQuestion"
+    tags:
+      - name: Questions
+  
+  sendDisplayQuestionToPlayer:
+    description: "Send displayQuestion command to Player"
+    action: send
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/displayQuestion"
+    tags:
+      - name: Questions
+  
+  receiveAnswerQuestion:
+    description: "Receive answerQuestion command from player"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/answerQuestion"
+    tags:
+      - name: Questions
+  
+  sendQuestionResult:
+    description: "Send questionResult command to Player"
+    action: send
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/questionResult"
+    tags:
+      - name: Questions
+  
+  sendDisplayLeaderboardToHost:
+    description: "Send displayLeaderboard command to Host"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/displayLeaderboard"
+    tags:
+      - name: Leaderboard
+  
+  sendDisplayLeaderboardToPlayer:
+    description: "Send displayLeaderboard command to Player"
+    action: send
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/displayLeaderboard"
+    tags:
+      - name: Leaderboard
+  
+  receiveEndGame:
+    description: "Receive endGame command from host"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/endGame"
     tags:
       - name: Sessions
 
@@ -350,7 +487,7 @@ components:
               emoji:
                 type: string
                 example: "😀"
-    
+
     kick:
       payload:
         type: object
@@ -358,3 +495,218 @@ components:
           command:
             type: string
             const: "kick"
+
+    start:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "start"
+
+    nextQuestion:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "nextQuestion"
+    
+    showQuestion:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "showQuestion"
+          payload:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+    
+    displayQuestion:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "displayQuestion"
+          payload:
+            allOf:
+              - type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  question:
+                    type: string
+                  seconds:
+                    type: integer
+                    format: uint32
+                    nullable: true
+              - $ref: "#/components/schemas/DisplayQuestionOptions"
+    
+    answerQuestion:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "answerQuestion"
+          payload:
+            type: object
+            properties:
+              answer:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+    
+    questionResult:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "questionResult"
+          payload:
+            type: object
+            properties:
+              question:
+                type: string
+                format: uuid
+              correctAnswers:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+              points:
+                type: integer
+                format: uint32
+                description: "Points received for the current question"
+              totalPoints:
+                type: integer
+                format: uint32
+    
+    displayLeaderboard:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "displayLeaderboard"
+          payload:
+            type: object
+            properties:
+              leaderboard:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+              isFinal:
+                type: boolean
+                description: "Whether this leaderboard is the final quiz result"
+    
+    endGame:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "endGame"
+  
+  schemas:
+    DisplayQuestionOptions:
+      oneOf:
+        - $ref: "#/components/schemas/DisplaySlideOptions"
+        - $ref: "#/components/schemas/DisplaySingleChoiceOptions"
+        - $ref: "#/components/schemas/DisplayMultipleChoiceOptions"
+        - $ref: "#/components/schemas/DisplayOrderOptions"
+      discriminator: type
+    
+    DisplaySlideOptions:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [SLIDE]
+    
+    DisplaySingleChoiceOptions:
+      type: object
+      required:
+        - type
+        - options
+      properties:
+        type:
+          type: string
+          enum: [SINGLE_CHOICE]
+        options:
+          type: array
+          minItems: 2
+          items:
+            $ref: "#/components/schemas/AnswerOption"
+    
+    DisplayMultipleChoiceOptions:
+      type: object
+      required:
+        - type
+        - options
+      properties:
+        type:
+          type: string
+          enum: [MULTIPLE_CHOICE]
+        options:
+          type: array
+          minItems: 2
+          items:
+            $ref: "#/components/schemas/AnswerOption"
+    
+    DisplayOrderOptions:
+      type: object
+      required:
+        - type
+        - options
+      properties:
+        type:
+          type: string
+          enum: [ORDER]
+        options:
+          type: array
+          minItems: 2
+          items:
+            $ref: "#/components/schemas/AnswerOption"
+    
+    AnswerOption:
+      type: object
+      required:
+        - id
+        - answer
+      properties:
+        id:
+          type: string
+          format: uuid
+        answer:
+          type: string
+    
+    LeaderboardEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        emoji:
+          type: string
+          example: "😀"
+          nullable: true
+        total_points:
+          type: integer
+          format: uint32
+        points:
+          type: integer
+          format: uint32
+          description: "Points received for the current question"

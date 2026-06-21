@@ -4,8 +4,8 @@ import type { JSX } from "react"
 import { useEffect } from "react"
 import { toast, Toaster } from "sonner"
 import QuizCard from "@/components/QuizCard"
-import { useQuizzes } from "@/api/queries"
-import type { Quiz } from "@/api/quiz"
+import { useQuizzes } from "@/api/quizzes/quizzes.queries.ts"
+import type { Quiz } from "@/api/quizzes/quizzes.types.ts"
 
 function renderQuizzesContent(sortedQuizzes: Quiz[], isLoading: boolean): JSX.Element | null {
     if (isLoading) {

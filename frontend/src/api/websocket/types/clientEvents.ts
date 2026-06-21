@@ -12,11 +12,12 @@ export interface ClientEvents {
         emoji: string | null
     }
     answerQuestion: {
-        answers: string[]
+        answer: string[]
     }
     start: object
+    nextQuestion: object
     showQuestion: {
-        question: string
+        id: string
     }
     setQuiz: {
         quiz: string
@@ -24,4 +25,5 @@ export interface ClientEvents {
     kickPlayer: {
         id: string
     }
+    endGame: object
 }
