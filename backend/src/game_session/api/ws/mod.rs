@@ -31,6 +31,7 @@ impl Joining for WsJoining {
         }
         let _ = self.tx.close(Some(CloseCode::Normal.into())).await;
     }
+
     fn id(&self) -> u64 {
         self.id
     }

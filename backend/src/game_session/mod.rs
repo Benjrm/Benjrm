@@ -160,6 +160,7 @@ impl From<WsChannelError> for ChannelError {
 
 #[async_trait::async_trait]
 pub trait Joining: Debug + Send {
+    /// Cancel joining (i.e. kick player).
     async fn cancel(self: Box<Self>);
     fn id(&self) -> u64;
 }

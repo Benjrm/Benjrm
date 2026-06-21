@@ -19,6 +19,7 @@ use {
     tokio::time::sleep,
 };
 
+/// Wraps the actual WebSocket and manages pings and time difference.
 pub(super) struct InnerChannel {
     pub(super) tx: actix_ws::Session,
     pub(super) rx: MessageStream,
@@ -62,6 +63,15 @@ impl InnerChannel {
         }
     }
 
+    /// Receive a command and manage pings.
+    ///
+    /// This function ensures that pings are exchanged regulary and calculates the average time difference for the last pings.
+    ///
+    /// A return value of `None` can have multiple reasons:
+    /// - The operation timed out. In this case, a ping is sent.
+    /// - A ping or pong was received
+    /// - The message type is not supported (supported types are text, binary, ping, pong and close)
+    /// - The message could not be parsed. In this case, an error is logged.
     pub async fn recv<Cmd: CommandTrait>(&mut self) -> Result<Option<Cmd>, Closed> {
         let msg = self.recv_msg().await?;
         let now = Utc::now();
@@ -141,6 +151,7 @@ impl InnerChannel {
     }
 }
 
+/// Stores a ring buffer of [`TimeDelta`]s.
 pub(super) struct RingDelta {
     pos: usize,
     deltas: [TimeDelta; Self::COUNT],

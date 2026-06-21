@@ -99,11 +99,13 @@ impl GameSessions {
         }
     }
 
+    /// Remove session without closing it and without permission check.
     pub async fn drop_session(&self, code: SessionCode) {
         let mut sessions = self.sessions.write().await;
         sessions.remove(&code);
     }
 
+    /// Remove and close session.
     pub async fn delete_session(
         &self,
         user: &User,
@@ -157,6 +159,8 @@ impl GameSession {
         Ok(())
     }
 
+    /// Set the host channel and close the old one.
+    /// Must only be called after successfully calling [`GameSession::check_set_host_channel`].
     pub async fn set_host_channel<T: Channel<HostMessage> + 'static>(&mut self, channel: T) {
         let channel = Box::new(channel);
         if let Some(old_channel) = self.host.channel.take() {
@@ -313,6 +317,8 @@ impl GameSession {
         Ok(())
     }
 
+    /// Add a new player and remove the channel from the list of joining players.
+    /// Must only be called after successfully calling [`GameSession::check_add_player`].
     pub async fn add_player<T: Channel<PlayerMessage> + 'static>(
         &mut self,
         id: Uuid,
@@ -631,6 +637,8 @@ impl QuestionOptions {
     }
 }
 
+/// Executes up to 64 futures in parallel.
+/// If the iterator yields more than 64 futures, an additional future is added each time a future finishes.
 async fn execute_futures<T>(mut iterator: T)
 where
     T: Iterator,

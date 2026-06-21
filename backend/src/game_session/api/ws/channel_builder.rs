@@ -42,6 +42,7 @@ impl WsChannelBuilder {
         }
     }
 
+    /// Create a new [`WsChannel`] and spawn a new listener. To terminate the listener, call [`WsChannel::close`].
     pub fn build<
         Cmd: CommandTrait + 'static,
         Payload: Copy + 'static,
@@ -114,6 +115,8 @@ impl WsChannelBuilder {
         }
     }
 
+    /// Wait for [`PlayerCommand::SetName`] and add player to [`GameSession`] on success.
+    /// Timeouts after 15 minutes and ignores all other messages.
     pub async fn wait_for_join(mut self) {
         let start = Instant::now();
         while let Ok(cmd) = self.inner.recv::<Command<PlayerCommand>>().await {

@@ -41,6 +41,7 @@ async fn get_host_ws(
     Ok(res)
 }
 
+/// Closes the session if the host doesn't reconnect within 15 minutes.
 async fn remove_host_ws(
     app_data: web::Data<AppData>,
     session: Arc<Mutex<GameSession>>,
@@ -89,6 +90,7 @@ async fn get_player_ws(
     }
 }
 
+/// Immediately removes the player from the session.
 pub(super) async fn remove_player_ws(
     _app_data: web::Data<AppData>,
     session: Arc<Mutex<GameSession>>,
