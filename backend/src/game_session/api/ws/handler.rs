@@ -1,0 +1,112 @@
+use {
+    crate::{
+        AppData,
+        auth::User,
+        error::Error,
+        game_session::{
+            GameSession, GameSessionError, GameSessionStatus, HostMessage, Message, SessionCode,
+            api::ws::{WsJoining, channel_builder::WsChannelBuilder},
+        },
+    },
+    actix_web::{HttpRequest, HttpResponse, rt, web},
+    std::{sync::Arc, time::Duration},
+    tokio::{sync::Mutex, time::sleep},
+    uuid::Uuid,
+};
+
+async fn get_host_ws(
+    req: HttpRequest,
+    body: web::Payload,
+    user: User,
+    code: web::Path<SessionCode>,
+    app_data: web::Data<AppData>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let code = code.into_inner();
+    let session = app_data
+        .game_sessions
+        .get_session(code)
+        .await
+        .map_err(Error::from)?;
+    let (res, tx, rx) = actix_ws::handle(&req, body)?;
+
+    let session_arc = Arc::clone(&session);
+    let mut session = session.lock().await;
+
+    session.check_set_host_channel(&user).map_err(Error::from)?;
+    let channel_builder = WsChannelBuilder::new(tx, rx, app_data, session_arc);
+    let channel = channel_builder.build(code, GameSession::handle_host_cmd, remove_host_ws);
+
+    session.set_host_channel(channel).await;
+
+    Ok(res)
+}
+
+async fn remove_host_ws(
+    app_data: web::Data<AppData>,
+    session: Arc<Mutex<GameSession>>,
+    id: u64,
+    code: SessionCode,
+) {
+    sleep(Duration::from_mins(15)).await;
+    let mut session = session.lock().await;
+
+    if let Some(channel) = &session.host.channel
+        && channel.id() == id
+    {
+        log::info!("Deleting session {code} due to inactivity");
+        app_data.game_sessions.drop_session(code).await;
+        session.host.channel = None;
+        session.close().await;
+    }
+}
+
+async fn get_player_ws(
+    req: HttpRequest,
+    body: web::Payload,
+    code: web::Path<SessionCode>,
+    app_data: web::Data<AppData>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let code = code.into_inner();
+    let session = app_data
+        .game_sessions
+        .get_session(code)
+        .await
+        .map_err(Error::from)?;
+
+    match &mut session.lock().await.status {
+        GameSessionStatus::Waiting(joining) => {
+            let (res, tx, rx) = actix_ws::handle(&req, body)?;
+
+            let channel_builder =
+                WsChannelBuilder::new(tx.clone(), rx, app_data, Arc::clone(&session));
+            let id = channel_builder.id;
+            let handle = rt::spawn(channel_builder.wait_for_join());
+
+            joining.push(Box::new(WsJoining { id, handle, tx }));
+            Ok(res)
+        }
+        _ => Err(Error::from(GameSessionError::AlreadyStarted).into()),
+    }
+}
+
+pub(super) async fn remove_player_ws(
+    _app_data: web::Data<AppData>,
+    session: Arc<Mutex<GameSession>>,
+    _channel_id: u64,
+    player_id: Uuid,
+) {
+    let mut session = session.lock().await;
+
+    if let Some(player_pos) = session.players.iter().position(|x| x.id == player_id) {
+        session.players.swap_remove(player_pos);
+        session
+            .host
+            .msg(Message::from(&HostMessage::RemovePlayer { id: player_id }))
+            .await
+    }
+}
+
+pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
+    cfg.service(web::resource("/sessions/{code}/ws/host").route(web::get().to(get_host_ws)));
+    cfg.service(web::resource("/sessions/{code}/ws/player").route(web::get().to(get_player_ws)));
+}
