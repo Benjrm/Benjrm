@@ -32,8 +32,8 @@ ACCESS_TOKEN=""
 get_admin_token() {
   echo -e "${BLUE}==> Getting admin token...${NO_COLOR}"
 
-  if [ -z "$KC_BOOTSTRAP_ADMIN_USERNAME" ] && [ -z "$KC_BOOTSTRAP_ADMIN_PASSWORD" ]; then
-    echo -e "${YELLOW}WARNING: KC_BOOTSTRAP_ADMIN_USERNAME and KC_BOOTSTRAP_ADMIN_PASSWORD are not set. Skipping Keycloak initialization.${NO_COLOR}"
+  if [ -z "$KC_BOOTSTRAP_ADMIN_USERNAME" ] || [ -z "$KC_BOOTSTRAP_ADMIN_PASSWORD" ]; then
+    echo -e "${YELLOW}WARNING: KC_BOOTSTRAP_ADMIN_USERNAME or KC_BOOTSTRAP_ADMIN_PASSWORD is not set. Skipping Keycloak initialization.${NO_COLOR}"
     exit 0
   fi
 
