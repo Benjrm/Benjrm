@@ -2,7 +2,7 @@ use {
     crate::{
         AppData,
         auth::User,
-        error::Error,
+        error::{Error, ErrorResponse},
         game_session::{
             Channel, ChannelError, Command, CommandTrait, GameSession, GameSessionError,
             GameSessionStatus, HostMessage, Joining, Message, PlayerCommand, PlayerMessage,
@@ -281,7 +281,14 @@ impl WsChannelBuilder {
     pub fn build<
         Cmd: CommandTrait + 'static,
         Payload: Copy + 'static,
-        HandleCmd: AsyncFn(&mut GameSession, Cmd, Arc<Mutex<GameSession>>, Payload) + Send + 'static,
+        HandleCmd: AsyncFn(
+                &mut GameSession,
+                Cmd,
+                Arc<Mutex<GameSession>>,
+                Payload,
+            ) -> Result<(), GameSessionError>
+            + Send
+            + 'static,
         HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, Payload) + Send + 'static,
     >(
         mut self,
@@ -293,15 +300,49 @@ impl WsChannelBuilder {
         let tx = self.inner.tx.clone();
 
         let handle = rt::spawn(async move {
-            while let Ok(cmd) = self.inner.recv().await {
+            while let Ok(cmd) = self.inner.recv::<Cmd>().await {
                 if let Some(cmd) = cmd {
-                    handle_cmd(
+                    let cmd_id = cmd.id();
+                    let res = handle_cmd(
                         &mut *self.session.lock().await,
                         cmd,
                         Arc::clone(&self.session),
                         payload,
                     )
                     .await;
+
+                    if cmd_id.is_some() {
+                        #[derive(Serialize)]
+                        #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
+                        enum Response {
+                            Ok,
+                            Error(ErrorResponse),
+                        }
+                        match res {
+                            Ok(()) => {
+                                send_msg_log_error(
+                                    &mut self.inner.tx,
+                                    Message {
+                                        id: cmd_id,
+                                        msg: &Response::Ok,
+                                        timing: None,
+                                    },
+                                )
+                                .await;
+                            }
+                            Err(err) => {
+                                send_msg_log_error(
+                                    &mut self.inner.tx,
+                                    Message {
+                                        id: cmd_id,
+                                        msg: &Response::Error(Error::from(err).into()),
+                                        timing: None,
+                                    },
+                                )
+                                .await;
+                            }
+                        }
+                    }
                 }
             }
             handle_delete(self.app_data, self.session, self.id, payload).await;
@@ -416,6 +457,21 @@ struct PingCommand {
     payload: Ping,
 }
 
+async fn send_msg_log_error<T: Serialize>(tx: &mut actix_ws::Session, msg: Message<'_, T>) {
+    if let Err(err) = send_msg(tx, msg).await {
+        log::error!("failed to send message: {err:?}")
+    }
+}
+
+async fn send_msg<T: Serialize>(
+    tx: &mut actix_ws::Session,
+    msg: Message<'_, T>,
+) -> Result<(), WsChannelError> {
+    let message_string = serde_json::to_string(&msg).map_err(WsChannelError::Serialization)?;
+    tx.text(message_string).await.map_err(WsChannelError::Tx)?;
+    Ok(())
+}
+
 #[async_trait::async_trait]
 impl<T: Serialize + Sync + 'static> Channel<T> for WsChannel {
     async fn send(&mut self, mut msg: Message<'_, T>) -> Result<(), ChannelError> {
@@ -424,12 +480,7 @@ impl<T: Serialize + Sync + 'static> Channel<T> for WsChannel {
             *timing += TimeDelta::milliseconds(ms);
         }
 
-        let message_string = serde_json::to_string(&msg).map_err(WsChannelError::Serialization)?;
-        self.tx
-            .text(message_string)
-            .await
-            .map_err(WsChannelError::Tx)?;
-        Ok(())
+        send_msg(&mut self.tx, msg).await.map_err(Into::into)
     }
 
     async fn close(self: Box<Self>) {

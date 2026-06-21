@@ -170,49 +170,33 @@ impl GameSession {
         cmd: Command<HostCommand>,
         arc: Arc<Mutex<Self>>,
         _payload: SessionCode,
-    ) {
+    ) -> Result<(), GameSessionError> {
         match cmd.command {
             HostCommand::Pong { .. } => (),
             HostCommand::KickPlayer { id } => {
-                if let Some(pos) = self.players.iter().position(|v| v.id == id) {
-                    let mut player = self.players.swap_remove(pos);
-                    player.msg(Message::from(&PlayerMessage::Kick)).await;
-                    player.channel.close().await;
-                    self.host
-                        .msg(Message::from(&HostMessage::RemovePlayer { id: player.id }))
-                        .await;
-                    self.host.ok(cmd.id).await;
-                } else {
-                    self.host
-                        .error(cmd.id, GameSessionError::PlayerNotFound)
-                        .await;
-                }
+                let pos = self
+                    .players
+                    .iter()
+                    .position(|v| v.id == id)
+                    .ok_or(GameSessionError::PlayerNotFound)?;
+                let mut player = self.players.swap_remove(pos);
+                player.msg(Message::from(&PlayerMessage::Kick)).await;
+                player.channel.close().await;
+                self.host
+                    .msg(Message::from(&HostMessage::RemovePlayer { id: player.id }))
+                    .await;
             }
             HostCommand::Start => {
-                let check_error = || {
-                    let quiz = self.quiz.as_ref().ok_or(GameSessionError::QuizMissing)?;
-
-                    if quiz.questions.is_empty() {
-                        return Err(GameSessionError::NoQuestions);
-                    }
-
-                    if self.players.is_empty() {
-                        return Err(GameSessionError::NoPlayers);
-                    }
-
-                    Ok(())
-                };
-
                 let GameSessionStatus::Waiting(joining) = &mut self.status else {
-                    self.host
-                        .error(cmd.id, GameSessionError::AlreadyStarted)
-                        .await;
-                    return;
+                    return Err(GameSessionError::AlreadyStarted);
                 };
 
-                if let Err(err) = check_error() {
-                    self.host.error(cmd.id, err).await;
-                    return;
+                let quiz = self.quiz.as_ref().ok_or(GameSessionError::QuizMissing)?;
+                if quiz.questions.is_empty() {
+                    return Err(GameSessionError::NoQuestions);
+                }
+                if self.players.is_empty() {
+                    return Err(GameSessionError::NoPlayers);
                 }
 
                 for item in std::mem::take(joining) {
@@ -222,24 +206,17 @@ impl GameSession {
                 self.status = GameSessionStatus::Started;
                 self.notify_all_players(Message::from(&PlayerMessage::Start))
                     .await;
-                self.host.ok(cmd.id).await;
             }
-            HostCommand::NextQuestion => match self.next_question(None, arc).await {
-                Ok(()) => self.host.ok(cmd.id).await,
-                Err(err) => self.host.error(cmd.id, err).await,
-            },
-            HostCommand::ShowQuestion { id } => match self.next_question(Some(id), arc).await {
-                Ok(()) => self.host.ok(cmd.id).await,
-                Err(err) => self.host.error(cmd.id, err).await,
-            },
+            HostCommand::NextQuestion => self.next_question(None, arc).await?,
+            HostCommand::ShowQuestion { id } => self.next_question(Some(id), arc).await?,
             HostCommand::EndGame => {
                 self.end_question(Some(true)).await;
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
                     .await;
                 self.status = GameSessionStatus::Closed;
-                self.host.ok(cmd.id).await;
             }
         }
+        Ok(())
     }
 
     async fn next_question(
@@ -374,7 +351,7 @@ impl GameSession {
         cmd: Command<PlayerCommand>,
         _arc: Arc<Mutex<Self>>,
         id: Uuid,
-    ) {
+    ) -> Result<(), GameSessionError> {
         match cmd.command {
             PlayerCommand::Pong { .. } => (),
             PlayerCommand::SetName { name, emoji } => {
@@ -398,43 +375,32 @@ impl GameSession {
                     }
                 }
 
-                if let Some(player) = this_player {
-                    if name_in_use {
-                        player
-                            .error(cmd.id, GameSessionError::NameAlreadyTaken)
-                            .await;
-                    } else {
-                        if let Some(emoji) = emoji {
-                            let emoji = emojis::get(&emoji);
-                            if emoji.is_none() {
-                                player.error(cmd.id, GameSessionError::InvalidEmoji).await;
-                                return;
-                            }
-                            player.emoji = emoji;
-                        } else {
-                            player.emoji = None;
-                        }
-                        player.name = name;
-
-                        // handle_player_cmd is only called if the player is already joined, so a SetName command is always a rename
-                        self.host
-                            .msg(Message::from(&HostMessage::RenamePlayer {
-                                id,
-                                name: player.name.clone(),
-                                emoji: player.emoji,
-                            }))
-                            .await;
-                        player.ok(cmd.id).await;
-                    }
+                let player = this_player.ok_or(GameSessionError::PlayerNotFound)?;
+                if name_in_use {
+                    return Err(GameSessionError::NameAlreadyTaken);
                 }
+
+                if let Some(emoji) = emoji {
+                    let emoji = emojis::get(&emoji).ok_or(GameSessionError::InvalidEmoji)?;
+                    player.emoji = Some(emoji);
+                } else {
+                    player.emoji = None;
+                }
+                player.name = name;
+
+                // handle_player_cmd is only called if the player is already joined, so a SetName command is always a rename
+                self.host
+                    .msg(Message::from(&HostMessage::RenamePlayer {
+                        id,
+                        name: player.name.clone(),
+                        emoji: player.emoji,
+                    }))
+                    .await;
             }
             PlayerCommand::AnswerQuestion { answer } => {
-                let Some(player) = Self::get_player_mut(&mut self.players, id) else {
-                    return;
-                };
+                let player = Self::get_player_mut(&mut self.players, id)?;
                 if matches!(self.status, GameSessionStatus::Leaderboard { .. }) {
-                    player.error(cmd.id, GameSessionError::TimeUp).await;
-                    return;
+                    return Err(GameSessionError::TimeUp);
                 }
                 let GameSessionStatus::Question {
                     idx,
@@ -443,24 +409,12 @@ impl GameSession {
                     abort_handle,
                 } = &mut self.status
                 else {
-                    player
-                        .error(cmd.id, GameSessionError::NoCurrentQuestion)
-                        .await;
-                    return;
+                    return Err(GameSessionError::NoCurrentQuestion);
                 };
-                let Some(quiz) = &self.quiz else {
-                    player.error(cmd.id, GameSessionError::QuizMissing).await;
-                    return;
-                };
+                let quiz = self.quiz.as_mut().ok_or(GameSessionError::QuizMissing)?;
                 let question = &quiz.questions[*idx];
 
-                let mut points = match question.options.get_points(&answer) {
-                    Ok(points) => points,
-                    Err(err) => {
-                        player.error(cmd.id, err).await;
-                        return;
-                    }
-                };
+                let mut points = question.options.get_points(&answer)?;
 
                 if let Some(duration) = question.model.r#type.default_answer_duration() {
                     let elapsed = (Utc::now() - *started).num_milliseconds() as f64;
@@ -473,28 +427,27 @@ impl GameSession {
                     }
                 }
 
-                match player.add_points(points, question.model.id) {
-                    Ok(_) => {
-                        player.ok(cmd.id).await;
-                        *answers += 1;
-                        if *answers == self.players.len() {
-                            if let Some(handle) = abort_handle {
-                                handle.abort();
-                            }
-                            self.end_question(None).await;
-                        }
+                player.add_points(points, question.model.id)?;
+                *answers += 1;
+                if *answers == self.players.len() {
+                    if let Some(handle) = abort_handle {
+                        handle.abort();
                     }
-                    Err(err) => player.error(cmd.id, err).await,
+                    self.end_question(None).await;
                 }
             }
         }
+        Ok(())
     }
 
     pub fn get_player_mut(
         players: &mut [GameSessionPlayer],
         id: Uuid,
-    ) -> Option<&mut GameSessionPlayer> {
-        players.iter_mut().find(|v| v.id == id)
+    ) -> Result<&mut GameSessionPlayer, GameSessionError> {
+        players
+            .iter_mut()
+            .find(|v| v.id == id)
+            .ok_or(GameSessionError::PlayerNotFound)
     }
 
     pub async fn notify_all_players(&mut self, msg: Message<'_, PlayerMessage>) {
@@ -579,56 +532,12 @@ impl GameSessionHost {
             log::error!("notify host error: {err:?}");
         }
     }
-
-    pub async fn ok(&mut self, id: Option<u64>) {
-        if id.is_some() {
-            self.msg(Message {
-                id,
-                msg: &HostMessage::Ok,
-                timing: None,
-            })
-            .await;
-        }
-    }
-
-    pub async fn error(&mut self, id: Option<u64>, err: impl Into<Error>) {
-        if id.is_some() {
-            self.msg(Message {
-                id,
-                msg: &HostMessage::Error(err.into().into()),
-                timing: None,
-            })
-            .await;
-        }
-    }
 }
 
 impl GameSessionPlayer {
     pub async fn msg(&mut self, msg: Message<'_, PlayerMessage>) {
         if let Err(err) = self.channel.send(msg).await {
             log::error!("failed to send message to player {}: {err:?}", self.id)
-        }
-    }
-
-    pub async fn ok(&mut self, id: Option<u64>) {
-        if id.is_some() {
-            self.msg(Message {
-                id,
-                msg: &PlayerMessage::Ok,
-                timing: None,
-            })
-            .await;
-        }
-    }
-
-    pub async fn error(&mut self, id: Option<u64>, err: impl Into<Error>) {
-        if id.is_some() {
-            self.msg(Message {
-                id,
-                msg: &PlayerMessage::Error(err.into().into()),
-                timing: None,
-            })
-            .await;
         }
     }
 

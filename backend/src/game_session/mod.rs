@@ -206,6 +206,7 @@ pub struct Command<T> {
 pub trait CommandTrait: Sized {
     fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error>;
     fn pong(&self) -> Option<(u32, DateTime<Utc>)>;
+    fn id(&self) -> Option<u64>;
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -290,6 +291,10 @@ impl CommandTrait for Command<HostCommand> {
             _ => None,
         }
     }
+
+    fn id(&self) -> Option<u64> {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -338,6 +343,10 @@ impl CommandTrait for Command<PlayerCommand> {
             PlayerCommand::Pong { id, timestamp } => Some((id, timestamp)),
             _ => None,
         }
+    }
+
+    fn id(&self) -> Option<u64> {
+        self.id
     }
 }
 
