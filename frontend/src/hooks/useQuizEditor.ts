@@ -241,28 +241,23 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         }
     }
 
-    const queuedQuestions = useMemo(() => {
-        if (!savedQuestions) return null
-
-        const baseQuestions = savedQuestions.length > 0 ? savedQuestions : [createEmptyQuestion()]
-
-        return applyQueueToQuestions(baseQuestions, queue)
-    }, [queue, savedQuestions])
-
     useEffect(() => {
-        if (!quizId || hasInitializedQuestions || !queuedQuestions) return undefined
+        if (!quizId || hasInitializedQuestions || !savedQuestions) return undefined
 
-        const initTimeoutId = window.setTimeout(() => {
-            setQuestions(queuedQuestions)
-            setCurrentQuestionIndex((prev) =>
-                Math.min(prev, Math.max(queuedQuestions.length - 1, 0))
-            )
+        const base = savedQuestions.length > 0 ? savedQuestions : []
+
+        const applied = applyQueueToQuestions(base, queue)
+        const final = applied.length > 0 ? applied : [createEmptyQuestion()]
+
+        const initTimeoutId = setTimeout(() => {
+            setQuestions(final)
+            setCurrentQuestionIndex((prev) => Math.min(prev, Math.max(final.length - 1, 0)))
             setHasUnsavedChanges(queue.length > 0)
             setHasInitializedQuestions(true)
-        }, 0)
+        })
 
-        return () => window.clearTimeout(initTimeoutId)
-    }, [quizId, queuedQuestions, hasInitializedQuestions, queue.length, setCurrentQuestionIndex])
+        return () => clearTimeout(initTimeoutId)
+    }, [hasInitializedQuestions, queue, quizId, savedQuestions, setCurrentQuestionIndex])
 
     useEffect(
         () => () => {
