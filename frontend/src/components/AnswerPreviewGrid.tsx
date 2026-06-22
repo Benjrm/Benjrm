@@ -9,6 +9,8 @@ interface Props {
     type: Question["type"]
 }
 
+const DRAG_HANDLE = "⋮⋮"
+
 export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element {
     const { t } = useTranslation()
 
@@ -25,7 +27,7 @@ export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element
                             className="text-muted-foreground/70 -mx-1 flex items-center self-stretch px-1 py-1"
                         >
                             <span className="bg-muted/60 text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full text-[11px]">
-                                ⋮⋮
+                                {DRAG_HANDLE}
                             </span>
                         </div>
 

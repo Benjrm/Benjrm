@@ -32,6 +32,7 @@ export default function LandingPage(): JSX.Element {
                                 <span>{t("landing.engageAndLearn")}</span>
                                 <span>
                                     {t("landing.with")}{" "}
+                                    {/* eslint-disable-next-line i18next/no-literal-string */}
                                     <span className="text-[#00F2FF]">Benjrm</span>
                                 </span>
                             </h1>
@@ -80,6 +81,7 @@ export default function LandingPage(): JSX.Element {
                                     src="/pictures/happy_people.jpg"
                                 />
                                 <div className="from-background/95 via-background/10 absolute inset-0 flex items-end bg-linear-to-t to-transparent p-8 lg:p-12">
+                                    {/* eslint-disable-next-line i18next/no-literal-string */}
                                     <p className="max-w-[85%] text-3xl leading-tight font-extrabold tracking-tighter text-white lg:text-5xl">
                                         Quiz together, learn forever.
                                     </p>

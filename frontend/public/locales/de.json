@@ -4,6 +4,8 @@
             "backendUnavailable": "Das Backend ist derzeit nicht erreichbar. Bitte versuche es später erneut.",
             "notFound": "Die gesuchte Seite existiert nicht."
         },
+        "loading": "Lade {{name}}...",
+        "download": "Herunterladen: {{name}}",
         "buttons": {
             "viewAll": "Alle ansehen",
             "cancel": "Abbrechen",
@@ -119,7 +121,16 @@
         },
         "sidebar": {
             "questions": "Fragen",
-            "addQuestion": "Frage hinzufügen"
+            "addQuestion": "Frage hinzufügen",
+            "dragHandle": "Verschieben",
+            "dragQuestion": "Frage verschieben",
+            "questionTitle": "Fragentitel",
+            "questionDescription": "Fragebeschreibung",
+            "answerOptions": "Antwortoptionen",
+            "optionPlaceholder": "Option {{i}} Platzhalter...",
+            "deleteAnswerOption": "Antwortoption löschen",
+            "editQuestion": "Frage bearbeiten",
+            "deleteQuestion": "Frage löschen"
         },
         "settings": {
             "livePreview": "Live Vorschau",
@@ -162,6 +173,9 @@
             "waitingForAnswers": "Warte auf Antworten der Teilnehmer",
             "complete": "Frage abgeschlossen — Ergebnisse sind da!",
             "waitingForHost": "Warte darauf, dass der Host weitermacht...",
+            "waitingForNext": "Warte auf nächste Frage…",
+            "currentLabel": "Aktuelle Frage",
+            "progress": "Fragenfortschritt",
             "skipNext": "Überspringen / Nächste Frage",
             "orderDefault": "Ordne die Elemente in die richtige Reihenfolge"
         },

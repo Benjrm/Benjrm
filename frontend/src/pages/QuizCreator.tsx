@@ -186,6 +186,7 @@ export default function QuizCreator(): JSX.Element {
                                           <div className="border-border bg-muted/95 w-[280px] rounded-2xl border p-4 shadow-2xl">
                                               <div className="mb-3 flex items-center gap-2">
                                                   <div className="text-muted-foreground/60 flex h-9 w-9 items-center justify-center rounded-md bg-white/5">
+                                                      {/* eslint-disable-next-line i18next/no-literal-string */}
                                                       <span className="text-lg">⋮⋮</span>
                                                   </div>
                                                   <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">

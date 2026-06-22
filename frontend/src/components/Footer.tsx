@@ -4,6 +4,8 @@ import type { JSX } from "react"
 import { NavLink } from "react-router"
 import { useTranslation } from "react-i18next"
 
+const BRAND_NAME = "Benjrm"
+
 export default function Footer(): JSX.Element {
     const { t } = useTranslation()
 
@@ -17,13 +19,14 @@ export default function Footer(): JSX.Element {
                         className="shrink-0 text-xl font-extrabold tracking-tighter text-[#00F2FF] sm:text-2xl"
                         to="/"
                     >
-                        Benjrm
+                        {BRAND_NAME}
                     </NavLink>
                 </div>
 
                 {/* Center: Copyright text */}
                 <div className="text-muted-foreground shrink-0 text-center text-sm font-medium">
-                    &copy; {new Date().getFullYear()} Benjrm. {t("common.footer.allRightsReserved")}
+                    &copy; {new Date().getFullYear()} {BRAND_NAME}.{" "}
+                    {t("common.footer.allRightsReserved")}
                 </div>
 
                 {/* Right side: Links */}

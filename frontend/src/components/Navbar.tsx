@@ -11,6 +11,8 @@ import AuthAction from "@/auth/components/AuthAction"
 import useAuthUser from "@/auth/hooks/useAuthUser"
 import LanguageSwitcher from "@/components/LanguageSwitcher.tsx"
 
+const BRAND_NAME = "Benjrm"
+
 export default function Navbar(): JSX.Element {
     const { t } = useTranslation()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -27,7 +29,7 @@ export default function Navbar(): JSX.Element {
                         className="shrink-0 text-2xl font-extrabold tracking-tighter text-[#00F2FF] sm:text-3xl"
                         to="/"
                     >
-                        Benjrm
+                        {BRAND_NAME}
                     </NavLink>
 
                     {/* Desktop Navigation */}

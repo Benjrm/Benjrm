@@ -183,6 +183,7 @@ export default function GameScreen({
                     <div
                         className={`rounded-full p-6 text-5xl ${correct ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"}`}
                     >
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
                         {correct ? "✓" : "✗"}
                     </div>
                     <h2 className="text-3xl font-bold">

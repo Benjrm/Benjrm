@@ -96,7 +96,7 @@ export default function QuestionItem({
                         <div
                             {...attributes}
                             {...listeners}
-                            aria-label="Drag question"
+                            aria-label={t("quizEditor.sidebar.dragQuestion")}
                             className="text-muted-foreground/40 hover:text-foreground flex min-h-10 min-w-10 cursor-grab touch-none items-center rounded-xl p-2 pr-3 transition-colors select-none active:cursor-grabbing"
                             style={{ touchAction: "none" }}
                         >

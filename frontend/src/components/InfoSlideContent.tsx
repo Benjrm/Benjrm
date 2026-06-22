@@ -1,6 +1,7 @@
 // frontend/src/components/InfoSlideContent.tsx
 
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 import MarkdownPageComponent from "@/components/markdown/MarkdownPageComponent"
 import QuestionHeader from "@/components/QuestionHeader"
 import { Button } from "@/shadcn/components/ui/button"
@@ -24,6 +25,7 @@ export default function InfoSlideContent({
     isHost = false,
     onNextQuestion,
 }: InfoSlideContentProps): JSX.Element {
+    const { t } = useTranslation()
     return (
         <div className="bg-background text-foreground min-h-full px-4 py-8">
             <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 md:max-w-3xl">
@@ -50,7 +52,7 @@ export default function InfoSlideContent({
                             className="bg-[#00D4E8] px-8 py-6 text-lg font-bold text-black hover:bg-[#00BDD0]"
                             onClick={onNextQuestion}
                         >
-                            Skip / Next Question
+                            {t("game.question.skipNext")}
                         </Button>
                     </div>
                 ) : null}

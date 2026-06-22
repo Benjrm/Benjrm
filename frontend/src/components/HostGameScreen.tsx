@@ -122,6 +122,13 @@ export default function HostGameScreen({
         )
     }
 
+    const answerColors = [
+        "bg-[#2d4cc9]/20 border-[#2d4cc9]/40 text-[#6b8ef0]",
+        "bg-[#ffa602]/20 border-[#ffa602]/40 text-[#ffc145]",
+        "bg-[#11c8d4]/20 border-[#11c8d4]/40 text-[#11c8d4]",
+        "bg-[#ff4949]/20 border-[#ff4949]/40 text-[#ff7070]",
+    ]
+
     return (
         <div className="bg-background text-foreground min-h-screen px-4 py-8 sm:px-8">
             <Toaster richColors />
@@ -199,22 +206,14 @@ export default function HostGameScreen({
                                     {currentQuestion.type !== QuestionTypeEnum.ORDER &&
                                     currentQuestion.options.length > 0 ? (
                                         <div className="mt-6 grid grid-cols-2 gap-3">
-                                            {currentQuestion.options.map((opt, i) => {
-                                                const colors = [
-                                                    "bg-[#2d4cc9]/20 border-[#2d4cc9]/40 text-[#6b8ef0]",
-                                                    "bg-[#ffa602]/20 border-[#ffa602]/40 text-[#ffc145]",
-                                                    "bg-[#11c8d4]/20 border-[#11c8d4]/40 text-[#11c8d4]",
-                                                    "bg-[#ff4949]/20 border-[#ff4949]/40 text-[#ff7070]",
-                                                ]
-                                                return (
-                                                    <div
-                                                        key={opt.id}
-                                                        className={`rounded-xl border px-4 py-3 text-sm font-medium ${colors[i] ?? colors[0]}`}
-                                                    >
-                                                        {opt.text}
-                                                    </div>
-                                                )
-                                            })}
+                                            {currentQuestion.options.map((opt, i) => (
+                                                <div
+                                                    key={opt.id}
+                                                    className={`rounded-xl border px-4 py-3 text-sm font-medium ${answerColors[i] ?? answerColors[0]}`}
+                                                >
+                                                    {opt.text}
+                                                </div>
+                                            ))}
                                         </div>
                                     ) : null}
                                 </>

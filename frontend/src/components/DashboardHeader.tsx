@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string -- unused component */
 import type { JSX } from "react"
 
 interface DashboardHeaderProps {

@@ -37,7 +37,7 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                             className="dark:text-foreground dark:placeholder:text-muted-foreground rounded-xl border-slate-200 bg-slate-50 px-4 py-5 text-base font-medium text-slate-900 transition-all placeholder:text-slate-500 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#00F2FF] dark:border-white/10 dark:bg-[#1C2028]"
                             inputMode="numeric"
                             onKeyDown={(e) => e.key === "Enter" && onJoinClick()}
-                            placeholder="Code"
+                            placeholder={t("dashboard.hero.codePlaceholder")}
                             type="text"
                             value={displayCode}
                             onChange={(e) =>
@@ -56,7 +56,7 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                             onClick={() => onJoinClick()}
                             type="button"
                         >
-                            START GAME
+                            {t("dashboard.hero.startGame")}
                             <svg fill="currentColor" height="10" viewBox="0 0 24 24" width="10">
                                 <path d="M5 3L19 12L5 21V3Z" />
                             </svg>

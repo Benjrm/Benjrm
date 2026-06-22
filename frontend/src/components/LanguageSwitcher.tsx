@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string -- language names must appear in their native form */
 import type { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import {

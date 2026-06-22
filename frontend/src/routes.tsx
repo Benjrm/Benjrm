@@ -39,7 +39,7 @@ const routes: RouteObject[] = [
             },
             {
                 path: "*",
-                element: <ErrorPage messageKey="common.errors.notFound" title="404" />,
+                element: <ErrorPage title="404" />,
             },
             {
                 path: "/auth/login",

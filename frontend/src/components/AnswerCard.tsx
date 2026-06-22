@@ -108,7 +108,7 @@ export default function AnswerCard({
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     {canDelete && onDelete ? (
                         <Button
-                            aria-label="Delete answer option"
+                            aria-label={t("quizEditor.sidebar.deleteAnswerOption")}
                             className="h-8 w-full gap-2 rounded-full border border-white/10 bg-black/20 px-3 text-[10px] font-bold tracking-widest text-white shadow-none hover:bg-red-500/90 hover:text-white sm:w-auto"
                             onClick={onDelete}
                             type="button"
