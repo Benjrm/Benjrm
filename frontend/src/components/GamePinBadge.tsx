@@ -12,15 +12,13 @@ export default function GamePinBadge({ codeWithDash }: GamePinBadgeProps): JSX.E
     if (!codeWithDash) return null
 
     return (
-        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-4 py-2 dark:bg-black/20">
-            <div>
-                <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
-                    {t("lobby.pin.label")}
-                </p>
-                <p className="font-mono text-xl font-black tracking-widest">{codeWithDash}</p>
-            </div>
+        <div className="inline-flex items-center gap-3 rounded-full border border-[#00D4E8]/20 bg-[#00D4E8]/10 px-4 py-2 shadow-[0_0_16px_-4px_rgba(0,212,232,0.3)]">
+            <span className="text-xs font-bold tracking-widest text-[#00D4E8] uppercase">
+                {t("lobby.pin.label")}
+            </span>
+            <span className="font-mono text-lg font-black tracking-widest">{codeWithDash}</span>
             <button
-                className="text-muted-foreground hover:text-foreground ml-1 transition-colors"
+                className="text-[#00D4E8]/60 transition-colors hover:text-[#00D4E8]"
                 title={t("lobby.pin.copyTitle")}
                 type="button"
                 onClick={() => {
@@ -28,7 +26,7 @@ export default function GamePinBadge({ codeWithDash }: GamePinBadgeProps): JSX.E
                     toast.success(t("lobby.pin.copied"))
                 }}
             >
-                <Copy className="h-5 w-5" />
+                <Copy className="h-4 w-4" />
             </button>
         </div>
     )

@@ -27,7 +27,7 @@ export default function GamePinForm({ onJoin, isPending, error }: GamePinFormPro
         <div className="flex flex-col gap-3">
             <div className="bg-muted/50 border-border flex flex-col items-center gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-sm sm:flex-row sm:p-8">
                 <Input
-                    aria-label="Enter Game PIN"
+                    aria-label={t("landing.gamePinAriaLabel")}
                     className="bg-background border-border placeholder:text-muted-foreground/70 h-12 w-full text-center text-lg font-bold tracking-widest transition-all focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#00F2FF] sm:h-14 sm:text-xl"
                     disabled={isPending}
                     inputMode="numeric"
@@ -43,7 +43,7 @@ export default function GamePinForm({ onJoin, isPending, error }: GamePinFormPro
                     onClick={() => handleJoin()}
                     size="lg"
                 >
-                    {isPending ? "Checking…" : t("landing.playButton")}
+                    {isPending ? t("landing.checking") : t("landing.playButton")}
                 </Button>
             </div>
             {error ? <p className="text-center text-sm text-red-500">{error}</p> : null}

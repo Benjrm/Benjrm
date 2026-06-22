@@ -103,17 +103,11 @@ export default function QuestionEditor({
                             </SelectTrigger>
 
                             <SelectContent>
-                                {Object.values(QuestionTypeEnum).map((value) => {
-                                    const name = value
-                                        .split("_")
-                                        .map((v) => `${v.charAt(0)}${v.slice(1).toLowerCase()}`)
-                                        .join(" ")
-                                    return (
-                                        <SelectItem key={value} value={value}>
-                                            {name}
-                                        </SelectItem>
-                                    )
-                                })}
+                                {Object.values(QuestionTypeEnum).map((value) => (
+                                    <SelectItem key={value} value={value}>
+                                        {t(`quizEditor.editor.types.${value}`)}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

@@ -1,7 +1,8 @@
 {
     "common": {
         "errors": {
-            "backendUnavailable": "Das Backend ist derzeit nicht erreichbar. Bitte versuche es später erneut."
+            "backendUnavailable": "Das Backend ist derzeit nicht erreichbar. Bitte versuche es später erneut.",
+            "notFound": "Die gesuchte Seite existiert nicht."
         },
         "buttons": {
             "viewAll": "Alle ansehen",
@@ -18,6 +19,8 @@
         },
         "header": {
             "home": "Startseite",
+            "dashboard": "Dashboard",
+            "profile": "Profil",
             "profilePlaceholder": "Profil-Platzhalter",
             "toggleMenu": "Menü umschalten",
             "signIn": "ANMELDEN",
@@ -27,6 +30,7 @@
     "dashboard": {
         "loadingQuizzes": "Lade Quizze...",
         "quizzesError": "Quizze konnten derzeit nicht geladen werden.",
+        "noQuizzes": "Keine Quizze verfügbar.",
         "hero": {
             "inputCodeAria": "Code eingeben",
             "codePlaceholder": "Code",
@@ -98,6 +102,12 @@
             "usePlainInput": "Einfaches Textfeld nutzen",
             "useMarkdownEditor": "Markdown-Editor nutzen",
             "selectType": "Typ auswählen",
+            "types": {
+                "SINGLE_CHOICE": "Einzelauswahl",
+                "MULTIPLE_CHOICE": "Mehrfachauswahl",
+                "SLIDE": "Folie",
+                "ORDER": "Reihenfolge"
+            },
             "slidePlaceholderMd": "Gib hier deinen Folieninhalt ein (Markdown unterstützt)...",
             "questionPlaceholderMd": "Gib hier deine Frage ein (Markdown unterstützt)...",
             "slidePlaceholder": "Gib hier deinen Folieninhalt ein...",
@@ -222,6 +232,11 @@
             "copied": "Spiel-Pin kopiert!"
         },
         "startGame": "Spiel starten",
+        "qr": {
+            "scanToJoin": "Scannen zum Beitreten:",
+            "showFullscreen": "Vollbild anzeigen",
+            "exitFullscreen": "Vollbild beenden"
+        },
         "errors": {
             "failedToStart": "Spiel konnte nicht gestartet werden",
             "somethingWentWrong": "Etwas ist schiefgelaufen",
@@ -238,6 +253,8 @@
         "with": "mit",
         "subtitle": "HOSTEN UND SPIELEN VON INTERAKTIVEN QUIZZES",
         "gamePinPlaceholder": "SPIEL-PIN EINGEBEN",
+        "gamePinAriaLabel": "Spiel-PIN eingeben",
+        "checking": "Überprüfe…",
         "playButton": "SPIELEN",
         "imageAlt": "Lernende, die an einem Quiz teilnehmen",
         "imageText": "Zusammen quizzen, gemeinsam lernen.",

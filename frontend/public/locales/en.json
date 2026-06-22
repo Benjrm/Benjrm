@@ -1,7 +1,8 @@
 {
     "common": {
         "errors": {
-            "backendUnavailable": "The backend is currently unavailable. Please try again later."
+            "backendUnavailable": "The backend is currently unavailable. Please try again later.",
+            "notFound": "The page you are looking for does not exist."
         },
         "buttons": {
             "viewAll": "View All",
@@ -18,6 +19,8 @@
         },
         "header": {
             "home": "Home",
+            "dashboard": "Dashboard",
+            "profile": "Profile",
             "profilePlaceholder": "Profile placeholder",
             "toggleMenu": "Toggle menu",
             "signIn": "SIGN IN",
@@ -27,6 +30,7 @@
     "dashboard": {
         "loadingQuizzes": "Loading quizzes...",
         "quizzesError": "Quizzes could not be loaded right now.",
+        "noQuizzes": "No quizzes available.",
         "hero": {
             "inputCodeAria": "Input Code",
             "codePlaceholder": "Code",
@@ -98,6 +102,12 @@
             "usePlainInput": "Use Plain Input",
             "useMarkdownEditor": "Use Markdown Editor",
             "selectType": "Select type",
+            "types": {
+                "SINGLE_CHOICE": "Single Choice",
+                "MULTIPLE_CHOICE": "Multiple Choice",
+                "SLIDE": "Slide",
+                "ORDER": "Order"
+            },
             "slidePlaceholderMd": "Type your slide content here (Markdown supported)...",
             "questionPlaceholderMd": "Type your question here (Markdown supported)...",
             "slidePlaceholder": "Type your slide content here...",
@@ -222,6 +232,11 @@
             "copied": "Game Pin copied!"
         },
         "startGame": "Start Game",
+        "qr": {
+            "scanToJoin": "Scan to join at",
+            "showFullscreen": "Show fullscreen",
+            "exitFullscreen": "Exit fullscreen"
+        },
         "errors": {
             "failedToStart": "Failed to start the game",
             "somethingWentWrong": "Something went wrong",
@@ -238,6 +253,8 @@
         "with": "with",
         "subtitle": "HOST AND PLAY FUN AND INTERACTIVE QUIZZES",
         "gamePinPlaceholder": "ENTER GAME PIN",
+        "gamePinAriaLabel": "Enter Game PIN",
+        "checking": "Checking…",
         "playButton": "PLAY",
         "imageAlt": "Students participating in a quiz",
         "imageText": "Quiz together, learn forever.",

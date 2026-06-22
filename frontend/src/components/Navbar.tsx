@@ -4,6 +4,7 @@ import type { JSX } from "react"
 import { useState } from "react"
 import { NavLink } from "react-router"
 import { Menu, UserCircle2, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import ThemeToggle from "@/components/ThemeToggle"
 import NavItem from "@/components/NavItem"
 import AuthAction from "@/auth/components/AuthAction"
@@ -11,6 +12,7 @@ import useAuthUser from "@/auth/hooks/useAuthUser"
 import LanguageSwitcher from "@/components/LanguageSwitcher.tsx"
 
 export default function Navbar(): JSX.Element {
+    const { t } = useTranslation()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const { data: isAuthenticated } = useAuthUser()
 
@@ -30,8 +32,10 @@ export default function Navbar(): JSX.Element {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden items-center gap-6 md:flex">
-                        <NavItem to="/">Home</NavItem>
-                        {isAuthenticated ? <NavItem to="/dashboard">Dashboard</NavItem> : null}
+                        <NavItem to="/">{t("common.header.home")}</NavItem>
+                        {isAuthenticated ? (
+                            <NavItem to="/dashboard">{t("common.header.dashboard")}</NavItem>
+                        ) : null}
                     </nav>
                 </div>
 
@@ -42,7 +46,7 @@ export default function Navbar(): JSX.Element {
 
                     {isAuthenticated ? (
                         <div
-                            aria-label="Profile"
+                            aria-label={t("common.header.profile")}
                             className="bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 sm:h-9 sm:w-9"
                             role="img"
                         >
@@ -54,7 +58,7 @@ export default function Navbar(): JSX.Element {
 
                     {/* Hamburger toggle (mobile only) */}
                     <button
-                        aria-label="Toggle menu"
+                        aria-label={t("common.header.toggleMenu")}
                         className="text-muted-foreground hover:text-foreground p-1 transition-colors md:hidden"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         type="button"
@@ -73,7 +77,7 @@ export default function Navbar(): JSX.Element {
                 <div className="border-border bg-background space-y-6 border-t px-4 py-6 shadow-lg md:hidden">
                     <nav className="flex flex-col items-center gap-5">
                         <NavItem isMobile onClick={() => setIsMobileMenuOpen(false)} to="/">
-                            Home
+                            {t("common.header.home")}
                         </NavItem>
                         {isAuthenticated ? (
                             <NavItem
@@ -81,7 +85,7 @@ export default function Navbar(): JSX.Element {
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 to="/dashboard"
                             >
-                                Dashboard
+                                {t("common.header.dashboard")}
                             </NavItem>
                         ) : null}
                     </nav>
