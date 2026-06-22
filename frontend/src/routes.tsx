@@ -12,10 +12,11 @@ import WaitingRoom from "./pages/WaitingRoom"
 import DownloadableMarkdown from "./components/DownloadableMarkdown"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
-import Leaderboard from "@/quiz/leaderboard/components/Leaderboard.tsx"
-import SingleChoiceQuestion from "@/pages/SingleChoiceQuestion.tsx"
 import Quizzes from "@/pages/Quizzes.tsx"
 import InfoSlide from "@/pages/InfoSlide.tsx"
+import GamePage from "@/pages/GamePage.tsx"
+import HostDashboard from "@/pages/HostDashboard.tsx"
+import PlayLayout from "@/layouts/PlayLayout.tsx"
 
 const routes: RouteObject[] = [
     {
@@ -43,14 +44,17 @@ const routes: RouteObject[] = [
                 ),
             },
             {
-                // Introduced in #28 only for testing purposes
-                // TODO: remove when the actual gameplay gets implemented
-                path: "/leaderboard",
-                element: <Leaderboard />,
-            },
-            {
                 path: "/auth/login",
                 element: <LoginRedirect />,
+            },
+            {
+                path: "/play/:code",
+                element: <PlayLayout />,
+                children: [
+                    { index: true, element: <WaitingRoom /> },
+                    { path: "game", element: <GamePage /> },
+                    { path: "host", element: <HostDashboard /> },
+                ],
             },
         ],
     },
@@ -77,10 +81,6 @@ const routes: RouteObject[] = [
                         path: ":quizId",
                         element: <QuizCreator />,
                     },
-                    {
-                        path: "play",
-                        element: <SingleChoiceQuestion />,
-                    },
                 ],
             },
             {
@@ -94,10 +94,6 @@ const routes: RouteObject[] = [
             {
                 path: "/infoslide",
                 element: <InfoSlide />,
-            },
-            {
-                path: "/play/:code",
-                element: <WaitingRoom />,
             },
         ],
     },

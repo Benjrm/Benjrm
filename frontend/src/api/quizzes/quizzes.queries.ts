@@ -2,10 +2,15 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import type { UseQueryResult, UseMutationResult } from "@tanstack/react-query"
-
-import { getQuiz, getQuizzes, createQuiz, updateQuiz, deleteQuiz } from "@/api/quiz"
-import type { CreateQuizInput, Quiz } from "@/api/quiz"
 import useQuestionQueueStorage from "@/api/questions/hooks/useQuestionQueueStorage"
+import type { NewQuiz, Quiz, UpdateQuiz } from "@/api/quizzes/quizzes.types.ts"
+import {
+    createQuiz,
+    deleteQuiz,
+    getQuiz,
+    getQuizzes,
+    updateQuiz,
+} from "@/api/quizzes/quizzes.api.ts"
 
 // Query Keys
 export const quizKeys = {
@@ -37,10 +42,10 @@ export function useQuizzes(): UseQueryResult<Quiz[]> {
 
 // ============ MUTATIONS ============
 
-export function useCreateQuiz(): UseMutationResult<Quiz, Error, CreateQuizInput> {
+export function useCreateQuiz(): UseMutationResult<Quiz, Error, NewQuiz> {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (data: CreateQuizInput): Promise<Quiz> => createQuiz(data),
+        mutationFn: async (data: NewQuiz): Promise<Quiz> => createQuiz(data),
         onSuccess: (quiz) => {
             queryClient.setQueryData(quizKeys.detail(quiz.id), quiz)
             queryClient.invalidateQueries({ queryKey: quizKeys.lists() })
@@ -50,10 +55,10 @@ export function useCreateQuiz(): UseMutationResult<Quiz, Error, CreateQuizInput>
 
 export function useUpdateQuiz(
     quizId: string | undefined
-): UseMutationResult<Quiz, Error, CreateQuizInput> {
+): UseMutationResult<Quiz, Error, UpdateQuiz> {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (data: CreateQuizInput): Promise<Quiz> => {
+        mutationFn: async (data: UpdateQuiz): Promise<Quiz> => {
             if (!quizId) throw new Error("No quiz ID")
             return updateQuiz(quizId, data)
         },

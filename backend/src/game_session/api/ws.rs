@@ -4,7 +4,8 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            Channel, ChannelError, Command, GameSession, HostCommand, Message, SessionCode,
+            Channel, ChannelError, Command, CommandTrait, GameSession, HostCommand, HostMessage,
+            Message, PlayerCommand, SessionCode,
         },
     },
     actix_web::{HttpRequest, HttpResponse, rt, web},
@@ -20,6 +21,7 @@ use {
         time::Duration,
     },
     tokio::{sync::Mutex, task::JoinHandle, time::sleep},
+    uuid::Uuid,
 };
 
 async fn get_host_ws(
@@ -41,22 +43,18 @@ async fn get_host_ws(
     let mut session = session.lock().await;
 
     session.check_set_host_channel(&user).map_err(Error::from)?;
-    let channel = WsChannel::new::<HostCommand, _, _>(
+    let channel = WsChannel::new::<Command<HostCommand>, _, _, _>(
         rx,
         tx,
         app_data,
         session_arc,
         code,
-        handle_host_cmd,
+        GameSession::handle_host_cmd,
         remove_host_ws,
     );
     session.set_host_channel(channel).await;
 
     Ok(res)
-}
-
-async fn handle_host_cmd(_session: Arc<Mutex<GameSession>>, cmd: HostCommand) {
-    log::debug!("host cmd: {cmd:?}");
 }
 
 async fn remove_host_ws(
@@ -78,6 +76,61 @@ async fn remove_host_ws(
     }
 }
 
+async fn get_player_ws(
+    req: HttpRequest,
+    body: web::Payload,
+    code: web::Path<SessionCode>,
+    app_data: web::Data<AppData>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let code = code.into_inner();
+    let session = app_data
+        .game_sessions
+        .get_session(code)
+        .await
+        .map_err(Error::from)?;
+    let (res, tx, rx) = actix_ws::handle(&req, body)?;
+
+    let session_arc = Arc::clone(&session);
+    let mut session = session.lock().await;
+
+    let id = Uuid::new_v4();
+    let channel = WsChannel::new::<Command<PlayerCommand>, _, _, _>(
+        rx,
+        tx,
+        app_data,
+        session_arc,
+        id,
+        GameSession::handle_player_cmd,
+        remove_player_ws,
+    );
+
+    session
+        .set_player_channel(id, channel)
+        .await
+        .map_err(Error::from)?;
+
+    Ok(res)
+}
+
+async fn remove_player_ws(
+    _app_data: web::Data<AppData>,
+    session: Arc<Mutex<GameSession>>,
+    _channel_id: u64,
+    player_id: Uuid,
+) {
+    let mut session = session.lock().await;
+
+    if let Some(player_pos) = session.players.iter().position(|x| x.id == player_id) {
+        let player = session.players.swap_remove(player_pos);
+        if player.name.is_some() {
+            session
+                .host
+                .msg(Message::from(&HostMessage::RemovePlayer { id: player_id }))
+                .await
+        }
+    }
+}
+
 pub struct WsChannel {
     id: u64,
     tx: actix_ws::Session,
@@ -87,26 +140,27 @@ pub struct WsChannel {
 
 impl WsChannel {
     pub fn new<
-        Cmd: Command + 'static,
-        HandleCmd: AsyncFn(Arc<Mutex<GameSession>>, Cmd) + Send + 'static,
-        HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, SessionCode) + Send + 'static,
+        Cmd: CommandTrait + 'static,
+        Payload: Copy + 'static,
+        HandleCmd: AsyncFn(&mut GameSession, Cmd, Arc<Mutex<GameSession>>, Payload) + Send + 'static,
+        HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, Payload) + Send + 'static,
     >(
         rx: MessageStream,
         tx: actix_ws::Session,
         app_data: web::Data<AppData>,
         session: Arc<Mutex<GameSession>>,
-        session_code: SessionCode,
+        payload: Payload,
         handle_cmd: HandleCmd,
         handle_delete: HandleDelete,
     ) -> Self {
         let id = <Self as Channel<()>>::generate_id();
         let time_delta_ms = Arc::new(AtomicI64::new(0));
-        let handle = rt::spawn(ws_listener::<Cmd, _, _>(
+        let handle = rt::spawn(ws_listener::<Cmd, _, _, _>(
             rx,
             tx.clone(),
             app_data,
             session,
-            session_code,
+            payload,
             handle_cmd,
             handle_delete,
             id,
@@ -123,15 +177,16 @@ impl WsChannel {
 
 #[allow(clippy::too_many_arguments)] // Only relevant for readability
 async fn ws_listener<
-    Cmd: Command,
-    HandleCmd: AsyncFn(Arc<Mutex<GameSession>>, Cmd) + Send,
-    HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, SessionCode) + Send,
+    Cmd: CommandTrait,
+    Payload: Copy,
+    HandleCmd: AsyncFn(&mut GameSession, Cmd, Arc<Mutex<GameSession>>, Payload) + Send,
+    HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, Payload) + Send,
 >(
     mut rx: MessageStream,
     mut tx: actix_ws::Session,
     app_data: web::Data<AppData>,
     session: Arc<Mutex<GameSession>>,
-    session_code: SessionCode,
+    payload: Payload,
     handle_cmd: HandleCmd,
     handle_delete: HandleDelete,
     socket_id: u64,
@@ -186,9 +241,15 @@ async fn ws_listener<
                         let time_delta = now - dest_time;
                         ring_delta.insert(time_delta);
                         time_delta_ms.store(ring_delta.avg().num_milliseconds(), Ordering::Relaxed);
+                    } else {
+                        handle_cmd(
+                            &mut *session.lock().await,
+                            cmd,
+                            Arc::clone(&session),
+                            payload,
+                        )
+                        .await;
                     }
-
-                    handle_cmd(Arc::clone(&session), cmd).await;
                 }
                 Some(Err(err)) => {
                     log::error!("error parsing websocket command: {err:?}");
@@ -213,7 +274,7 @@ async fn ws_listener<
 
     loop {
         if let Err(Closed) = receive_msg().await {
-            handle_delete(app_data, Arc::clone(&session), socket_id, session_code).await;
+            handle_delete(app_data, Arc::clone(&session), socket_id, payload).await;
             return;
         }
     }
@@ -260,8 +321,8 @@ struct PingCommand {
 }
 
 #[async_trait::async_trait]
-impl<T: Serialize + Send + 'static> Channel<T> for WsChannel {
-    async fn send(&mut self, mut msg: Message<T>) -> Result<(), ChannelError> {
+impl<T: Serialize + Sync + 'static> Channel<T> for WsChannel {
+    async fn send(&mut self, mut msg: Message<'_, T>) -> Result<(), ChannelError> {
         if let Some(timing) = &mut msg.timing {
             let ms = self.time_delta_ms.load(Ordering::Relaxed);
             *timing += TimeDelta::milliseconds(ms);
@@ -293,4 +354,5 @@ pub enum WsChannelError {
 
 pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
     cfg.service(web::resource("/sessions/{code}/ws/host").route(web::get().to(get_host_ws)));
+    cfg.service(web::resource("/sessions/{code}/ws/player").route(web::get().to(get_player_ws)));
 }

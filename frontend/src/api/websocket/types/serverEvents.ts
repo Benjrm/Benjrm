@@ -1,32 +1,57 @@
+import type { QuestionType } from "@/api/questions/types/questionType"
+
 /**
  * Maps server commands to their respective payload types.
  * Each key represents a command sent by the server, and its value defines the structure of the data payload associated with that command.
  */
 export interface ServerEvents {
+    error: {
+        category: string
+        error: string
+        message: string
+    }
+    ok: unknown
     ping: {
         id: number
     }
     displayQuestion: {
         id: string
         question: string
-        type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE"
-        options: unknown
+        type: QuestionType
+        options: { id: string; answer: string }[]
+        seconds: number | null
+        totalQuestions: number
     }
     questionResult: {
         question: string
-        correctAnswer: string
+        correctAnswers: string[]
+        totalPoints: number
         points: number
     }
-    updateLeaderboard: {
-        name: string
-        points: number
-    }[]
-    addParticipant: {
+    displayLeaderboard: {
+        leaderboard: {
+            id: string
+            name: string
+            emoji: string | null
+            totalPoints: number
+            points: number
+        }[]
+        isFinal: boolean
+    }
+    addPlayer: {
         id: string
         name: string
+        emoji: string | null
     }
-    removeParticipant: {
+    renamePlayer: {
         id: string
         name: string
+        emoji: string | null
     }
+    removePlayer: {
+        id: string
+    }
+    kick: unknown
+    start: unknown
+    gameEnded: unknown
 }

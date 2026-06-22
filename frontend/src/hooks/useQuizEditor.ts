@@ -4,7 +4,7 @@ import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
-import { useQuiz, useDeleteQuiz } from "@/api/queries"
+import { useQuiz, useDeleteQuiz } from "@/api/quizzes/quizzes.queries.ts"
 import { useQuestions } from "@/api/questions"
 import questionKeys from "@/api/questions/utils/questionKeys"
 import type { Question } from "@/types/question"
@@ -21,9 +21,9 @@ import useQuestionChangeQueue, {
 } from "@/hooks/useQuestionChangeQueue"
 import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
 import type { QuestionApiRequest } from "@/api/questions/types/question.api.ts"
-import { getQuiz } from "@/api/quiz"
 import { ApiError } from "@/api/utils"
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
+import { getQuiz } from "@/api/quizzes/quizzes.api.ts"
 
 export interface QuestionError {
     missingQuestion: boolean
@@ -41,6 +41,7 @@ export interface UseQuizEditorResult {
     bigQuestionError: string | null
     isLoadingQuestions: boolean
     questionLoadError: unknown
+    isQuizPlayable: boolean
     questions: Question[]
     currentQuestionIndex: number
     handleSelectQuestion: (n: number) => void
@@ -584,6 +585,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         })
     }
 
+    const isQuizPlayable =
+        hasInitializedQuestions &&
+        questions.length > 0 &&
+        questions.every((q) => validateQuestion(q) === null)
+
     return {
         quiz,
         quizTitle,
@@ -594,6 +600,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         bigQuestionError,
         isLoadingQuestions,
         questionLoadError,
+        isQuizPlayable,
         questions,
         currentQuestionIndex,
         handleSelectQuestion,

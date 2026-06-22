@@ -12,6 +12,12 @@ export default class WebSocketService {
 
     private listeners = new Map<keyof ServerEvents, Set<AnyServerEventHandler>>()
 
+    private openCallbacks = new Set<() => void>()
+
+    private closeWithoutOpenCallbacks = new Set<() => void>()
+
+    private pendingDisconnect: ReturnType<typeof setTimeout> | null = null
+
     private static async decodeMessageData(data: MessageEvent["data"]): Promise<string | null> {
         if (typeof data === "string") {
             return data
@@ -43,7 +49,17 @@ export default class WebSocketService {
      * @param url The URL of the target WebSocket server to connect to.
      */
     public connect(url: string): void {
-        if (this.socket?.url === url && this.socket.readyState === WebSocket.OPEN) {
+        // Cancel any deferred disconnect so StrictMode's immediate re-mount doesn't drop the socket.
+        if (this.pendingDisconnect !== null) {
+            clearTimeout(this.pendingDisconnect)
+            this.pendingDisconnect = null
+        }
+
+        if (
+            this.socket?.url === url &&
+            (this.socket.readyState === WebSocket.OPEN ||
+                this.socket.readyState === WebSocket.CONNECTING)
+        ) {
             return
         }
 
@@ -57,8 +73,13 @@ export default class WebSocketService {
         const ws = new WebSocket(url)
         this.socket = ws
 
+        let hasOpened = false
+
         ws.onopen = () => {
+            hasOpened = true
             console.log("Connected")
+            this.openCallbacks.forEach((cb) => cb())
+            this.openCallbacks.clear()
         }
 
         ws.onmessage = async (event) => {
@@ -81,7 +102,11 @@ export default class WebSocketService {
                 const data = raw as ServerMessage
                 const handlers = this.listeners.get(data.command)
                 handlers?.forEach((handler) =>
-                    (handler as ServerEventHandler<typeof data.command>)(data.payload, data.timing)
+                    (handler as ServerEventHandler<typeof data.command>)(
+                        data.payload,
+                        data.timing,
+                        data.id
+                    )
                 )
             } catch (error) {
                 console.error("Failed to process WebSocket message:", error)
@@ -89,6 +114,10 @@ export default class WebSocketService {
         }
 
         ws.onclose = () => {
+            if (!hasOpened) {
+                this.closeWithoutOpenCallbacks.forEach((cb) => cb())
+                this.closeWithoutOpenCallbacks.clear()
+            }
             this.cleanup(ws)
         }
 
@@ -98,15 +127,20 @@ export default class WebSocketService {
     }
 
     /**
-     * Closes the socket connection.
-     * If the socket does not exist or the connection is already closed, it does nothing.
+     * Schedules a disconnect on the next event-loop tick.
+     * The pending close is cancelled if `connect` is called first (React 18 StrictMode pattern).
+     * If the socket does not exist or is already closed, it does nothing.
      */
     public disconnect(): void {
-        if (!this.socket) {
-            return
+        if (!this.socket) return
+        if (this.pendingDisconnect !== null) {
+            clearTimeout(this.pendingDisconnect)
         }
-        this.socket.close()
-        this.socket = null
+        this.pendingDisconnect = setTimeout(() => {
+            this.pendingDisconnect = null
+            if (!this.socket) return
+            this.socket.close()
+        }, 0)
     }
 
     /**
@@ -124,6 +158,48 @@ export default class WebSocketService {
             )
         }
         this.socket.send(JSON.stringify(message))
+    }
+
+    /**
+     * Registers a callback to fire once when the socket is (or becomes) open.
+     * If the socket is already open the callback is invoked synchronously.
+     * @returns An unsubscribe function.
+     */
+    public onConnect(callback: () => void): () => void {
+        if (this.socket?.readyState === WebSocket.OPEN) {
+            callback()
+            return () => {}
+        }
+        this.openCallbacks.add(callback)
+        return () => {
+            this.openCallbacks.delete(callback)
+        }
+    }
+
+    /**
+     * Registers a callback to fire once if the current socket closes before it ever opens
+     * (i.e., the connection was refused or the session code was not found).
+     * @returns An unsubscribe function.
+     */
+    public onConnectFail(callback: () => void): () => void {
+        this.closeWithoutOpenCallbacks.add(callback)
+        return () => {
+            this.closeWithoutOpenCallbacks.delete(callback)
+        }
+    }
+
+    /**
+     * Dev-only: dispatches a fake server event directly to all registered listeners,
+     * bypassing the real WebSocket connection. Used by mock hooks in development.
+     */
+    public simulateReceive<K extends keyof ServerEvents>(
+        command: K,
+        payload: ServerEvents[K]
+    ): void {
+        const handlers = this.listeners.get(command)
+        handlers?.forEach((handler) =>
+            (handler as ServerEventHandler<K>)(payload, undefined, undefined)
+        )
     }
 
     /**

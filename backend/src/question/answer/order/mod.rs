@@ -49,7 +49,7 @@ impl From<UpdateAnswerOrder> for UpdateAnswerChoice {
 
 #[derive(Debug, Clone)]
 pub struct AnswerOrderModel {
-    choice: AnswerChoiceModel,
+    pub choice: AnswerChoiceModel,
 }
 
 impl Serialize for AnswerOrderModel {

@@ -6,13 +6,13 @@ import { ApiError } from "@/api/utils"
 export interface SessionStatus {
     isLoading: boolean
     isHost: boolean
-    isParticipant: boolean
+    isPlayer: boolean
     isInvalidCode: boolean
     session: Session | undefined
 }
 
 /**
- * A hook that loads the session and determines the user's role (host or participant).
+ * A hook that loads the session and determines the user's role (host or player).
  * @param code The session code
  */
 export default function useSessionStatus(code: number | undefined): SessionStatus {
@@ -22,15 +22,17 @@ export default function useSessionStatus(code: number | undefined): SessionStatu
         // If we have session data, the user is the host
         const isHost = !!session
 
-        // A 403 error indirectly indicates that the user is a participant
-        const isParticipant = sessionError instanceof ApiError && sessionError.status === 403
+        // A 403 or 401 error indirectly indicates that the user is a player
+        const isPlayer =
+            sessionError instanceof ApiError &&
+            (sessionError.status === 403 || sessionError.status === 401)
 
-        const isInvalidCode = !!sessionError && !isParticipant
+        const isInvalidCode = !!sessionError && !isPlayer
 
         return {
             isLoading,
             isHost,
-            isParticipant,
+            isPlayer,
             isInvalidCode,
             session,
         }

@@ -226,6 +226,20 @@ impl QuestionType {
             Self::SingleChoice | Self::MultipleChoice | Self::Order => Self::SingleChoice,
         }
     }
+
+    pub fn default_answer_duration(&self) -> Option<u32> {
+        let duration = match self {
+            Self::Slide => None,
+            Self::SingleChoice | Self::MultipleChoice => Some(30),
+            Self::Order => Some(120),
+        };
+
+        #[cfg(test)]
+        return duration.map(|_| 1);
+
+        #[cfg(not(test))]
+        duration
+    }
 }
 
 pub trait LinkedItem {

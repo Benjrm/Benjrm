@@ -9,10 +9,10 @@ import { cn } from "@/shadcn/lib/utils"
 export interface PlayQuizButtonProps {
     quizId: string | undefined
     className?: string
+    disabled?: boolean
 }
 
-export function PlayQuizButton({ quizId, className }: PlayQuizButtonProps): JSX.Element {
-    const { t } = useTranslation()
+export function PlayQuizButton({ quizId, className, disabled }: PlayQuizButtonProps): JSX.Element {
     const createSessionMutation = useCreateSession()
 
     const handlePlayQuiz = (): void => {
@@ -22,7 +22,7 @@ export function PlayQuizButton({ quizId, className }: PlayQuizButtonProps): JSX.
 
     return (
         <Button
-            disabled={createSessionMutation.isPending || !quizId}
+            disabled={(disabled ?? createSessionMutation.isPending) || !quizId}
             onClick={handlePlayQuiz}
             type="button"
             className={cn(

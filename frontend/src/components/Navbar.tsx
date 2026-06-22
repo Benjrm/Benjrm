@@ -1,31 +1,91 @@
 // frontend/src/components/Navbar.tsx
 
 import type { JSX } from "react"
+import { useState } from "react"
 import { NavLink } from "react-router"
-import LoginLink from "@/auth/components/LoginLink.tsx"
-import ThemeToggle from "@/components/ThemeToggle.tsx"
+import { Menu, UserCircle2, X } from "lucide-react"
+import ThemeToggle from "@/components/ThemeToggle"
+import NavItem from "@/components/NavItem"
+import AuthAction from "@/auth/components/AuthAction"
+import useAuthUser from "@/auth/hooks/useAuthUser"
 import LanguageSwitcher from "@/components/LanguageSwitcher.tsx"
 
 export default function Navbar(): JSX.Element {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const { data: isAuthenticated } = useAuthUser()
+
     return (
         <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
-            <div className="mx-auto flex items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4">
-                {/* Left: Logo */}
-                <NavLink
-                    end
-                    className="shrink-0 text-2xl font-extrabold tracking-tighter text-[#00F2FF] sm:text-3xl"
-                    to="/"
-                >
-                    Benjrm
-                </NavLink>
+            <div className="mx-auto flex w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4">
+                {/* Left side */}
+                <div className="flex items-center gap-8">
+                    {/* Logo */}
+                    <NavLink
+                        end
+                        className="shrink-0 text-2xl font-extrabold tracking-tighter text-[#00F2FF] sm:text-3xl"
+                        to="/"
+                    >
+                        Benjrm
+                    </NavLink>
 
-                {/* Right: Actions */}
-                <div className="flex items-center gap-2 sm:gap-3">
-                    <LanguageSwitcher />
-                    <LoginLink />
+                    {/* Desktop Navigation */}
+                    <nav className="hidden items-center gap-6 md:flex">
+                        <NavItem to="/">Home</NavItem>
+                        {isAuthenticated ? <NavItem to="/dashboard">Dashboard</NavItem> : null}
+                    </nav>
+                </div>
+
+                {/* Right side */}
+                <div className="flex shrink-0 items-center gap-2 sm:gap-4">
                     <ThemeToggle />
+
+                    {isAuthenticated ? (
+                        <div
+                            aria-label="Profile"
+                            className="bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 sm:h-9 sm:w-9"
+                            role="img"
+                        >
+                            <UserCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </div>
+                    ) : null}
+
+                    <AuthAction />
+
+                    {/* Hamburger toggle (mobile only) */}
+                    <button
+                        aria-label="Toggle menu"
+                        className="text-muted-foreground hover:text-foreground p-1 transition-colors md:hidden"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        type="button"
+                    >
+                        {isMobileMenuOpen ? (
+                            <X className="h-6 w-6" />
+                        ) : (
+                            <Menu className="h-6 w-6" />
+                        )}
+                    </button>
                 </div>
             </div>
+
+            {/* Mobile Navigation Dropdown */}
+            {isMobileMenuOpen ? (
+                <div className="border-border bg-background space-y-6 border-t px-4 py-6 shadow-lg md:hidden">
+                    <nav className="flex flex-col items-center gap-5">
+                        <NavItem isMobile onClick={() => setIsMobileMenuOpen(false)} to="/">
+                            Home
+                        </NavItem>
+                        {isAuthenticated ? (
+                            <NavItem
+                                isMobile
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                to="/dashboard"
+                            >
+                                Dashboard
+                            </NavItem>
+                        ) : null}
+                    </nav>
+                </div>
+            ) : null}
         </header>
     )
 }
