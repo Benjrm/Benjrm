@@ -3,6 +3,7 @@ import { X } from "lucide-react"
 import { Toaster } from "sonner"
 import GamePinBadge from "@/components/GamePinBadge"
 import ProfilePicker from "@/components/ProfilePicker"
+import QRCode from "@/components/QRCode"
 import StartQuizButton from "@/components/StartQuizButton"
 import { Button } from "@/shadcn/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
@@ -64,46 +65,55 @@ export default function Lobby({
                 <div className="bg-linear-to-r from-[#00D4E8]/10 via-transparent to-[#FF8A00]/10 p-6 sm:p-8">
                     {isHost ? (
                         <>
-                            <div className="mb-4">
-                                <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                                    {quiz?.title ?? "No title"}
-                                </h1>
-                                <p className="text-muted-foreground mt-1 text-sm">
-                                    Players joined:{" "}
-                                    <span className="text-foreground font-semibold">
-                                        {players.length}
-                                    </span>
-                                </p>
+                            <div className="mb-4 flex items-start justify-between gap-4">
+                                <div>
+                                    <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+                                        {quiz?.title ?? "No title"}
+                                    </h1>
+                                    <p className="text-muted-foreground mt-1 text-sm">
+                                        Players joined:{" "}
+                                        <span className="text-foreground font-semibold">
+                                            {players.length}
+                                        </span>
+                                    </p>
+                                </div>
                             </div>
 
-                            <ul className="space-y-2">
-                                {players.map((player) => (
-                                    <li
-                                        key={player.id}
-                                        className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2 dark:bg-black/20"
-                                    >
-                                        <div className="bg-muted/80 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold uppercase">
-                                            {player.emoji ?? player.name.charAt(0)}
-                                        </div>
-                                        <p className="flex-1 text-sm font-medium">{player.name}</p>
-                                        <Button
-                                            className="h-7 w-7 text-white/50 hover:text-red-400"
-                                            onClick={() => onKickPlayer(player.id)}
-                                            size="icon"
-                                            title={`Kick ${player.name}`}
-                                            type="button"
-                                            variant="ghost"
+                            <div className="flex flex-col gap-6 md:flex-row md:items-start">
+                                <QRCode codeWithDash={codeWithDash} />
+
+                                {/* Player list — second on mobile, left on desktop */}
+                                <ul className="order-2 flex-1 space-y-2 md:order-1">
+                                    {players.map((player) => (
+                                        <li
+                                            key={player.id}
+                                            className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2 dark:bg-black/20"
                                         >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </li>
-                                ))}
-                                {players.length === 0 ? (
-                                    <li className="text-muted-foreground py-4 text-center text-sm">
-                                        No players yet — share the pin!
-                                    </li>
-                                ) : null}
-                            </ul>
+                                            <div className="bg-muted/80 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold uppercase">
+                                                {player.emoji ?? player.name.charAt(0)}
+                                            </div>
+                                            <p className="flex-1 text-sm font-medium">
+                                                {player.name}
+                                            </p>
+                                            <Button
+                                                className="h-7 w-7 text-white/50 hover:text-red-400"
+                                                onClick={() => onKickPlayer(player.id)}
+                                                size="icon"
+                                                title={`Kick ${player.name}`}
+                                                type="button"
+                                                variant="ghost"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </li>
+                                    ))}
+                                    {players.length === 0 ? (
+                                        <li className="text-muted-foreground py-4 text-center text-sm">
+                                            No players yet — share the pin!
+                                        </li>
+                                    ) : null}
+                                </ul>
+                            </div>
                         </>
                     ) : (
                         <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4 dark:bg-black/20">
