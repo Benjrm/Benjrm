@@ -8,8 +8,8 @@ import type {
     UpdateQuestionQueueItem,
 } from "@/queue/queue.types.ts"
 import assertNever from "@/utils/assertNever.ts"
-import QuestionQueueError from "@/queue/queue.error.ts"
 import { ApiError } from "@/api/utils.ts"
+import QuestionQueueError from "@/queue/queue.error.ts"
 
 async function processCreateOp<QI extends Extract<QueueItem, CreateQuestionQueueItem>>(
     item: QI,
@@ -93,39 +93,48 @@ async function processQueueItem(
 export default async function processQueue(
     items: QueueItem[],
     quizId: string
-): Promise<{ idMap: Record<string, string>; succeededIds: Set<string> }> {
+): Promise<{
+    idMap: Record<string, string>
+    succeededIds: Set<string>
+    failed: { itemId: string; error: string }[]
+}> {
     const idMap: Record<string, string> = {}
     const succeededIds = new Set<string>()
+    const failed: { itemId: string; error: string }[] = []
 
     // eslint-disable-next-line no-restricted-syntax
     for (const item of items) {
-        if (
-            (item.op === "update" || item.op === "delete") &&
-            item.questionId &&
-            idMap[item.questionId]
-        ) {
-            item.questionId = idMap[item.questionId]
-        }
+        try {
+            if (
+                (item.op === "update" || item.op === "delete") &&
+                item.questionId &&
+                idMap[item.questionId]
+            ) {
+                item.questionId = idMap[item.questionId]
+            }
 
-        // eslint-disable-next-line no-await-in-loop
-        const result = await processQueueItem(item, idMap, quizId)
+            // eslint-disable-next-line no-await-in-loop
+            const result = await processQueueItem(item, idMap, quizId)
 
-        if (
-            result.status === "success" &&
-            item.op === "create" &&
-            item.questionId &&
-            result.createdId
-        ) {
-            idMap[item.questionId] = result.createdId
-        }
-
-        if (result.status === "success") {
-            succeededIds.add(item.id)
-        } else {
-            throw new Error(result.reason)
+            if (result.status === "success") {
+                succeededIds.add(item.id)
+                if (item.op === "create" && item.questionId && result.createdId) {
+                    idMap[item.questionId] = result.createdId
+                }
+            } else {
+                failed.push({
+                    itemId: item.id,
+                    error: result.reason,
+                })
+            }
+        } catch (e) {
+            failed.push({
+                itemId: item.id,
+                error: e instanceof Error ? e.message : String(e),
+            })
         }
     }
-    return { idMap, succeededIds }
+    return { idMap, succeededIds, failed }
 }
 
 export function sortQueue(queue: QueueItem[]): QueueItem[] {

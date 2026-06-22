@@ -124,4 +124,4 @@ export type Action =
  */
 export type ProcessResult =
     | { status: "success"; createdId?: string }
-    | { status: "skipped"; reason?: string }
+    | { status: "skipped"; reason: string }

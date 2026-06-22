@@ -52,7 +52,6 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
         }
     }, [queueStorage, storageQuizId, queue])
 
-
     const upsertCreate = useCallback((questionId: string, payload: QuestionRequest) => {
         dispatch({ type: "upsertCreate", questionId, payload })
     }, [])
@@ -122,14 +121,12 @@ export default function useQuestionChangeQueue(quizId?: string): UseQuestionChan
             if (!quizId) {
                 throw new Error("Quiz id is required to flush the question change queue.")
             }
-            const { idMap, succeededIds } = await processQueue(sortedQueue, quizId)
+            const { idMap, succeededIds, failed } = await processQueue(sortedQueue, quizId)
             updateQueueState(queue, succeededIds, idMap)
 
+            setLastError(normalizeError(failed))
+
             return { items: sortedQueue, idMap }
-        } catch (err) {
-            const error = normalizeError(err)
-            setLastError(error)
-            throw error
         } finally {
             setIsFlushing(false)
         }
