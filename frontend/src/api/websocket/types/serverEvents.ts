@@ -54,4 +54,10 @@ export interface ServerEvents {
     kick: unknown
     start: unknown
     gameEnded: unknown
+    connectResponse: {
+        id: string
+        secret: string
+        name: string
+        emoji: string | null
+    }
 }

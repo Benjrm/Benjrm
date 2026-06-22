@@ -51,6 +51,10 @@ impl_err! {
         InvalidEmoji = BAD_REQUEST,
         #[error("Player not found")]
         PlayerNotFound = NOT_FOUND,
+        #[error("Command not allowed")]
+        CommandNotAllowed = BAD_REQUEST,
+        #[error("Invalid player secret")]
+        InvalidPlayerSecret = FORBIDDEN,
         #[error("Game session not started")]
         NotStarted = BAD_REQUEST,
         #[error("Game session already started")]
@@ -125,6 +129,7 @@ impl From<User> for GameSessionHost {
 
 pub struct GameSessionPlayer {
     id: Uuid,
+    secret: Uuid,
     name: String,
     emoji: Option<&'static Emoji>,
     channel: Box<dyn Channel<PlayerMessage>>,
@@ -304,6 +309,12 @@ pub enum PlayerMessage {
     Ok,
     Error(ErrorResponse),
     Kick,
+    ConnectResponse {
+        id: Uuid,
+        secret: Uuid,
+        name: String,
+        emoji: Option<&'static Emoji>,
+    },
     Start,
     GameEnded,
     DisplayQuestion(Arc<DisplayQuestionMessage>),
@@ -331,6 +342,7 @@ pub enum PlayerMessage {
 pub enum PlayerCommand {
     Pong { id: u32, timestamp: DateTime<Utc> },
     SetName { name: String, emoji: Option<String> },
+    Reconnect { id: Uuid, secret: Uuid },
     AnswerQuestion { answer: Vec<Uuid> },
 }
 

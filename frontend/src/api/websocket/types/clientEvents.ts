@@ -11,6 +11,10 @@ export interface ClientEvents {
         name: string
         emoji: string | null
     }
+    reconnect: {
+        id: string
+        secret: string
+    }
     answerQuestion: {
         answer: string[]
     }

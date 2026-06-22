@@ -321,6 +321,7 @@ impl GameSession {
     /// Must only be called after successfully calling [`GameSession::check_add_player`].
     pub async fn add_player<T: Channel<PlayerMessage> + 'static>(
         &mut self,
+        cmd_id: Option<u64>,
         id: Uuid,
         channel: T,
         name: String,
@@ -331,15 +332,30 @@ impl GameSession {
         {
             joining.swap_remove(pos);
         }
+        let secret = Uuid::new_v4();
 
-        let player = GameSessionPlayer {
+        let mut player = GameSessionPlayer {
             id,
+            secret,
             name,
             emoji,
             channel: Box::new(channel),
             points: 0,
             last_question: None,
         };
+
+        player
+            .msg(Message {
+                id: cmd_id,
+                msg: &PlayerMessage::ConnectResponse {
+                    id,
+                    secret,
+                    name: player.name.clone(),
+                    emoji,
+                },
+                timing: None,
+            })
+            .await;
 
         self.host
             .msg(Message::from(&HostMessage::AddPlayer {
@@ -403,6 +419,7 @@ impl GameSession {
                     }))
                     .await;
             }
+            PlayerCommand::Reconnect { .. } => Err(GameSessionError::CommandNotAllowed)?,
             PlayerCommand::AnswerQuestion { answer } => {
                 let player = Self::get_player_mut(&mut self.players, id)?;
                 if matches!(self.status, GameSessionStatus::Leaderboard { .. }) {
@@ -541,6 +558,33 @@ impl GameSessionHost {
 }
 
 impl GameSessionPlayer {
+    pub fn check_set_channel(&self, secret: Uuid) -> Result<(), GameSessionError> {
+        if self.secret != secret {
+            return Err(GameSessionError::InvalidPlayerSecret);
+        }
+        Ok(())
+    }
+
+    pub async fn set_channel<T: Channel<PlayerMessage> + 'static>(
+        &mut self,
+        cmd_id: Option<u64>,
+        channel: T,
+    ) {
+        let old_channel = std::mem::replace(&mut self.channel, Box::new(channel));
+        old_channel.close().await;
+        self.msg(Message {
+            id: cmd_id,
+            msg: &PlayerMessage::ConnectResponse {
+                id: self.id,
+                secret: self.secret,
+                name: self.name.clone(),
+                emoji: self.emoji,
+            },
+            timing: None,
+        })
+        .await;
+    }
+
     pub async fn msg(&mut self, msg: Message<'_, PlayerMessage>) {
         if let Err(err) = self.channel.send(msg).await {
             log::error!("failed to send message to player {}: {err:?}", self.id)

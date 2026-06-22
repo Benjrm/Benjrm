@@ -94,12 +94,15 @@ async fn get_player_ws(
 pub(super) async fn remove_player_ws(
     _app_data: web::Data<AppData>,
     session: Arc<Mutex<GameSession>>,
-    _channel_id: u64,
+    channel_id: u64,
     player_id: Uuid,
 ) {
+    sleep(Duration::from_mins(15)).await;
     let mut session = session.lock().await;
 
-    if let Some(player_pos) = session.players.iter().position(|x| x.id == player_id) {
+    if let Some(player_pos) = session.players.iter().position(|x| x.id == player_id)
+        && session.players[player_pos].channel.id() == channel_id
+    {
         session.players.swap_remove(player_pos);
         session
             .host

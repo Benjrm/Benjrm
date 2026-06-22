@@ -137,11 +137,26 @@ async fn dummy_player(
     name: &str,
 ) -> (Uuid, mpsc::Receiver<PlayerMessage>) {
     let player = Uuid::new_v4();
-    let (player_channel, _, player_rx) = DummyChanel::new();
+    let (player_channel, _, mut player_rx) = DummyChanel::new();
     session.check_add_player(name).unwrap();
     session
-        .add_player(player, player_channel, name.into(), None)
+        .add_player(None, player, player_channel, name.into(), None)
         .await;
+
+    match player_rx.recv().await.unwrap() {
+        PlayerMessage::ConnectResponse {
+            id,
+            secret,
+            name: response_name,
+            emoji,
+        } => {
+            assert_eq!(id, player);
+            assert_eq!(response_name, name);
+            assert_eq!(emoji, None);
+            assert_ne!(id, secret);
+        }
+        x => panic!("invalid message: {x:?}"),
+    }
 
     match host_rx.recv().await.unwrap() {
         HostMessage::AddPlayer {
@@ -284,12 +299,17 @@ async fn join() {
         session.check_add_player("cool name").unwrap();
         session
             .add_player(
+                None,
                 player,
                 player_channel,
                 "cool name".into(),
                 Some(emojis::get("😀").unwrap()),
             )
             .await;
+        assert!(matches!(
+            player_rx.recv().await.unwrap(),
+            PlayerMessage::ConnectResponse { .. }
+        ));
 
         match host_rx.recv().await.unwrap() {
             HostMessage::AddPlayer { id, name, emoji } => {
@@ -416,8 +436,12 @@ async fn start() {
         let (player_channel, _, mut player_rx) = DummyChanel::new();
         session.check_add_player("test").unwrap();
         session
-            .add_player(player, player_channel, "test".into(), None)
+            .add_player(None, player, player_channel, "test".into(), None)
             .await;
+        assert!(matches!(
+            player_rx.recv().await.unwrap(),
+            PlayerMessage::ConnectResponse { .. }
+        ));
 
         match rx.recv().await.unwrap() {
             HostMessage::AddPlayer { id, name, emoji } => {
