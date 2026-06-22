@@ -1,5 +1,8 @@
 {
     "common": {
+        "errors": {
+            "backendUnavailable": "Das Backend ist derzeit nicht erreichbar. Bitte versuche es später erneut."
+        },
         "buttons": {
             "viewAll": "Alle ansehen",
             "cancel": "Abbrechen",
@@ -134,6 +137,101 @@
             "oneCorrectRequired": "Es ist mindestens eine richtige Antwort erforderlich."
         }
     },
+    "game": {
+        "starting": "Spiel startet...",
+        "getReady": "Mach dich bereit!",
+        "hostClosed": "Host hat die Lobby geschlossen",
+        "hostClosedLoading": "Host hat die Lobby geschlossen...",
+        "playerLeft": "{{name}} hat das Spiel verlassen",
+        "anErrorOccurred": "Ein Fehler ist aufgetreten",
+        "question": {
+            "label": "Frage {{current}} / {{total}}",
+            "current": "Aktuelle Frage:",
+            "noQuestion": "Noch keine Frage.",
+            "playersReading": "Spieler lesen...",
+            "waitingForAnswers": "Warte auf Antworten der Teilnehmer",
+            "complete": "Frage abgeschlossen — Ergebnisse sind da!",
+            "waitingForHost": "Warte darauf, dass der Host weitermacht...",
+            "skipNext": "Überspringen / Nächste Frage",
+            "orderDefault": "Ordne die Elemente in die richtige Reihenfolge"
+        },
+        "answer": {
+            "submit": "Antwort absenden",
+            "sent": "Antwort gesendet!",
+            "submitOrder": "Reihenfolge absenden"
+        },
+        "result": {
+            "correct": "Richtig!",
+            "wrong": "Falsch!",
+            "points": "+{{points}} Punkte",
+            "total": "Gesamt: {{total}}"
+        },
+        "leaderboard": {
+            "title": "Rangliste",
+            "finalPodium": "Abschluss-Podium",
+            "finished": "🏆 Das Quiz ist beendet! 🏆",
+            "leave": "Spiel verlassen",
+            "pts": "Pkt."
+        },
+        "host": {
+            "dashboard": "Host Dashboard",
+            "players": "{{count}} Spieler",
+            "timeLeft": "{{secs}}s übrig",
+            "timesUp": "Zeit abgelaufen!",
+            "showPodium": "Podium zeigen →",
+            "endGame": "Spiel beenden & verlassen",
+            "showLeaderboard": "Rangliste zeigen →",
+            "nextQuestion": "Nächste Frage →"
+        },
+        "player": {
+            "host": "Host",
+            "player": "Spieler"
+        },
+        "time": "Zeit: {{time}}"
+    },
+    "lobby": {
+        "waitingLobby": "Warteraum",
+        "loadingLobby": "Lobby wird geladen…",
+        "lobbyNotFound": {
+            "title": "Quiz-Lobby nicht gefunden",
+            "description": "Keine Lobby mit dem Code {{code}} gefunden. Bitte überprüfe den Einladungscode und versuche es erneut."
+        },
+        "host": {
+            "noTitle": "Kein Titel",
+            "playersJoined": "Beigetretene Spieler:",
+            "noPlayers": "Noch keine Spieler — teile den Pin!",
+            "kickPlayer": "{{name}} rauswerfen"
+        },
+        "player": {
+            "youreIn": "Du bist dabei!",
+            "playerSetup": "Spieler einrichten",
+            "tapAvatarHint": "Avatar antippen, um Emoji zu wählen",
+            "waitingForHost": "Warte darauf, dass der Host das Spiel startet"
+        },
+        "profile": {
+            "chooseName": "Name wählen",
+            "choosePlayerName": "Spielernamen wählen",
+            "chooseProfileEmoji": "Profil-Emoji wählen",
+            "selectEmoji": "Emoji auswählen {{emoji}}",
+            "saving": "Speichert…",
+            "save": "Speichern"
+        },
+        "pin": {
+            "label": "Spiel-Pin",
+            "copyTitle": "Spiel-Pin kopieren",
+            "copied": "Spiel-Pin kopiert!"
+        },
+        "startGame": "Spiel starten",
+        "errors": {
+            "failedToStart": "Spiel konnte nicht gestartet werden",
+            "somethingWentWrong": "Etwas ist schiefgelaufen",
+            "kicked": "Du wurdest vom Host aus der Lobby entfernt.",
+            "waitingForPlayers": "Warte auf Spieler…"
+        },
+        "events": {
+            "playerLeft": "{{name}} hat den Raum verlassen"
+        }
+    },
     "landing": {
         "newFeaturesLive": "Neue Funktionen online",
         "engageAndLearn": "Spiele und lerne",
@@ -142,6 +240,10 @@
         "gamePinPlaceholder": "SPIEL-PIN EINGEBEN",
         "playButton": "SPIELEN",
         "imageAlt": "Lernende, die an einem Quiz teilnehmen",
-        "imageText": "Zusammen quizzen, gemeinsam lernen."
+        "imageText": "Zusammen quizzen, gemeinsam lernen.",
+        "errors": {
+            "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+            "lobbyNotFound": "Keine Lobby mit diesem Code gefunden. Bitte überprüfe den Code und versuche es erneut."
+        }
     }
 }

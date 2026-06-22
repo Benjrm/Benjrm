@@ -1,6 +1,7 @@
 import type { JSX } from "react"
 import { X } from "lucide-react"
 import { Toaster } from "sonner"
+import { useTranslation } from "react-i18next"
 import GamePinBadge from "@/components/GamePinBadge"
 import ProfilePicker from "@/components/ProfilePicker"
 import StartQuizButton from "@/components/StartQuizButton"
@@ -50,12 +51,13 @@ export default function Lobby({
     onCloseEmoji,
     onStartGame,
 }: LobbyProps): JSX.Element {
+    const { t } = useTranslation()
     return (
         <section className="mx-auto w-full max-w-4xl py-8">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div className="inline-flex w-max items-center gap-2 rounded-full border border-[#FF8A00]/20 bg-[#FF8A00]/10 px-3 py-1.5 text-xs font-bold tracking-widest text-[#FF8A00] uppercase">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-[#FF8A00]" />
-                    Waiting Lobby
+                    {t("lobby.waitingLobby")}
                 </div>
                 <GamePinBadge codeWithDash={codeWithDash} />
             </div>
@@ -66,10 +68,10 @@ export default function Lobby({
                         <>
                             <div className="mb-4">
                                 <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                                    {quiz?.title ?? "No title"}
+                                    {quiz?.title ?? t("lobby.host.noTitle")}
                                 </h1>
                                 <p className="text-muted-foreground mt-1 text-sm">
-                                    Players joined:{" "}
+                                    {t("lobby.host.playersJoined")}{" "}
                                     <span className="text-foreground font-semibold">
                                         {players.length}
                                     </span>
@@ -90,9 +92,11 @@ export default function Lobby({
                                             className="h-7 w-7 text-white/50 hover:text-red-400"
                                             onClick={() => onKickPlayer(player.id)}
                                             size="icon"
-                                            title={`Kick ${player.name}`}
                                             type="button"
                                             variant="ghost"
+                                            title={t("lobby.host.kickPlayer", {
+                                                name: player.name,
+                                            })}
                                         >
                                             <X className="h-4 w-4" />
                                         </Button>
@@ -100,7 +104,7 @@ export default function Lobby({
                                 ))}
                                 {players.length === 0 ? (
                                     <li className="text-muted-foreground py-4 text-center text-sm">
-                                        No players yet — share the pin!
+                                        {t("lobby.host.noPlayers")}
                                     </li>
                                 ) : null}
                             </ul>
@@ -115,7 +119,7 @@ export default function Lobby({
                                     <div>
                                         <p className="text-sm font-semibold">{name}</p>
                                         <p className="text-muted-foreground text-xs">
-                                            You&apos;re in!.
+                                            {t("lobby.player.youreIn")}
                                         </p>
                                     </div>
                                 </div>
@@ -123,10 +127,10 @@ export default function Lobby({
                                 <>
                                     <div className="mb-4 flex items-center justify-between">
                                         <p className="text-sm font-semibold tracking-wide">
-                                            Player Setup
+                                            {t("lobby.player.playerSetup")}
                                         </p>
                                         <span className="text-muted-foreground text-xs">
-                                            Tap avatar to choose emoji
+                                            {t("lobby.player.tapAvatarHint")}
                                         </span>
                                     </div>
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
@@ -153,7 +157,7 @@ export default function Lobby({
                             />
                         ) : (
                             <p className="text-muted-foreground text-sm font-medium">
-                                Waiting for host to start the game
+                                {t("lobby.player.waitingForHost")}
                             </p>
                         )}
                     </div>
@@ -165,13 +169,13 @@ export default function Lobby({
             <Dialog onOpenChange={onCloseEmoji} open={isEmojiOpen}>
                 <DialogContent className="border-white/10 bg-[#111318] text-white sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Choose profile emoji</DialogTitle>
+                        <DialogTitle>{t("lobby.profile.chooseProfileEmoji")}</DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
                         {AVAILABLE_EMOJIS.map((em) => (
                             <button
                                 key={em}
-                                aria-label={`Select emoji ${em}`}
+                                aria-label={t("lobby.profile.selectEmoji", { emoji: em })}
                                 className="hover:bg-muted/70 flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-black/20 text-xl transition"
                                 onClick={() => onPickEmoji(em)}
                                 type="button"

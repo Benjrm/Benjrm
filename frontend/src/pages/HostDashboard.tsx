@@ -2,6 +2,7 @@ import type { JSX } from "react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
@@ -12,6 +13,7 @@ import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 import type { SessionPlayer } from "@/api/session"
 
 export default function HostDashboard(): JSX.Element {
+    const { t } = useTranslation()
     const codeParam = useParams().code
     const code = codeParam !== null ? Number(codeParam) || undefined : undefined
     const navigate = useNavigate()
@@ -103,7 +105,10 @@ export default function HostDashboard(): JSX.Element {
     })
     useSocketEvent("removePlayer", ({ id }) => {
         const leaving = players.find((p) => p.id === id)
-        if (leaving) toast(`${leaving.emoji ? `${leaving.emoji} ` : ""}${leaving.name} has left`)
+        if (leaving)
+            toast(
+                `${leaving.emoji ? `${leaving.emoji} ` : ""}${t("game.playerLeft", { name: leaving.name })}`
+            )
         setPlayers((prev) => prev.filter((p) => p.id !== id))
     })
 
@@ -114,9 +119,12 @@ export default function HostDashboard(): JSX.Element {
 
     useSocketEvent(
         "error",
-        useCallback((payload) => {
-            toast.error(payload.message ?? "An error occurred")
-        }, [])
+        useCallback(
+            (payload) => {
+                toast.error(payload.message ?? t("game.anErrorOccurred"))
+            },
+            [t]
+        )
     )
 
     // Send the first question as soon as the WebSocket is ready

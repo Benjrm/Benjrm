@@ -13,6 +13,7 @@ export interface PlayQuizButtonProps {
 }
 
 export function PlayQuizButton({ quizId, className, disabled }: PlayQuizButtonProps): JSX.Element {
+    const { t } = useTranslation()
     const createSessionMutation = useCreateSession()
 
     const handlePlayQuiz = (): void => {

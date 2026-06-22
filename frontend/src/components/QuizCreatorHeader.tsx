@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { Edit2, Settings, Trash2 } from "lucide-react"
 import {
     Dialog,
@@ -42,6 +43,7 @@ export default function QuizCreatorHeader({
     isConfirmOpen,
     handleDelete,
 }: QuizCreatorHeaderProps): ReactNode {
+    const { t } = useTranslation()
     const handleConfirmClose = () => setIsConfirmOpen(false)
 
     return (
@@ -50,7 +52,7 @@ export default function QuizCreatorHeader({
                 <div className="flex items-center gap-3">
                     <h1 className="text-4xl font-extrabold md:text-5xl">{quizTitle}</h1>
                     <Button
-                        aria-label="Edit title"
+                        aria-label={t("quizEditor.header.editTitle")}
                         className="text-muted-foreground hover:text-foreground p-2"
                         onClick={() => setIsEditModalOpen(true)}
                         type="button"
@@ -63,7 +65,7 @@ export default function QuizCreatorHeader({
                     <div className="mt-3 flex items-center gap-3">
                         <p className="max-w-2xl text-base whitespace-pre-wrap">{quizDescription}</p>
                         <Button
-                            aria-label="Edit description"
+                            aria-label={t("quizEditor.header.editDescription")}
                             className="text-muted-foreground hover:text-foreground p-2"
                             onClick={() => setIsEditModalOpen(true)}
                             type="button"
@@ -82,12 +84,12 @@ export default function QuizCreatorHeader({
                     variant="ghost"
                 >
                     <Settings className="h-4 w-4" />
-                    Settings
+                    {t("quizEditor.header.settings")}
                 </Button>
 
                 {hasUnsavedChanges ? (
                     <Button disabled={isSavingQuestions} onClick={discardChanges} variant="outline">
-                        Discard Changes
+                        {t("quizEditor.header.discardChanges")}
                     </Button>
                 ) : null}
 
@@ -103,7 +105,9 @@ export default function QuizCreatorHeader({
                             .catch(() => {})
                     }}
                 >
-                    {isSavingQuestions ? "Saving..." : "Save Quiz"}
+                    {isSavingQuestions
+                        ? t("quizEditor.header.saving")
+                        : t("quizEditor.header.saveQuiz")}
                 </Button>
 
                 {quizId ? (
@@ -113,22 +117,21 @@ export default function QuizCreatorHeader({
                         variant="ghost"
                     >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Quiz
+                        {t("quizEditor.header.deleteQuiz")}
                     </Button>
                 ) : null}
                 <Dialog onOpenChange={setIsConfirmOpen} open={isConfirmOpen}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Delete Quiz?</DialogTitle>
+                            <DialogTitle>{t("quizEditor.deleteModal.title")}</DialogTitle>
                             <DialogDescription>
-                                This action cannot be undone. Are you sure you want to delete the
-                                quiz?
+                                {t("quizEditor.deleteModal.description")}
                             </DialogDescription>
                         </DialogHeader>
 
                         <DialogFooter>
                             <Button onClick={handleConfirmClose} variant="outline">
-                                Abbrechen
+                                {t("common.buttons.cancel")}
                             </Button>
                             <Button
                                 className="bg-red-600 text-white hover:bg-red-700"
@@ -136,7 +139,7 @@ export default function QuizCreatorHeader({
                                     handleDelete().catch(() => {})
                                 }}
                             >
-                                Löschen
+                                {t("common.buttons.delete")}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

@@ -1,6 +1,7 @@
 import type { JSX } from "react"
 import { useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 import { Avatar, AvatarFallback } from "@shadcn/components/ui/avatar"
 import getRankingDisplay from "@/quiz/leaderboard/utils/getRankingDisplay"
@@ -18,6 +19,7 @@ export default function LeaderboardAnimationScreen({
     isFinal,
     onLeave,
 }: LeaderboardAnimationScreenProps): JSX.Element {
+    const { t } = useTranslation()
     const sorted = useMemo(
         () => [...leaderboard].sort((a, b) => b.totalPoints - a.totalPoints),
         [leaderboard]
@@ -31,7 +33,7 @@ export default function LeaderboardAnimationScreen({
                 initial={{ opacity: 0, y: -30 }}
                 transition={{ duration: 0.5 }}
             >
-                {isFinal ? "Final Podium" : "Leaderboard"}
+                {isFinal ? t("game.leaderboard.finalPodium") : t("game.leaderboard.title")}
             </motion.h1>
 
             <div className="w-full max-w-lg">
@@ -61,7 +63,7 @@ export default function LeaderboardAnimationScreen({
                                 </Avatar>
                                 <span className="truncate font-bold">{entry.name}</span>
                                 <span className="font-bold tabular-nums">
-                                    {entry.totalPoints} pts
+                                    {entry.totalPoints} {t("game.leaderboard.pts")}
                                 </span>
                             </motion.div>
                         )
@@ -76,12 +78,14 @@ export default function LeaderboardAnimationScreen({
                     initial={{ opacity: 0 }}
                     transition={{ delay: 0.8 }}
                 >
-                    <p className="text-xl font-bold text-yellow-500">🏆 The quiz is finished! 🏆</p>
+                    <p className="text-xl font-bold text-yellow-500">
+                        {t("game.leaderboard.finished")}
+                    </p>
                     <Button
                         className="bg-red-500 px-8 py-6 text-lg font-bold text-white hover:bg-red-600"
                         onClick={onLeave}
                     >
-                        Leave Game
+                        {t("game.leaderboard.leave")}
                     </Button>
                 </motion.div>
             ) : null}

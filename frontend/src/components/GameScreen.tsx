@@ -2,6 +2,7 @@ import type { JSX } from "react"
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router"
 import { Toaster } from "sonner"
+import { useTranslation } from "react-i18next"
 import QuestionCardContent from "@/components/QuestionCardContent"
 import InfoSlideContent from "@/components/InfoSlideContent"
 import OrderQuestionContent from "@/components/OrderQuestionContent"
@@ -18,6 +19,7 @@ import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 const PREVIEW_DURATION_MS = 2500
 
 function QuestionPreview({ question }: { question: { text: string } }): JSX.Element {
+    const { t } = useTranslation()
     const [width, setWidth] = useState(100)
 
     useEffect(() => {
@@ -28,7 +30,7 @@ function QuestionPreview({ question }: { question: { text: string } }): JSX.Elem
     return (
         <div className="flex min-h-[50vh] flex-col items-center justify-center gap-8 px-6 text-center">
             <p className="text-muted-foreground text-sm font-semibold tracking-widest uppercase">
-                Get ready!
+                {t("game.getReady")}
             </p>
             <div className="bg-card text-card-foreground w-full max-w-xl rounded-2xl border px-8 py-10 shadow-lg">
                 <h2 className="text-3xl font-extrabold sm:text-4xl">{question.text}</h2>
@@ -75,6 +77,7 @@ export default function GameScreen({
     onNextQuestion,
     onSendAnswer,
 }: GameScreenProps): JSX.Element {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const [showingPreview, setShowingPreview] = useState(false)
     const prevQuestionIndexRef = useRef(-1)
@@ -113,8 +116,8 @@ export default function GameScreen({
             return (
                 <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
                     <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
-                    <h2 className="text-2xl font-bold text-white">Game is starting...</h2>
-                    <p className="text-muted-foreground">Get ready!</p>
+                    <h2 className="text-2xl font-bold text-white">{t("game.starting")}</h2>
+                    <p className="text-muted-foreground">{t("game.getReady")}</p>
                 </div>
             )
         }
@@ -182,11 +185,17 @@ export default function GameScreen({
                     >
                         {correct ? "✓" : "✗"}
                     </div>
-                    <h2 className="text-3xl font-bold">{correct ? "Correct!" : "Wrong!"}</h2>
-                    <p className="text-xl">+{questionResult.points} points</p>
-                    <p className="text-muted-foreground">Total: {questionResult.totalPoints}</p>
+                    <h2 className="text-3xl font-bold">
+                        {correct ? t("game.result.correct") : t("game.result.wrong")}
+                    </h2>
+                    <p className="text-xl">
+                        {t("game.result.points", { points: questionResult.points })}
+                    </p>
+                    <p className="text-muted-foreground">
+                        {t("game.result.total", { total: questionResult.totalPoints })}
+                    </p>
                     <p className="text-muted-foreground mt-8 text-sm">
-                        Waiting for the host to continue...
+                        {t("game.question.waitingForHost")}
                     </p>
                 </div>
             )

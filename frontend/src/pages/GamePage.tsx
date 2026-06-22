@@ -2,6 +2,7 @@ import type { JSX } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { Toaster, toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 import GameScreen from "@/components/GameScreen"
@@ -14,6 +15,7 @@ import type {
 } from "@/hooks/useGameSession"
 
 export default function GamePage(): JSX.Element {
+    const { t } = useTranslation()
     const codeParam = useParams().code
     const code = codeParam !== null ? Number(codeParam) || undefined : undefined
     const navigate = useNavigate()
@@ -109,13 +111,13 @@ export default function GamePage(): JSX.Element {
 
     useEffect(() => {
         if (!hostEndedGame) return undefined
-        toast.error("Host has closed the lobby")
-        const t = setTimeout(() => {
+        toast.error(t("game.hostClosed"))
+        const timer = setTimeout(() => {
             if (code !== undefined) sessionStorage.removeItem(`gameActive:${code}`)
             navigate("/")
         }, 3000)
-        return () => clearTimeout(t)
-    }, [hostEndedGame, navigate, code])
+        return () => clearTimeout(timer)
+    }, [hostEndedGame, navigate, code, t])
 
     const sendAnswer = useCallback(
         (answer: string | string[]): void => {
@@ -131,7 +133,7 @@ export default function GamePage(): JSX.Element {
                 <Toaster richColors />
                 <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-4 text-center">
                     <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
-                    <p className="text-muted-foreground">Host has closed the lobby...</p>
+                    <p className="text-muted-foreground">{t("game.hostClosedLoading")}</p>
                 </div>
             </>
         )

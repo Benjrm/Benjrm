@@ -1,5 +1,8 @@
 {
     "common": {
+        "errors": {
+            "backendUnavailable": "The backend is currently unavailable. Please try again later."
+        },
         "buttons": {
             "viewAll": "View All",
             "cancel": "Cancel",
@@ -134,6 +137,101 @@
             "oneCorrectRequired": "At least one correct answer is required."
         }
     },
+    "game": {
+        "starting": "Game is starting...",
+        "getReady": "Get ready!",
+        "hostClosed": "Host has closed the lobby",
+        "hostClosedLoading": "Host has closed the lobby...",
+        "playerLeft": "{{name}} has left",
+        "anErrorOccurred": "An error occurred",
+        "question": {
+            "label": "Question {{current}} / {{total}}",
+            "current": "Current Question:",
+            "noQuestion": "No question yet.",
+            "playersReading": "Players are reading...",
+            "waitingForAnswers": "Waiting for participants to answer",
+            "complete": "Question complete — results are in!",
+            "waitingForHost": "Waiting for the host to continue...",
+            "skipNext": "Skip / Next Question",
+            "orderDefault": "Order the elements in the correct sequence"
+        },
+        "answer": {
+            "submit": "Submit Answer",
+            "sent": "Answer sent!",
+            "submitOrder": "Submit Order"
+        },
+        "result": {
+            "correct": "Correct!",
+            "wrong": "Wrong!",
+            "points": "+{{points}} points",
+            "total": "Total: {{total}}"
+        },
+        "leaderboard": {
+            "title": "Leaderboard",
+            "finalPodium": "Final Podium",
+            "finished": "🏆 The quiz is finished! 🏆",
+            "leave": "Leave Game",
+            "pts": "pts"
+        },
+        "host": {
+            "dashboard": "Host Dashboard",
+            "players": "{{count}} players",
+            "timeLeft": "{{secs}}s left",
+            "timesUp": "Time's up!",
+            "showPodium": "Show Podium →",
+            "endGame": "End Game & Exit",
+            "showLeaderboard": "Show Leaderboard →",
+            "nextQuestion": "Next Question →"
+        },
+        "player": {
+            "host": "Host",
+            "player": "Player"
+        },
+        "time": "Time: {{time}}"
+    },
+    "lobby": {
+        "waitingLobby": "Waiting Lobby",
+        "loadingLobby": "Loading the quiz lobby…",
+        "lobbyNotFound": {
+            "title": "Quiz lobby not found",
+            "description": "No lobby with the code {{code}} was found. Please check the invitation code and try again."
+        },
+        "host": {
+            "noTitle": "No title",
+            "playersJoined": "Players joined:",
+            "noPlayers": "No players yet — share the pin!",
+            "kickPlayer": "Kick {{name}}"
+        },
+        "player": {
+            "youreIn": "You're in!",
+            "playerSetup": "Player Setup",
+            "tapAvatarHint": "Tap avatar to choose emoji",
+            "waitingForHost": "Waiting for host to start the game"
+        },
+        "profile": {
+            "chooseName": "Choose Name",
+            "choosePlayerName": "Choose player name",
+            "chooseProfileEmoji": "Choose profile emoji",
+            "selectEmoji": "Select emoji {{emoji}}",
+            "saving": "Saving…",
+            "save": "Save"
+        },
+        "pin": {
+            "label": "Game Pin",
+            "copyTitle": "Copy Game Pin",
+            "copied": "Game Pin copied!"
+        },
+        "startGame": "Start Game",
+        "errors": {
+            "failedToStart": "Failed to start the game",
+            "somethingWentWrong": "Something went wrong",
+            "kicked": "You have been removed from the lobby by the host.",
+            "waitingForPlayers": "Waiting for players to join..."
+        },
+        "events": {
+            "playerLeft": "{{name}} has left the room"
+        }
+    },
     "landing": {
         "newFeaturesLive": "New Features Live",
         "engageAndLearn": "Engage and learn",
@@ -142,6 +240,10 @@
         "gamePinPlaceholder": "ENTER GAME PIN",
         "playButton": "PLAY",
         "imageAlt": "Students participating in a quiz",
-        "imageText": "Quiz together, learn forever."
+        "imageText": "Quiz together, learn forever.",
+        "errors": {
+            "generic": "Something went wrong. Please try again.",
+            "lobbyNotFound": "No lobby found with this code. Please check and try again."
+        }
     }
 }

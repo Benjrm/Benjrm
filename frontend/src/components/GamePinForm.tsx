@@ -2,6 +2,7 @@
 
 import type { JSX } from "react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Input } from "@/shadcn/components/ui/input"
 import { Button } from "@/shadcn/components/ui/button"
 
@@ -12,6 +13,7 @@ interface GamePinFormProps {
 }
 
 export default function GamePinForm({ onJoin, isPending, error }: GamePinFormProps): JSX.Element {
+    const { t } = useTranslation()
     const [digits, setDigits] = useState("")
 
     const displayCode = digits.length > 4 ? `${digits.slice(0, 4)}-${digits.slice(4)}` : digits
@@ -31,7 +33,7 @@ export default function GamePinForm({ onJoin, isPending, error }: GamePinFormPro
                     inputMode="numeric"
                     onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 8))}
                     onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-                    placeholder="ENTER GAME PIN"
+                    placeholder={t("landing.gamePinPlaceholder")}
                     type="text"
                     value={displayCode}
                 />
@@ -41,7 +43,7 @@ export default function GamePinForm({ onJoin, isPending, error }: GamePinFormPro
                     onClick={() => handleJoin()}
                     size="lg"
                 >
-                    {isPending ? "Checking…" : "PLAY"}
+                    {isPending ? "Checking…" : t("landing.playButton")}
                 </Button>
             </div>
             {error ? <p className="text-center text-sm text-red-500">{error}</p> : null}

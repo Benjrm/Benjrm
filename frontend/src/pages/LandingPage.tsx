@@ -3,12 +3,14 @@
 import { useState } from "react"
 import type { JSX } from "react"
 import { useNavigate } from "react-router"
+import { useTranslation } from "react-i18next"
 import GamePinForm from "@/components/GamePinForm"
 import { getSession } from "@/api/session"
 import { ApiError } from "@/api/utils"
 
 export default function LandingPage(): JSX.Element {
     const navigate = useNavigate()
+    const { t } = useTranslation()
     const [isPending, setIsPending] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -49,13 +51,11 @@ export default function LandingPage(): JSX.Element {
                                     navigate(`/play/${encodeURIComponent(digits)}`)
                                 } catch (err) {
                                     if (!(err instanceof ApiError)) {
-                                        setError("Something went wrong. Please try again.")
+                                        setError(t("landing.errors.generic"))
                                         return
                                     }
                                     if (err.status === 404) {
-                                        setError(
-                                            "No lobby found with this code. Please check and try again."
-                                        )
+                                        setError(t("landing.errors.lobbyNotFound"))
                                     } else {
                                         // 401 (unauthenticated) or 403 (not the host) — the session
                                         // exists or we can't verify; let WaitingRoom handle it.
@@ -81,7 +81,7 @@ export default function LandingPage(): JSX.Element {
                                 />
                                 <div className="from-background/95 via-background/10 absolute inset-0 flex items-end bg-linear-to-t to-transparent p-8 lg:p-12">
                                     <p className="max-w-[85%] text-3xl leading-tight font-extrabold tracking-tighter text-white lg:text-5xl">
-                                        {t("landing.imageText")}
+                                        Quiz together, learn forever.
                                     </p>
                                 </div>
                             </div>

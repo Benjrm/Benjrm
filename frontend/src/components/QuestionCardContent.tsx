@@ -2,6 +2,7 @@
 
 import type { JSX } from "react"
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 import type { QuestionType } from "@/api/questions/types/questionType"
 import QuestionHeader from "@/components/QuestionHeader"
@@ -44,6 +45,7 @@ export default function QuestionCardContent({
     onNextQuestion,
     type,
 }: QuestionCardContentProps): JSX.Element {
+    const { t } = useTranslation()
     const [selectedAnswers, setSelectedAnswers] = useState<string[]>([])
     const [timeLeft, setTimeLeft] = useState<number | null>(() => {
         if (questionExpiresAt)
@@ -93,9 +95,11 @@ export default function QuestionCardContent({
                 <QuestionHeader
                     currentQuestion={currentQuestionIndex + 1}
                     playerEmoji={playerEmoji}
-                    playerName={playerName ?? (isHost ? "Host" : "Player")}
                     remainingTime={timeLeft}
                     totalQuestions={totalQuestions}
+                    playerName={
+                        playerName ?? (isHost ? t("game.player.host") : t("game.player.player"))
+                    }
                 />
 
                 <TimerBar timeLeft={timeLeft} totalSeconds={secondsToAnswer} />
@@ -124,7 +128,7 @@ export default function QuestionCardContent({
                                 if (onSendAnswer) onSendAnswer(selectedAnswers)
                             }}
                         >
-                            {hasSubmitted ? "Answer sent!" : "Submit Answer"}
+                            {hasSubmitted ? t("game.answer.sent") : t("game.answer.submit")}
                         </Button>
                     </div>
                 ) : null}
@@ -135,7 +139,7 @@ export default function QuestionCardContent({
                             className="bg-[#00D4E8] font-bold text-black hover:bg-[#00BDD0]"
                             onClick={onNextQuestion}
                         >
-                            Skip / Next Question
+                            {t("game.question.skipNext")}
                         </Button>
                     </div>
                 ) : null}
