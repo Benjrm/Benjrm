@@ -5,6 +5,7 @@ import { Toaster } from "sonner"
 import QuestionCardContent from "@/components/QuestionCardContent"
 import InfoSlideContent from "@/components/InfoSlideContent"
 import OrderQuestionContent from "@/components/OrderQuestionContent"
+import MarkdownComponent from "@/components/markdown/MarkdownComponent"
 import LeaderboardAnimationScreen from "@/components/LeaderboardAnimationScreen"
 import { GameStateEnum } from "@/hooks/useGameSession"
 import type {
@@ -30,7 +31,9 @@ function QuestionPreview({ question }: { question: { text: string } }): JSX.Elem
                 Get ready!
             </p>
             <div className="bg-card text-card-foreground w-full max-w-xl rounded-2xl border px-8 py-10 shadow-lg">
-                <h2 className="text-3xl font-extrabold sm:text-4xl">{question.text}</h2>
+                <div className="text-3xl font-extrabold sm:text-4xl [&_p]:m-0 [&_p]:text-3xl [&_p]:font-extrabold sm:[&_p]:text-4xl">
+                    <MarkdownComponent content={question.text} />
+                </div>
             </div>
             <div className="bg-muted/50 w-full max-w-xl overflow-hidden rounded-full">
                 <div
