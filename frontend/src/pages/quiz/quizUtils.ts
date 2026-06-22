@@ -24,7 +24,7 @@ export function createEmptyQuestion(): Question {
         question: "",
         created: new Date(),
         modified: new Date(),
-        type: "MULTIPLE_CHOICE",
+        type: "SINGLE_CHOICE",
         options: [
             { id: tempId(), answer: "", correct: false },
             { id: tempId(), answer: "", correct: false },
