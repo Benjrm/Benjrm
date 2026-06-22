@@ -1,7 +1,7 @@
 import type { Question, QuestionRequest } from "@/api/questions/questions.types.ts"
 
 /**
- * {@link https://de.wikipedia.org/wiki/Adapter_(Entwurfsmuster) Adapter pattern} for the question's api.
+ * {@link https://en.wikipedia.org/wiki/Adapter_pattern Adapter pattern} for the question's api.
  */
 export interface QuestionAdapter {
     /**

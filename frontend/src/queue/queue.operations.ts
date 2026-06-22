@@ -54,9 +54,6 @@ async function processReorderOp<QI extends Extract<QueueItem, ReorderQueueItem>>
     idMap: Record<string, string>,
     quizId: string
 ): Promise<ProcessResult> {
-    // const payload = item.payload as { order?: string[] } | undefined
-    // let order = payload?.order ?? []
-
     let { order } = item.payload
 
     if (order.length === 0) return { status: "skipped", reason: "missing_order_payload" }

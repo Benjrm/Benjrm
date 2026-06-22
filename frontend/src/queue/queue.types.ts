@@ -30,6 +30,7 @@ export interface CreateQuestionQueueItem extends BaseQueueItem {
     /**
      * The unique question uuid v4 identifier.
      * In case of create operations, this may be a temporary client-side generated id.
+     * Note: Temporary client-side generated IDs starts with "temp-" prefix to distinguish them from real backend-generated IDs.
      */
     questionId: string
 }
@@ -49,8 +50,7 @@ export interface UpdateQuestionQueueItem extends BaseQueueItem {
     payload: QuestionRequest
 
     /**
-     * The unique question uuid v4 identifier.
-     * In case of create operations, this may be a temporary client-side generated id.
+     * The unique, server-side generated question uuid v4 identifier.
      */
     questionId: string
 }
@@ -66,8 +66,7 @@ export interface DeleteQuestionQueueItem extends BaseQueueItem {
     op: "delete"
 
     /**
-     * The unique question uuid v4 identifier.
-     * In case of create operations, this may be a temporary client-side generated id.
+     * The unique, server-side generated question uuid v4 identifier.
      */
     questionId: string
 }
