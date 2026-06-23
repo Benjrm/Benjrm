@@ -74,20 +74,26 @@ async fn get_player_ws(
         .await
         .map_err(Error::from)?;
 
+    let (res, tx, rx) = actix_ws::handle(&req, body)?;
+    let channel_builder = WsChannelBuilder::new(tx.clone(), rx, app_data, Arc::clone(&session));
+
     match &mut session.lock().await.status {
         GameSessionStatus::Waiting(joining) => {
-            let (res, tx, rx) = actix_ws::handle(&req, body)?;
-
-            let channel_builder =
-                WsChannelBuilder::new(tx.clone(), rx, app_data, Arc::clone(&session));
             let id = channel_builder.id;
             let handle = rt::spawn(channel_builder.wait_for_join());
-
             joining.push(Box::new(WsJoining { id, handle, tx }));
-            Ok(res)
         }
-        _ => Err(Error::from(GameSessionError::AlreadyStarted).into()),
+        GameSessionStatus::Closed => {
+            return Err(Error::from(GameSessionError::InvalidCode).into());
+        }
+        _ => {
+            // Game already started — wait_for_join accepts reconnect commands,
+            // and rejects setName via check_add_player internally.
+            rt::spawn(channel_builder.wait_for_join());
+        }
     }
+
+    Ok(res)
 }
 
 /// Immediately removes the player from the session.

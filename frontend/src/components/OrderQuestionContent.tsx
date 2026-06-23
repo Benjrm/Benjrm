@@ -32,8 +32,10 @@ interface Option {
 
 export interface OrderQuestionContentProps {
     currentQuestionIndex?: number
+    initialItemOrder?: string[]
     isHost?: boolean
     onNextQuestion?: () => void
+    onItemOrderChange?: (ids: string[]) => void
     options?: Option[]
     playerName?: string
     playerEmoji?: string
@@ -75,8 +77,10 @@ function SortableItem({ id, text }: { id: string; text: string }): JSX.Element {
 
 export default function OrderQuestionContent({
     currentQuestionIndex = 0,
+    initialItemOrder,
     isHost = false,
     onNextQuestion,
+    onItemOrderChange,
     options = [],
     playerName,
     playerEmoji,
@@ -86,7 +90,12 @@ export default function OrderQuestionContent({
     totalQuestions = 0,
     onSendAnswer,
 }: OrderQuestionContentProps): JSX.Element {
-    const [items, setItems] = useState<Option[]>(options)
+    const [items, setItems] = useState<Option[]>(() => {
+        if (!initialItemOrder || initialItemOrder.length === 0) return options
+        return [...options].sort(
+            (a, b) => initialItemOrder.indexOf(a.id) - initialItemOrder.indexOf(b.id)
+        )
+    })
     const [timeLeft, setTimeLeft] = useState<number | null>(() => {
         if (questionExpiresAt)
             return Math.max(0, Math.ceil((questionExpiresAt - Date.now()) / 1000))
@@ -138,7 +147,9 @@ export default function OrderQuestionContent({
             setItems((prevItems) => {
                 const oldIndex = prevItems.findIndex((item) => item.id === active.id)
                 const newIndex = prevItems.findIndex((item) => item.id === over.id)
-                return arrayMove(prevItems, oldIndex, newIndex)
+                const next = arrayMove(prevItems, oldIndex, newIndex)
+                onItemOrderChange?.(next.map((i) => i.id))
+                return next
             })
         }
     }

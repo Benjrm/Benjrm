@@ -66,9 +66,9 @@ export default function QuestionCardContent({
         }
     }, [questionExpiresAt, secondsToAnswer])
 
-    // Automatisches Absenden, wenn die Zeit bei 0 ankommt
+    // Automatisches Absenden, wenn die Zeit bei 0 ankommt (nur wenn Antwort ausgewählt)
     useEffect(() => {
-        if (timeLeft === 0 && !hasSubmitted && !isHost) {
+        if (timeLeft === 0 && !hasSubmitted && !isHost && selectedAnswers.length > 0) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setHasSubmitted(true)
             if (onSendAnswer) onSendAnswer(selectedAnswers)
@@ -120,8 +120,12 @@ export default function QuestionCardContent({
                             className="bg-[#00D4E8] px-8 py-6 text-lg font-bold text-black hover:bg-[#00BDD0] disabled:bg-gray-600 disabled:text-gray-300"
                             disabled={hasSubmitted || selectedAnswers.length === 0}
                             onClick={() => {
-                                setHasSubmitted(true)
-                                if (onSendAnswer) onSendAnswer(selectedAnswers)
+                                try {
+                                    if (onSendAnswer) onSendAnswer(selectedAnswers)
+                                    setHasSubmitted(true)
+                                } catch {
+                                    // WS not ready; player can retry once connected
+                                }
                             }}
                         >
                             {hasSubmitted ? "Answer sent!" : "Submit Answer"}

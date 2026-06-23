@@ -13,6 +13,28 @@ import type {
     LeaderboardEntry,
 } from "@/hooks/useGameSession"
 
+interface GameSnapshot {
+    gameState: GameState
+    currentQuestion: GameQuestion | null
+    currentQuestionIndex: number
+    totalQuestions: number
+    questionExpiresAt: number | null
+    questionResult: QuestionResult | null
+    leaderboard: LeaderboardEntry[] | null
+    isFinalLeaderboard: boolean
+    playerItemOrder: string[] | null
+}
+
+function getGameSnapshot(key: string | null): GameSnapshot | null {
+    if (!key) return null
+    try {
+        const raw = sessionStorage.getItem(key)
+        return raw ? (JSON.parse(raw) as GameSnapshot) : null
+    } catch {
+        return null
+    }
+}
+
 export default function GamePage(): JSX.Element {
     const codeParam = useParams().code
     const code = codeParam !== null ? Number(codeParam) || undefined : undefined
@@ -27,6 +49,8 @@ export default function GamePage(): JSX.Element {
     }, [gameActive, navigate, codeParam])
 
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null
+    const snapshotKey = code !== undefined ? `gameSnapshot:${code}` : null
+
     const { playerName, playerEmoji } = useMemo(() => {
         if (!storageKey) return { playerName: undefined, playerEmoji: undefined }
         try {
@@ -38,17 +62,80 @@ export default function GamePage(): JSX.Element {
         }
     }, [storageKey])
 
-    const [gameState, setGameState] = useState<GameState>(GameStateEnum.PLAYING)
-    const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(null)
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
-    const [totalQuestions, setTotalQuestions] = useState(0)
-    const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(null)
-    const [questionResult, setQuestionResult] = useState<QuestionResult | null>(null)
-    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
-    const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
+    // Start as true so the overlay shows until the WS is confirmed open.
+    // onEveryConnect fires immediately if the socket is already open (normal navigation),
+    // so there is no visible flash on non-refresh transitions.
+    const [isReconnecting, setIsReconnecting] = useState(true)
+    useEffect(() => {
+        const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
+        const unsubConnect = ws.onEveryConnect(() => setIsReconnecting(false))
+        return () => {
+            unsubDisconnect()
+            unsubConnect()
+        }
+    }, [ws])
+
+    // Lazy initializers read the snapshot once on mount to restore state after a page refresh.
+    // sessionStorage reads are synchronous and fast, so calling getGameSnapshot per field is fine.
+    const [gameState, setGameState] = useState<GameState>(
+        () => getGameSnapshot(snapshotKey)?.gameState ?? GameStateEnum.PLAYING
+    )
+    const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(
+        () => getGameSnapshot(snapshotKey)?.currentQuestion ?? null
+    )
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
+        () => getGameSnapshot(snapshotKey)?.currentQuestionIndex ?? -1
+    )
+    const [totalQuestions, setTotalQuestions] = useState(
+        () => getGameSnapshot(snapshotKey)?.totalQuestions ?? 0
+    )
+    const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(
+        () => getGameSnapshot(snapshotKey)?.questionExpiresAt ?? null
+    )
+    const [questionResult, setQuestionResult] = useState<QuestionResult | null>(
+        () => getGameSnapshot(snapshotKey)?.questionResult ?? null
+    )
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(
+        () => getGameSnapshot(snapshotKey)?.leaderboard ?? null
+    )
+    const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(
+        () => getGameSnapshot(snapshotKey)?.isFinalLeaderboard ?? false
+    )
+    const [playerItemOrder, setPlayerItemOrder] = useState<string[] | null>(
+        () => getGameSnapshot(snapshotKey)?.playerItemOrder ?? null
+    )
     const pendingFinalLeaderboardRef = useRef<LeaderboardEntry[] | null>(null)
 
+    // Persist game state so a page refresh restores the last known screen.
+    useEffect(() => {
+        if (!snapshotKey) return
+        const s: GameSnapshot = {
+            gameState,
+            currentQuestion,
+            currentQuestionIndex,
+            totalQuestions,
+            questionExpiresAt,
+            questionResult,
+            leaderboard,
+            isFinalLeaderboard,
+            playerItemOrder,
+        }
+        sessionStorage.setItem(snapshotKey, JSON.stringify(s))
+    }, [
+        snapshotKey,
+        gameState,
+        currentQuestion,
+        currentQuestionIndex,
+        totalQuestions,
+        questionExpiresAt,
+        questionResult,
+        leaderboard,
+        isFinalLeaderboard,
+        playerItemOrder,
+    ])
+
     useSocketEvent("displayQuestion", (payload, timing) => {
+        setPlayerItemOrder(null)
         setGameState(GameStateEnum.QUESTION)
         setCurrentQuestion({
             id: payload.id,
@@ -89,6 +176,7 @@ export default function GamePage(): JSX.Element {
 
     useSocketEvent("gameEnded", () => {
         if (storageKey) sessionStorage.removeItem(storageKey)
+        if (snapshotKey) sessionStorage.removeItem(snapshotKey)
         const pending = pendingFinalLeaderboardRef.current
         if (pending) {
             // First signal: show the final podium. Clear buffer so the next gameEnded navigates away.
@@ -140,15 +228,23 @@ export default function GamePage(): JSX.Element {
     return (
         <>
             <Toaster richColors />
+            {isReconnecting ? (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/70 text-center backdrop-blur-sm">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
+                    <p className="text-muted-foreground">Reconnecting…</p>
+                </div>
+            ) : null}
             <GameScreen
                 currentQuestion={currentQuestion}
                 currentQuestionIndex={currentQuestionIndex}
                 gameState={gameState}
                 isFinalLeaderboard={isFinalLeaderboard}
                 leaderboard={leaderboard}
+                onItemOrderChange={setPlayerItemOrder}
                 onNextQuestion={() => undefined}
                 onSendAnswer={sendAnswer}
                 playerEmoji={playerEmoji}
+                playerItemOrder={playerItemOrder}
                 playerName={playerName}
                 questionExpiresAt={questionExpiresAt}
                 questionResult={questionResult}

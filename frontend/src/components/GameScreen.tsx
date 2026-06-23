@@ -57,8 +57,10 @@ interface GameScreenProps {
     isFinalLeaderboard: boolean
     playerName: string | undefined
     playerEmoji: string | undefined
+    playerItemOrder: string[] | null
     onNextQuestion: () => void
     onSendAnswer: (answer: string | string[]) => void
+    onItemOrderChange: (ids: string[]) => void
 }
 
 export default function GameScreen({
@@ -72,12 +74,14 @@ export default function GameScreen({
     isFinalLeaderboard,
     playerName,
     playerEmoji,
+    playerItemOrder,
     onNextQuestion,
     onSendAnswer,
+    onItemOrderChange,
 }: GameScreenProps): JSX.Element {
     const navigate = useNavigate()
     const [showingPreview, setShowingPreview] = useState(false)
-    const prevQuestionIndexRef = useRef(-1)
+    const prevQuestionIndexRef = useRef(currentQuestionIndex)
 
     useEffect(() => {
         if (
@@ -140,7 +144,9 @@ export default function GameScreen({
                     <OrderQuestionContent
                         key={currentQuestion.id}
                         currentQuestionIndex={currentQuestionIndex}
+                        initialItemOrder={playerItemOrder ?? undefined}
                         isHost={false}
+                        onItemOrderChange={onItemOrderChange}
                         onNextQuestion={onNextQuestion}
                         onSendAnswer={(ids) => onSendAnswer(ids)}
                         options={currentQuestion.options}

@@ -3,7 +3,8 @@ use {
         AppData,
         error::Error,
         game_session::{
-            Channel, Command, CommandTrait, GameSession, GameSessionError, Message, PlayerCommand,
+            Channel, Command, CommandTrait, GameSession, GameSessionError, GameSessionStatus,
+            Message, PlayerCommand,
             api::ws::{
                 Response,
                 channel::{WsChannel, send_msg_log_error},
@@ -177,11 +178,18 @@ impl WsChannelBuilder {
                 let player = GameSession::get_player_mut(&mut session.players, id)?;
                 player.check_set_channel(secret)?;
 
-                // Take `_self` out of `self_optional` to let `session.set_channel` consume it
+                // Take `_self` out of `self_optional` to let `player.set_channel` consume it
                 if let Some(mut _self) = self_optional.take() {
+                    let channel_builder_id = _self.id;
                     _self.inner.ok(cmd.id).await;
                     let channel = _self.build(id, GameSession::handle_player_cmd, remove_player_ws);
                     player.set_channel(cmd.id, channel).await;
+                    // Remove from joining so game start doesn't cancel (kick) this reconnected connection.
+                    if let GameSessionStatus::Waiting(joining) = &mut session.status {
+                        if let Some(pos) = joining.iter().position(|x| x.id() == channel_builder_id) {
+                            joining.swap_remove(pos);
+                        }
+                    }
                 }
             }
             _ => (),
