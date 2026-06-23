@@ -37,6 +37,11 @@ export interface ServerEvents {
             points: number
         }[]
         isFinal: boolean
+        questionStatistics?: {
+            option: string
+            votes: number
+            isCorrect: boolean
+        }[]
     }
     addPlayer: {
         id: string

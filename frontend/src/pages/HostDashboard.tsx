@@ -41,6 +41,9 @@ export default function HostDashboard(): JSX.Element {
     const [totalQuestions, setTotalQuestions] = useState(0)
     const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(null)
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
+    const [questionStatistics, setQuestionStatistics] = useState<
+        { option: string; votes: number; isCorrect: boolean }[] | null
+    >(null)
     const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
     const [hasPendingFinalPodium, setHasPendingFinalPodium] = useState(false)
     const pendingFinalLeaderboardRef = useRef<LeaderboardEntry[] | null>(null)
@@ -79,6 +82,7 @@ export default function HostDashboard(): JSX.Element {
         const isFinal =
             payload.isFinal || (totalQuestions > 0 && currentQuestionIndex >= totalQuestions - 1)
         setLeaderboard(payload.leaderboard)
+        setQuestionStatistics(payload.questionStatistics ?? null)
         setGameState(GameStateEnum.LEADERBOARD)
         if (isFinal) {
             if (currentQuestion?.type === QuestionTypeEnum.SLIDE) {
@@ -169,6 +173,7 @@ export default function HostDashboard(): JSX.Element {
             onShowPodium={hasPendingFinalPodium ? showFinalPodium : undefined}
             players={players}
             questionExpiresAt={questionExpiresAt}
+            questionStatistics={questionStatistics}
             quizTitle={quiz?.title}
             totalQuestions={totalQuestions}
         />
