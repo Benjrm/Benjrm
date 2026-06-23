@@ -48,7 +48,6 @@ export default function HostGameQuestionStatistic({
     currentQuestionIndex,
     totalQuestions,
 }: HostGameQuestionStatisticProps): JSX.Element {
-
     return (
         <div className="flex h-full flex-col justify-between">
             <div>
