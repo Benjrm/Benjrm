@@ -43,9 +43,8 @@ export default function GamePage(): JSX.Element {
 
     const gameActive = code !== undefined && sessionStorage.getItem(`gameActive:${code}`) === "1"
     useEffect(() => {
-        if (!gameActive) {
-            navigate(`/play/${codeParam ?? ""}`, { replace: true })
-        }
+        if (gameActive) return
+        navigate(`/play/${codeParam ?? ""}`, { replace: true })
     }, [gameActive, navigate, codeParam])
 
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null

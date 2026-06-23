@@ -8,6 +8,6 @@ export default function PlayLayout(): JSX.Element {
     const code = codeParam !== null ? Number(codeParam) || undefined : undefined
     const { isHost } = useSessionStatus(code)
     useHostWebSocket(isHost ? code : undefined)
-    usePlayerWebSocket(!isHost ? code : undefined)
+    usePlayerWebSocket(isHost ? undefined : code)
     return <Outlet />
 }

@@ -16,9 +16,9 @@ export default class WebSocketService {
 
     private closeWithoutOpenCallbacks = new Set<() => void>()
 
-    private everyOpenCallbacks = new Set<() => void>()
+    private readonly everyOpenCallbacks = new Set<() => void>()
 
-    private everyCloseCallbacks = new Set<() => void>()
+    private readonly everyCloseCallbacks = new Set<() => void>()
 
     private pendingDisconnect: ReturnType<typeof setTimeout> | null = null
 

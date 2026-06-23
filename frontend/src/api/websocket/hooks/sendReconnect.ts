@@ -21,7 +21,9 @@ export default function sendReconnect(ws: WebSocketService, storageKey: string):
 
     if (!saved.id || !saved.secret) return
 
-    const cmdId = Math.floor(Math.random() * 2 ** 31)
+    const arr = new Uint32Array(1)
+    crypto.getRandomValues(arr)
+    const cmdId = arr[0]
     let resolved = false
 
     let unsubOk: () => void = () => {}
