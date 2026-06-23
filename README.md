@@ -57,6 +57,19 @@ Keycloak admin user: admin, password: admin
 
 > This credentials can be configured using the `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` environment variables.
 
+After starting this the first time, you should log into the Keycloak admin interface, create a new admin user and remove the existing one.
+
+1. Log into the Keycloak admin interface using username: admin and password: admin (or your customized bootstrap credentials)
+2. Go to "Users" -> "Add user"
+3. Enter a username and click on "Create"
+4. Go to "Role mapping" -> "Assign role" -> "Realm roles"
+5. Select "admin" and click on "Assign"
+6. Go to "Credentials" and click on "Set password"
+7. Enter a secure password, uncheck "Temporary" and click on "Save"
+8. Sign out and sign in using the new admin user
+9. Go to "Users", select the initial admin user and click on "Delete user"
+10. Edit `.env` and remove or comment out `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD`
+
 ### Use other identity provider than the one shipped in `compose.yaml`
 
 If you don't want to use the identity provider shipped with this project, you can configure any identity provider that supports openid connect in the `.env` file.
