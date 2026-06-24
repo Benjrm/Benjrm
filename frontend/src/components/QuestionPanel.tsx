@@ -5,9 +5,8 @@ import rehypeRaw from "rehype-raw"
 import rehypeSanitize from "rehype-sanitize"
 import markdownComponents from "@/components/markdown/markdownComponents"
 import sanitizeSchema from "@/components/markdown/sanitizeSchema"
-import type { QuestionType } from "@/api/questions/types/questionType"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 import CountdownDisplay from "@/components/CountdownDisplay"
+import type { QuestionType } from "@/api/questions/questions.types.ts"
 
 const ANSWER_COLORS = [
     { color: "#2d4cc9", icon: "▲" },
@@ -55,7 +54,7 @@ export default function QuestionPanel({
                 </ReactMarkdown>
             </div>
 
-            {questionType === QuestionTypeEnum.ORDER && options ? (
+            {questionType === "ORDER" && options ? (
                 <ol className="my-8 flex flex-col gap-3">
                     {options.map((opt, idx) => (
                         <li
@@ -71,7 +70,7 @@ export default function QuestionPanel({
                 </ol>
             ) : null}
 
-            {questionType !== QuestionTypeEnum.ORDER && options && options.length > 0 ? (
+            {questionType !== "ORDER" && options && options.length > 0 ? (
                 <div className="my-8 grid grid-cols-1 gap-4 md:grid-cols-2">
                     {options.map((opt, idx) => {
                         const { color, icon } = ANSWER_COLORS[idx] ?? ANSWER_COLORS[0]

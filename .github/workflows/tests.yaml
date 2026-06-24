@@ -2,17 +2,8 @@ name: Testing pipeline
 run-name: Testing for ${{ github.event_name }} by @${{ github.actor }}
 
 on:
-  push:
-    branches:
-      - 'main'
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_call:
   workflow_dispatch:
-
-# Cancel concurrent running workflows, after a new one is triggered
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -41,7 +32,7 @@ jobs:
   build_frontend:
     needs: check_changes
     if: needs.check_changes.outputs.frontend == 'true' || needs.check_changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/build_frontend.yml
+    uses: ./.github/workflows/build_frontend.yaml
 
   # Backend Tests
   backend_tests:

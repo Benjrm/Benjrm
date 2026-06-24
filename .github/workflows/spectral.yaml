@@ -1,17 +1,6 @@
 name: Run Spectral on Pull Requests
 on:
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'docs/openapispec/RestInterface.yaml'
-      - 'docs/asyncapi/WebSockets.yaml'
-      - '.github/workflows/spectral.yaml'
-  pull_request:
-    paths:
-      - 'docs/openapispec/RestInterface.yaml'
-      - 'docs/asyncapi/WebSockets.yaml'
-      - '.github/workflows/spectral.yaml'
+  workflow_call:
   workflow_dispatch:
 
 permissions:

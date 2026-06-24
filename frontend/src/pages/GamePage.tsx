@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { Toaster, toast } from "sonner"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 import GameScreen from "@/components/GameScreen"
 import { GameStateEnum } from "@/hooks/useGameSession"
 import type {
@@ -68,7 +67,7 @@ export default function GamePage(): JSX.Element {
     })
 
     useSocketEvent("questionResult", (payload) => {
-        if (currentQuestion?.type === QuestionTypeEnum.SLIDE) return
+        if (currentQuestion?.type === "SLIDE") return
         setQuestionResult(payload)
         setGameState(GameStateEnum.RESULT)
     })
