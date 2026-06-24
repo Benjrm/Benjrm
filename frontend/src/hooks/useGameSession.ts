@@ -3,7 +3,7 @@ import { useNavigate } from "react-router"
 import { toast } from "sonner"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import useSessionPlayers from "@/api/session/hooks/useSessionPlayers"
-import type { QuestionType } from "@/api/questions/types/questionType"
+import type { QuestionType } from "@/api/questions/questions.types.ts"
 
 export const AVAILABLE_EMOJIS = [
     "😀",

@@ -24,7 +24,6 @@ import {
     getQuestionPreviewText,
 } from "./quiz/quizUtils"
 import useQuizEditor from "@/hooks/useQuizEditor"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 import QuizCreatorHeader from "@/components/QuizCreatorHeader.tsx"
 
 export default function QuizCreator(): JSX.Element {
@@ -187,8 +186,7 @@ export default function QuizCreator(): JSX.Element {
                                                       <span className="text-lg">⋮⋮</span>
                                                   </div>
                                                   <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
-                                                      {activeQuestion.type ===
-                                                      QuestionTypeEnum.SLIDE
+                                                      {activeQuestion.type === "SLIDE"
                                                           ? "Slide"
                                                           : "Question"}
                                                   </span>
@@ -201,7 +199,7 @@ export default function QuizCreator(): JSX.Element {
                                                   )}
                                               </p>
 
-                                              {activeQuestion.type !== QuestionTypeEnum.SLIDE ? (
+                                              {activeQuestion.type !== "SLIDE" ? (
                                                   <div className="grid grid-cols-2 gap-1.5 opacity-80">
                                                       <div className="h-2 rounded-full bg-[#2d4cc9]" />
                                                       <div className="h-2 rounded-full bg-[#ffa602]" />

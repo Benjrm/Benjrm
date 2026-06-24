@@ -18,6 +18,7 @@
 *.njsproj
 *.sln
 *.sw?
+*.iml
 
 docs/githubpages/*
 !docs/githubpages/index.html
