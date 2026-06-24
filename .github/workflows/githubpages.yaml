@@ -12,6 +12,9 @@ on:
       - 'docs/asyncapi/WebSockets.yaml'
       # Changes to the GitHub Actions workflow itself should also trigger a re-deployment to GitHub Pages
       - '.github/workflows/githubpages.yaml'
+      # Changes to the GitHub Pages entry point (index.html) providing links to different documentation artifacts
+      # should trigger a re-deployment to GitHub Pages
+      - 'docs/githubpages/index.html'
   workflow_dispatch:
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
@@ -27,9 +30,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.0
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6.0.0
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24.18.0'
+          cache: 'npm'
       - name: Install AsyncAPI CLI
         run: npm install -g @asyncapi/cli@6.0.2
       - name: Generate AsyncAPI Docs
@@ -47,7 +55,7 @@ jobs:
           cp docs/openapispec/index.html docs/githubpages/openapispec/index.html
           cp docs/openapispec/RestInterface.yaml docs/githubpages/openapispec/RestInterface.yaml
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: 'docs/githubpages'
   deploy:
@@ -62,4 +70,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v5.0.0
