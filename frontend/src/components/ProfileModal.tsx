@@ -45,7 +45,7 @@ const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, accountUrl }) =>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-6">
-                    {accountUrl !== null && (
+                    {accountUrl !== null ? (
                         <div className="flex flex-col gap-3">
                             <div>
                                 <p className="text-sm font-medium">Account Settings</p>
@@ -65,9 +65,14 @@ const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, accountUrl }) =>
                                 <ExternalLink className="h-4 w-4" />
                             </Button>
                         </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">
+                            Your account settings are managed externally. Contact your administrator
+                            for help with account management.
+                        </p>
                     )}
 
-                    {accountUrl !== null && <Separator />}
+                    <Separator />
 
                     <div className="flex flex-col gap-3">
                         <div>
