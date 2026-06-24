@@ -1,4 +1,4 @@
-import type { QuestionType } from "@/api/questions/types/questionType"
+import type { QuestionType } from "@/api/questions/questions.types.ts"
 
 /**
  * Maps server commands to their respective payload types.
