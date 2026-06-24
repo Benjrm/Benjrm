@@ -7,10 +7,7 @@ import { useTranslation } from "react-i18next"
 import { useQuiz, useDeleteQuiz } from "@/api/quizzes/quizzes.queries.ts"
 import { useQuestions } from "@/api/questions"
 import questionKeys from "@/api/questions/utils/questionKeys"
-import {
-    createEmptyQuestion,
-    applyQueueToQuestions,
-} from "@/pages/quiz/quizUtils"
+import { createEmptyQuestion, applyQueueToQuestions } from "@/pages/quiz/quizUtils"
 import tempId from "@/utils/tempId"
 import useQuestionChangeQueue from "@/hooks/useQuestionChangeQueue"
 import { ApiError } from "@/api/utils"
