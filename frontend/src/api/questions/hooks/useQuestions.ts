@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query"
 import type { UseQueryResult } from "@tanstack/react-query"
 import questionKeys from "@/api/questions/utils/questionKeys.ts"
 import questionAdapterImpl from "@/api/questions/adapter/questionAdapterImpl.ts"
-import type { QuestionApiResponse } from "@/api/questions/types/question.api.ts"
+import type { Question } from "@/api/questions/questions.types.ts"
 
-export default function useQuestions(quizId?: string): UseQueryResult<QuestionApiResponse[]> {
+export default function useQuestions(quizId?: string): UseQueryResult<Question[]> {
     return useQuery({
         queryKey: quizId ? questionKeys.all(quizId) : [],
         enabled: !!quizId,

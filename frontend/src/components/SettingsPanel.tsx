@@ -4,9 +4,8 @@ import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import AnswerPreviewGrid from "./AnswerPreviewGrid"
 import { ScrollArea } from "@/shadcn/components/ui/scroll-area"
-import type { Question } from "@/types/question"
 import MarkdownComponent from "@/components/markdown/MarkdownComponent"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
+import type { Question } from "@/api/questions/questions.types.ts"
 
 interface SettingsPanelProps {
     question: Question
@@ -34,11 +33,11 @@ export default function SettingsPanel({ question }: SettingsPanelProps): JSX.Ele
                         {/* Question */}
                         <div className="border-border mb-3 rounded-[1.25rem] border bg-white/90 p-3 text-center shadow-sm dark:bg-white/10">
                             <div className="text-[10px] font-bold tracking-[0.2em] text-[#FF8A00] uppercase">
-                                {question.type === QuestionTypeEnum.SLIDE
+                                {question.type === "SLIDE"
                                     ? t("quizEditor.settings.slideContent")
                                     : t("quizEditor.editor.question")}
                             </div>
-                            {question.type === QuestionTypeEnum.SLIDE ? (
+                            {question.type === "SLIDE" ? (
                                 <div className="mt-2 text-left text-xs leading-5 text-slate-900 dark:text-white">
                                     <MarkdownComponent
                                         content={
@@ -60,7 +59,7 @@ export default function SettingsPanel({ question }: SettingsPanelProps): JSX.Ele
                         </div>
 
                         {/* Answers */}
-                        {question.type !== QuestionTypeEnum.SLIDE ? (
+                        {question.type !== "SLIDE" ? (
                             <ScrollArea className="min-h-0 flex-1 pr-1">
                                 <AnswerPreviewGrid
                                     options={question.options}

@@ -14,7 +14,6 @@ import type {
     QuestionResult,
     LeaderboardEntry,
 } from "@/hooks/useGameSession"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 
 const PREVIEW_DURATION_MS = 2500
 
@@ -86,7 +85,7 @@ export default function GameScreen({
         if (
             gameState === GameStateEnum.QUESTION &&
             currentQuestion &&
-            currentQuestion.type !== QuestionTypeEnum.SLIDE &&
+            currentQuestion.type !== "SLIDE" &&
             currentQuestionIndex !== prevQuestionIndexRef.current
         ) {
             prevQuestionIndexRef.current = currentQuestionIndex
@@ -123,7 +122,7 @@ export default function GameScreen({
         }
 
         if (gameState === GameStateEnum.QUESTION && currentQuestion) {
-            if (currentQuestion.type === QuestionTypeEnum.SLIDE) {
+            if (currentQuestion.type === "SLIDE") {
                 return (
                     <InfoSlideContent
                         key={currentQuestion.id}
@@ -138,7 +137,7 @@ export default function GameScreen({
                 )
             }
 
-            if (currentQuestion.type === QuestionTypeEnum.ORDER) {
+            if (currentQuestion.type === "ORDER") {
                 return (
                     <OrderQuestionContent
                         key={currentQuestion.id}

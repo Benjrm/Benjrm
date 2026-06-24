@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 import QuestionItem from "@/components/QuestionItem.tsx"
 import { ScrollArea } from "@/shadcn/components/ui/scroll-area"
-import type { Question } from "@/types/question"
+import type { Question } from "@/api/questions/questions.types.ts"
 
 interface QuestionSidebarProps {
     activeIndex: number

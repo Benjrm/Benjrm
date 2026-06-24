@@ -1,12 +1,11 @@
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import getAnswerVisuals from "../utils/answerVisuals"
-import type { QuestionOption, Question } from "@/types/question"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
+import type { QuestionOption, QuestionType } from "@/api/questions/questions.types.ts"
 
 interface Props {
     options: QuestionOption[]
-    type: Question["type"]
+    type: QuestionType
 }
 
 const DRAG_HANDLE = "⋮⋮"
@@ -14,7 +13,7 @@ const DRAG_HANDLE = "⋮⋮"
 export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element {
     const { t } = useTranslation()
 
-    if (type === QuestionTypeEnum.ORDER) {
+    if (type === "ORDER") {
         return (
             <div className="space-y-3">
                 {options.map((option, index) => (

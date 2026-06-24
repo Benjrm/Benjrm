@@ -1,20 +1,65 @@
+/**
+ * A storage abstraction for managing lists of values identified by a string key.
+ * Implementations may persist data in browser storage, memory, or any other
+ * backing store.
+ */
 export interface ListStorage<T> {
+    /**
+     * Retrieves all values associated with the given identifier.
+     * @param id The unique identifier of the stored list.
+     * @returns A copy of the stored values, or an empty array if no values exist.
+     */
     get: (id: string) => T[]
+
+    /**
+     * Stores the provided values under the given identifier, replacing any
+     * previously stored values.
+     * @param id The unique identifier of the stored list.
+     * @param values The values to persist.
+     */
     set: (id: string, values: T[]) => void
+    /**
+     * Removes all values associated with the given identifier.
+     *
+     * @param id The unique identifier of the stored list.
+     */
     delete: (id: string) => void
     cleanup: (isUsed: (id: string) => Promise<boolean>) => Promise<void>
 }
 
+/**
+ * Creates a list storage instance that persists values in browser localStorage
+ * and keeps an in-memory fallback copy.
+ * Each stored list is scoped by the provided storage key and an identifier,
+ * resulting in keys of the form `${storageKey}:${id}`.
+ * @param storageKey The namespace used to prefix all storage entries.
+ * @returns A configured list storage instance.
+ */
 export function createListStorage<T>(storageKey: string): ListStorage<T> {
     const memoryStore = new Map<string, T[]>()
 
+    /**
+     * Reads a deep copy of the values stored in memory for the given identifier.
+     * @param id The identifier of the stored list.
+     * @returns A cloned array of stored values, or an empty array if none exist.
+     */
     const readFromMemory = (id: string): T[] => {
         const questions = memoryStore.get(id) ?? []
         return structuredClone(questions)
     }
 
+    /**
+     * Builds the fully qualified storage key for the given identifier.
+     * @param id The identifier of the stored list.
+     * @returns The namespaced storage key.
+     */
     const getStorageKey = (id: string): string => `${storageKey}:${id}`
 
+    /**
+     * Determines whether browser storage APIs are available in the current
+     * execution environment.
+     * @returns `true` if localStorage can be accessed; otherwise `false`.
+     */
     const isBrowserAvailable = (): boolean =>
         typeof window !== "undefined" && typeof localStorage !== "undefined"
 

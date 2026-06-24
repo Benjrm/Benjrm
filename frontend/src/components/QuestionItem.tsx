@@ -5,14 +5,10 @@ import type { MouseEvent, KeyboardEvent, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@shadcn/components/ui/button.tsx"
 import { getQuestionPreviewText } from "@/pages/quiz/quizUtils"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
+import type { Question } from "@/api/questions/questions.types.ts"
 
 interface QuestionProps {
-    question: {
-        id: string
-        question: string
-        type?: string
-    }
+    question: Pick<Question, "id" | "question" | "type">
     onSelect: (index: number) => void
     index: number
     onDelete: (index: number) => void
@@ -51,9 +47,9 @@ export default function QuestionItem({
     }
 
     let previewOptions
-    if (question.type === QuestionTypeEnum.SLIDE) {
+    if (question.type === "SLIDE") {
         previewOptions = null
-    } else if (question.type === QuestionTypeEnum.ORDER) {
+    } else if (question.type === "ORDER") {
         previewOptions = (
             <div className="grid grid-cols-1 gap-1.5 opacity-80">
                 <div className="h-2 rounded-full bg-[#2d4cc9]" />
@@ -110,7 +106,7 @@ export default function QuestionItem({
                         />
 
                         <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
-                            {question.type === QuestionTypeEnum.SLIDE
+                            {question.type === "SLIDE"
                                 ? t("quizEditor.editor.slide")
                                 : t("quizEditor.editor.question")}{" "}
                             {index + 1}

@@ -3,13 +3,12 @@
 import type { JSX } from "react"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
-import type { QuestionType } from "@/api/questions/types/questionType"
 import QuestionHeader from "@/components/QuestionHeader"
 import QuestionContainer from "@/components/QuestionContainer"
 import AnswerOption from "@/components/AnswerOption"
 import TimerBar from "@/components/TimerBar"
 import { Button } from "@/shadcn/components/ui/button"
+import type { QuestionType } from "@/api/questions/questions.types.ts"
 
 export interface QuestionOption {
     id: string
@@ -80,7 +79,7 @@ export default function QuestionCardContent({
     const handleSelect = (id: string) => {
         if (isHost || hasSubmitted) return
 
-        if (type === QuestionTypeEnum.MULTIPLE_CHOICE) {
+        if (type === "MULTIPLE_CHOICE") {
             setSelectedAnswers((prev) =>
                 prev.includes(id) ? prev.filter((val) => val !== id) : [...prev, id]
             )

@@ -5,7 +5,7 @@ import { Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import AnswerCard from "@/components/AnswerCard"
 import { Button } from "@/shadcn/components/ui/button"
-import type { QuestionOption } from "@/types/question"
+import type { QuestionOption } from "@/api/questions/questions.types.ts"
 
 interface StandardOptionsProps {
     options: QuestionOption[]
