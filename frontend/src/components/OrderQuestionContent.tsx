@@ -21,6 +21,8 @@ import {
     useSortable,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { Button } from "@/shadcn/components/ui/button"
 import TimerBar from "@/components/TimerBar"
 import QuestionHeader from "@/components/QuestionHeader"
@@ -70,7 +72,15 @@ function SortableItem({ id, text }: { id: string; text: string }): JSX.Element {
                     : "border-border bg-muted/30 hover:bg-muted/60"
             }`}
         >
-            <span>{text}</span>
+            <div className="[&_p]:m-0">
+                <ReactMarkdown
+                    unwrapDisallowed
+                    allowedElements={["p", "strong", "em", "code", "del", "s"]}
+                    remarkPlugins={[remarkGfm]}
+                >
+                    {text}
+                </ReactMarkdown>
+            </div>
             <span className="text-muted-foreground text-xl">≡</span>
         </div>
     )

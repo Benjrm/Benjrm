@@ -2,11 +2,14 @@ import type { JSX } from "react"
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router"
 import { Toaster } from "sonner"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { Button } from "@/shadcn/components/ui/button"
 import HostDashboardSidebar from "@/components/HostDashboardSidebar"
 import GamePinBadge from "@/components/GamePinBadge"
 import Leaderboard from "@/quiz/leaderboard/components/Leaderboard"
 import MarkdownPageComponent from "@/components/markdown/MarkdownPageComponent"
+import MarkdownComponent from "@/components/markdown/MarkdownComponent"
 import { GameStateEnum } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
 
@@ -165,9 +168,9 @@ export default function HostGameScreen({
                                     <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-widest uppercase">
                                         Current Question:
                                     </p>
-                                    <h2 className="text-xl font-bold sm:text-2xl">
-                                        {currentQuestion.text}
-                                    </h2>
+                                    <div className="text-xl font-bold sm:text-2xl [&_p]:m-0 [&_p]:text-xl [&_p]:font-bold sm:[&_p]:text-2xl">
+                                        <MarkdownComponent content={currentQuestion.text} />
+                                    </div>
 
                                     {currentQuestion.type === "ORDER" &&
                                     currentQuestion.options.length > 0 ? (
@@ -180,7 +183,22 @@ export default function HostGameScreen({
                                                     <span className="text-muted-foreground w-5 shrink-0 text-center font-bold">
                                                         {i + 1}
                                                     </span>
-                                                    {opt.text}
+                                                    <div className="[&_p]:m-0">
+                                                        <ReactMarkdown
+                                                            unwrapDisallowed
+                                                            remarkPlugins={[remarkGfm]}
+                                                            allowedElements={[
+                                                                "p",
+                                                                "strong",
+                                                                "em",
+                                                                "code",
+                                                                "del",
+                                                                "s",
+                                                            ]}
+                                                        >
+                                                            {opt.text}
+                                                        </ReactMarkdown>
+                                                    </div>
                                                 </li>
                                             ))}
                                         </ol>
@@ -198,9 +216,22 @@ export default function HostGameScreen({
                                                 return (
                                                     <div
                                                         key={opt.id}
-                                                        className={`rounded-xl border px-4 py-3 text-sm font-medium ${colors[i] ?? colors[0]}`}
+                                                        className={`rounded-xl border px-4 py-3 text-sm font-medium [&_p]:m-0 ${colors[i] ?? colors[0]}`}
                                                     >
-                                                        {opt.text}
+                                                        <ReactMarkdown
+                                                            unwrapDisallowed
+                                                            remarkPlugins={[remarkGfm]}
+                                                            allowedElements={[
+                                                                "p",
+                                                                "strong",
+                                                                "em",
+                                                                "code",
+                                                                "del",
+                                                                "s",
+                                                            ]}
+                                                        >
+                                                            {opt.text}
+                                                        </ReactMarkdown>
                                                     </div>
                                                 )
                                             })}
