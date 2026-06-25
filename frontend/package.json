@@ -9,7 +9,7 @@
         "lint": "prettier --check . && eslint . && node scripts/check-locales.ts",
         "lint:fix": "eslint . --fix && prettier --write .",
         "preview": "vite preview",
-        "type:check": "tsc -b",
+        "type:check": "tsc --noEmit",
         "format": "prettier --write .",
         "format:check": "prettier --check ."
     },
