@@ -17,6 +17,7 @@ const CONFIRM_PHRASE = "DELETE"
 
 const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, accountUrl }) => {
     const [confirmText, setConfirmText] = useState("")
+    const [isDeleted, setIsDeleted] = useState(false)
     const { mutate: deleteAccount, isPending } = useDeleteAccount()
 
     const canDelete = confirmText === CONFIRM_PHRASE && !isPending
@@ -25,7 +26,7 @@ const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, accountUrl }) =>
         if (!canDelete) return
         deleteAccount(undefined, {
             onSuccess: () => {
-                window.location.href = "/"
+                setIsDeleted(true)
             },
         })
     }
@@ -33,8 +34,61 @@ const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, accountUrl }) =>
     const handleOpenChange = (open: boolean) => {
         if (!open) {
             setConfirmText("")
+            setIsDeleted(false)
             onClose()
         }
+    }
+
+    if (isDeleted) {
+        return (
+            <Dialog onOpenChange={handleOpenChange} open={isOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Account Deleted</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4">
+                        <p className="text-sm">
+                            Your Benjrm account has been successfully deleted.
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                            Note: this only deleted your Benjrm account. Your account at your
+                            identity provider was not affected.
+                        </p>
+                        {accountUrl !== null ? (
+                            <>
+                                <p className="text-muted-foreground text-sm">
+                                    You may also want to delete your account at your identity
+                                    provider. Click below to open it.
+                                </p>
+                                <Button
+                                    className="w-full gap-2"
+                                    variant="outline"
+                                    onClick={() =>
+                                        window.open(accountUrl, "_blank", "noopener,noreferrer")
+                                    }
+                                >
+                                    Open Identity Provider
+                                    <ExternalLink className="h-4 w-4" />
+                                </Button>
+                            </>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">
+                                To delete your account at your identity provider, please contact
+                                your administrator.
+                            </p>
+                        )}
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                window.location.href = "/"
+                            }}
+                        >
+                            Go to Home
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        )
     }
 
     return (
@@ -50,8 +104,7 @@ const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, accountUrl }) =>
                             <div>
                                 <p className="text-sm font-medium">Account Settings</p>
                                 <p className="text-muted-foreground mt-1 text-sm">
-                                    Edit your username, email, and password in your identity
-                                    provider.
+                                    Edit your account settings in your identity provider.
                                 </p>
                             </div>
                             <Button
@@ -78,7 +131,8 @@ const ProfileModal: FC<ProfileModalProps> = ({ isOpen, onClose, accountUrl }) =>
                         <div>
                             <p className="text-sm font-medium text-red-500">Danger Zone</p>
                             <p className="text-muted-foreground mt-1 text-sm">
-                                Permanently deletes your account and all associated data.
+                                Permanently deletes your Benjrm account and all associated data.
+                                Your identity provider account will not be affected.
                             </p>
                         </div>
 
