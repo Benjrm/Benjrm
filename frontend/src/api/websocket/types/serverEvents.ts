@@ -39,6 +39,7 @@ export interface ServerEvents {
         }[]
         isFinal: boolean
     }
+    displayPodium: unknown
     addPlayer: {
         id: string
         name: string

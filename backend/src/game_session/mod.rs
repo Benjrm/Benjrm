@@ -108,13 +108,15 @@ pub enum GameSessionStatus {
         started: DateTime<Utc>,
         answers: usize,
         abort_handle: Option<JoinHandle<()>>,
+        leaderboard: Option<Arc<Vec<LeaderboardEntry>>>,
     },
-    Closed,
     Leaderboard {
         idx: usize,
         leaderboard: Arc<Vec<LeaderboardEntry>>,
         is_final: bool,
     },
+    Podium(Arc<Vec<LeaderboardEntry>>),
+    Closed,
 }
 
 pub struct GameSessionHost {
@@ -224,24 +226,29 @@ pub trait CommandTrait: Sized {
 pub enum HostMessage {
     Ok,
     Error(ErrorResponse),
+    #[serde(rename_all = "camelCase")]
     AddPlayer {
         id: Uuid,
         name: String,
         emoji: Option<&'static Emoji>,
     },
+    #[serde(rename_all = "camelCase")]
     RenamePlayer {
         id: Uuid,
         name: String,
         emoji: Option<&'static Emoji>,
     },
+    #[serde(rename_all = "camelCase")]
     RemovePlayer {
         id: Uuid,
     },
     DisplayQuestion(Arc<DisplayQuestionMessage>),
+    #[serde(rename_all = "camelCase")]
     DisplayLeaderboard {
         leaderboard: Arc<Vec<LeaderboardEntry>>,
         is_final: bool,
     },
+    DisplayPodium,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -314,6 +321,7 @@ pub enum PlayerMessage {
     Ok,
     Error(ErrorResponse),
     Kick,
+    #[serde(rename_all = "camelCase")]
     ConnectResponse {
         id: Uuid,
         secret: Uuid,

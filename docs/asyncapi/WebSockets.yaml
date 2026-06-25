@@ -57,6 +57,8 @@ channels:
         $ref: "#/components/messages/displayLeaderboard"
       showPodium:
         $ref: "#/components/messages/showPodium"
+      displayPodium:
+        $ref: "#/components/messages/displayPodium"
       endGame:
         $ref: "#/components/messages/endGame"
     tags:
@@ -337,6 +339,16 @@ operations:
       $ref: "#/channels/sessionHost"
     messages:
       - $ref: "#/channels/sessionHost/messages/showPodium"
+    tags:
+      - name: Sessions
+  
+  sendDisplayPodium:
+    description: "Send displayPodium command to host"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/displayPodium"
     tags:
       - name: Sessions
   
@@ -656,6 +668,14 @@ components:
           command:
             type: string
             const: "showPodium"
+    
+    displayPodium:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "displayPodium"
     
     endGame:
       payload:

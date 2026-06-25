@@ -65,6 +65,11 @@ export default function HostDashboard(): JSX.Element {
         sendShowPodium()
     }, [sendShowPodium])
 
+    useSocketEvent("displayPodium", () => {
+        setIsFinalLeaderboard(true)
+        setHasPendingFinalPodium(false)
+    })
+
     useSocketEvent("displayQuestion", (payload, timing) => {
         hasDisplayedQuestionRef.current = true
         setGameState(GameStateEnum.QUESTION)
