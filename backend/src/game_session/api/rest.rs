@@ -168,13 +168,11 @@ fn player_list_response(
     }
     let mut res_players = Vec::new();
     for player in players {
-        if let Some(name) = &player.name {
-            res_players.push(Player {
-                id: player.id,
-                name: name.clone(),
-                emoji: player.emoji,
-            })
-        }
+        res_players.push(Player {
+            id: player.id,
+            name: player.name.clone(),
+            emoji: player.emoji,
+        })
     }
     Ok(HttpResponse::Ok().json(res_players))
 }
