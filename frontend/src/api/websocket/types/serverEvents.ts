@@ -37,10 +37,13 @@ export interface ServerEvents {
             points: number
         }[]
         isFinal: boolean
-        questionStatistics?: {
+    }
+    showStatistics: {
+        answers: number
+        answerStatistic: {
             option: string
             votes: number
-            isCorrect: boolean
+            correct: boolean
         }[]
     }
     addPlayer: {

@@ -72,7 +72,9 @@ export default function HostGameQuestionStatistic({
                         const style = OPTION_COLORS[i] ?? OPTION_COLORS[0]
                         const Icon = style.icon
                         const percentage =
-                            totalAnswers > 0 ? Math.round((opt.votes / totalAnswers) * 100) : 0
+                            expectedAnswers > 0
+                                ? Math.round((opt.votes / expectedAnswers) * 100)
+                                : 0
 
                         return (
                             <div key={opt.id} className="flex flex-col gap-2">

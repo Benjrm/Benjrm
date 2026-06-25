@@ -4,10 +4,18 @@ import type { GameQuestion } from "@/hooks/useGameSession"
 /**
  * Interface that represents the question statistics from the websocket.
  */
-export interface QuestionStatistic {
+export interface QuestionStatistics {
+    answers: number
+    answerStatistic: AnswerStatistic[]
+}
+
+/**
+ * Interface that represents the statistic for one answer option.
+ */
+export interface AnswerStatistic {
     option: string
     votes: number
-    isCorrect: boolean
+    correct: boolean
 }
 
 /**
@@ -28,30 +36,24 @@ export interface StatisticOption {
  */
 export default function useQuestionStatistics(
     currentQuestion: GameQuestion | null,
-    questionStatistics?: QuestionStatistic[] | null
+    questionStatistics: QuestionStatistics | null
 ): { statisticOptions: StatisticOption[]; totalAnswers: number } {
     const statisticOptions = useMemo(() => {
         if (!currentQuestion) return []
         return currentQuestion.options.map((option) => {
-            const statisticsForOption = questionStatistics?.find(
+            const statisticsForOption = questionStatistics?.answerStatistic.find(
                 (stat) => stat.option === option.id
             )
             return {
                 id: option.id,
                 text: option.text,
                 votes: statisticsForOption ? statisticsForOption.votes : 0,
-                isCorrect: statisticsForOption ? statisticsForOption.isCorrect : false,
+                isCorrect: statisticsForOption ? statisticsForOption.correct : false,
             }
         })
     }, [currentQuestion, questionStatistics])
 
-    const totalAnswers = useMemo(
-        () =>
-            questionStatistics
-                ? questionStatistics.reduce((acc, current) => acc + current.votes, 0)
-                : 0,
-        [questionStatistics]
-    )
+    const totalAnswers = questionStatistics?.answers ?? 0
 
     return { statisticOptions, totalAnswers }
 }

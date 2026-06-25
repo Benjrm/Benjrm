@@ -55,6 +55,8 @@ channels:
         $ref: "#/components/messages/displayQuestion"
       displayLeaderboard:
         $ref: "#/components/messages/displayLeaderboard"
+      showStatistics:
+        $ref: "#/components/messages/showStatistics"
       endGame:
         $ref: "#/components/messages/endGame"
     tags:
@@ -323,6 +325,16 @@ operations:
       - $ref: "#/channels/sessionPlayer/messages/displayLeaderboard"
     tags:
       - name: Leaderboard
+  
+  sendShowStatistics:
+    description: "Send showStatistics command to Host"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/showStatistics"
+    tags:
+      - name: Questions
   
   receiveEndGame:
     description: "Receive endGame command from host"
@@ -608,6 +620,24 @@ components:
                 type: boolean
                 description: "Whether this leaderboard is the final quiz result"
     
+    showStatistics:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "showStatistics"
+          payload:
+            type: object
+            properties:
+              answers:
+                type: integer
+              answerStatistic:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnswerStatistic"
+                nullable: true
+    
     endGame:
       payload:
         type: object
@@ -710,3 +740,14 @@ components:
           type: integer
           format: uint32
           description: "Points received for the current question"
+    
+    AnswerStatistic:
+      type: object
+      properties:
+        option:
+          type: string
+          format: uuid
+        votes:
+          type: integer
+        correct:
+          type: boolean

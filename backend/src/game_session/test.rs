@@ -556,6 +556,7 @@ async fn show_question() {
             match rx.recv().await.unwrap() {
                 HostMessage::DisplayQuestion(question) => host_question = Some(question),
                 HostMessage::DisplayLeaderboard { .. } => (),
+                HostMessage::ShowStatistics { .. } => (),
                 x => panic!("invalid message: {x:?}"),
             }
         }
@@ -758,6 +759,20 @@ async fn play_dummy_quiz() {
     drop(session);
 
     match host_rx.recv().await.unwrap() {
+        HostMessage::ShowStatistics {
+            answers: answer_count,
+            answer_statistic,
+        } => {
+            assert_eq!(answer_count, 1);
+            assert_eq!(answer_statistic.len(), answers.len());
+            for (statistic, answer) in answer_statistic.iter().zip(answers) {
+                assert_eq!(statistic.option, answer)
+            }
+        }
+        x => panic!("invalid message: {x:?}"),
+    }
+
+    match host_rx.recv().await.unwrap() {
         HostMessage::DisplayLeaderboard {
             leaderboard,
             is_final,
@@ -808,7 +823,7 @@ async fn play_dummy_quiz() {
     let mut session = session_arc.lock().await;
 
     let mut first = true;
-    loop {
+    'outer: loop {
         let res = session
             .handle_host_cmd(
                 Command {
@@ -821,39 +836,49 @@ async fn play_dummy_quiz() {
             .await;
 
         if !first {
-            match host_rx.recv().await.unwrap() {
-                HostMessage::DisplayLeaderboard { is_final, .. } => {
-                    assert!(matches!(
-                        player_1_rx.recv().await.unwrap(),
-                        PlayerMessage::QuestionResult { .. }
-                    ));
-                    assert!(matches!(
-                        player_2_rx.recv().await.unwrap(),
-                        PlayerMessage::QuestionResult { .. }
-                    ));
-                    assert!(matches!(
-                        player_3_rx.recv().await.unwrap(),
-                        PlayerMessage::QuestionResult { .. }
-                    ));
-
-                    if is_final {
-                        assert!(matches!(res, Err(GameSessionError::NoQuestionLeft)));
+            for _ in 0..2 {
+                match host_rx.recv().await.unwrap() {
+                    HostMessage::DisplayLeaderboard { is_final, .. } => {
                         assert!(matches!(
                             player_1_rx.recv().await.unwrap(),
-                            PlayerMessage::DisplayLeaderboard { .. }
+                            PlayerMessage::QuestionResult { .. }
                         ));
                         assert!(matches!(
                             player_2_rx.recv().await.unwrap(),
-                            PlayerMessage::DisplayLeaderboard { .. }
+                            PlayerMessage::QuestionResult { .. }
                         ));
                         assert!(matches!(
                             player_3_rx.recv().await.unwrap(),
-                            PlayerMessage::DisplayLeaderboard { .. }
+                            PlayerMessage::QuestionResult { .. }
                         ));
-                        break;
+
+                        if is_final {
+                            assert!(matches!(res, Err(GameSessionError::NoQuestionLeft)));
+                            assert!(matches!(
+                                player_1_rx.recv().await.unwrap(),
+                                PlayerMessage::DisplayLeaderboard { .. }
+                            ));
+                            assert!(matches!(
+                                player_2_rx.recv().await.unwrap(),
+                                PlayerMessage::DisplayLeaderboard { .. }
+                            ));
+                            assert!(matches!(
+                                player_3_rx.recv().await.unwrap(),
+                                PlayerMessage::DisplayLeaderboard { .. }
+                            ));
+                            break 'outer;
+                        }
                     }
+                    HostMessage::ShowStatistics {
+                        answers: _,
+                        answer_statistic,
+                    } => {
+                        for item in answer_statistic {
+                            assert_eq!(item.votes, 0);
+                        }
+                    }
+                    x => panic!("invalid message: {x:?}"),
                 }
-                x => panic!("invalid message: {x:?}"),
             }
         }
 

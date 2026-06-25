@@ -101,6 +101,7 @@ pub enum GameSessionStatus {
         idx: usize,
         started: DateTime<Utc>,
         answers: usize,
+        answer_distribution: Vec<usize>,
         abort_handle: Option<JoinHandle<()>>,
     },
     Closed,
@@ -233,6 +234,11 @@ pub enum HostMessage {
         leaderboard: Arc<Vec<LeaderboardEntry>>,
         is_final: bool,
     },
+    #[serde(rename_all = "camelCase")]
+    ShowStatistics {
+        answers: usize,
+        answer_statistic: Vec<AnswerStatistic>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -263,6 +269,13 @@ impl PartialOrd for LeaderboardEntry {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AnswerStatistic {
+    pub option: Uuid,
+    pub votes: usize,
+    pub correct: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]

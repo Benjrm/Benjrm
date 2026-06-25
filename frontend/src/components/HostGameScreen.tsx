@@ -11,6 +11,7 @@ import MarkdownPageComponent from "@/components/markdown/MarkdownPageComponent"
 import { GameStateEnum } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
 import useQuestionStatistics from "@/hooks/useQuestionStatistics"
+import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
 
 function QuestionTimer({ expiresAt }: { expiresAt: number | null }): JSX.Element | null {
     const [now, setNow] = useState(() => Date.now())
@@ -45,7 +46,7 @@ interface HostGameScreenProps {
     onNextQuestion: () => void
     onEndGame: () => void
     onShowPodium?: () => void
-    questionStatistics?: { option: string; votes: number; isCorrect: boolean }[] | null
+    questionStatistics: QuestionStatistics | null
 }
 
 export default function HostGameScreen({

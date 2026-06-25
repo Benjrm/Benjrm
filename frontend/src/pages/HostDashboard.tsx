@@ -9,6 +9,7 @@ import HostGameScreen from "@/components/HostGameScreen"
 import { GameStateEnum } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
 import type { SessionPlayer } from "@/api/session"
+import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
 
 export default function HostDashboard(): JSX.Element {
     const codeParam = useParams().code
@@ -40,9 +41,7 @@ export default function HostDashboard(): JSX.Element {
     const [totalQuestions, setTotalQuestions] = useState(0)
     const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(null)
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
-    const [questionStatistics, setQuestionStatistics] = useState<
-        { option: string; votes: number; isCorrect: boolean }[] | null
-    >(null)
+    const [questionStatistics, setQuestionStatistics] = useState<QuestionStatistics | null>(null)
     const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
     const [hasPendingFinalPodium, setHasPendingFinalPodium] = useState(false)
     const pendingFinalLeaderboardRef = useRef<LeaderboardEntry[] | null>(null)
@@ -81,7 +80,6 @@ export default function HostDashboard(): JSX.Element {
         const isFinal =
             payload.isFinal || (totalQuestions > 0 && currentQuestionIndex >= totalQuestions - 1)
         setLeaderboard(payload.leaderboard)
-        setQuestionStatistics(payload.questionStatistics ?? null)
         setGameState(GameStateEnum.LEADERBOARD)
         if (isFinal) {
             if (currentQuestion?.type === "SLIDE") {
@@ -96,6 +94,10 @@ export default function HostDashboard(): JSX.Element {
         } else {
             setIsFinalLeaderboard(false)
         }
+    })
+
+    useSocketEvent("showStatistics", (payload) => {
+        setQuestionStatistics(payload)
     })
 
     useSocketEvent("addPlayer", ({ id, name, emoji }) => {

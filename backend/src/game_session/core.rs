@@ -3,9 +3,10 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            Channel, Command, DisplayQuestionMessage, GameSession, GameSessionError,
-            GameSessionHost, GameSessionPlayer, GameSessionStatus, GameSessions, HostCommand,
-            HostMessage, LeaderboardEntry, Message, PlayerCommand, PlayerMessage, SessionCode,
+            AnswerStatistic, Channel, Command, DisplayQuestionMessage, GameSession,
+            GameSessionError, GameSessionHost, GameSessionPlayer, GameSessionStatus, GameSessions,
+            HostCommand, HostMessage, LeaderboardEntry, Message, PlayerCommand, PlayerMessage,
+            SessionCode,
         },
         question::{Question, QuestionFilter, QuestionOptions},
         quiz::Quiz,
@@ -277,10 +278,13 @@ impl GameSession {
                     }
                 })
             });
+
+        let options_len = quiz.questions[question].options.len();
         self.status = GameSessionStatus::Question {
             idx: question,
             started,
             answers: 0,
+            answer_distribution: vec![0; options_len],
             abort_handle,
         };
 
@@ -403,7 +407,9 @@ impl GameSession {
                     }))
                     .await;
             }
-            PlayerCommand::AnswerQuestion { answer } => {
+            PlayerCommand::AnswerQuestion { mut answer } => {
+                answer.sort();
+                answer.dedup();
                 let player = Self::get_player_mut(&mut self.players, id)?;
                 if matches!(self.status, GameSessionStatus::Leaderboard { .. }) {
                     return Err(GameSessionError::TimeUp);
@@ -412,6 +418,7 @@ impl GameSession {
                     idx,
                     started,
                     answers,
+                    answer_distribution,
                     abort_handle,
                 } = &mut self.status
                 else {
@@ -422,6 +429,7 @@ impl GameSession {
 
                 let mut points = question.options.get_points(&answer)?;
 
+                let mut answer_in_time = true;
                 if let Some(duration) = question.model.r#type.default_answer_duration() {
                     let elapsed = (Utc::now() - *started).num_milliseconds() as f64;
                     let max_time = (duration as f64) * 1000f64;
@@ -430,6 +438,15 @@ impl GameSession {
                         points = (points as f64 * factor.min(1.0)) as u32;
                     } else {
                         points = 0;
+                        answer_in_time = false;
+                    }
+                }
+
+                if answer_in_time {
+                    for answer in answer {
+                        if let Some(pos) = question.options.position(answer) {
+                            answer_distribution[pos] += 1;
+                        }
                     }
                 }
 
@@ -465,7 +482,13 @@ impl GameSession {
     }
 
     pub async fn end_question(&mut self, is_final: Option<bool>) {
-        let GameSessionStatus::Question { idx, .. } = &self.status else {
+        let GameSessionStatus::Question {
+            idx,
+            answers,
+            answer_distribution,
+            ..
+        } = &self.status
+        else {
             return;
         };
         let Some(quiz) = &self.quiz else {
@@ -474,8 +497,31 @@ impl GameSession {
 
         let is_final = is_final.unwrap_or(*idx + 1 >= quiz.questions.len());
         let question = &quiz.questions[*idx];
-        let correct_answers = Arc::new(question.options.correct_answer_list());
 
+        match &question.options {
+            QuestionOptions::Slide => (),
+            QuestionOptions::SingleChoice(models) | QuestionOptions::MultipleChoice(models) => {
+                let answer_statistic = models
+                    .iter()
+                    .enumerate()
+                    .map(|(i, model)| AnswerStatistic {
+                        option: model.id,
+                        votes: answer_distribution[i],
+                        correct: model.correct,
+                    })
+                    .collect();
+
+                self.host
+                    .msg(Message::from(&HostMessage::ShowStatistics {
+                        answers: *answers,
+                        answer_statistic,
+                    }))
+                    .await;
+            }
+            QuestionOptions::Order(_) => (),
+        };
+
+        let correct_answers = Arc::new(question.options.correct_answer_list());
         let mut leaderboard = Vec::with_capacity(self.players.len());
 
         let iterator = self.players.iter_mut().map(|player| {
@@ -633,6 +679,26 @@ impl QuestionOptions {
                 models.iter().filter(|x| x.correct).map(|x| x.id).collect()
             }
             QuestionOptions::Order(models) => models.iter().map(|x| x.id).collect(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            QuestionOptions::Slide => 0,
+            QuestionOptions::SingleChoice(models) | QuestionOptions::MultipleChoice(models) => {
+                models.len()
+            }
+            QuestionOptions::Order(models) => models.len(),
+        }
+    }
+
+    pub fn position(&self, id: Uuid) -> Option<usize> {
+        match self {
+            QuestionOptions::Slide => None,
+            QuestionOptions::SingleChoice(models) | QuestionOptions::MultipleChoice(models) => {
+                models.iter().position(|x| x.id == id)
+            }
+            QuestionOptions::Order(models) => models.iter().position(|x| x.id == id),
         }
     }
 }
