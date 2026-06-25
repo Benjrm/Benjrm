@@ -159,7 +159,7 @@ impl GameSession {
         Ok(())
     }
 
-    /// Set the host channel and close the old one.
+    /// Set the host channel and close the old one. Informs the new host of the currect state.
     /// Must only be called after successfully calling [`GameSession::check_set_host_channel`].
     pub async fn set_host_channel<T: Channel<HostMessage> + 'static>(&mut self, channel: T) {
         let channel = Box::new(channel);
@@ -170,6 +170,7 @@ impl GameSession {
         self.update_host().await;
     }
 
+    /// send all messages that are required to restore the state to the host.
     async fn update_host(&mut self) {
         let Some(quiz) = &self.quiz else { return };
 
@@ -465,6 +466,8 @@ impl GameSession {
         self.players.push(player);
     }
 
+    /// send messages to restore the current state to a player.
+    /// [`PlayerMessage::QuestionResult`] is not included because it's basically a response to [`PlayerCommand::AnswerQuestion`] and is not persisted.
     pub async fn update_player(&mut self, player_id: Uuid) {
         let Ok(player) = Self::get_player_mut(&mut self.players, player_id) else {
             return;
