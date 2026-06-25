@@ -213,6 +213,25 @@ impl GameSession {
             }
             HostCommand::NextQuestion => self.next_question(None, arc).await?,
             HostCommand::ShowQuestion { id } => self.next_question(Some(id), arc).await?,
+            HostCommand::ShowPodium => {
+                let leaderboard = match &self.status {
+                    GameSessionStatus::Leaderboard { leaderboard, .. } => leaderboard,
+                    _ => return Err(GameSessionError::NoLeaderboard),
+                };
+
+                let player_iterator = self.players.iter_mut().map(|player| {
+                    let leaderboard = Arc::clone(leaderboard);
+                    async move {
+                        player
+                            .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
+                                leaderboard,
+                                is_final: true,
+                            }))
+                            .await;
+                    }
+                });
+                execute_futures(player_iterator).await;
+            }
             HostCommand::EndGame => {
                 self.end_question(Some(true)).await;
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
@@ -249,7 +268,7 @@ impl GameSession {
                 .ok_or(GameSessionError::QuestionNotFound)?
         } else {
             let question = match self.status {
-                GameSessionStatus::Leaderboard { idx } => idx + 1,
+                GameSessionStatus::Leaderboard { idx, .. } => idx + 1,
                 _ => 0,
             };
             if question >= quiz.questions.len() {
@@ -287,6 +306,7 @@ impl GameSession {
         let total_questions = quiz.questions.len();
         let question = Arc::new(DisplayQuestionMessage::new(
             &quiz.questions[question],
+            question,
             total_questions,
         ));
 
@@ -294,7 +314,7 @@ impl GameSession {
             .msg(Message {
                 id: None,
                 msg: &HostMessage::DisplayQuestion(Arc::clone(&question)),
-                timing: Some(started),
+                timing: None,
             })
             .await;
         self.notify_all_players(Message {
@@ -366,6 +386,52 @@ impl GameSession {
             .await;
 
         self.players.push(player);
+    }
+
+    pub async fn update_player(&mut self, player_id: Uuid) {
+        let Ok(player) = Self::get_player_mut(&mut self.players, player_id) else {
+            return;
+        };
+        let Some(quiz) = &self.quiz else {
+            return;
+        };
+
+        match &self.status {
+            GameSessionStatus::Waiting(_) => (),
+            GameSessionStatus::Started => player.msg(Message::from(&PlayerMessage::Start)).await,
+            GameSessionStatus::Question { idx, started, .. } => {
+                player.msg(Message::from(&PlayerMessage::Start)).await;
+
+                let question = Arc::new(DisplayQuestionMessage::new(
+                    &quiz.questions[*idx],
+                    *idx,
+                    quiz.questions.len(),
+                ));
+                player
+                    .msg(Message {
+                        id: None,
+                        msg: &PlayerMessage::DisplayQuestion(question),
+                        timing: Some(*started),
+                    })
+                    .await;
+            }
+            GameSessionStatus::Leaderboard {
+                leaderboard,
+                is_final,
+                ..
+            } => {
+                player.msg(Message::from(&PlayerMessage::Start)).await;
+                if *is_final {
+                    player
+                        .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
+                            leaderboard: Arc::clone(leaderboard),
+                            is_final: true,
+                        }))
+                        .await;
+                }
+            }
+            GameSessionStatus::Closed => player.msg(Message::from(&PlayerMessage::GameEnded)).await,
+        }
     }
 
     pub async fn handle_player_cmd(
@@ -520,30 +586,19 @@ impl GameSession {
         execute_futures(iterator).await;
 
         leaderboard.sort();
-        self.status = GameSessionStatus::Leaderboard { idx: *idx };
-
         let leaderboard = Arc::new(leaderboard);
+        self.status = GameSessionStatus::Leaderboard {
+            idx: *idx,
+            leaderboard: Arc::clone(&leaderboard),
+            is_final,
+        };
+
         self.host
             .msg(Message::from(&HostMessage::DisplayLeaderboard {
-                leaderboard: Arc::clone(&leaderboard),
+                leaderboard,
                 is_final,
             }))
             .await;
-
-        if is_final {
-            let player_iterator = self.players.iter_mut().map(|player| {
-                let leaderboard = Arc::clone(&leaderboard);
-                async move {
-                    player
-                        .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
-                            leaderboard,
-                            is_final,
-                        }))
-                        .await;
-                }
-            });
-            execute_futures(player_iterator).await;
-        }
     }
 }
 

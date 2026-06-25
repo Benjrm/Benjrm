@@ -20,6 +20,7 @@ export interface ServerEvents {
         type: QuestionType
         options: { id: string; answer: string }[]
         seconds: number | null
+        index: number
         totalQuestions: number
     }
     questionResult: {

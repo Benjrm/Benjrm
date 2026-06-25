@@ -83,6 +83,8 @@ impl_err! {
         NoQuestionLeft = BAD_REQUEST,
         #[error("Quiz has no questions")]
         NoQuestions = BAD_REQUEST,
+        #[error("No leaderboard to show")]
+        NoLeaderboard = BAD_REQUEST,
     }
 }
 
@@ -110,6 +112,8 @@ pub enum GameSessionStatus {
     Closed,
     Leaderboard {
         idx: usize,
+        leaderboard: Arc<Vec<LeaderboardEntry>>,
+        is_final: bool,
     },
 }
 
@@ -283,6 +287,7 @@ pub enum HostCommand {
     Start,
     NextQuestion,
     ShowQuestion { id: Uuid },
+    ShowPodium,
     EndGame,
 }
 
@@ -371,16 +376,18 @@ pub struct DisplayQuestionMessage {
     #[serde(flatten)]
     options: DisplayQuestionOptions,
     seconds: Option<u32>,
+    index: usize,
     total_questions: usize,
 }
 
 impl DisplayQuestionMessage {
-    pub fn new(value: &Question, total_questions: usize) -> Self {
+    pub fn new(value: &Question, index: usize, total_questions: usize) -> Self {
         Self {
             id: value.model.id,
             question: value.model.question.clone(),
             options: DisplayQuestionOptions::from(&value.options),
             seconds: value.model.r#type.default_answer_duration(),
+            index,
             total_questions,
         }
     }

@@ -862,6 +862,18 @@ async fn play_dummy_quiz() {
 
                     if is_final {
                         assert!(matches!(res, Err(GameSessionError::NoQuestionLeft)));
+                        session
+                            .handle_host_cmd(
+                                Command {
+                                    id: None,
+                                    command: HostCommand::ShowPodium,
+                                },
+                                session_arc.clone(),
+                                code,
+                            )
+                            .await
+                            .unwrap();
+
                         assert!(matches!(
                             player_1_rx.recv().await.unwrap(),
                             PlayerMessage::DisplayLeaderboard { .. }

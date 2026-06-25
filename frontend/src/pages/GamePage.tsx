@@ -1,5 +1,5 @@
 import type { JSX } from "react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { Toaster, toast } from "sonner"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
@@ -12,28 +12,6 @@ import type {
     QuestionResult,
     LeaderboardEntry,
 } from "@/hooks/useGameSession"
-
-interface GameSnapshot {
-    gameState: GameState
-    currentQuestion: GameQuestion | null
-    currentQuestionIndex: number
-    totalQuestions: number
-    questionExpiresAt: number | null
-    questionResult: QuestionResult | null
-    leaderboard: LeaderboardEntry[] | null
-    isFinalLeaderboard: boolean
-    playerItemOrder: string[] | null
-}
-
-function getGameSnapshot(key: string | null): GameSnapshot | null {
-    if (!key) return null
-    try {
-        const raw = sessionStorage.getItem(key)
-        return raw ? (JSON.parse(raw) as GameSnapshot) : null
-    } catch {
-        return null
-    }
-}
 
 export default function GamePage(): JSX.Element {
     const codeParam = useParams().code
@@ -48,7 +26,6 @@ export default function GamePage(): JSX.Element {
     }, [gameActive, navigate, codeParam])
 
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null
-    const snapshotKey = code !== undefined ? `gameSnapshot:${code}` : null
 
     const { playerName, playerEmoji } = useMemo(() => {
         if (!storageKey) return { playerName: undefined, playerEmoji: undefined }
@@ -76,62 +53,15 @@ export default function GamePage(): JSX.Element {
 
     // Lazy initializers read the snapshot once on mount to restore state after a page refresh.
     // sessionStorage reads are synchronous and fast, so calling getGameSnapshot per field is fine.
-    const [gameState, setGameState] = useState<GameState>(
-        () => getGameSnapshot(snapshotKey)?.gameState ?? GameStateEnum.PLAYING
-    )
-    const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(
-        () => getGameSnapshot(snapshotKey)?.currentQuestion ?? null
-    )
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
-        () => getGameSnapshot(snapshotKey)?.currentQuestionIndex ?? -1
-    )
-    const [totalQuestions, setTotalQuestions] = useState(
-        () => getGameSnapshot(snapshotKey)?.totalQuestions ?? 0
-    )
-    const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(
-        () => getGameSnapshot(snapshotKey)?.questionExpiresAt ?? null
-    )
-    const [questionResult, setQuestionResult] = useState<QuestionResult | null>(
-        () => getGameSnapshot(snapshotKey)?.questionResult ?? null
-    )
-    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(
-        () => getGameSnapshot(snapshotKey)?.leaderboard ?? null
-    )
-    const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(
-        () => getGameSnapshot(snapshotKey)?.isFinalLeaderboard ?? false
-    )
-    const [playerItemOrder, setPlayerItemOrder] = useState<string[] | null>(
-        () => getGameSnapshot(snapshotKey)?.playerItemOrder ?? null
-    )
-    const pendingFinalLeaderboardRef = useRef<LeaderboardEntry[] | null>(null)
-
-    // Persist game state so a page refresh restores the last known screen.
-    useEffect(() => {
-        if (!snapshotKey) return
-        const s: GameSnapshot = {
-            gameState,
-            currentQuestion,
-            currentQuestionIndex,
-            totalQuestions,
-            questionExpiresAt,
-            questionResult,
-            leaderboard,
-            isFinalLeaderboard,
-            playerItemOrder,
-        }
-        sessionStorage.setItem(snapshotKey, JSON.stringify(s))
-    }, [
-        snapshotKey,
-        gameState,
-        currentQuestion,
-        currentQuestionIndex,
-        totalQuestions,
-        questionExpiresAt,
-        questionResult,
-        leaderboard,
-        isFinalLeaderboard,
-        playerItemOrder,
-    ])
+    const [gameState, setGameState] = useState<GameState>(GameStateEnum.PLAYING)
+    const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(null)
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
+    const [totalQuestions, setTotalQuestions] = useState(0)
+    const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(null)
+    const [questionResult, setQuestionResult] = useState<QuestionResult | null>(null)
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
+    const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
+    const [playerItemOrder, setPlayerItemOrder] = useState<string[] | null>(null)
 
     useSocketEvent("displayQuestion", (payload, timing) => {
         setPlayerItemOrder(null)
@@ -149,7 +79,7 @@ export default function GamePage(): JSX.Element {
         const startedAt = timing ? new Date(timing).getTime() : Date.now()
         setQuestionExpiresAt(payload.seconds ? startedAt + payload.seconds * 1000 : null)
         setTotalQuestions(payload.totalQuestions)
-        setCurrentQuestionIndex((prev) => prev + 1)
+        setCurrentQuestionIndex(payload.index)
         setQuestionResult(null)
     })
 
@@ -160,31 +90,16 @@ export default function GamePage(): JSX.Element {
     })
 
     useSocketEvent("displayLeaderboard", (payload) => {
-        if (payload.isFinal) {
-            // Buffer final leaderboard — player stays on result screen until host ends the game
-            pendingFinalLeaderboardRef.current = payload.leaderboard
-            setIsFinalLeaderboard(true)
-        } else {
-            setLeaderboard(payload.leaderboard)
-            setIsFinalLeaderboard(false)
-            setGameState(GameStateEnum.LEADERBOARD)
-        }
+        setLeaderboard(payload.leaderboard)
+        setIsFinalLeaderboard(payload.isFinal)
+        setGameState(GameStateEnum.LEADERBOARD)
     })
 
     const [hostEndedGame, setHostEndedGame] = useState(false)
 
     useSocketEvent("gameEnded", () => {
         if (storageKey) sessionStorage.removeItem(storageKey)
-        if (snapshotKey) sessionStorage.removeItem(snapshotKey)
-        const pending = pendingFinalLeaderboardRef.current
-        if (pending) {
-            // First signal: show the final podium. Clear buffer so the next gameEnded navigates away.
-            pendingFinalLeaderboardRef.current = null
-            setLeaderboard(pending)
-            setIsFinalLeaderboard(true)
-            setGameState(GameStateEnum.LEADERBOARD)
-        } else if (isFinalLeaderboard) {
-            // Second signal: host ended the game after players saw the podium — navigate away cleanly
+        if (isFinalLeaderboard) {
             if (code !== undefined) sessionStorage.removeItem(`gameActive:${code}`)
             navigate("/")
         } else {

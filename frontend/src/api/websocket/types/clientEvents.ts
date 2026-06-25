@@ -23,9 +23,7 @@ export interface ClientEvents {
     showQuestion: {
         id: string
     }
-    setQuiz: {
-        quiz: string
-    }
+    showPodium: object
     kickPlayer: {
         id: string
     }

@@ -184,12 +184,14 @@ impl WsChannelBuilder {
                     _self.inner.ok(cmd.id).await;
                     let channel = _self.build(id, GameSession::handle_player_cmd, remove_player_ws);
                     player.set_channel(cmd.id, channel).await;
+                    let player_id = player.id;
                     // Remove from joining so game start doesn't cancel (kick) this reconnected connection.
                     if let GameSessionStatus::Waiting(joining) = &mut session.status
                         && let Some(pos) = joining.iter().position(|x| x.id() == channel_builder_id)
                     {
                         joining.swap_remove(pos);
                     }
+                    session.update_player(player_id).await;
                 }
             }
             _ => (),

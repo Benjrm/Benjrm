@@ -1,5 +1,4 @@
 import type { JSX } from "react"
-import { useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/shadcn/components/ui/button"
 import { Avatar, AvatarFallback } from "@shadcn/components/ui/avatar"
@@ -18,11 +17,6 @@ export default function LeaderboardAnimationScreen({
     isFinal,
     onLeave,
 }: LeaderboardAnimationScreenProps): JSX.Element {
-    const sorted = useMemo(
-        () => [...leaderboard].sort((a, b) => b.totalPoints - a.totalPoints),
-        [leaderboard]
-    )
-
     return (
         <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-12">
             <motion.h1
@@ -36,7 +30,7 @@ export default function LeaderboardAnimationScreen({
 
             <div className="w-full max-w-lg">
                 <AnimatePresence>
-                    {sorted.map((entry, i) => {
+                    {leaderboard.map((entry, i) => {
                         const rank = i + 1
                         const initials = entry.name.substring(0, 2).toUpperCase()
 

@@ -55,6 +55,8 @@ channels:
         $ref: "#/components/messages/displayQuestion"
       displayLeaderboard:
         $ref: "#/components/messages/displayLeaderboard"
+      showPodium:
+        $ref: "#/components/messages/showPodium"
       endGame:
         $ref: "#/components/messages/endGame"
     tags:
@@ -328,6 +330,16 @@ operations:
     tags:
       - name: Leaderboard
   
+  receiveShowPodium:
+    description: "Receive showPodium command from host"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/showPodium"
+    tags:
+      - name: Sessions
+  
   receiveEndGame:
     description: "Receive endGame command from host"
     action: receive
@@ -571,6 +583,10 @@ components:
                     type: integer
                     format: uint32
                     nullable: true
+                  index:
+                    type: integer
+                  totalQuestions:
+                    type: integer
               - $ref: "#/components/schemas/DisplayQuestionOptions"
     
     answerQuestion:
@@ -632,6 +648,14 @@ components:
               isFinal:
                 type: boolean
                 description: "Whether this leaderboard is the final quiz result"
+    
+    showPodium:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "showPodium"
     
     endGame:
       payload:
