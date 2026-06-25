@@ -8,7 +8,6 @@ import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import HostGameScreen from "@/components/HostGameScreen"
 import { GameStateEnum } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 import type { SessionPlayer } from "@/api/session"
 
 export default function HostDashboard(): JSX.Element {
@@ -85,7 +84,7 @@ export default function HostDashboard(): JSX.Element {
         setQuestionStatistics(payload.questionStatistics ?? null)
         setGameState(GameStateEnum.LEADERBOARD)
         if (isFinal) {
-            if (currentQuestion?.type === QuestionTypeEnum.SLIDE) {
+            if (currentQuestion?.type === "SLIDE") {
                 // Slide questions have no result screen — jump straight to podium
                 setIsFinalLeaderboard(true)
                 sendEndGame()

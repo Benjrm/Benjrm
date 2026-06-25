@@ -10,7 +10,6 @@ import Leaderboard from "@/quiz/leaderboard/components/Leaderboard"
 import MarkdownPageComponent from "@/components/markdown/MarkdownPageComponent"
 import { GameStateEnum } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
 import useQuestionStatistics from "@/hooks/useQuestionStatistics"
 
 function QuestionTimer({ expiresAt }: { expiresAt: number | null }): JSX.Element | null {
@@ -151,7 +150,7 @@ export default function HostGameScreen({
                 <div className="bg-card text-card-foreground flex flex-col rounded-2xl border p-6">
                     {gameState === GameStateEnum.LEADERBOARD &&
                     currentQuestion &&
-                    currentQuestion.type !== QuestionTypeEnum.SLIDE ? (
+                    currentQuestion.type !== "SLIDE" ? (
                         <HostGameQuestionStatistic
                             currentQuestionIndex={currentQuestionIndex}
                             expectedAnswers={players.length}
@@ -166,8 +165,7 @@ export default function HostGameScreen({
                                 <span className="text-muted-foreground text-sm font-bold">
                                     Question {currentQuestionIndex + 1} / {totalQuestions}
                                 </span>
-                                {playersPreviewing &&
-                                currentQuestion?.type !== QuestionTypeEnum.SLIDE ? (
+                                {playersPreviewing && currentQuestion?.type !== "SLIDE" ? (
                                     <span className="text-muted-foreground text-sm font-semibold">
                                         Players are reading...
                                     </span>
@@ -184,7 +182,7 @@ export default function HostGameScreen({
 
                             {currentQuestion ? (
                                 <>
-                                    {currentQuestion.type === QuestionTypeEnum.SLIDE ? (
+                                    {currentQuestion.type === "SLIDE" ? (
                                         <MarkdownPageComponent content={currentQuestion.text} />
                                     ) : (
                                         <>
@@ -195,7 +193,7 @@ export default function HostGameScreen({
                                                 {currentQuestion.text}
                                             </h2>
 
-                                            {currentQuestion.type === QuestionTypeEnum.ORDER &&
+                                            {currentQuestion.type === "ORDER" &&
                                             currentQuestion.options.length > 0 ? (
                                                 <ol className="mt-6 flex flex-col gap-2">
                                                     {currentQuestion.options.map((opt, i) => (
@@ -211,7 +209,7 @@ export default function HostGameScreen({
                                                     ))}
                                                 </ol>
                                             ) : null}
-                                            {currentQuestion.type !== QuestionTypeEnum.ORDER &&
+                                            {currentQuestion.type !== "ORDER" &&
                                             currentQuestion.options.length > 0 ? (
                                                 <div className="mt-6 grid grid-cols-2 gap-3">
                                                     {currentQuestion.options.map((opt, i) => {
@@ -240,7 +238,7 @@ export default function HostGameScreen({
                             )}
 
                             {gameState === GameStateEnum.QUESTION &&
-                            currentQuestion?.type !== QuestionTypeEnum.SLIDE ? (
+                            currentQuestion?.type !== "SLIDE" ? (
                                 <div className="mt-6 flex items-center gap-3 border-t pt-4">
                                     <div className="border-muted-foreground/20 border-t-muted-foreground/60 h-4 w-4 animate-spin rounded-full border-2" />
                                     <p className="text-muted-foreground text-sm">
@@ -278,7 +276,7 @@ export default function HostGameScreen({
                     }}
                     onShowPodium={
                         onShowPodium ??
-                        (currentQuestion?.type === QuestionTypeEnum.SLIDE &&
+                        (currentQuestion?.type === "SLIDE" &&
                         totalQuestions > 0 &&
                         currentQuestionIndex >= totalQuestions - 1
                             ? onNextQuestion
