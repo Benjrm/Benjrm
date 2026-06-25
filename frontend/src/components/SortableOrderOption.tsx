@@ -2,9 +2,11 @@ import { CSS } from "@dnd-kit/utilities"
 import { useSortable } from "@dnd-kit/sortable"
 import { GripVertical } from "lucide-react"
 import type { JSX } from "react"
+import MDEditor from "@uiw/react-md-editor"
 
 import { Button } from "@/shadcn/components/ui/button"
 import { Input } from "@/shadcn/components/ui/input"
+import { useTheme } from "@/context/ThemeContext"
 
 interface SortableOrderOptionProps {
     id: string
@@ -17,6 +19,7 @@ interface SortableOrderOptionProps {
     showDelete?: boolean
     editable?: boolean
     error: boolean
+    isMdEditor?: boolean
 }
 
 export default function SortableOrderOption({
@@ -30,10 +33,12 @@ export default function SortableOrderOption({
     showDelete = false,
     editable = false,
     error,
+    isMdEditor = false,
 }: SortableOrderOptionProps): JSX.Element {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id,
     })
+    const { theme } = useTheme()
 
     return (
         <div
@@ -63,16 +68,38 @@ export default function SortableOrderOption({
 
             {editable ? (
                 <div className="relative w-full">
-                    <Input
-                        onChange={(event) => onChange?.(event.target.value)}
-                        placeholder={placeholder}
-                        value={value}
-                        className={`text-foreground h-12 rounded-xl text-base font-semibold shadow-none ${
-                            error
-                                ? "border-red-400! bg-red-50 dark:border-red-400/30! dark:bg-red-500/10"
-                                : "border-border/40 bg-background/80"
-                        }`}
-                    />
+                    {isMdEditor ? (
+                        <div
+                            data-color-mode={theme === "auto" ? "auto" : theme}
+                            className={`[&_.w-md-editor-toolbar]:!border-border overflow-hidden rounded-xl border shadow-sm [&_.w-md-editor]:!shadow-none [&_.w-md-editor-text]:h-full [&_.w-md-editor-toolbar]:!border-b [&_.w-md-editor-toolbar]:!bg-transparent [&_.wmde-markdown-color]:!bg-transparent ${
+                                error ? "border-red-400 dark:border-red-400/30" : "border-border"
+                            }`}
+                        >
+                            <MDEditor
+                                height={100}
+                                onChange={(val) => onChange?.(val ?? "")}
+                                preview="edit"
+                                textareaProps={{ placeholder }}
+                                value={value}
+                                className={
+                                    error
+                                        ? "bg-red-50! dark:bg-red-500/10!"
+                                        : "bg-muted/90! dark:bg-muted/25!"
+                                }
+                            />
+                        </div>
+                    ) : (
+                        <Input
+                            onChange={(event) => onChange?.(event.target.value)}
+                            placeholder={placeholder}
+                            value={value}
+                            className={`text-foreground h-12 rounded-xl text-base font-semibold shadow-none ${
+                                error
+                                    ? "border-red-400! bg-red-50 dark:border-red-400/30! dark:bg-red-500/10"
+                                    : "border-border/40 bg-background/80"
+                            }`}
+                        />
+                    )}
                     {error ? (
                         <div className="absolute right-0 bottom-0 mx-2 mb-1 text-sm font-medium text-red-500">
                             This field is required

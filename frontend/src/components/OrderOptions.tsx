@@ -25,6 +25,7 @@ interface OrderOptionsProps {
     onDeleteOption: (index: number) => void
     onReorderOptions: (activeId: string, overId: string) => void
     onAddOption: () => void
+    isMdEditor: boolean
 }
 
 export default function OrderOptions({
@@ -34,6 +35,7 @@ export default function OrderOptions({
     onDeleteOption,
     onReorderOptions,
     onAddOption,
+    isMdEditor,
 }: OrderOptionsProps): JSX.Element {
     const sensors = useSensors(
         useSensor(TouchSensor, {
@@ -79,6 +81,7 @@ export default function OrderOptions({
                                 error={errorMissingAnswers.includes(index)}
                                 id={option.id}
                                 index={index}
+                                isMdEditor={isMdEditor}
                                 onChange={(value) => onChange(index, value)}
                                 placeholder={`Item ${index + 1}`}
                                 value={(option as { answer?: string }).answer ?? ""}
