@@ -43,6 +43,14 @@ If you want to run the backend directly using `cargo run` but still want to use 
 
 To run the checks performed by the pipelines locally, you can run `sh check.sh`.
 
+### Troubleshooting
+
+If the "ProcessFdQuotaExceeded" error occurs when running the backend, it means you have reached the maximum limit for open file descriptors in your shell. You can work around this issue by increasing the limit in your current shell session before running the backend:
+
+```bash
+$ ulimit -n 8192
+```
+
 ## CVE-2023-49092
 
 The MySQL database driver (`sqlx-mysql`) has a dependency (`rsa`), which has a vulnerability allowing potential key recovery. As a solution, the MySQL driver has been removed from this project. `cargo audit` still reports the vulnerability due to a [Cargo bug](https://github.com/rust-lang/cargo/issues/10801) causing `rsa` to be still included in the `Cargo.lock`. You can verify that `rsa` isn't being used in this project by running `cargo tree | grep rsa`.

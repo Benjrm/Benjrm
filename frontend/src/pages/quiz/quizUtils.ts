@@ -1,12 +1,15 @@
 import type { Modifier } from "@dnd-kit/core"
-import type { Question } from "@/types/question"
-import type { QuestionApiRequest, QuestionApiResponse } from "@/api/questions/types/question.api"
 import tempId from "@/utils/tempId"
-import { QueueOpEnum } from "@/hooks/useQuestionChangeQueue"
-import type { QueueItem } from "@/hooks/useQuestionChangeQueue"
-import { QuestionTypeEnum } from "@/api/questions/types/questionType"
+import type {
+    Question,
+    QuestionRequest,
+    QuestionType,
+    UpdateQuestionRequest,
+} from "@/api/questions/questions.types.ts"
+import assertNever from "@/utils/assertNever.ts"
+import type { QueueItem } from "@/queue/queue.types.ts"
 
-export function getQuestionPreviewText(text: string | undefined, type?: string): string {
+export function getQuestionPreviewText(text: string | undefined, type?: QuestionType): string {
     const firstLine =
         text
             ?.split("\n")
@@ -17,56 +20,21 @@ export function getQuestionPreviewText(text: string | undefined, type?: string):
         .replace(/[*_~`]/g, "")
         .replace(/\[(.*?)\]\(.*?\)/g, "$1")
         .trim()
-    return cleaned || (type === QuestionTypeEnum.SLIDE ? "Untitled slide" : "Untitled question")
+    return cleaned || (type === "SLIDE" ? "Untitled slide" : "Untitled question")
 }
 
 export function createEmptyQuestion(): Question {
     return {
         id: tempId(),
         question: "",
+        created: new Date(),
+        modified: new Date(),
+        type: "SINGLE_CHOICE",
         options: [
             { id: tempId(), answer: "", correct: false },
             { id: tempId(), answer: "", correct: false },
         ],
-        type: QuestionTypeEnum.MULTIPLE_CHOICE,
         hidden: false,
-    }
-}
-
-export function questionToRequest(question: Question): QuestionApiRequest {
-    const getOptions = () => {
-        if (question.type === QuestionTypeEnum.SLIDE) return []
-        if (question.type === QuestionTypeEnum.ORDER)
-            return question.options.map((opt) => ({ answer: opt.answer }))
-        return question.options.map((opt) => ({
-            answer: opt.answer,
-            correct: Boolean((opt as { correct?: boolean }).correct),
-        }))
-    }
-
-    return {
-        question: question.question,
-        type: question.type,
-        hidden: question.hidden,
-        options: getOptions(),
-    }
-}
-
-export function responseToQuestion(response: QuestionApiResponse): Question {
-    const optionsRaw = Array.isArray(response.options) ? response.options : []
-
-    const options = optionsRaw.map((opt) => ({
-        id: String(opt.id ?? tempId()),
-        answer: String(opt.answer ?? ""),
-        correct: Boolean((opt as { correct?: boolean }).correct),
-    }))
-
-    return {
-        id: String(response.id ?? tempId()),
-        question: String(response.question ?? ""),
-        type: response.type ?? QuestionTypeEnum.MULTIPLE_CHOICE,
-        hidden: Boolean(response.hidden),
-        options,
     }
 }
 
@@ -75,33 +43,57 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
 
     let draftQuestions = [...baseQuestions]
 
-    const applyRequest = (question: Question, request: QuestionApiRequest): Question => {
-        const nextOptions = Array.isArray(request.options)
-            ? (
-                  request.options as {
-                      answer: string
-                      correct?: boolean
-                  }[]
-              ).map((option, index) => ({
-                  id: question.options[index]?.id ?? tempId(),
-                  answer: option.answer,
-                  correct: Boolean(option.correct),
-              }))
-            : []
-
-        return {
-            ...question,
-            question: request.question,
-            hidden: request.hidden,
-            type: request.type,
-            options: nextOptions,
+    const applyRequest = (
+        question: Question,
+        request: QuestionRequest | UpdateQuestionRequest
+    ): Question => {
+        switch (request.type) {
+            case "SLIDE":
+                return {
+                    ...question,
+                    question: request.question,
+                    hidden: request.hidden,
+                    type: request.type,
+                }
+            case "ORDER": {
+                const existingOptions = question.type === "ORDER" ? question.options : []
+                return {
+                    ...question,
+                    question: request.question,
+                    hidden: request.hidden,
+                    type: "ORDER",
+                    options: request.options.map((o, i) => ({
+                        id: existingOptions[i]?.id ?? tempId(),
+                        answer: o.answer,
+                    })),
+                }
+            }
+            case "SINGLE_CHOICE":
+            case "MULTIPLE_CHOICE": {
+                const existingOptions =
+                    question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE"
+                        ? question.options
+                        : []
+                return {
+                    ...question,
+                    question: request.question,
+                    hidden: request.hidden,
+                    type: request.type,
+                    options: request.options.map((o, i) => ({
+                        id: existingOptions[i]?.id ?? tempId(),
+                        answer: o.answer,
+                        correct: o.correct,
+                    })),
+                }
+            }
+            default:
+                return assertNever(request)
         }
     }
 
     queue.forEach((item) => {
-        if (item.op === QueueOpEnum.REORDER) {
-            const payload = item.payload as { order?: string[] } | undefined
-            const order = payload?.order ?? []
+        if (item.op === "reorder") {
+            const { order } = item.payload
             if (!order.length) return
 
             const orderSet = new Set(order)
@@ -118,25 +110,41 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
 
         if (!item.questionId) return
 
-        if (item.op === QueueOpEnum.DELETE) {
+        if (item.op === "delete") {
             draftQuestions = draftQuestions.filter((question) => question.id !== item.questionId)
             return
         }
 
-        if (item.op === QueueOpEnum.CREATE) {
-            const request = item.payload as QuestionApiRequest | undefined
+        if (item.op === "create") {
+            const request = item.payload as QuestionRequest | undefined
             if (!request) return
 
-            const createdQuestion = applyRequest(
-                {
-                    id: item.questionId,
-                    question: "",
-                    type: request.type,
-                    hidden: request.hidden,
-                    options: [],
-                },
-                request
-            )
+            const now = new Date()
+            const base = {
+                id: item.questionId,
+                question: "",
+                type: request.type,
+                hidden: request.hidden,
+                created: now,
+                modified: now,
+            }
+
+            const createdQuestion =
+                request.type === "SLIDE"
+                    ? applyRequest(
+                          {
+                              ...base,
+                              type: "SLIDE",
+                          },
+                          request
+                      )
+                    : applyRequest(
+                          {
+                              ...base,
+                              options: [],
+                          },
+                          request
+                      )
 
             const existingIndex = draftQuestions.findIndex((q) => q.id === item.questionId)
             if (existingIndex >= 0) {
@@ -147,19 +155,47 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
             return
         }
 
-        if (item.op === QueueOpEnum.UPDATE) {
-            const request = item.payload as Partial<QuestionApiRequest> | undefined
+        if (item.op === "update") {
+            const request = item.payload as QuestionRequest | undefined
             if (!request) return
+            if (!request.type) return
 
             const existing = draftQuestions.find((q) => q.id === item.questionId)
             if (!existing) return
 
-            const updatedQuestion = applyRequest(existing, {
+            const base = {
                 question: request.question ?? existing.question,
-                hidden: request.hidden ?? existing.hidden,
                 type: request.type ?? existing.type,
-                options: request.options ?? existing.options,
-            })
+                hidden: request.hidden ?? existing.hidden,
+                modified: new Date(),
+            }
+
+            let updatedQuestion: Question
+            switch (request.type) {
+                case "SLIDE":
+                    updatedQuestion = applyRequest(existing, {
+                        ...base,
+                        type: "SLIDE",
+                    })
+                    break
+                case "ORDER":
+                    updatedQuestion = applyRequest(existing, {
+                        ...base,
+                        type: request.type,
+                        options: request.options,
+                    })
+                    break
+                case "SINGLE_CHOICE":
+                case "MULTIPLE_CHOICE":
+                    updatedQuestion = applyRequest(existing, {
+                        ...base,
+                        type: request.type,
+                        options: request.options,
+                    })
+                    break
+                default:
+                    assertNever(request)
+            }
 
             draftQuestions = draftQuestions.map((q) =>
                 q.id === item.questionId ? updatedQuestion : q
@@ -168,12 +204,6 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
     })
 
     return draftQuestions
-}
-
-export interface QuizDraftStorage {
-    questions: Question[]
-    currentQuestionIndex: number
-    savedAt: string
 }
 
 export const restrictToVerticalAxis: Modifier = ({ transform }) => ({
