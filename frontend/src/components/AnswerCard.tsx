@@ -2,11 +2,9 @@
 
 import type { JSX } from "react"
 import { Check, Trash2, X } from "lucide-react"
-import MDEditor from "@uiw/react-md-editor"
 import getAnswerVisuals from "../utils/answerVisuals"
-import { Textarea } from "@/shadcn/components/ui/textarea"
 import { Button } from "@/shadcn/components/ui/button"
-import { useTheme } from "@/context/ThemeContext"
+import AnswerContent from "@/components/AnswerContent"
 
 export interface AnswerCardProps {
     // visual props are optional; can be derived from `index`
@@ -41,7 +39,6 @@ export default function AnswerCard({
     error,
     isMdEditor = false,
 }: AnswerCardProps): JSX.Element {
-    const { theme } = useTheme()
     // If any visual prop is provided, use provided (with defaults). Otherwise, derive from index when available.
     const hasProvidedVisuals = icon != null || accent != null || glow != null
     let visuals: { accent: string; glow: string; icon: string }
@@ -86,50 +83,13 @@ export default function AnswerCard({
                         {usedIcon}
                     </div>
 
-                    <div className="relative w-full">
-                        {isMdEditor ? (
-                            <div
-                                data-color-mode={theme === "auto" ? "auto" : theme}
-                                className={`[&_.w-md-editor-toolbar]:!border-border overflow-hidden rounded-xl border shadow-sm [&_.w-md-editor]:!shadow-none [&_.w-md-editor-text]:h-full [&_.w-md-editor-toolbar]:!border-b [&_.w-md-editor-toolbar]:!bg-transparent [&_.wmde-markdown-color]:!bg-transparent ${
-                                    error
-                                        ? "border-red-400 dark:border-red-400/30"
-                                        : "border-border"
-                                }`}
-                            >
-                                <MDEditor
-                                    height={120}
-                                    onChange={(val) => onChange(val ?? "")}
-                                    preview="edit"
-                                    textareaProps={{ placeholder }}
-                                    value={value}
-                                    className={
-                                        error
-                                            ? "bg-red-50! dark:bg-red-500/10!"
-                                            : "bg-muted/90! dark:bg-muted/25!"
-                                    }
-                                />
-                            </div>
-                        ) : (
-                            <Textarea
-                                onChange={(e) => onChange(e.target.value)}
-                                placeholder={placeholder}
-                                rows={2}
-                                style={{ fieldSizing: "fixed" }}
-                                value={value}
-                                className={`placeholder:text-muted-foreground/60 h-28 w-full resize-none overflow-y-auto p-4 text-lg leading-7 font-semibold shadow-none focus-visible:ring-0 sm:h-24 sm:text-lg ${
-                                    error
-                                        ? "border-red-400! bg-red-50 dark:border-red-400/30! dark:bg-red-500/10"
-                                        : "bg-muted/90 dark:bg-muted/25 border-none"
-                                }`}
-                            />
-                        )}
-
-                        {error ? (
-                            <div className="absolute right-0 bottom-0 left-0 mx-2 mb-1 text-sm font-medium text-red-500">
-                                This field is required
-                            </div>
-                        ) : null}
-                    </div>
+                    <AnswerContent
+                        error={error}
+                        isMdEditor={isMdEditor}
+                        onChange={onChange}
+                        placeholder={placeholder}
+                        value={value}
+                    />
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
