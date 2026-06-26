@@ -17,6 +17,7 @@ pub struct Oidc {
     public_idp_url: Option<Url>,
     issuer_url: Url,
     logout_url: Url,
+    account_url: Option<String>,
 }
 
 impl Oidc {
@@ -52,6 +53,8 @@ impl Oidc {
         let logout_url = Url::parse(&logout_url).expect("LOGOUT_URL");
         let logout_url = Self::to_public_idp_url_inner(logout_url, &public_idp_url);
 
+        let account_url = env::var("OIDC_ACCOUNT_URL").ok();
+
         let config = OAuth2Config::new(
             env_var("OIDC_CLIENT_ID"),
             env_var("OIDC_CLIENT_SECRET"),
@@ -76,6 +79,7 @@ impl Oidc {
             public_idp_url,
             issuer_url: public_issuer_url,
             logout_url,
+            account_url,
         }
     }
 
@@ -90,6 +94,10 @@ impl Oidc {
 
     fn to_public_idp_url(&self, url: Url) -> Url {
         Self::to_public_idp_url_inner(url, &self.public_idp_url)
+    }
+
+    pub fn account_url(&self) -> Option<String> {
+        self.account_url.clone()
     }
 }
 

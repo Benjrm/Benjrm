@@ -6,6 +6,8 @@ use {
             entity::{ActiveUser, UserColumn, UserEntity, UserModel},
             oidc::error::Error,
         },
+        error::Error as AppError,
+        quiz::{QuizError, QuizFilter, entity::QuizModel},
     },
     actix_session::Session,
     actix_web::{HttpResponse, web},
@@ -14,7 +16,7 @@ use {
     openidconnect::Nonce,
     sea_orm::{
         ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter,
-        SqlErr,
+        SqlErr, TransactionTrait,
     },
     serde::{Deserialize, Serialize},
     uuid::Uuid,
@@ -138,8 +140,62 @@ async fn logout(data: web::Data<AppData>, session: Session) -> HttpResponse {
         .finish()
 }
 
-async fn get_user(user: User) -> HttpResponse {
-    HttpResponse::Ok().json(user)
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UserResponse {
+    id: Uuid,
+    account_url: Option<String>,
+}
+
+async fn get_user(user: User, data: web::Data<AppData>) -> HttpResponse {
+    HttpResponse::Ok().json(UserResponse {
+        id: user.id,
+        account_url: data.oidc.account_url(),
+    })
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct DeleteConfirmation {
+    confirmation: String,
+}
+
+async fn delete_user(
+    data: web::Data<AppData>,
+    session: Session,
+    user: User,
+    body: web::Json<DeleteConfirmation>,
+) -> Result<HttpResponse, actix_web::Error> {
+    if body.confirmation != "DELETE" {
+        return Ok(HttpResponse::UnprocessableEntity().finish());
+    }
+
+    let txn = data
+        .db
+        .begin()
+        .await
+        .map_err(|e| AppError::from(QuizError::from(e)))?;
+
+    let quizzes = QuizModel::get_many(&txn, user.id, &QuizFilter { hidden: None })
+        .await
+        .map_err(AppError::from)?;
+
+    for quiz in quizzes {
+        quiz.delete(&txn).await?;
+    }
+
+    UserEntity::delete_by_id(user.id)
+        .exec(&txn)
+        .await
+        .map_err(|e| AppError::from(QuizError::from(e)))?;
+
+    txn.commit()
+        .await
+        .map_err(|e| AppError::from(QuizError::from(e)))?;
+
+    session.purge();
+
+    Ok(HttpResponse::NoContent().finish())
 }
 
 #[cfg(debug_assertions)]
@@ -202,7 +258,11 @@ pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/login").route(web::get().to(login)));
     cfg.service(web::resource("/oidc/callback").route(web::get().to(callback)));
     cfg.service(web::resource("/logout").route(web::post().to(logout)));
-    cfg.service(web::resource("/user").route(web::get().to(get_user)));
+    cfg.service(
+        web::resource("/user")
+            .route(web::get().to(get_user))
+            .route(web::delete().to(delete_user)),
+    );
 
     #[cfg(debug_assertions)]
     cfg.service(web::resource("/login/dummy/{id}").route(web::get().to(dummy_login)));
