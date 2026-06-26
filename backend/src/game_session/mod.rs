@@ -95,7 +95,7 @@ pub struct GameSession {
 
 #[derive(Debug)]
 pub enum GameSessionStatus {
-    Waiting,
+    Waiting(Vec<Box<dyn Joining>>),
     Started,
     Question {
         idx: usize,
@@ -125,7 +125,7 @@ impl From<User> for GameSessionHost {
 
 pub struct GameSessionPlayer {
     id: Uuid,
-    name: Option<String>,
+    name: String,
     emoji: Option<&'static Emoji>,
     channel: Box<dyn Channel<PlayerMessage>>,
     points: u32,
@@ -156,6 +156,13 @@ impl From<WsChannelError> for ChannelError {
     fn from(value: WsChannelError) -> Self {
         Self::Ws(value)
     }
+}
+
+#[async_trait::async_trait]
+pub trait Joining: Debug + Send {
+    /// Cancel joining (i.e. kick player).
+    async fn cancel(self: Box<Self>);
+    fn id(&self) -> u64;
 }
 
 #[derive(Debug, Serialize)]
@@ -200,6 +207,7 @@ pub struct Command<T> {
 pub trait CommandTrait: Sized {
     fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error>;
     fn pong(&self) -> Option<(u32, DateTime<Utc>)>;
+    fn id(&self) -> Option<u64>;
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -284,6 +292,10 @@ impl CommandTrait for Command<HostCommand> {
             _ => None,
         }
     }
+
+    fn id(&self) -> Option<u64> {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -332,6 +344,10 @@ impl CommandTrait for Command<PlayerCommand> {
             PlayerCommand::Pong { id, timestamp } => Some((id, timestamp)),
             _ => None,
         }
+    }
+
+    fn id(&self) -> Option<u64> {
+        self.id
     }
 }
 
