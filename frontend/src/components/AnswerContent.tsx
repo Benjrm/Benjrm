@@ -49,16 +49,19 @@ export default function AnswerContent({
                         />
                     </div>
 
-                    <Button
-                        aria-label="Expand editor"
-                        className="absolute top-1 right-1 z-10 h-6 w-6 rounded p-0 opacity-60 hover:opacity-100"
-                        onClick={() => setIsExpanded(true)}
-                        size="sm"
-                        type="button"
-                        variant="ghost"
-                    >
-                        <Maximize2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="mt-1 flex justify-end">
+                        <Button
+                            aria-label="Expand editor"
+                            className="h-6 gap-1 px-2 text-[10px] opacity-60 hover:opacity-100"
+                            onClick={() => setIsExpanded(true)}
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                        >
+                            <Maximize2 className="h-3 w-3" />
+                            Expand
+                        </Button>
+                    </div>
 
                     <Dialog onOpenChange={setIsExpanded} open={isExpanded}>
                         <DialogContent className="max-w-3xl">
