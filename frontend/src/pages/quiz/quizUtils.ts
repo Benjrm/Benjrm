@@ -1,4 +1,5 @@
 import type { Modifier } from "@dnd-kit/core"
+import type { TFunction } from "i18next"
 import tempId from "@/utils/tempId"
 import type {
     Question,
@@ -6,10 +7,14 @@ import type {
     QuestionType,
     UpdateQuestionRequest,
 } from "@/api/questions/questions.types.ts"
-import assertNever from "@/utils/assertNever.ts"
 import type { QueueItem } from "@/queue/queue.types.ts"
+import assertNever from "@/utils/assertNever.ts"
 
-export function getQuestionPreviewText(text: string | undefined, type?: QuestionType): string {
+export function getQuestionPreviewText(
+    text: string | undefined,
+    type?: QuestionType,
+    t?: TFunction
+): string {
     const firstLine =
         text
             ?.split("\n")
@@ -20,6 +25,15 @@ export function getQuestionPreviewText(text: string | undefined, type?: Question
         .replace(/[*_~`]/g, "")
         .replace(/\[(.*?)\]\(.*?\)/g, "$1")
         .trim()
+
+    if (t) {
+        return (
+            cleaned ||
+            (type === "SLIDE"
+                ? t("quizEditor.editor.untitledSlide")
+                : t("quizEditor.editor.untitledQuestion"))
+        )
+    }
     return cleaned || (type === "SLIDE" ? "Untitled slide" : "Untitled question")
 }
 

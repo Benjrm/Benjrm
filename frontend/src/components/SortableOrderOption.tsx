@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/sortable"
 import { GripVertical } from "lucide-react"
 import type { JSX } from "react"
 
+import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 import AnswerContent from "@/components/AnswerContent"
 
@@ -33,6 +34,7 @@ export default function SortableOrderOption({
     error,
     isMdEditor = false,
 }: SortableOrderOptionProps): JSX.Element {
+    const { t } = useTranslation()
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id,
     })
@@ -85,7 +87,7 @@ export default function SortableOrderOption({
                     type="button"
                     variant="ghost"
                 >
-                    Remove
+                    {t("common.buttons.delete")}
                 </Button>
             ) : null}
         </div>

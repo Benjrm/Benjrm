@@ -1,0 +1,310 @@
+{
+    "common": {
+        "errors": {
+            "backendUnavailable": "The backend is currently unavailable. Please try again later.",
+            "notFound": "The page you are looking for does not exist."
+        },
+        "loading": "Loading {{name}}...",
+        "download": "Download {{name}}",
+        "buttons": {
+            "viewAll": "View All",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "correct": "Correct",
+            "wrong": "Wrong"
+        },
+        "footer": {
+            "allRightsReserved": "All Rights Reserved.",
+            "imprint": "Impressum",
+            "privacyPolicy": "Privacy Policy",
+            "termsAndConditions": "Terms and Conditions"
+        },
+        "brandName": "Benjrm",
+        "header": {
+            "home": "Home",
+            "dashboard": "Dashboard",
+            "toggleMenu": "Toggle menu",
+            "openProfile": "Open profile",
+            "signIn": "SIGN IN",
+            "logout": "Logout"
+        },
+        "profileModal": {
+            "title": "Profile",
+            "deleted": {
+                "title": "Account Deleted",
+                "success": "Your Benjrm account has been successfully deleted.",
+                "note": "Note: this only deleted your Benjrm account. Your account at your identity provider was not affected.",
+                "openIdpHint": "You may also want to delete your account at your identity provider. Click below to open it.",
+                "openIdpButton": "Open Identity Provider",
+                "contactAdmin": "To delete your account at your identity provider, please contact your administrator.",
+                "goHome": "Go to Home"
+            },
+            "settings": {
+                "title": "Account Settings",
+                "description": "Edit your account settings in your identity provider.",
+                "openButton": "Open Account Settings",
+                "managedExternally": "Your account settings are managed externally. Contact your administrator for help with account management."
+            },
+            "dangerZone": {
+                "title": "Danger Zone",
+                "description": "Permanently deletes your Benjrm account and all associated data. Your identity provider account will not be affected.",
+                "deletionIncludes": "Deletion includes:",
+                "itemQuizzes": "All your quizzes and questions",
+                "itemHistory": "Account history",
+                "confirmBefore": "Type",
+                "confirmAfter": "to confirm",
+                "deleting": "Deleting…",
+                "deleteButton": "Delete Account"
+            }
+        }
+    },
+    "dashboard": {
+        "loadingQuizzes": "Loading quizzes...",
+        "quizzesError": "Quizzes could not be loaded right now.",
+        "noQuizzes": "No quizzes available.",
+        "hero": {
+            "inputCodeAria": "Input Code",
+            "codePlaceholder": "Code",
+            "joinViaCode": "Join via Code",
+            "startGame": "START GAME",
+            "addQuiz": "Add Quiz",
+            "imageAlt": "People celebrating"
+        },
+        "discover": {
+            "title": "Discover",
+            "recentQuizzes": "Most Recent Quizzes",
+            "yourQuizzes": "Your Quizzes"
+        }
+    },
+    "quiz": {
+        "modal": {
+            "editTitle": "Edit quiz",
+            "createTitle": "Create a new Quiz",
+            "editDescription": "Update title and description.",
+            "createDescription": "Enter a title and optional description."
+        },
+        "form": {
+            "saveError": "The quiz could not be saved right now. Please try again later.",
+            "missingIdError": "Missing quiz id for edit",
+            "createButton": "Create Quiz",
+            "creating": "Creating...",
+            "saving": "Saving...",
+            "saveChangesButton": "Save changes",
+            "titleLabel": "Title *",
+            "titlePlaceholder": "e.g. Math Quiz",
+            "descriptionLabel": "Description",
+            "descriptionPlaceholder": "Optional description for your quiz..."
+        },
+        "card": {
+            "noDescription": "No description available yet.",
+            "editQuiz": "Edit Quiz"
+        },
+        "playButton": {
+            "starting": "Starting...",
+            "play": "Play Quiz"
+        }
+    },
+    "quizEditor": {
+        "toasts": {
+            "loadingQuiz": "Loading quiz...",
+            "loadingQuestions": "Loading questions...",
+            "loadQuestionsError": "Failed to load questions.",
+            "unsavedChanges": "There are still unsaved changes. Click Save Quiz to save them.",
+            "deleteError": "Quiz could not be deleted. Please try again."
+        },
+        "header": {
+            "editTitle": "Edit title",
+            "editDescription": "Edit description",
+            "settings": "Settings",
+            "discardChanges": "Discard Changes",
+            "saving": "Saving...",
+            "saveQuiz": "Save Quiz",
+            "deleteQuiz": "Delete Quiz"
+        },
+        "deleteModal": {
+            "title": "Delete Quiz?",
+            "description": "This action cannot be undone. Are you sure you want to delete the quiz?"
+        },
+        "editor": {
+            "slide": "Slide",
+            "question": "Question",
+            "of": "of",
+            "usePlainInput": "Use Plain Input",
+            "useMarkdownEditor": "Use Markdown Editor",
+            "selectType": "Select type",
+            "types": {
+                "SINGLE_CHOICE": "Single Choice",
+                "MULTIPLE_CHOICE": "Multiple Choice",
+                "SLIDE": "Slide",
+                "ORDER": "Order"
+            },
+            "slidePlaceholderMd": "Type your slide content here (Markdown supported)...",
+            "questionPlaceholderMd": "Type your question here (Markdown supported)...",
+            "slidePlaceholder": "Type your slide content here...",
+            "questionPlaceholder": "Type your question here...",
+            "fieldRequired": "This field is required",
+            "expandEditor": "Expand editor",
+            "expand": "Expand",
+            "editAnswer": "Edit Answer",
+            "untitledSlide": "Untitled slide",
+            "untitledQuestion": "Untitled question",
+            "untitledQuiz": "Untitled"
+        },
+        "sidebar": {
+            "questions": "Questions",
+            "addQuestion": "Add Question",
+            "dragHandle": "Drag Handle",
+            "dragQuestion": "Drag question",
+            "questionTitle": "Question Title",
+            "questionDescription": "Question Description",
+            "answerOptions": "Answer Options",
+            "optionPlaceholder": "Option {{i}} placeholder...",
+            "deleteAnswerOption": "Delete answer option",
+            "editQuestion": "Edit question",
+            "deleteQuestion": "Delete question"
+        },
+        "settings": {
+            "livePreview": "Live Preview",
+            "slideContent": "Slide Content",
+            "typeMarkdownHere": "*Type your markdown here...*",
+            "typeQuestionHere": "Type your question..."
+        },
+        "options": {
+            "item": "Item",
+            "addItem": "Add Item",
+            "option": "Option",
+            "addOption": "Add Option",
+            "answerPlaceholder": "Answer"
+        },
+        "validation": {
+            "createQuizFirst": "Please create or open a quiz first so the questions can be saved in the adapter.",
+            "addAtLeastOne": "Add at least one question before saving.",
+            "slideMissingText": "Slide {{index}} is missing the text.",
+            "questionMissingText": "Question {{index}} is missing the question text.",
+            "optionEmpty": "Question {{questionIndex}}, option {{optionIndex}} is empty.",
+            "needsCorrectAnswer": "Question {{index}} needs at least one correct answer.",
+            "unknownError": "Question {{index}} has an unknown validation error",
+            "missingQuestionText": "The question text is missing.",
+            "optionIsEmpty": "Option {{index}} is empty.",
+            "oneCorrectRequired": "At least one correct answer is required."
+        }
+    },
+    "game": {
+        "starting": "Game is starting...",
+        "getReady": "Get ready!",
+        "hostClosed": "Host has closed the lobby",
+        "hostClosedLoading": "Host has closed the lobby...",
+        "playerLeft": "{{name}} has left",
+        "anErrorOccurred": "An error occurred",
+        "question": {
+            "label": "Question {{current}} / {{total}}",
+            "current": "Current Question:",
+            "noQuestion": "No question yet.",
+            "playersReading": "Players are reading...",
+            "waitingForAnswers": "Waiting for participants to answer",
+            "complete": "Question complete — results are in!",
+            "waitingForHost": "Waiting for the host to continue...",
+            "waitingForNext": "Waiting for next question…",
+            "currentLabel": "Current Question",
+            "progress": "Question progress",
+            "skipNext": "Skip / Next Question"
+        },
+        "answer": {
+            "submit": "Submit Answer",
+            "sent": "Answer sent!",
+            "submitOrder": "Submit Order"
+        },
+        "result": {
+            "correct": "Correct!",
+            "wrong": "Wrong!",
+            "points": "+{{points}} points",
+            "total": "Total: {{total}}"
+        },
+        "leaderboard": {
+            "title": "Leaderboard",
+            "finalPodium": "Final Podium",
+            "finished": "🏆 The quiz is finished! 🏆",
+            "leave": "Leave Game",
+            "pts": "pts"
+        },
+        "host": {
+            "dashboard": "Host Dashboard",
+            "players": "{{count}} players",
+            "timeLeft": "{{secs}}s left",
+            "timesUp": "Time's up!",
+            "showPodium": "Show Podium →",
+            "endGame": "End Game & Exit",
+            "showLeaderboard": "Show Leaderboard →",
+            "nextQuestion": "Next Question →"
+        },
+        "player": {
+            "host": "Host",
+            "player": "Player"
+        },
+        "time": "Time: {{time}}"
+    },
+    "lobby": {
+        "waitingLobby": "Waiting Lobby",
+        "loadingLobby": "Loading the quiz lobby…",
+        "lobbyNotFound": {
+            "title": "Quiz lobby not found",
+            "description": "No lobby with the code {{code}} was found. Please check the invitation code and try again."
+        },
+        "host": {
+            "noTitle": "No title",
+            "playersJoined": "Players joined:",
+            "noPlayers": "No players yet — share the pin!",
+            "kickPlayer": "Kick {{name}}"
+        },
+        "player": {
+            "youreIn": "You're in!",
+            "playerSetup": "Player Setup",
+            "tapAvatarHint": "Tap avatar to choose emoji",
+            "waitingForHost": "Waiting for host to start the game"
+        },
+        "profile": {
+            "chooseName": "Choose Name",
+            "choosePlayerName": "Choose player name",
+            "chooseProfileEmoji": "Choose profile emoji",
+            "selectEmoji": "Select emoji {{emoji}}",
+            "saving": "Saving…",
+            "save": "Save"
+        },
+        "pin": {
+            "label": "Game Pin",
+            "copyTitle": "Copy Game Pin",
+            "copied": "Game Pin copied!"
+        },
+        "startGame": "Start Game",
+        "qr": {
+            "scanToJoin": "Scan to join at",
+            "showFullscreen": "Show fullscreen",
+            "exitFullscreen": "Exit fullscreen"
+        },
+        "errors": {
+            "failedToStart": "Failed to start the game",
+            "somethingWentWrong": "Something went wrong",
+            "kicked": "You have been removed from the lobby by the host.",
+            "waitingForPlayers": "Waiting for players to join..."
+        },
+        "events": {
+            "playerLeft": "{{name}} has left the room"
+        }
+    },
+    "landing": {
+        "newFeaturesLive": "New Features Live",
+        "engageAndLearn": "Engage and learn",
+        "with": "with",
+        "subtitle": "HOST AND PLAY FUN AND INTERACTIVE QUIZZES",
+        "gamePinPlaceholder": "ENTER GAME PIN",
+        "gamePinAriaLabel": "Enter Game PIN",
+        "checking": "Checking…",
+        "playButton": "PLAY",
+        "imageAlt": "Students participating in a quiz",
+        "imageText": "Quiz together, learn forever.",
+        "errors": {
+            "generic": "Something went wrong. Please try again.",
+            "lobbyNotFound": "No lobby found with this code. Please check and try again."
+        }
+    }
+}

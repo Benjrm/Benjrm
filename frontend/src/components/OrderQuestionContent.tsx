@@ -3,6 +3,7 @@
 
 import type { JSX } from "react"
 import { useState, useEffect, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import {
     DndContext,
     closestCenter,
@@ -93,12 +94,13 @@ export default function OrderQuestionContent({
     options = [],
     playerName,
     playerEmoji,
-    questionText = "Ordne die Elemente in die richtige Reihenfolge",
+    questionText,
     secondsToAnswer = null,
     questionExpiresAt = null,
     totalQuestions = 0,
     onSendAnswer,
 }: OrderQuestionContentProps): JSX.Element {
+    const { t } = useTranslation()
     const [items, setItems] = useState<Option[]>(options)
     const [hasAnswered, setHasAnswered] = useState(false)
     const timeLeft = useQuestionTimer(questionExpiresAt ?? null, secondsToAnswer ?? null)
@@ -162,9 +164,11 @@ export default function OrderQuestionContent({
                 <QuestionHeader
                     currentQuestion={currentQuestionIndex + 1}
                     playerEmoji={playerEmoji}
-                    playerName={playerName ?? (isHost ? "Host" : "Player")}
                     remainingTime={timeLeft}
                     totalQuestions={totalQuestions}
+                    playerName={
+                        playerName ?? (isHost ? t("game.player.host") : t("game.player.player"))
+                    }
                 />
 
                 <TimerBar
@@ -179,13 +183,13 @@ export default function OrderQuestionContent({
                 {isHost ? (
                     <div className="flex flex-col items-center gap-6 py-12">
                         <p className="text-muted-foreground text-center text-lg">
-                            Players are ordering the items...
+                            {t("game.question.playersReading")}
                         </p>
                         <Button
                             className="bg-[#00D4E8] px-8 py-6 text-lg font-bold text-black hover:bg-[#00BDD0]"
                             onClick={onNextQuestion}
                         >
-                            Next / Show Results
+                            {t("game.question.skipNext")}
                         </Button>
                     </div>
                 ) : (
@@ -217,7 +221,7 @@ export default function OrderQuestionContent({
                             disabled={hasAnswered}
                             onClick={handleSend}
                         >
-                            {hasAnswered ? "Answer sent!" : "Submit Order"}
+                            {hasAnswered ? t("game.answer.sent") : t("game.answer.submitOrder")}
                         </Button>
                     </div>
                 )}

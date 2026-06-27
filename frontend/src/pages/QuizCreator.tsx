@@ -14,6 +14,7 @@ import {
     useSensors,
 } from "@dnd-kit/core"
 
+import { useTranslation } from "react-i18next"
 import CreateQuizModal from "../components/CreateQuizModal"
 import QuestionEditor from "../components/QuestionEditor"
 import QuestionSidebar from "../components/QuestionSidebar"
@@ -27,6 +28,7 @@ import useQuizEditor from "@/hooks/useQuizEditor"
 import QuizCreatorHeader from "@/components/QuizCreatorHeader.tsx"
 
 export default function QuizCreator(): JSX.Element {
+    const { t } = useTranslation()
     const params = useParams()
     const quizId = params.id ?? params.quizId
     const navigate = useNavigate()
@@ -69,7 +71,7 @@ export default function QuizCreator(): JSX.Element {
 
     useEffect(() => {
         if (isLoading && quizId) {
-            toast.loading("Loading quiz...", { id: "quiz-loading" })
+            toast.loading(t("quizEditor.toasts.loadingQuiz"), { id: "quiz-loading" })
         } else {
             toast.dismiss("quiz-loading")
             if (error && quizId) {
@@ -77,29 +79,29 @@ export default function QuizCreator(): JSX.Element {
                 toast.error(msg, { id: "quiz-error" })
             }
         }
-    }, [isLoading, error, quizId])
+    }, [isLoading, error, quizId, t])
 
     useEffect(() => {
         if (isLoadingQuestions && quizId && !hasInitializedQuestions) {
-            toast.loading("Loading questions...", { id: "questions-loading" })
+            toast.loading(t("quizEditor.toasts.loadingQuestions"), { id: "questions-loading" })
         } else {
             toast.dismiss("questions-loading")
             if (questionLoadError) {
-                toast.error("Failed to load questions.", { id: "questions-error" })
+                toast.error(t("quizEditor.toasts.loadQuestionsError"), { id: "questions-error" })
             }
         }
-    }, [isLoadingQuestions, questionLoadError, quizId, hasInitializedQuestions])
+    }, [isLoadingQuestions, questionLoadError, quizId, hasInitializedQuestions, t])
 
     useEffect(() => {
         if (hasUnsavedChanges) {
-            toast.warning("There are still unsaved changes. Click Save Quiz to save them.", {
+            toast.warning(t("quizEditor.toasts.unsavedChanges"), {
                 id: "unsaved-changes",
                 duration: Infinity,
             })
         } else {
             toast.dismiss("unsaved-changes")
         }
-    }, [hasUnsavedChanges])
+    }, [hasUnsavedChanges, t])
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -118,7 +120,7 @@ export default function QuizCreator(): JSX.Element {
             setIsConfirmOpen(false)
             navigate("/dashboard")
         } catch {
-            toast.error("Quiz could not be deleted. Please try again.")
+            toast.error(t("quizEditor.toasts.deleteError"))
         }
     }
 
@@ -183,19 +185,21 @@ export default function QuizCreator(): JSX.Element {
                                           <div className="border-border bg-muted/95 w-[280px] rounded-2xl border p-4 shadow-2xl">
                                               <div className="mb-3 flex items-center gap-2">
                                                   <div className="text-muted-foreground/60 flex h-9 w-9 items-center justify-center rounded-md bg-white/5">
+                                                      {/* eslint-disable-next-line i18next/no-literal-string */}
                                                       <span className="text-lg">⋮⋮</span>
                                                   </div>
                                                   <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
                                                       {activeQuestion.type === "SLIDE"
-                                                          ? "Slide"
-                                                          : "Question"}
+                                                          ? t("quizEditor.editor.slide")
+                                                          : t("quizEditor.editor.question")}
                                                   </span>
                                               </div>
 
                                               <p className="mb-4 line-clamp-2 min-h-10 text-sm font-semibold">
                                                   {getQuestionPreviewText(
                                                       activeQuestion.question,
-                                                      activeQuestion.type
+                                                      activeQuestion.type,
+                                                      t
                                                   )}
                                               </p>
 

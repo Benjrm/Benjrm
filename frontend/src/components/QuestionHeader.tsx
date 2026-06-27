@@ -1,4 +1,5 @@
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 
 interface QuestionHeaderProps {
     playerName: string
@@ -15,6 +16,7 @@ export default function QuestionHeader({
     totalQuestions,
     remainingTime,
 }: QuestionHeaderProps): JSX.Element {
+    const { t } = useTranslation()
     const formattedTime =
         remainingTime !== null
             ? `${Math.floor(remainingTime / 60)
@@ -29,7 +31,7 @@ export default function QuestionHeader({
             </div>
 
             <div className="text-muted-foreground flex w-full items-center justify-between px-2 text-sm font-bold">
-                <div>{formattedTime !== null ? `Time: ${formattedTime}` : null}</div>
+                <div>{formattedTime !== null ? t("game.time", { time: formattedTime }) : null}</div>
 
                 <div>
                     {currentQuestion} / {totalQuestions}

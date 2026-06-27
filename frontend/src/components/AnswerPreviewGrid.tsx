@@ -1,4 +1,5 @@
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 import getAnswerVisuals from "../utils/answerVisuals"
 import MarkdownComponent from "@/components/markdown/MarkdownComponent"
 import type { QuestionOption, QuestionType } from "@/api/questions/questions.types.ts"
@@ -8,7 +9,11 @@ interface Props {
     type: QuestionType
 }
 
+const DRAG_HANDLE = "⋮⋮"
+
 export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element {
+    const { t } = useTranslation()
+
     if (type === "ORDER") {
         return (
             <div className="space-y-3">
@@ -22,7 +27,7 @@ export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element
                             className="text-muted-foreground/70 -mx-1 flex items-center self-stretch px-1 py-1"
                         >
                             <span className="bg-muted/60 text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full text-[11px]">
-                                ⋮⋮
+                                {DRAG_HANDLE}
                             </span>
                         </div>
 
@@ -31,7 +36,11 @@ export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element
                         </div>
 
                         <span className="text-card-foreground text-[15px] font-bold tracking-tight [&_p]:m-0">
-                            <MarkdownComponent content={option.answer || `Item ${index + 1}`} />
+                            <MarkdownComponent
+                                content={
+                                    option.answer || `${t("quizEditor.options.item")} ${index + 1}`
+                                }
+                            />
                         </span>
                     </div>
                 ))}
@@ -75,12 +84,14 @@ export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element
                         </span>
 
                         <span className="relative z-10 line-clamp-2 text-[11px] leading-4 font-semibold text-slate-700 dark:text-white [&_p]:m-0">
-                            <MarkdownComponent content={option.answer || "Answer"} />
+                            <MarkdownComponent
+                                content={option.answer || t("quizEditor.options.answerPlaceholder")}
+                            />
                         </span>
 
                         {isCorrect ? (
                             <span className="relative z-10 mt-2 rounded-full border border-emerald-500/25 bg-emerald-500/15 px-2 py-0.5 text-[8px] font-bold tracking-[0.2em] text-emerald-700 uppercase dark:text-emerald-200">
-                                Correct
+                                {t("common.buttons.correct")}
                             </span>
                         ) : null}
                     </div>

@@ -1,4 +1,5 @@
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import getAnswerVisuals from "@/utils/answerVisuals"
@@ -20,6 +21,7 @@ export default function AnswerOption({
     icon,
     onSelect,
 }: AnswerOptionProps): JSX.Element {
+    const { t } = useTranslation()
     let visuals = { accent: color, icon }
     if (icon == null && color == null) {
         visuals = getAnswerVisuals(index)
@@ -56,7 +58,7 @@ export default function AnswerOption({
                     allowedElements={["p", "strong", "em", "code", "del", "s"]}
                     remarkPlugins={[remarkGfm]}
                 >
-                    {text || `Option ${index + 1}`}
+                    {text || `${t("quizEditor.options.option")} ${index + 1}`}
                 </ReactMarkdown>
             </div>
         </button>

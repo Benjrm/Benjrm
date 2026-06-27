@@ -3,6 +3,7 @@
 import { ChevronRight } from "lucide-react"
 import { Link } from "react-router"
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 
 interface Props {
     title: string
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export default function CategoryHeader({ title, description, to }: Props): JSX.Element {
+    const { t } = useTranslation()
+
     return (
         <div className="flex items-end justify-between">
             <div>
@@ -23,7 +26,7 @@ export default function CategoryHeader({ title, description, to }: Props): JSX.E
                 className="group text-muted-foreground ml-4 flex items-center gap-1 text-xs font-bold tracking-widest whitespace-nowrap uppercase transition-colors hover:text-[#00F2FF]"
                 to={to}
             >
-                View All
+                {t("common.buttons.viewAll")}
                 <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
         </div>

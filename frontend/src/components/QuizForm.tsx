@@ -4,13 +4,15 @@ import { useState } from "react"
 import type { FC, SubmitEvent } from "react"
 import { useNavigate } from "react-router"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { DialogFooter } from "@/shadcn/components/ui/dialog"
 import { Button } from "@/shadcn/components/ui/button"
 import { Label } from "@/shadcn/components/ui/label"
 import { useCreateQuiz, useUpdateQuiz } from "@/api/quizzes/quizzes.queries.ts"
 
-function getReadableQuizMutationError(): string {
-    return "The quiz could not be saved right now. Please try again later."
+function getReadableQuizMutationError(t: TFunction): string {
+    return t("quiz.form.saveError")
 }
 
 interface QuizFormProps {
@@ -30,6 +32,7 @@ const QuizForm: FC<QuizFormProps> = ({
     onSuccess,
     quizId,
 }) => {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const [title, setTitle] = useState(initialTitle)
     const [description, setDescription] = useState(initialDescription)
@@ -56,7 +59,7 @@ const QuizForm: FC<QuizFormProps> = ({
                 onSuccess(quiz.id)
             } else {
                 if (!quizId) {
-                    toast.error("Missing quiz id for edit")
+                    toast.error(t("quiz.form.missingIdError"))
                     return
                 }
 
@@ -70,29 +73,29 @@ const QuizForm: FC<QuizFormProps> = ({
                 onSuccess(updated.id)
             }
         } catch {
-            toast.error(getReadableQuizMutationError())
+            toast.error(getReadableQuizMutationError(t))
         }
     }
 
-    let buttonText = "Create Quiz"
+    let buttonText = t("quiz.form.createButton")
     if (isLoading) {
-        buttonText = mode === "create" ? "Creating..." : "Saving..."
+        buttonText = mode === "create" ? t("quiz.form.creating") : t("quiz.form.saving")
     } else if (mode === "edit") {
-        buttonText = "Save changes"
+        buttonText = t("quiz.form.saveChangesButton")
     }
 
     return (
         <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
                 <Label className="block text-sm font-medium" htmlFor="title">
-                    Title *
+                    {t("quiz.form.titleLabel")}
                 </Label>
                 <input
                     required
                     className="border-input bg-background mt-1 w-full rounded border px-3 py-2 text-sm"
                     id="title"
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Math Quiz"
+                    placeholder={t("quiz.form.titlePlaceholder")}
                     type="text"
                     value={title}
                 />
@@ -100,13 +103,13 @@ const QuizForm: FC<QuizFormProps> = ({
 
             <div>
                 <Label className="block text-sm font-medium" htmlFor="description">
-                    Description
+                    {t("quiz.form.descriptionLabel")}
                 </Label>
                 <textarea
                     className="border-input bg-background mt-1 w-full rounded border px-3 py-2 text-sm"
                     id="description"
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Optional description for your quiz..."
+                    placeholder={t("quiz.form.descriptionPlaceholder")}
                     rows={3}
                     value={description}
                 />
@@ -114,7 +117,7 @@ const QuizForm: FC<QuizFormProps> = ({
 
             <DialogFooter>
                 <Button disabled={isLoading} onClick={onClose} type="button" variant="outline">
-                    Cancel
+                    {t("common.buttons.cancel")}
                 </Button>
                 <Button disabled={isLoading} type="submit">
                     {buttonText}

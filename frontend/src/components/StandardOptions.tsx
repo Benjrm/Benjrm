@@ -2,6 +2,7 @@
 
 import type { JSX } from "react"
 import { Plus } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import AnswerCard from "@/components/AnswerCard"
 import { Button } from "@/shadcn/components/ui/button"
 import type { QuestionOption } from "@/api/questions/questions.types.ts"
@@ -25,6 +26,8 @@ export default function StandardOptions({
     onAddOption,
     isMdEditor,
 }: StandardOptionsProps): JSX.Element {
+    const { t } = useTranslation()
+
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
@@ -39,7 +42,7 @@ export default function StandardOptions({
                         onChange={(value) => onChange(index, value)}
                         onDelete={options.length > 2 ? () => onDeleteOption(index) : undefined}
                         onToggleCorrect={() => onToggleCorrect(index)}
-                        placeholder={`Option ${index + 1}`}
+                        placeholder={`${t("quizEditor.options.option")} ${index + 1}`}
                         value={(option as { answer?: string }).answer ?? ""}
                     />
                 ))}
@@ -52,7 +55,7 @@ export default function StandardOptions({
                 variant="ghost"
             >
                 <Plus className="h-4 w-4" />
-                Add Option
+                {t("quizEditor.options.addOption")}
             </Button>
         </div>
     )
