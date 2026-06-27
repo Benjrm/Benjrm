@@ -25,6 +25,8 @@ export interface QuestionCardContentProps {
     isHost: boolean
     currentQuestionIndex: number
     totalQuestions: number
+    initialHasSubmitted?: boolean
+    initialSelectedAnswers?: string[]
     onSendAnswer?: (id: string | string[]) => void
     onNextQuestion?: () => void
     type?: QuestionType
@@ -40,12 +42,14 @@ export default function QuestionCardContent({
     isHost,
     currentQuestionIndex,
     totalQuestions,
+    initialHasSubmitted = false,
+    initialSelectedAnswers = [],
     onSendAnswer,
     onNextQuestion,
     type,
 }: QuestionCardContentProps): JSX.Element {
-    const [selectedAnswers, setSelectedAnswers] = useState<string[]>([])
-    const [hasSubmitted, setHasSubmitted] = useState(false)
+    const [selectedAnswers, setSelectedAnswers] = useState<string[]>(initialSelectedAnswers)
+    const [hasSubmitted, setHasSubmitted] = useState(initialHasSubmitted)
     const timeLeft = useQuestionTimer(questionExpiresAt ?? null, secondsToAnswer)
 
     // Automatisches Absenden, wenn die Zeit bei 0 ankommt (nur wenn Antwort ausgewählt)

@@ -60,6 +60,9 @@ interface GameScreenProps {
     playerName: string | undefined
     playerEmoji: string | undefined
     playerItemOrder: string[] | null
+    hasSubmittedAnswer?: boolean
+    initialSelectedAnswers?: string[]
+    skipPreview?: boolean
     onNextQuestion: () => void
     onSendAnswer: (answer: string | string[]) => void
     onItemOrderChange: (ids: string[]) => void
@@ -77,6 +80,9 @@ export default function GameScreen({
     playerName,
     playerEmoji,
     playerItemOrder,
+    hasSubmittedAnswer = false,
+    initialSelectedAnswers = [],
+    skipPreview = false,
     onNextQuestion,
     onSendAnswer,
     onItemOrderChange,
@@ -94,12 +100,17 @@ export default function GameScreen({
         ) {
             prevQuestionIndexRef.current = currentQuestionIndex
 
-            setShowingPreview(true)
-            const timer = setTimeout(() => setShowingPreview(false), PREVIEW_DURATION_MS)
-            return () => clearTimeout(timer)
+            if (skipPreview) return undefined
+
+            const showTimer = setTimeout(() => setShowingPreview(true), 0)
+            const hideTimer = setTimeout(() => setShowingPreview(false), PREVIEW_DURATION_MS)
+            return () => {
+                clearTimeout(showTimer)
+                clearTimeout(hideTimer)
+            }
         }
         return undefined
-    }, [gameState, currentQuestion, currentQuestionIndex])
+    }, [gameState, currentQuestion, currentQuestionIndex, questionExpiresAt, skipPreview])
 
     function renderContent(): JSX.Element | null {
         if (gameState === GameStateEnum.LEADERBOARD && leaderboard) {
@@ -146,6 +157,7 @@ export default function GameScreen({
                     <OrderQuestionContent
                         key={currentQuestion.id}
                         currentQuestionIndex={currentQuestionIndex}
+                        initialHasAnswered={hasSubmittedAnswer}
                         initialItemOrder={playerItemOrder ?? undefined}
                         isHost={false}
                         onItemOrderChange={onItemOrderChange}
@@ -166,6 +178,8 @@ export default function GameScreen({
                 <QuestionCardContent
                     key={currentQuestionIndex}
                     currentQuestionIndex={currentQuestionIndex}
+                    initialHasSubmitted={hasSubmittedAnswer}
+                    initialSelectedAnswers={initialSelectedAnswers}
                     isHost={false}
                     onNextQuestion={onNextQuestion}
                     onSendAnswer={onSendAnswer}

@@ -61,9 +61,48 @@ export default function GamePage(): JSX.Element {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
     const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
     const [playerItemOrder, setPlayerItemOrder] = useState<string[] | null>(null)
+    const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false)
+    const [initialSelectedAnswers, setInitialSelectedAnswers] = useState<string[]>([])
+    const [skipNextPreview, setSkipNextPreview] = useState(false)
 
     useSocketEvent("displayQuestion", (payload, timing) => {
-        setPlayerItemOrder(null)
+        let isReconnect = false
+        let alreadySubmitted = false
+        let restoredAnswers: string[] = []
+        let restoredItemOrder: string[] | null = null
+
+        if (storageKey) {
+            try {
+                const raw = sessionStorage.getItem(storageKey)
+                const stored = raw
+                    ? (JSON.parse(raw) as {
+                          lastQuestionId?: string
+                          submittedQuestionId?: string
+                          submittedAnswers?: string[]
+                          currentItemOrder?: string[]
+                      })
+                    : {}
+                isReconnect = stored.lastQuestionId === payload.id
+                alreadySubmitted = stored.submittedQuestionId === payload.id
+                restoredAnswers = alreadySubmitted ? (stored.submittedAnswers ?? []) : []
+                if (isReconnect) {
+                    restoredItemOrder = alreadySubmitted
+                        ? restoredAnswers
+                        : (stored.currentItemOrder ?? null)
+                }
+                sessionStorage.setItem(
+                    storageKey,
+                    JSON.stringify({ ...stored, lastQuestionId: payload.id })
+                )
+            } catch {
+                /* ignore */
+            }
+        }
+
+        setSkipNextPreview(isReconnect)
+        setHasSubmittedAnswer(alreadySubmitted)
+        setInitialSelectedAnswers(restoredAnswers)
+        setPlayerItemOrder(restoredItemOrder)
         setGameState(GameStateEnum.QUESTION)
         setCurrentQuestion({
             id: payload.id,
@@ -122,8 +161,44 @@ export default function GamePage(): JSX.Element {
         (answer: string | string[]): void => {
             const answerArray = Array.isArray(answer) ? answer : [answer]
             ws.send({ command: "answerQuestion", payload: { answer: answerArray } })
+            setHasSubmittedAnswer(true)
+            if (storageKey && currentQuestion) {
+                try {
+                    const raw = sessionStorage.getItem(storageKey)
+                    const existing = raw ? (JSON.parse(raw) as object) : {}
+                    sessionStorage.setItem(
+                        storageKey,
+                        JSON.stringify({
+                            ...existing,
+                            submittedQuestionId: currentQuestion.id,
+                            submittedAnswers: answerArray,
+                        })
+                    )
+                } catch {
+                    /* ignore */
+                }
+            }
         },
-        [ws]
+        [ws, storageKey, currentQuestion]
+    )
+
+    const handleItemOrderChange = useCallback(
+        (ids: string[]): void => {
+            setPlayerItemOrder(ids)
+            if (storageKey) {
+                try {
+                    const raw = sessionStorage.getItem(storageKey)
+                    const existing = raw ? (JSON.parse(raw) as object) : {}
+                    sessionStorage.setItem(
+                        storageKey,
+                        JSON.stringify({ ...existing, currentItemOrder: ids })
+                    )
+                } catch {
+                    /* ignore */
+                }
+            }
+        },
+        [storageKey]
     )
 
     if (hostEndedGame) {
@@ -151,9 +226,11 @@ export default function GamePage(): JSX.Element {
                 currentQuestion={currentQuestion}
                 currentQuestionIndex={currentQuestionIndex}
                 gameState={gameState}
+                hasSubmittedAnswer={hasSubmittedAnswer}
+                initialSelectedAnswers={initialSelectedAnswers}
                 isFinalLeaderboard={isFinalLeaderboard}
                 leaderboard={leaderboard}
-                onItemOrderChange={setPlayerItemOrder}
+                onItemOrderChange={handleItemOrderChange}
                 onNextQuestion={() => undefined}
                 onSendAnswer={sendAnswer}
                 playerEmoji={playerEmoji}
@@ -161,6 +238,7 @@ export default function GamePage(): JSX.Element {
                 playerName={playerName}
                 questionExpiresAt={questionExpiresAt}
                 questionResult={questionResult}
+                skipPreview={skipNextPreview}
                 totalQuestions={totalQuestions}
             />
         </>

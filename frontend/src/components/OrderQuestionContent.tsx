@@ -38,6 +38,7 @@ interface Option {
 export interface OrderQuestionContentProps {
     currentQuestionIndex?: number
     initialItemOrder?: string[]
+    initialHasAnswered?: boolean
     isHost?: boolean
     onNextQuestion?: () => void
     onItemOrderChange?: (ids: string[]) => void
@@ -91,6 +92,7 @@ function SortableItem({ id, text }: { id: string; text: string }): JSX.Element {
 export default function OrderQuestionContent({
     currentQuestionIndex = 0,
     initialItemOrder,
+    initialHasAnswered = false,
     isHost = false,
     onNextQuestion,
     onItemOrderChange,
@@ -103,8 +105,16 @@ export default function OrderQuestionContent({
     totalQuestions = 0,
     onSendAnswer,
 }: OrderQuestionContentProps): JSX.Element {
-    const [items, setItems] = useState<Option[]>(options)
-    const [hasAnswered, setHasAnswered] = useState(false)
+    const [items, setItems] = useState<Option[]>(() => {
+        if (initialItemOrder && initialItemOrder.length > 0) {
+            const ordered = initialItemOrder
+                .map((id) => options.find((o) => o.id === id))
+                .filter((o): o is Option => o !== undefined)
+            return ordered.length === options.length ? ordered : options
+        }
+        return options
+    })
+    const [hasAnswered, setHasAnswered] = useState(initialHasAnswered)
     const timeLeft = useQuestionTimer(questionExpiresAt ?? null, secondsToAnswer ?? null)
 
     // Automatisches Senden, wenn die Zeit abläuft
