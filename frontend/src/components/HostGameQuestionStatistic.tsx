@@ -77,7 +77,7 @@ export default function HostGameQuestionStatistic({
                                 key={opt.id}
                                 className="border-border bg-muted/40 flex items-center gap-4 rounded-xl border px-6 py-4 text-lg font-semibold"
                             >
-                                <span className="text-[#00D4E8] w-6 h-6 shrink-0 text-center text-xl font-bold">
+                                <span className="h-6 w-6 shrink-0 text-center text-xl font-bold text-[#00D4E8]">
                                     {i + 1}
                                 </span>
                                 {opt.text}

@@ -48,7 +48,9 @@ export default function useQuestionStatistics(
             return questionStatistics.answerStatistic.map((stat) => {
                 // The backend only sends the option ID, so we look up the actual text
                 // from the local currentQuestion state.
-                const currentOption = currentQuestion.options.find((option) => option.id === stat.option)
+                const currentOption = currentQuestion.options.find(
+                    (option) => option.id === stat.option
+                )
                 return {
                     id: stat.option,
                     text: currentOption?.text ?? "",
