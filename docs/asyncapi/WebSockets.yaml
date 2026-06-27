@@ -628,15 +628,10 @@ components:
             type: string
             const: "showStatistics"
           payload:
-            type: object
-            properties:
-              answers:
-                type: integer
-              answerStatistic:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AnswerStatistic"
-                nullable: true
+            oneOf:
+              - $ref: "#/components/schemas/SingleChoiceStatistics"
+              - $ref: "#/components/schemas/MultipleChoiceStatistics"
+              - $ref: "#/components/schemas/OrderStatistics"
     
     endGame:
       payload:
@@ -740,6 +735,56 @@ components:
           type: integer
           format: uint32
           description: "Points received for the current question"
+
+    SingleChoiceStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          const: "SINGLE_CHOICE"
+        answers:
+          type: integer
+        answerStatistic:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnswerStatistic"
+          nullable: true
+
+    MultipleChoiceStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          const: "MULTIPLE_CHOICE"
+        answers:
+          type: integer
+        answerStatistic:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnswerStatistic"
+          nullable: true
+
+    OrderStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          const: "ORDER"
+        answers:
+          type: integer
+        correct:
+          type: array
+          items:
+            type: string
+            format: uuid
+        answerStatistic:
+          description: >
+            Array that maps the index to the count of players.
+            The index represents the count of correct option relationships (two options in the correct order)
+          type: array
+          items:
+            type: integer
+          nullable: true
     
     AnswerStatistic:
       type: object

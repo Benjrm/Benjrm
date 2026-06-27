@@ -1,18 +1,31 @@
 import { useMemo } from "react"
 import type { GameQuestion } from "@/hooks/useGameSession"
 
+export type QuestionStatistics = ChoiceQuestionStatistics | OrderQuestionStatistics
+
 /**
- * Interface that represents the question statistics from the websocket.
+ * Interface that represents the question statistics for a "ORDER" question.
  */
-export interface QuestionStatistics {
+export interface OrderQuestionStatistics {
+    type: "ORDER"
     answers: number
-    answerStatistic: AnswerStatistic[]
+    correct: string[]
+    answerStatistic: number[]
 }
 
 /**
- * Interface that represents the statistic for one answer option.
+ * Interface that represents the question statistics for a "SINGLE_CHOICE" or "MULTIPLE_CHOICE" question.
  */
-export interface AnswerStatistic {
+export interface ChoiceQuestionStatistics {
+    type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE"
+    answers: number
+    answerStatistic: ChoiceAnswerStatistic[]
+}
+
+/**
+ * Interface that represents the statistic for one answer option of a "SINGLE_CHOICE" or "MULTIPLE_CHOICE" question.
+ */
+export interface ChoiceAnswerStatistic {
     option: string
     votes: number
     correct: boolean
@@ -45,6 +58,21 @@ export default function useQuestionStatistics(
         // For Single/Multiple Choice: The backend sends the votes and correct flags for each option.
         // For ORDER questions: The backend deliberately sends the options in the original, correct sequence.
         if (questionStatistics && questionStatistics.answerStatistic.length > 0) {
+            if (questionStatistics.type === "ORDER") {
+                return questionStatistics.correct.map((optionId) => {
+                    // The backend only sends the option ID, so we look up the actual text
+                    // from the local currentQuestion state.
+                    const currentOption = currentQuestion.options.find(
+                        (option) => option.id === optionId
+                    )
+                    return {
+                        id: optionId,
+                        text: currentOption?.text ?? "",
+                        votes: 0,
+                        isCorrect: false,
+                    }
+                })
+            }
             return questionStatistics.answerStatistic.map((stat) => {
                 // The backend only sends the option ID, so we look up the actual text
                 // from the local currentQuestion state.

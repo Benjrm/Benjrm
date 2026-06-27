@@ -1,4 +1,5 @@
 import type { QuestionType } from "@/api/questions/questions.types.ts"
+import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
 
 /**
  * Maps server commands to their respective payload types.
@@ -38,14 +39,7 @@ export interface ServerEvents {
         }[]
         isFinal: boolean
     }
-    showStatistics: {
-        answers: number
-        answerStatistic: {
-            option: string
-            votes: number
-            correct: boolean
-        }[]
-    }
+    showStatistics: QuestionStatistics
     addPlayer: {
         id: string
         name: string

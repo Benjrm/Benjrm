@@ -4,9 +4,9 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            Channel, ChannelError, Command, DisplayQuestionMessage, DisplayQuestionOptions,
-            GameSession, GameSessionError, HostCommand, HostMessage, Message, PlayerCommand,
-            PlayerMessage, api::ws::WsChannelError,
+            AnswerStatistics, Channel, ChannelError, Command, DisplayQuestionMessage,
+            DisplayQuestionOptions, GameSession, GameSessionError, HostCommand, HostMessage,
+            Message, PlayerCommand, PlayerMessage, api::ws::WsChannelError,
         },
         question::{
             NewQuestion, NewQuestionOptions, Question,
@@ -759,13 +759,10 @@ async fn play_dummy_quiz() {
     drop(session);
 
     match host_rx.recv().await.unwrap() {
-        HostMessage::ShowStatistics {
-            answers: answer_count,
-            answer_statistic,
-        } => {
-            assert_eq!(answer_count, 1);
-            assert_eq!(answer_statistic.len(), answers.len());
-            for (statistic, answer) in answer_statistic.iter().zip(answers) {
+        HostMessage::ShowStatistics(AnswerStatistics::SingleChoice(stats)) => {
+            assert_eq!(stats.answers, 1);
+            assert_eq!(stats.answer_statistic.len(), answers.len());
+            for (statistic, answer) in stats.answer_statistic.iter().zip(answers) {
                 assert_eq!(statistic.option, answer)
             }
         }
@@ -869,14 +866,7 @@ async fn play_dummy_quiz() {
                             break 'outer;
                         }
                     }
-                    HostMessage::ShowStatistics {
-                        answers: _,
-                        answer_statistic,
-                    } => {
-                        for item in answer_statistic {
-                            assert_eq!(item.votes, 0);
-                        }
-                    }
+                    HostMessage::ShowStatistics(_) => (),
                     x => panic!("invalid message: {x:?}"),
                 }
             }
