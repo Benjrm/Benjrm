@@ -14,6 +14,7 @@ interface QuestionAnswerOptionsProps {
     options: QuestionOption[]
     type?: QuestionType
     errorMissingAnswers: number[]
+    isMdEditor: boolean
 }
 
 export default function QuestionAnswerOptions({
@@ -25,11 +26,13 @@ export default function QuestionAnswerOptions({
     options,
     type,
     errorMissingAnswers,
+    isMdEditor,
 }: QuestionAnswerOptionsProps): JSX.Element {
     if (type === "ORDER") {
         return (
             <OrderOptions
                 errorMissingAnswers={errorMissingAnswers}
+                isMdEditor={isMdEditor}
                 onAddOption={onAddOption}
                 onChange={onChange}
                 onDeleteOption={onDeleteOption}
@@ -42,6 +45,7 @@ export default function QuestionAnswerOptions({
     return (
         <StandardOptions
             errorMissingAnswers={errorMissingAnswers}
+            isMdEditor={isMdEditor}
             onAddOption={onAddOption}
             onChange={onChange}
             onDeleteOption={onDeleteOption}
