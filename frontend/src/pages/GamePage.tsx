@@ -4,13 +4,23 @@ import { useNavigate, useParams } from "react-router"
 import { Toaster, toast } from "sonner"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import GameScreen from "@/components/GameScreen"
-import { GameStateEnum } from "@/hooks/useGameSession"
+import { GameStateEnum, parseDisplayQuestion, computeExpiresAt } from "@/hooks/useGameSession"
 import type {
     GameState,
     GameQuestion,
     QuestionResult,
     LeaderboardEntry,
 } from "@/hooks/useGameSession"
+
+function mergeStorage(key: string, patch: object): void {
+    try {
+        const raw = sessionStorage.getItem(key)
+        const existing = raw ? (JSON.parse(raw) as object) : {}
+        sessionStorage.setItem(key, JSON.stringify({ ...existing, ...patch }))
+    } catch {
+        /* ignore */
+    }
+}
 
 export default function GamePage(): JSX.Element {
     const codeParam = useParams().code
@@ -104,18 +114,8 @@ export default function GamePage(): JSX.Element {
         setInitialSelectedAnswers(restoredAnswers)
         setPlayerItemOrder(restoredItemOrder)
         setGameState(GameStateEnum.QUESTION)
-        setCurrentQuestion({
-            id: payload.id,
-            type: payload.type,
-            text: payload.question,
-            options: (payload.options ?? []).map((opt: { id: string; answer: string }) => ({
-                id: opt.id,
-                text: opt.answer,
-            })),
-            seconds: payload.seconds ?? null,
-        })
-        const startedAt = timing ? new Date(timing).getTime() : Date.now()
-        setQuestionExpiresAt(payload.seconds ? startedAt + payload.seconds * 1000 : null)
+        setCurrentQuestion(parseDisplayQuestion(payload))
+        setQuestionExpiresAt(computeExpiresAt(payload.seconds, timing))
         setTotalQuestions(payload.totalQuestions)
         setCurrentQuestionIndex(payload.index)
         setQuestionResult(null)
@@ -163,20 +163,10 @@ export default function GamePage(): JSX.Element {
             ws.send({ command: "answerQuestion", payload: { answer: answerArray } })
             setHasSubmittedAnswer(true)
             if (storageKey && currentQuestion) {
-                try {
-                    const raw = sessionStorage.getItem(storageKey)
-                    const existing = raw ? (JSON.parse(raw) as object) : {}
-                    sessionStorage.setItem(
-                        storageKey,
-                        JSON.stringify({
-                            ...existing,
-                            submittedQuestionId: currentQuestion.id,
-                            submittedAnswers: answerArray,
-                        })
-                    )
-                } catch {
-                    /* ignore */
-                }
+                mergeStorage(storageKey, {
+                    submittedQuestionId: currentQuestion.id,
+                    submittedAnswers: answerArray,
+                })
             }
         },
         [ws, storageKey, currentQuestion]
@@ -186,16 +176,7 @@ export default function GamePage(): JSX.Element {
         (ids: string[]): void => {
             setPlayerItemOrder(ids)
             if (storageKey) {
-                try {
-                    const raw = sessionStorage.getItem(storageKey)
-                    const existing = raw ? (JSON.parse(raw) as object) : {}
-                    sessionStorage.setItem(
-                        storageKey,
-                        JSON.stringify({ ...existing, currentItemOrder: ids })
-                    )
-                } catch {
-                    /* ignore */
-                }
+                mergeStorage(storageKey, { currentItemOrder: ids })
             }
         },
         [storageKey]

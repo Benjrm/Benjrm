@@ -6,7 +6,7 @@ import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import HostGameScreen from "@/components/HostGameScreen"
-import { GameStateEnum } from "@/hooks/useGameSession"
+import { GameStateEnum, parseDisplayQuestion, computeExpiresAt } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
 import type { SessionPlayer } from "@/api/session"
 
@@ -72,18 +72,8 @@ export default function HostDashboard(): JSX.Element {
     useSocketEvent("displayQuestion", (payload, timing) => {
         hasDisplayedQuestionRef.current = true
         setGameState(GameStateEnum.QUESTION)
-        setCurrentQuestion({
-            id: payload.id,
-            type: payload.type,
-            text: payload.question,
-            options: (payload.options ?? []).map((opt: { id: string; answer: string }) => ({
-                id: opt.id,
-                text: opt.answer,
-            })),
-            seconds: payload.seconds ?? null,
-        })
-        const startedAt = timing ? new Date(timing).getTime() : Date.now()
-        setQuestionExpiresAt(payload.seconds ? startedAt + payload.seconds * 1000 : null)
+        setCurrentQuestion(parseDisplayQuestion(payload))
+        setQuestionExpiresAt(computeExpiresAt(payload.seconds, timing))
         setTotalQuestions(payload.totalQuestions)
         setCurrentQuestionIndex(payload.index)
     })
