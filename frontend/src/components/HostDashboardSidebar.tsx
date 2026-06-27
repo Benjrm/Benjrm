@@ -1,4 +1,5 @@
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 import LeaderboardItem from "@/quiz/leaderboard/components/LeaderboardItem"
 import getLeaderboardItemPropsList from "@/quiz/leaderboard/utils/getLeaderboardItemPropsList"
@@ -21,6 +22,7 @@ export default function HostDashboardSidebar({
     onEnd,
     onShowPodium,
 }: HostDashboardSidebarProps): JSX.Element {
+    const { t } = useTranslation()
     const leaderboardItems = getLeaderboardItemPropsList(entries)
 
     function renderActionButton(): JSX.Element {
@@ -31,7 +33,7 @@ export default function HostDashboardSidebar({
                     onClick={onShowPodium}
                     type="button"
                 >
-                    Show Podium →
+                    {t("game.host.showPodium")}
                 </Button>
             )
         }
@@ -42,7 +44,7 @@ export default function HostDashboardSidebar({
                     onClick={onEnd}
                     type="button"
                 >
-                    End Game & Exit
+                    {t("game.host.endGame")}
                 </Button>
             )
         }
@@ -52,7 +54,7 @@ export default function HostDashboardSidebar({
                 onClick={onNext}
                 type="button"
             >
-                {isLastQuestion ? "Show Leaderboard →" : "Next Question →"}
+                {isLastQuestion ? t("game.host.showLeaderboard") : t("game.host.nextQuestion")}
             </Button>
         )
     }
@@ -60,7 +62,9 @@ export default function HostDashboardSidebar({
     return (
         <aside className="flex flex-col gap-6">
             <div className="bg-muted/30 border-border flex-1 rounded-3xl border p-5 shadow-xl backdrop-blur-sm">
-                <h4 className="mb-4 text-lg font-black tracking-tight">Leaderboard</h4>
+                <h4 className="mb-4 text-lg font-black tracking-tight">
+                    {t("game.leaderboard.title")}
+                </h4>
                 {leaderboardItems.length > 0 ? (
                     <ol className="max-h-[45vh] space-y-3 overflow-auto pr-1">
                         {leaderboardItems.map((item) => (

@@ -1,0 +1,311 @@
+{
+    "common": {
+        "errors": {
+            "backendUnavailable": "Das Backend ist derzeit nicht erreichbar. Bitte versuche es später erneut.",
+            "notFound": "Die gesuchte Seite existiert nicht."
+        },
+        "loading": "Lade {{name}}...",
+        "download": "Herunterladen: {{name}}",
+        "buttons": {
+            "viewAll": "Alle ansehen",
+            "cancel": "Abbrechen",
+            "delete": "Löschen",
+            "correct": "Richtig",
+            "wrong": "Falsch"
+        },
+        "footer": {
+            "allRightsReserved": "Alle Rechte vorbehalten.",
+            "imprint": "Impressum",
+            "privacyPolicy": "Datenschutzerklärung",
+            "termsAndConditions": "Allgemeine Geschäftsbedingungen"
+        },
+        "brandName": "Benjrm",
+        "header": {
+            "home": "Startseite",
+            "dashboard": "Dashboard",
+            "toggleMenu": "Menü umschalten",
+            "openProfile": "Profil öffnen",
+            "signIn": "ANMELDEN",
+            "logout": "Abmelden"
+        },
+        "profileModal": {
+            "title": "Profil",
+            "deleted": {
+                "title": "Konto gelöscht",
+                "success": "Dein Benjrm-Konto wurde erfolgreich gelöscht.",
+                "note": "Hinweis: Es wurde nur dein Benjrm-Konto gelöscht. Dein Konto beim Identity Provider wurde nicht beeinflusst.",
+                "openIdpHint": "Du möchtest möglicherweise auch dein Konto beim Identity Provider löschen. Klicke unten, um ihn zu öffnen.",
+                "openIdpButton": "Identity Provider öffnen",
+                "contactAdmin": "Um dein Konto beim Identity Provider zu löschen, wende dich bitte an deinen Administrator.",
+                "goHome": "Zur Startseite"
+            },
+            "settings": {
+                "title": "Kontoeinstellungen",
+                "description": "Bearbeite deine Kontoeinstellungen bei deinem Identity Provider.",
+                "openButton": "Kontoeinstellungen öffnen",
+                "managedExternally": "Deine Kontoeinstellungen werden extern verwaltet. Wende dich an deinen Administrator."
+            },
+            "dangerZone": {
+                "title": "Gefahrenzone",
+                "description": "Löscht dein Benjrm-Konto und alle zugehörigen Daten dauerhaft. Dein Identity-Provider-Konto wird nicht beeinflusst.",
+                "deletionIncludes": "Löschen umfasst:",
+                "itemQuizzes": "Alle deine Quizze und Fragen",
+                "itemHistory": "Kontoverlauf",
+                "confirmBefore": "Tippe",
+                "confirmAfter": "zur Bestätigung",
+                "deleting": "Löscht…",
+                "deleteButton": "Konto löschen"
+            }
+        }
+    },
+    "dashboard": {
+        "loadingQuizzes": "Lade Quizze...",
+        "quizzesError": "Quizze konnten derzeit nicht geladen werden.",
+        "noQuizzes": "Keine Quizze verfügbar.",
+        "hero": {
+            "inputCodeAria": "Code eingeben",
+            "codePlaceholder": "Code",
+            "joinViaCode": "Mit Code beitreten",
+            "startGame": "SPIEL STARTEN",
+            "addQuiz": "Quiz hinzufügen",
+            "imageAlt": "Feiernde Menschen"
+        },
+        "discover": {
+            "title": "Entdecken",
+            "recentQuizzes": "Neueste Quizze",
+            "yourQuizzes": "Deine Quizze"
+        }
+    },
+    "quiz": {
+        "modal": {
+            "editTitle": "Quiz bearbeiten",
+            "createTitle": "Neues Quiz erstellen",
+            "editDescription": "Titel und Beschreibung aktualisieren.",
+            "createDescription": "Gib einen Titel und optional eine Beschreibung ein."
+        },
+        "form": {
+            "saveError": "Das Quiz konnte derzeit nicht gespeichert werden. Bitte versuche es später erneut.",
+            "missingIdError": "Quiz-ID für die Bearbeitung fehlt",
+            "createButton": "Quiz erstellen",
+            "creating": "Erstelle...",
+            "saving": "Speichere...",
+            "saveChangesButton": "Änderungen speichern",
+            "titleLabel": "Titel *",
+            "titlePlaceholder": "z.B. Mathe-Quiz",
+            "descriptionLabel": "Beschreibung",
+            "descriptionPlaceholder": "Optionale Beschreibung für dein Quiz..."
+        },
+        "card": {
+            "noDescription": "Noch keine Beschreibung verfügbar.",
+            "editQuiz": "Quiz bearbeiten"
+        },
+        "playButton": {
+            "starting": "Startet...",
+            "play": "Quiz spielen"
+        }
+    },
+    "quizEditor": {
+        "toasts": {
+            "loadingQuiz": "Lade Quiz...",
+            "loadingQuestions": "Lade Fragen...",
+            "loadQuestionsError": "Fragen konnten nicht geladen werden.",
+            "unsavedChanges": "Es gibt noch ungespeicherte Änderungen. Klicke auf 'Quiz speichern', um sie zu sichern.",
+            "deleteError": "Das Quiz konnte nicht gelöscht werden. Bitte versuche es erneut."
+        },
+        "header": {
+            "editTitle": "Titel bearbeiten",
+            "editDescription": "Beschreibung bearbeiten",
+            "settings": "Einstellungen",
+            "discardChanges": "Änderungen verwerfen",
+            "saving": "Speichert...",
+            "saveQuiz": "Quiz speichern",
+            "deleteQuiz": "Quiz löschen"
+        },
+        "deleteModal": {
+            "title": "Quiz löschen?",
+            "description": "Diese Aktion kann nicht rückgängig gemacht werden. Bist du sicher, dass du das Quiz löschen möchtest?"
+        },
+        "editor": {
+            "slide": "Folie",
+            "question": "Frage",
+            "of": "von",
+            "usePlainInput": "Einfaches Textfeld nutzen",
+            "useMarkdownEditor": "Markdown-Editor nutzen",
+            "selectType": "Typ auswählen",
+            "types": {
+                "SINGLE_CHOICE": "Einzelauswahl",
+                "MULTIPLE_CHOICE": "Mehrfachauswahl",
+                "SLIDE": "Folie",
+                "ORDER": "Reihenfolge"
+            },
+            "slidePlaceholderMd": "Gib hier deinen Folieninhalt ein (Markdown unterstützt)...",
+            "questionPlaceholderMd": "Gib hier deine Frage ein (Markdown unterstützt)...",
+            "slidePlaceholder": "Gib hier deinen Folieninhalt ein...",
+            "questionPlaceholder": "Gib hier deine Frage ein...",
+            "fieldRequired": "Dieses Feld ist erforderlich",
+            "expandEditor": "Editor vergrößern",
+            "expand": "Vergrößern",
+            "editAnswer": "Antwort bearbeiten",
+            "untitledSlide": "Unbenannte Folie",
+            "untitledQuestion": "Unbenannte Frage",
+            "untitledQuiz": "Unbenannt"
+        },
+        "sidebar": {
+            "questions": "Fragen",
+            "addQuestion": "Frage hinzufügen",
+            "dragHandle": "Verschieben",
+            "dragQuestion": "Frage verschieben",
+            "questionTitle": "Fragentitel",
+            "questionDescription": "Fragebeschreibung",
+            "answerOptions": "Antwortoptionen",
+            "optionPlaceholder": "Option {{i}} Platzhalter...",
+            "deleteAnswerOption": "Antwortoption löschen",
+            "editQuestion": "Frage bearbeiten",
+            "deleteQuestion": "Frage löschen"
+        },
+        "settings": {
+            "livePreview": "Live Vorschau",
+            "slideContent": "Folieninhalt",
+            "typeMarkdownHere": "*Gib hier dein Markdown ein...*",
+            "typeQuestionHere": "Gib hier deine Frage ein..."
+        },
+        "options": {
+            "item": "Element",
+            "addItem": "Element hinzufügen",
+            "option": "Option",
+            "addOption": "Option hinzufügen",
+            "answerPlaceholder": "Antwort"
+        },
+        "validation": {
+            "createQuizFirst": "Bitte erstelle oder öffne zuerst ein Quiz, damit die Fragen gespeichert werden können.",
+            "addAtLeastOne": "Füge mindestens eine Frage hinzu, bevor du speicherst.",
+            "slideMissingText": "Folie {{index}} fehlt der Text.",
+            "questionMissingText": "Frage {{index}} fehlt der Fragetext.",
+            "optionEmpty": "Frage {{questionIndex}}, Option {{optionIndex}} ist leer.",
+            "needsCorrectAnswer": "Frage {{index}} benötigt mindestens eine richtige Antwort.",
+            "unknownError": "Frage {{index}} hat einen unbekannten Validierungsfehler.",
+            "missingQuestionText": "Der Fragetext fehlt.",
+            "optionIsEmpty": "Option {{index}} ist leer.",
+            "oneCorrectRequired": "Es ist mindestens eine richtige Antwort erforderlich."
+        }
+    },
+    "game": {
+        "starting": "Spiel startet...",
+        "getReady": "Mach dich bereit!",
+        "reconnecting": "Verbindung wird wiederhergestellt…",
+        "hostClosed": "Host hat die Lobby geschlossen",
+        "hostClosedLoading": "Host hat die Lobby geschlossen...",
+        "playerLeft": "{{name}} hat das Spiel verlassen",
+        "anErrorOccurred": "Ein Fehler ist aufgetreten",
+        "question": {
+            "label": "Frage {{current}} / {{total}}",
+            "current": "Aktuelle Frage:",
+            "noQuestion": "Noch keine Frage.",
+            "playersReading": "Spieler lesen...",
+            "waitingForAnswers": "Warte auf Antworten der Teilnehmer",
+            "complete": "Frage abgeschlossen — Ergebnisse sind da!",
+            "waitingForHost": "Warte darauf, dass der Host weitermacht...",
+            "waitingForNext": "Warte auf nächste Frage…",
+            "currentLabel": "Aktuelle Frage",
+            "progress": "Fragenfortschritt",
+            "skipNext": "Überspringen / Nächste Frage"
+        },
+        "answer": {
+            "submit": "Antwort absenden",
+            "sent": "Antwort gesendet!",
+            "submitOrder": "Reihenfolge absenden"
+        },
+        "result": {
+            "correct": "Richtig!",
+            "wrong": "Falsch!",
+            "points": "+{{points}} Punkte",
+            "total": "Gesamt: {{total}}"
+        },
+        "leaderboard": {
+            "title": "Rangliste",
+            "finalPodium": "Abschluss-Podium",
+            "finished": "🏆 Das Quiz ist beendet! 🏆",
+            "leave": "Spiel verlassen",
+            "pts": "Pkt."
+        },
+        "host": {
+            "dashboard": "Host Dashboard",
+            "players": "{{count}} Spieler",
+            "timeLeft": "{{secs}}s übrig",
+            "timesUp": "Zeit abgelaufen!",
+            "showPodium": "Podium zeigen →",
+            "endGame": "Spiel beenden & verlassen",
+            "showLeaderboard": "Rangliste zeigen →",
+            "nextQuestion": "Nächste Frage →"
+        },
+        "player": {
+            "host": "Host",
+            "player": "Spieler"
+        },
+        "time": "Zeit: {{time}}"
+    },
+    "lobby": {
+        "waitingLobby": "Warteraum",
+        "loadingLobby": "Lobby wird geladen…",
+        "lobbyNotFound": {
+            "title": "Quiz-Lobby nicht gefunden",
+            "description": "Keine Lobby mit dem Code {{code}} gefunden. Bitte überprüfe den Einladungscode und versuche es erneut."
+        },
+        "host": {
+            "noTitle": "Kein Titel",
+            "playersJoined": "Beigetretene Spieler:",
+            "noPlayers": "Noch keine Spieler — teile den Pin!",
+            "kickPlayer": "{{name}} rauswerfen"
+        },
+        "player": {
+            "youreIn": "Du bist dabei!",
+            "playerSetup": "Spieler einrichten",
+            "tapAvatarHint": "Avatar antippen, um Emoji zu wählen",
+            "waitingForHost": "Warte darauf, dass der Host das Spiel startet"
+        },
+        "profile": {
+            "chooseName": "Name wählen",
+            "choosePlayerName": "Spielernamen wählen",
+            "chooseProfileEmoji": "Profil-Emoji wählen",
+            "selectEmoji": "Emoji auswählen {{emoji}}",
+            "saving": "Speichert…",
+            "save": "Speichern"
+        },
+        "pin": {
+            "label": "Spiel-Pin",
+            "copyTitle": "Spiel-Pin kopieren",
+            "copied": "Spiel-Pin kopiert!"
+        },
+        "startGame": "Spiel starten",
+        "qr": {
+            "scanToJoin": "Scannen zum Beitreten:",
+            "showFullscreen": "Vollbild anzeigen",
+            "exitFullscreen": "Vollbild beenden"
+        },
+        "errors": {
+            "failedToStart": "Spiel konnte nicht gestartet werden",
+            "somethingWentWrong": "Etwas ist schiefgelaufen",
+            "kicked": "Du wurdest vom Host aus der Lobby entfernt.",
+            "waitingForPlayers": "Warte auf Spieler…"
+        },
+        "events": {
+            "playerLeft": "{{name}} hat den Raum verlassen"
+        }
+    },
+    "landing": {
+        "newFeaturesLive": "Neue Funktionen online",
+        "engageAndLearn": "Spiele und lerne",
+        "with": "mit",
+        "subtitle": "HOSTEN UND SPIELEN VON INTERAKTIVEN QUIZZEN",
+        "gamePinPlaceholder": "SPIEL-PIN EINGEBEN",
+        "gamePinAriaLabel": "Spiel-PIN eingeben",
+        "checking": "Überprüfe…",
+        "playButton": "SPIELEN",
+        "imageAlt": "Lernende, die an einem Quiz teilnehmen",
+        "imageText": "Zusammen quizzen, gemeinsam lernen.",
+        "errors": {
+            "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+            "lobbyNotFound": "Keine Lobby mit diesem Code gefunden. Bitte überprüfe den Code und versuche es erneut."
+        }
+    }
+}

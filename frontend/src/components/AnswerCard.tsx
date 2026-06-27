@@ -2,6 +2,7 @@
 
 import type { JSX } from "react"
 import { Check, Trash2, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import getAnswerVisuals from "../utils/answerVisuals"
 import { Button } from "@/shadcn/components/ui/button"
 import AnswerContent from "@/components/AnswerContent"
@@ -39,6 +40,7 @@ export default function AnswerCard({
     error,
     isMdEditor = false,
 }: AnswerCardProps): JSX.Element {
+    const { t } = useTranslation()
     // If any visual prop is provided, use provided (with defaults). Otherwise, derive from index when available.
     const hasProvidedVisuals = icon != null || accent != null || glow != null
     let visuals: { accent: string; glow: string; icon: string }
@@ -95,14 +97,14 @@ export default function AnswerCard({
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     {canDelete && onDelete ? (
                         <Button
-                            aria-label="Delete answer option"
+                            aria-label={t("quizEditor.sidebar.deleteAnswerOption")}
                             className="h-8 w-full gap-2 rounded-full border border-white/10 bg-black/20 px-3 text-[10px] font-bold tracking-widest text-white shadow-none hover:bg-red-500/90 hover:text-white sm:w-auto"
                             onClick={onDelete}
                             type="button"
                             variant="ghost"
                         >
                             <Trash2 className="h-3.5 w-3.5" />
-                            Delete
+                            {t("common.buttons.delete")}
                         </Button>
                     ) : null}
 
@@ -123,7 +125,7 @@ export default function AnswerCard({
                             ) : (
                                 <X className="h-3.5 w-3.5" />
                             )}
-                            {correct ? "Correct" : "Wrong"}
+                            {correct ? t("common.buttons.correct") : t("common.buttons.wrong")}
                         </Button>
                     ) : null}
                 </div>

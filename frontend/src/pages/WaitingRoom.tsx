@@ -4,6 +4,7 @@ import type { JSX } from "react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import GamePinForm from "@/components/GamePinForm"
 import Lobby from "@/components/Lobby"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
@@ -14,6 +15,7 @@ import { AVAILABLE_EMOJIS } from "@/hooks/useGameSession"
 import type { Player } from "@/hooks/useGameSession"
 
 export default function WaitingRoom(): JSX.Element {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const codeParam = useParams().code
     const code = codeParam !== null ? Number(codeParam) || undefined : undefined
@@ -122,7 +124,7 @@ export default function WaitingRoom(): JSX.Element {
             const leaving = players.find((p) => p.id === id)
             if (leaving) {
                 toast(
-                    `${leaving.emoji ? `${leaving.emoji} ` : ""}${leaving.name} has left the room`
+                    `${leaving.emoji ? `${leaving.emoji} ` : ""}${t("lobby.events.playerLeft", { name: leaving.name })}`
                 )
             }
         }
@@ -186,17 +188,17 @@ export default function WaitingRoom(): JSX.Element {
             setNameError(payload.message)
         } else if (id === pendingStartId) {
             setPendingStartId(null)
-            toast.error(payload.message || "Failed to start the game")
+            toast.error(payload.message || t("lobby.errors.failedToStart"))
         } else if (id === undefined) {
             // Only show toast for server-initiated errors (no id).
             // Errors with unknown ids come from internal commands (e.g. reconnect) handled elsewhere.
-            toast.error(payload.message || "Something went wrong")
+            toast.error(payload.message || t("lobby.errors.somethingWentWrong"))
         }
     })
 
     useSocketEvent("kick", () => {
         if (storageKey) sessionStorage.removeItem(storageKey)
-        toast.error("You have been removed from the lobby by the host.")
+        toast.error(t("lobby.errors.kicked"))
         setTimeout(async () => {
             try {
                 await navigate("/")
@@ -231,19 +233,19 @@ export default function WaitingRoom(): JSX.Element {
 
     const onStartGame = useCallback((): void => {
         if (players.length === 0) {
-            toast.error("Waiting for players to join...")
+            toast.error(t("lobby.errors.waitingForPlayers"))
             return
         }
         const id = Math.floor(Math.random() * 2 ** 31)
         setPendingStartId(id)
         ws.send({ id, command: "start" })
-    }, [players.length, ws])
+    }, [players.length, ws, t])
 
     if (isLoadingSession || isLoadingQuiz || (isPlayer && wsConnected === undefined)) {
         return (
             <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-4 py-24">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
-                <p className="text-muted-foreground text-sm">Loading the quiz lobby…</p>
+                <p className="text-muted-foreground text-sm">{t("lobby.loadingLobby")}</p>
             </section>
         )
     }
@@ -252,11 +254,9 @@ export default function WaitingRoom(): JSX.Element {
         return (
             <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-6 py-24">
                 <div className="w-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">
-                    <h1 className="text-base font-bold">Quiz lobby not found</h1>
+                    <h1 className="text-base font-bold">{t("lobby.lobbyNotFound.title")}</h1>
                     <p className="mt-1 text-sm">
-                        No lobby with the code{" "}
-                        <span className="font-mono font-bold">{codeWithDash}</span> was found.
-                        Please check the invitation code and try again.
+                        {t("lobby.lobbyNotFound.description", { code: codeWithDash })}
                     </p>
                 </div>
                 <GamePinForm

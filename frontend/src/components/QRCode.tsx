@@ -2,6 +2,7 @@ import type { JSX } from "react"
 import { useEffect, useRef, useState } from "react"
 import { Maximize2, Minimize2 } from "lucide-react"
 import ReactQRCode from "react-qr-code"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 
 interface QRCodeProps {
@@ -9,6 +10,7 @@ interface QRCodeProps {
 }
 
 export default function QRCode({ codeWithDash }: QRCodeProps): JSX.Element {
+    const { t } = useTranslation()
     const [isFullscreen, setIsFullscreen] = useState(false)
     const qrFullscreenRef = useRef<HTMLDivElement>(null)
 
@@ -66,7 +68,7 @@ export default function QRCode({ codeWithDash }: QRCodeProps): JSX.Element {
                         </div>
                         <Button className="gap-2" onClick={toggleFullscreen} variant="outline">
                             <Minimize2 className="h-4 w-4" />
-                            Exit fullscreen
+                            {t("lobby.qr.exitFullscreen")}
                         </Button>
                     </>
                 ) : null}
@@ -74,7 +76,7 @@ export default function QRCode({ codeWithDash }: QRCodeProps): JSX.Element {
             {!isFullscreen && (
                 <div className="flex flex-col items-center gap-2">
                     <p className="text-muted-foreground max-w-xs text-center text-xs">
-                        Scan to join at{" "}
+                        {t("lobby.qr.scanToJoin")}{" "}
                         <span className="text-foreground font-mono font-semibold">{joinUrl}</span>
                     </p>
                     <Button
@@ -84,7 +86,7 @@ export default function QRCode({ codeWithDash }: QRCodeProps): JSX.Element {
                         variant="outline"
                     >
                         <Maximize2 className="h-4 w-4" />
-                        Show fullscreen
+                        {t("lobby.qr.showFullscreen")}
                     </Button>
                 </div>
             )}

@@ -2,6 +2,7 @@ import type { JSX } from "react"
 import { useState } from "react"
 import { Maximize2 } from "lucide-react"
 import MDEditor from "@uiw/react-md-editor"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 import { Input } from "@/shadcn/components/ui/input"
 import { Textarea } from "@/shadcn/components/ui/textarea"
@@ -25,6 +26,7 @@ export default function AnswerContent({
     isMdEditor,
     singleLine = false,
 }: AnswerContentProps): JSX.Element {
+    const { t } = useTranslation()
     const { theme } = useTheme()
     const [isExpanded, setIsExpanded] = useState(false)
 
@@ -51,7 +53,7 @@ export default function AnswerContent({
 
                     <div className="mt-1 flex justify-end">
                         <Button
-                            aria-label="Expand editor"
+                            aria-label={t("quizEditor.editor.expandEditor")}
                             className="h-6 gap-1 px-2 text-[10px] opacity-60 hover:opacity-100"
                             onClick={() => setIsExpanded(true)}
                             size="sm"
@@ -59,14 +61,14 @@ export default function AnswerContent({
                             variant="ghost"
                         >
                             <Maximize2 className="h-3 w-3" />
-                            Expand
+                            {t("quizEditor.editor.expand")}
                         </Button>
                     </div>
 
                     <Dialog onOpenChange={setIsExpanded} open={isExpanded}>
                         <DialogContent className="max-w-3xl">
                             <DialogHeader>
-                                <DialogTitle>Edit Answer</DialogTitle>
+                                <DialogTitle>{t("quizEditor.editor.editAnswer")}</DialogTitle>
                             </DialogHeader>
                             <div className={wrapperClass} data-color-mode={colorMode}>
                                 <MDEditor
@@ -121,7 +123,7 @@ export default function AnswerContent({
 
             {error ? (
                 <div className="absolute right-0 bottom-0 left-0 mx-2 mb-1 text-sm font-medium text-red-500">
-                    This field is required
+                    {t("quizEditor.editor.fieldRequired")}
                 </div>
             ) : null}
         </div>
