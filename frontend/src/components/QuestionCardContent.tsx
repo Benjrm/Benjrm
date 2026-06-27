@@ -8,6 +8,7 @@ import AnswerOption from "@/components/AnswerOption"
 import TimerBar from "@/components/TimerBar"
 import { Button } from "@/shadcn/components/ui/button"
 import type { QuestionType } from "@/api/questions/questions.types.ts"
+import useQuestionTimer from "@/hooks/useQuestionTimer"
 
 export interface QuestionOption {
     id: string
@@ -44,26 +45,8 @@ export default function QuestionCardContent({
     type,
 }: QuestionCardContentProps): JSX.Element {
     const [selectedAnswers, setSelectedAnswers] = useState<string[]>([])
-    const [timeLeft, setTimeLeft] = useState<number | null>(() => {
-        if (questionExpiresAt)
-            return Math.max(0, Math.ceil((questionExpiresAt - Date.now()) / 1000))
-        return secondsToAnswer
-    })
     const [hasSubmitted, setHasSubmitted] = useState(false)
-
-    useEffect(() => {
-        const expiresAt =
-            questionExpiresAt ?? (secondsToAnswer ? Date.now() + secondsToAnswer * 1000 : null)
-        if (expiresAt === null) return undefined
-        const timer = setInterval(() => {
-            const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
-            setTimeLeft(remaining)
-            if (remaining <= 0) clearInterval(timer)
-        }, 500)
-        return (): void => {
-            clearInterval(timer)
-        }
-    }, [questionExpiresAt, secondsToAnswer])
+    const timeLeft = useQuestionTimer(questionExpiresAt ?? null, secondsToAnswer)
 
     // Automatisches Absenden, wenn die Zeit bei 0 ankommt (nur wenn Antwort ausgewählt)
     useEffect(() => {

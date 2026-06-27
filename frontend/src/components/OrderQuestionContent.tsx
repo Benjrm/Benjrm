@@ -8,6 +8,7 @@ import {
     closestCenter,
     KeyboardSensor,
     PointerSensor,
+    TouchSensor,
     useSensor,
     useSensors,
 } from "@dnd-kit/core"
@@ -20,9 +21,13 @@ import {
     useSortable,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { Button } from "@/shadcn/components/ui/button"
 import TimerBar from "@/components/TimerBar"
 import QuestionHeader from "@/components/QuestionHeader"
+import QuestionContainer from "@/components/QuestionContainer"
+import useQuestionTimer from "@/hooks/useQuestionTimer"
 import { restrictToVerticalAxis, restrictToParentElement } from "@/pages/quiz/quizUtils"
 
 interface Option {
@@ -69,7 +74,15 @@ function SortableItem({ id, text }: { id: string; text: string }): JSX.Element {
                     : "border-border bg-muted/30 hover:bg-muted/60"
             }`}
         >
-            <span>{text}</span>
+            <div className="[&_p]:m-0">
+                <ReactMarkdown
+                    unwrapDisallowed
+                    allowedElements={["p", "strong", "em", "code", "del", "s"]}
+                    remarkPlugins={[remarkGfm]}
+                >
+                    {text}
+                </ReactMarkdown>
+            </div>
             <span className="text-muted-foreground text-xl">≡</span>
         </div>
     )
@@ -90,30 +103,9 @@ export default function OrderQuestionContent({
     totalQuestions = 0,
     onSendAnswer,
 }: OrderQuestionContentProps): JSX.Element {
-    const [items, setItems] = useState<Option[]>(() => {
-        if (!initialItemOrder || initialItemOrder.length === 0) return options
-        return [...options].sort(
-            (a, b) => initialItemOrder.indexOf(a.id) - initialItemOrder.indexOf(b.id)
-        )
-    })
-    const [timeLeft, setTimeLeft] = useState<number | null>(() => {
-        if (questionExpiresAt)
-            return Math.max(0, Math.ceil((questionExpiresAt - Date.now()) / 1000))
-        return secondsToAnswer
-    })
+    const [items, setItems] = useState<Option[]>(options)
     const [hasAnswered, setHasAnswered] = useState(false)
-
-    useEffect(() => {
-        const expiresAt =
-            questionExpiresAt ?? (secondsToAnswer ? Date.now() + secondsToAnswer * 1000 : null)
-        if (expiresAt === null) return undefined
-        const timer = setInterval(() => {
-            const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
-            setTimeLeft(remaining)
-            if (remaining <= 0) clearInterval(timer)
-        }, 500)
-        return () => clearInterval(timer)
-    }, [questionExpiresAt, secondsToAnswer])
+    const timeLeft = useQuestionTimer(questionExpiresAt ?? null, secondsToAnswer ?? null)
 
     // Automatisches Senden, wenn die Zeit abläuft
     useEffect(() => {
@@ -128,9 +120,15 @@ export default function OrderQuestionContent({
 
     // Drag-and-Drop Sensoren
     const sensors = useSensors(
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
+        }),
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 5, // Erlaubt Klicks (Maus/Touch) ohne direkt zu draggen
+                distance: 5,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -181,7 +179,7 @@ export default function OrderQuestionContent({
                     totalSeconds={secondsToAnswer ?? null}
                 />
 
-                <h2 className="mb-8 text-center text-2xl font-bold sm:text-3xl">{questionText}</h2>
+                <QuestionContainer question={questionText} />
 
                 {/* Ansicht für den Host */}
                 {isHost ? (

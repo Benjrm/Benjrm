@@ -182,6 +182,7 @@ export default function QuestionEditor({
             {question.type !== "SLIDE" ? (
                 <QuestionAnswerOptions
                     errorMissingAnswers={questionError.missingAnswers}
+                    isMdEditor={isMdEditor}
                     onAddOption={onAddOption}
                     onChange={onChangeOption}
                     onDeleteOption={onDeleteOption}
