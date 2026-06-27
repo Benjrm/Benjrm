@@ -9,14 +9,14 @@ import ThemeToggle from "@/components/ThemeToggle"
 import NavItem from "@/components/NavItem"
 import AuthAction from "@/auth/components/AuthAction"
 import useAuthUser from "@/auth/hooks/useAuthUser"
-import LanguageSwitcher from "@/components/LanguageSwitcher.tsx"
-
-const BRAND_NAME = "Benjrm"
+import ProfileModal from "@/components/ProfileModal"
+import LanguageSwitcher from "@/components/LanguageSwitcher"
 
 export default function Navbar(): JSX.Element {
     const { t } = useTranslation()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-    const { data: isAuthenticated } = useAuthUser()
+    const [isProfileOpen, setIsProfileOpen] = useState(false)
+    const { data: user } = useAuthUser()
 
     return (
         <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
@@ -29,13 +29,13 @@ export default function Navbar(): JSX.Element {
                         className="shrink-0 text-2xl font-extrabold tracking-tighter text-[#00F2FF] sm:text-3xl"
                         to="/"
                     >
-                        {BRAND_NAME}
+                        {t("common.brandName")}
                     </NavLink>
 
                     {/* Desktop Navigation */}
                     <nav className="hidden items-center gap-6 md:flex">
                         <NavItem to="/">{t("common.header.home")}</NavItem>
-                        {isAuthenticated ? (
+                        {user ? (
                             <NavItem to="/dashboard">{t("common.header.dashboard")}</NavItem>
                         ) : null}
                     </nav>
@@ -46,14 +46,22 @@ export default function Navbar(): JSX.Element {
                     <LanguageSwitcher />
                     <ThemeToggle />
 
-                    {isAuthenticated ? (
-                        <div
-                            aria-label={t("common.header.profile")}
-                            className="bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 sm:h-9 sm:w-9"
-                            role="img"
-                        >
-                            <UserCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
-                        </div>
+                    {user ? (
+                        <>
+                            <button
+                                aria-label={t("common.header.openProfile")}
+                                className="bg-muted text-muted-foreground hover:text-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 transition-colors sm:h-9 sm:w-9"
+                                onClick={() => setIsProfileOpen(true)}
+                                type="button"
+                            >
+                                <UserCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                            </button>
+                            <ProfileModal
+                                accountUrl={user.accountUrl}
+                                isOpen={isProfileOpen}
+                                onClose={() => setIsProfileOpen(false)}
+                            />
+                        </>
                     ) : null}
 
                     <AuthAction />
@@ -81,7 +89,7 @@ export default function Navbar(): JSX.Element {
                         <NavItem isMobile onClick={() => setIsMobileMenuOpen(false)} to="/">
                             {t("common.header.home")}
                         </NavItem>
-                        {isAuthenticated ? (
+                        {user ? (
                             <NavItem
                                 isMobile
                                 onClick={() => setIsMobileMenuOpen(false)}

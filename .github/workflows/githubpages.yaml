@@ -1,0 +1,75 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      # OpenAPI Specification changes should trigger a re-deployment to GitHub Pages
+      - 'docs/openapispec/index.html'
+      - 'docs/openapispec/RestInterface.yaml'
+      - 'docs/openapispec/dist/**'
+      # AsyncAPI Specification changes should trigger a re-deployment to GitHub Pages
+      - 'docs/asyncapi/WebSockets.yaml'
+      # Changes to the GitHub Actions workflow itself should also trigger a re-deployment to GitHub Pages
+      - '.github/workflows/githubpages.yaml'
+      # Changes to the GitHub Pages entry point (index.html) providing links to different documentation artifacts
+      # should trigger a re-deployment to GitHub Pages
+      - 'docs/githubpages/index.html'
+      - 'docs/githubpages/styles.css'
+  workflow_dispatch:
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+      - name: Setup Pages
+        uses: actions/configure-pages@v6.0.0
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24.18.0'
+      - name: Install AsyncAPI CLI
+        run: npm install -g @asyncapi/cli@6.0.2
+      - name: Generate AsyncAPI Docs
+        run: |
+          rm -rf docs/githubpages/asyncapi
+          mkdir -p docs/githubpages/asyncapi
+          asyncapi generate fromTemplate \
+            docs/asyncapi/WebSockets.yaml \
+            @asyncapi/html-template@3.5.6 \
+            -o docs/githubpages/asyncapi
+      - name: Copy OpenAPI Spec
+        run: |
+          rm -rf docs/githubpages/openapispec
+          mkdir -p docs/githubpages/openapispec
+          cp docs/openapispec/index.html docs/githubpages/openapispec/index.html
+          cp docs/openapispec/RestInterface.yaml docs/githubpages/openapispec/RestInterface.yaml
+          cp -r docs/openapispec/dist docs/githubpages/openapispec/dist
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: 'docs/githubpages'
+  deploy:
+    permissions:
+      pages: write    # to deploy to GitHub Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+    needs: build-docs
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5.0.0

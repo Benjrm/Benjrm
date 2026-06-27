@@ -19,14 +19,45 @@
             "privacyPolicy": "Privacy Policy",
             "termsAndConditions": "Terms and Conditions"
         },
+        "brandName": "Benjrm",
         "header": {
             "home": "Home",
             "dashboard": "Dashboard",
             "profile": "Profile",
             "profilePlaceholder": "Profile placeholder",
             "toggleMenu": "Toggle menu",
+            "openProfile": "Open profile",
             "signIn": "SIGN IN",
             "logout": "Logout"
+        },
+        "profileModal": {
+            "title": "Profile",
+            "deleted": {
+                "title": "Account Deleted",
+                "success": "Your Benjrm account has been successfully deleted.",
+                "note": "Note: this only deleted your Benjrm account. Your account at your identity provider was not affected.",
+                "openIdpHint": "You may also want to delete your account at your identity provider. Click below to open it.",
+                "openIdpButton": "Open Identity Provider",
+                "contactAdmin": "To delete your account at your identity provider, please contact your administrator.",
+                "goHome": "Go to Home"
+            },
+            "settings": {
+                "title": "Account Settings",
+                "description": "Edit your account settings in your identity provider.",
+                "openButton": "Open Account Settings",
+                "managedExternally": "Your account settings are managed externally. Contact your administrator for help with account management."
+            },
+            "dangerZone": {
+                "title": "Danger Zone",
+                "description": "Permanently deletes your Benjrm account and all associated data. Your identity provider account will not be affected.",
+                "deletionIncludes": "Deletion includes:",
+                "itemQuizzes": "All your quizzes and questions",
+                "itemHistory": "Account history",
+                "confirmBefore": "Type",
+                "confirmAfter": "to confirm",
+                "deleting": "Deleting…",
+                "deleteButton": "Delete Account"
+            }
         }
     },
     "dashboard": {

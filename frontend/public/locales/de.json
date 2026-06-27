@@ -19,14 +19,45 @@
             "privacyPolicy": "Datenschutzerklärung",
             "termsAndConditions": "Allgemeine Geschäftsbedingungen"
         },
+        "brandName": "Benjrm",
         "header": {
             "home": "Startseite",
             "dashboard": "Dashboard",
             "profile": "Profil",
             "profilePlaceholder": "Profil-Platzhalter",
             "toggleMenu": "Menü umschalten",
+            "openProfile": "Profil öffnen",
             "signIn": "ANMELDEN",
             "logout": "Abmelden"
+        },
+        "profileModal": {
+            "title": "Profil",
+            "deleted": {
+                "title": "Konto gelöscht",
+                "success": "Dein Benjrm-Konto wurde erfolgreich gelöscht.",
+                "note": "Hinweis: Es wurde nur dein Benjrm-Konto gelöscht. Dein Konto beim Identity Provider wurde nicht beeinflusst.",
+                "openIdpHint": "Du möchtest möglicherweise auch dein Konto beim Identity Provider löschen. Klicke unten, um ihn zu öffnen.",
+                "openIdpButton": "Identity Provider öffnen",
+                "contactAdmin": "Um dein Konto beim Identity Provider zu löschen, wende dich bitte an deinen Administrator.",
+                "goHome": "Zur Startseite"
+            },
+            "settings": {
+                "title": "Kontoeinstellungen",
+                "description": "Bearbeite deine Kontoeinstellungen bei deinem Identity Provider.",
+                "openButton": "Kontoeinstellungen öffnen",
+                "managedExternally": "Deine Kontoeinstellungen werden extern verwaltet. Wende dich an deinen Administrator."
+            },
+            "dangerZone": {
+                "title": "Gefahrenzone",
+                "description": "Löscht dein Benjrm-Konto und alle zugehörigen Daten dauerhaft. Dein Identity-Provider-Konto wird nicht beeinflusst.",
+                "deletionIncludes": "Löschen umfasst:",
+                "itemQuizzes": "Alle deine Quizze und Fragen",
+                "itemHistory": "Kontoverlauf",
+                "confirmBefore": "Tippe",
+                "confirmAfter": "zur Bestätigung",
+                "deleting": "Löscht…",
+                "deleteButton": "Konto löschen"
+            }
         }
     },
     "dashboard": {
