@@ -518,7 +518,23 @@ impl GameSession {
                     }))
                     .await;
             }
-            QuestionOptions::Order(_) => (),
+            QuestionOptions::Order(models) => {
+                let answer_statistic = models
+                    .iter()
+                    .map(|model| AnswerStatistic {
+                        option: model.id,
+                        votes: 0,
+                        correct: true,
+                    })
+                    .collect();
+
+                self.host
+                    .msg(Message::from(&HostMessage::ShowStatistics {
+                        answers: *answers,
+                        answer_statistic,
+                    }))
+                    .await;
+            }
         };
 
         let correct_answers = Arc::new(question.options.correct_answer_list());

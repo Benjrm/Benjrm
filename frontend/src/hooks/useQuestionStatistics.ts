@@ -40,17 +40,33 @@ export default function useQuestionStatistics(
 ): { statisticOptions: StatisticOption[]; totalAnswers: number } {
     const statisticOptions = useMemo(() => {
         if (!currentQuestion) return []
-        return currentQuestion.options.map((option) => {
-            const statisticsForOption = questionStatistics?.answerStatistic.find(
-                (stat) => stat.option === option.id
-            )
-            return {
-                id: option.id,
-                text: option.text,
-                votes: statisticsForOption ? statisticsForOption.votes : 0,
-                isCorrect: statisticsForOption ? statisticsForOption.correct : false,
-            }
-        })
+
+        // Stats available
+        // For Single/Multiple Choice: The backend sends the votes and correct flags for each option.
+        // For ORDER questions: The backend deliberately sends the options in the original, correct sequence.
+        if (questionStatistics && questionStatistics.answerStatistic.length > 0) {
+            return questionStatistics.answerStatistic.map((stat) => {
+                // The backend only sends the option ID, so we look up the actual text
+                // from the local currentQuestion state.
+                const currentOption = currentQuestion.options.find((option) => option.id === stat.option)
+                return {
+                    id: stat.option,
+                    text: currentOption?.text ?? "",
+                    votes: stat.votes,
+                    isCorrect: stat.correct,
+                }
+            })
+        }
+
+        // Fallback (Loading / Initial State)
+        // Before the websocket event with the actual statistics arrives, we render an empty initial state.
+        // We just map the local options and default to 0 votes.
+        return currentQuestion.options.map((option) => ({
+            id: option.id,
+            text: option.text,
+            votes: 0,
+            isCorrect: false,
+        }))
     }, [currentQuestion, questionStatistics])
 
     const totalAnswers = questionStatistics?.answers ?? 0
