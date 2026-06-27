@@ -1,5 +1,7 @@
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import getAnswerVisuals from "@/utils/answerVisuals"
 
 interface AnswerOptionProps {
@@ -29,13 +31,14 @@ export default function AnswerOption({
             aria-pressed={isSelected}
             onClick={() => onSelect(index)}
             type="button"
-            className={`bg-muted/30 relative flex flex-col items-center justify-center gap-4 overflow-visible rounded-2xl border-2 p-8 text-center shadow-sm backdrop-blur-lg transition-all duration-300 ease-out ${
+            className={`bg-muted/50 relative flex flex-col items-center justify-center gap-4 overflow-visible rounded-2xl border-2 p-8 text-center shadow-sm transition-all duration-300 ease-out ${
                 isSelected
                     ? "scale-[1.01] shadow-[0_0_40px_var(--glow-color)]"
                     : "hover:scale-[1.01] hover:shadow-[0_0_40px_var(--glow-color)]"
             }`}
             style={
                 {
+                    touchAction: "manipulation",
                     borderColor: isSelected ? "var(--glow-color)" : "rgba(255,255,255,0.08)",
                     boxShadow: isSelected ? `0 0 40px ${visuals.accent}` : undefined,
                     "--glow-color": visuals.accent,
@@ -49,8 +52,14 @@ export default function AnswerOption({
                 {visuals.icon}
             </div>
 
-            <div className="text-base font-bold">
-                {text || `${t("quizEditor.options.option")} ${index + 1}`}
+            <div className="text-base font-bold [&_p]:m-0">
+                <ReactMarkdown
+                    unwrapDisallowed
+                    allowedElements={["p", "strong", "em", "code", "del", "s"]}
+                    remarkPlugins={[remarkGfm]}
+                >
+                    {text || `${t("quizEditor.options.option")} ${index + 1}`}
+                </ReactMarkdown>
             </div>
         </button>
     )

@@ -23,8 +23,6 @@
         "header": {
             "home": "Startseite",
             "dashboard": "Dashboard",
-            "profile": "Profil",
-            "profilePlaceholder": "Profil-Platzhalter",
             "toggleMenu": "Menü umschalten",
             "openProfile": "Profil öffnen",
             "signIn": "ANMELDEN",
@@ -75,8 +73,7 @@
         "discover": {
             "title": "Entdecken",
             "recentQuizzes": "Neueste Quizze",
-            "yourQuizzes": "Deine Quizze",
-            "addQuiz": "Quiz hinzufügen"
+            "yourQuizzes": "Deine Quizze"
         }
     },
     "quiz": {
@@ -146,6 +143,9 @@
             "slidePlaceholder": "Gib hier deinen Folieninhalt ein...",
             "questionPlaceholder": "Gib hier deine Frage ein...",
             "fieldRequired": "Dieses Feld ist erforderlich",
+            "expandEditor": "Editor vergrößern",
+            "expand": "Vergrößern",
+            "editAnswer": "Antwort bearbeiten",
             "untitledSlide": "Unbenannte Folie",
             "untitledQuestion": "Unbenannte Frage",
             "untitledQuiz": "Unbenannt"
@@ -207,8 +207,7 @@
             "waitingForNext": "Warte auf nächste Frage…",
             "currentLabel": "Aktuelle Frage",
             "progress": "Fragenfortschritt",
-            "skipNext": "Überspringen / Nächste Frage",
-            "orderDefault": "Ordne die Elemente in die richtige Reihenfolge"
+            "skipNext": "Überspringen / Nächste Frage"
         },
         "answer": {
             "submit": "Antwort absenden",
@@ -296,7 +295,7 @@
         "newFeaturesLive": "Neue Funktionen online",
         "engageAndLearn": "Spiele und lerne",
         "with": "mit",
-        "subtitle": "HOSTEN UND SPIELEN VON INTERAKTIVEN QUIZZES",
+        "subtitle": "HOSTEN UND SPIELEN VON INTERAKTIVEN QUIZZEN",
         "gamePinPlaceholder": "SPIEL-PIN EINGEBEN",
         "gamePinAriaLabel": "Spiel-PIN eingeben",
         "checking": "Überprüfe…",

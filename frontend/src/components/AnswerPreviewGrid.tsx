@@ -1,6 +1,7 @@
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import getAnswerVisuals from "../utils/answerVisuals"
+import MarkdownComponent from "@/components/markdown/MarkdownComponent"
 import type { QuestionOption, QuestionType } from "@/api/questions/questions.types.ts"
 
 interface Props {
@@ -34,8 +35,12 @@ export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element
                             {index + 1}
                         </div>
 
-                        <span className="text-card-foreground text-[15px] font-bold tracking-tight">
-                            {option.answer || `${t("quizEditor.options.item")} ${index + 1}`}
+                        <span className="text-card-foreground text-[15px] font-bold tracking-tight [&_p]:m-0">
+                            <MarkdownComponent
+                                content={
+                                    option.answer || `${t("quizEditor.options.item")} ${index + 1}`
+                                }
+                            />
                         </span>
                     </div>
                 ))}
@@ -78,8 +83,10 @@ export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element
                             {visuals.icon}
                         </span>
 
-                        <span className="relative z-10 line-clamp-2 text-[11px] leading-4 font-semibold text-slate-700 dark:text-white">
-                            {option.answer || t("quizEditor.options.answerPlaceholder")}
+                        <span className="relative z-10 line-clamp-2 text-[11px] leading-4 font-semibold text-slate-700 dark:text-white [&_p]:m-0">
+                            <MarkdownComponent
+                                content={option.answer || t("quizEditor.options.answerPlaceholder")}
+                            />
                         </span>
 
                         {isCorrect ? (

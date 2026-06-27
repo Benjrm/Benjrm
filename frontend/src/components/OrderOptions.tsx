@@ -26,6 +26,7 @@ interface OrderOptionsProps {
     onDeleteOption: (index: number) => void
     onReorderOptions: (activeId: string, overId: string) => void
     onAddOption: () => void
+    isMdEditor: boolean
 }
 
 export default function OrderOptions({
@@ -35,6 +36,7 @@ export default function OrderOptions({
     onDeleteOption,
     onReorderOptions,
     onAddOption,
+    isMdEditor,
 }: OrderOptionsProps): JSX.Element {
     const { t } = useTranslation()
     const sensors = useSensors(
@@ -81,6 +83,7 @@ export default function OrderOptions({
                                 error={errorMissingAnswers.includes(index)}
                                 id={option.id}
                                 index={index}
+                                isMdEditor={isMdEditor}
                                 onChange={(value) => onChange(index, value)}
                                 placeholder={`${t("quizEditor.options.item")} ${index + 1}`}
                                 value={(option as { answer?: string }).answer ?? ""}

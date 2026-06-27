@@ -23,8 +23,6 @@
         "header": {
             "home": "Home",
             "dashboard": "Dashboard",
-            "profile": "Profile",
-            "profilePlaceholder": "Profile placeholder",
             "toggleMenu": "Toggle menu",
             "openProfile": "Open profile",
             "signIn": "SIGN IN",
@@ -75,8 +73,7 @@
         "discover": {
             "title": "Discover",
             "recentQuizzes": "Most Recent Quizzes",
-            "yourQuizzes": "Your Quizzes",
-            "addQuiz": "Add Quiz"
+            "yourQuizzes": "Your Quizzes"
         }
     },
     "quiz": {
@@ -146,6 +143,9 @@
             "slidePlaceholder": "Type your slide content here...",
             "questionPlaceholder": "Type your question here...",
             "fieldRequired": "This field is required",
+            "expandEditor": "Expand editor",
+            "expand": "Expand",
+            "editAnswer": "Edit Answer",
             "untitledSlide": "Untitled slide",
             "untitledQuestion": "Untitled question",
             "untitledQuiz": "Untitled"
@@ -207,8 +207,7 @@
             "waitingForNext": "Waiting for next question…",
             "currentLabel": "Current Question",
             "progress": "Question progress",
-            "skipNext": "Skip / Next Question",
-            "orderDefault": "Order the elements in the correct sequence"
+            "skipNext": "Skip / Next Question"
         },
         "answer": {
             "submit": "Submit Answer",

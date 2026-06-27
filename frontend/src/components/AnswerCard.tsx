@@ -4,8 +4,8 @@ import type { JSX } from "react"
 import { Check, Trash2, X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import getAnswerVisuals from "../utils/answerVisuals"
-import { Textarea } from "@/shadcn/components/ui/textarea"
 import { Button } from "@/shadcn/components/ui/button"
+import AnswerContent from "@/components/AnswerContent"
 
 export interface AnswerCardProps {
     // visual props are optional; can be derived from `index`
@@ -22,6 +22,7 @@ export interface AnswerCardProps {
     correct?: boolean
     onDelete?: () => void
     canDelete?: boolean
+    isMdEditor?: boolean
 }
 
 export default function AnswerCard({
@@ -37,6 +38,7 @@ export default function AnswerCard({
     canDelete = false,
     index,
     error,
+    isMdEditor = false,
 }: AnswerCardProps): JSX.Element {
     const { t } = useTranslation()
     // If any visual prop is provided, use provided (with defaults). Otherwise, derive from index when available.
@@ -83,26 +85,13 @@ export default function AnswerCard({
                         {usedIcon}
                     </div>
 
-                    <div className="relative w-full">
-                        <Textarea
-                            onChange={(e) => onChange(e.target.value)}
-                            placeholder={placeholder}
-                            rows={2}
-                            style={{ fieldSizing: "fixed" }}
-                            value={value}
-                            className={`placeholder:text-muted-foreground/60 h-28 w-full resize-none overflow-y-auto p-4 text-lg leading-7 font-semibold shadow-none focus-visible:ring-0 sm:h-24 sm:text-lg ${
-                                error
-                                    ? "border-red-400! bg-red-50 dark:border-red-400/30! dark:bg-red-500/10"
-                                    : "bg-muted/90 dark:bg-muted/25 border-none"
-                            }`}
-                        />
-
-                        {error ? (
-                            <div className="absolute right-0 bottom-0 left-0 mx-2 mb-1 text-sm font-medium text-red-500">
-                                {t("quizEditor.editor.fieldRequired")}
-                            </div>
-                        ) : null}
-                    </div>
+                    <AnswerContent
+                        error={error}
+                        isMdEditor={isMdEditor}
+                        onChange={onChange}
+                        placeholder={placeholder}
+                        value={value}
+                    />
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

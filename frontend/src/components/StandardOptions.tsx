@@ -14,6 +14,7 @@ interface StandardOptionsProps {
     onDeleteOption: (index: number) => void
     onToggleCorrect: (index: number) => void
     onAddOption: () => void
+    isMdEditor: boolean
 }
 
 export default function StandardOptions({
@@ -23,6 +24,7 @@ export default function StandardOptions({
     onDeleteOption,
     onToggleCorrect,
     onAddOption,
+    isMdEditor,
 }: StandardOptionsProps): JSX.Element {
     const { t } = useTranslation()
 
@@ -36,6 +38,7 @@ export default function StandardOptions({
                         correct={(option as { correct?: boolean }).correct ?? false}
                         error={errorMissingAnswers.includes(index)}
                         index={index}
+                        isMdEditor={isMdEditor}
                         onChange={(value) => onChange(index, value)}
                         onDelete={options.length > 2 ? () => onDeleteOption(index) : undefined}
                         onToggleCorrect={() => onToggleCorrect(index)}
