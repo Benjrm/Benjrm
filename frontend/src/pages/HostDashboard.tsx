@@ -7,7 +7,7 @@ import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import HostGameScreen from "@/components/HostGameScreen"
-import { GameStateEnum, parseDisplayQuestion, computeExpiresAt } from "@/hooks/useGameSession"
+import { GameStateEnum, parseDisplayQuestion } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
 import type { SessionPlayer } from "@/api/session"
 
@@ -41,6 +41,7 @@ export default function HostDashboard(): JSX.Element {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
     const [totalQuestions, setTotalQuestions] = useState(0)
     const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(null)
+    const [questionStartsAt, setQuestionStartsAt] = useState<number | null>(null)
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
     const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
     const [hasPendingFinalPodium, setHasPendingFinalPodium] = useState(false)
@@ -75,7 +76,9 @@ export default function HostDashboard(): JSX.Element {
         hasDisplayedQuestionRef.current = true
         setGameState(GameStateEnum.QUESTION)
         setCurrentQuestion(parseDisplayQuestion(payload))
-        setQuestionExpiresAt(computeExpiresAt(payload.seconds, timing))
+        const startsAt = timing ? new Date(timing).getTime() : Date.now()
+        setQuestionStartsAt(startsAt)
+        setQuestionExpiresAt(payload.seconds ? startsAt + payload.seconds * 1000 : null)
         setTotalQuestions(payload.totalQuestions)
         setCurrentQuestionIndex(payload.index)
     })
@@ -186,6 +189,7 @@ export default function HostDashboard(): JSX.Element {
                 onShowPodium={hasPendingFinalPodium ? showPodium : undefined}
                 players={players}
                 questionExpiresAt={questionExpiresAt}
+                questionStartsAt={questionStartsAt}
                 quizTitle={quiz?.title}
                 totalQuestions={totalQuestions}
             />

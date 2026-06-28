@@ -21,12 +21,6 @@ export function parseDisplayQuestion(payload: {
     }
 }
 
-export function computeExpiresAt(seconds: number | null, timing?: string | null): number | null {
-    if (!seconds) return null
-    const startedAt = timing ? new Date(timing).getTime() : Date.now()
-    return startedAt + seconds * 1000
-}
-
 export const AVAILABLE_EMOJIS = [
     "😀",
     "😃",
