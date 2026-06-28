@@ -9,10 +9,10 @@ import GamePinForm from "@/components/GamePinForm"
 import Lobby from "@/components/Lobby"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
-import useSessionPlayers from "@/api/session/hooks/useSessionPlayers"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import { AVAILABLE_EMOJIS } from "@/hooks/useGameSession"
 import type { Player } from "@/hooks/useGameSession"
+import { getSessionPlayers } from "@/api/session"
 
 export default function WaitingRoom(): JSX.Element {
     const { t } = useTranslation()
@@ -29,7 +29,6 @@ export default function WaitingRoom(): JSX.Element {
 
     const { isLoading: isLoadingSession, isHost, isPlayer, isInvalidCode } = useSessionStatus(code)
     const { data: quiz, isLoading: isLoadingQuiz } = useSessionQuiz(isHost ? code : undefined)
-    const { data: initialPlayers } = useSessionPlayers(isHost ? code : undefined)
 
     const ws = useWebSocketContext()
 
@@ -63,25 +62,26 @@ export default function WaitingRoom(): JSX.Element {
 
     // Player list (used by host to display joined players)
     const [players, setPlayers] = useState<Player[]>([])
-    const playersInitialized = useRef(false)
-    useEffect(() => {
-        if (initialPlayers && !playersInitialized.current) {
-            playersInitialized.current = true
-            setPlayers(initialPlayers)
-        }
-    }, [initialPlayers])
 
-    // WS connection tracking (player role only — determines when lobby is ready to show)
-    const [wsConnected, setWsConnected] = useState<boolean | undefined>(undefined)
+    // Start as true so the overlay shows until the WS is confirmed open.
+    // onEveryConnect fires immediately if the socket is already open (normal navigation),
+    // so there is no visible flash on non-refresh transitions.
+    const [isReconnecting, setIsReconnecting] = useState(true)
+    const [connectionFailed, setConnectionFailed] = useState(false)
     useEffect(() => {
-        if (!isPlayer) return undefined
-        const unsubOpen = ws.onConnect(() => setWsConnected(true))
-        const unsubFail = ws.onConnectFail(() => setWsConnected(false))
-        return (): void => {
-            unsubOpen()
-            unsubFail()
+        const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
+        const unsubConnect = ws.onEveryConnect(async () => {
+            setIsReconnecting(false)
+            setConnectionFailed(false)
+            if (isHost && code) setPlayers(await getSessionPlayers(code))
+        })
+        const unsubConnectFail = ws.onConnectFail(() => setConnectionFailed(true))
+        return () => {
+            unsubDisconnect()
+            unsubConnect()
+            unsubConnectFail()
         }
-    }, [isPlayer, ws])
+    }, [ws, isHost, code])
 
     // Re-send saved name after WS reconnects (skipped when reconnect credentials exist)
     const nameSavedRef = useRef(nameSaved)
@@ -241,7 +241,7 @@ export default function WaitingRoom(): JSX.Element {
         ws.send({ id, command: "start" })
     }, [players.length, ws, t])
 
-    if (isLoadingSession || isLoadingQuiz || (isPlayer && wsConnected === undefined)) {
+    if (isLoadingSession || isLoadingQuiz || isReconnecting) {
         return (
             <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-4 py-24">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
@@ -250,7 +250,7 @@ export default function WaitingRoom(): JSX.Element {
         )
     }
 
-    if (isInvalidCode || !code || (isPlayer && wsConnected === false)) {
+    if (isInvalidCode || !code || connectionFailed) {
         return (
             <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-6 py-24">
                 <div className="w-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">

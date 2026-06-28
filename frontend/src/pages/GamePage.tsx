@@ -56,11 +56,13 @@ export default function GamePage(): JSX.Element {
     useEffect(() => {
         const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
         const unsubConnect = ws.onEveryConnect(() => setIsReconnecting(false))
+        const unsubConnectFail = ws.onConnectFail(async () => navigate("/"))
         return () => {
             unsubDisconnect()
             unsubConnect()
+            unsubConnectFail()
         }
-    }, [ws])
+    }, [ws, navigate])
 
     // Lazy initializers read the snapshot once on mount to restore state after a page refresh.
     // sessionStorage reads are synchronous and fast, so calling getGameSnapshot per field is fine.

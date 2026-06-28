@@ -135,6 +135,21 @@ export default function HostDashboard(): JSX.Element {
         return ws.onConnect(sendFirstQuestion)
     }, [ws])
 
+    // Start as true so the overlay shows until the WS is confirmed open.
+    // onEveryConnect fires immediately if the socket is already open (normal navigation),
+    // so there is no visible flash on non-refresh transitions.
+    const [isReconnecting, setIsReconnecting] = useState(true)
+    useEffect(() => {
+        const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
+        const unsubConnect = ws.onEveryConnect(() => setIsReconnecting(false))
+        const unsubConnectFail = ws.onConnectFail(async () => navigate("/"))
+        return () => {
+            unsubDisconnect()
+            unsubConnect()
+            unsubConnectFail()
+        }
+    }, [ws, navigate])
+
     // Send endGame on unmount only after the first question was received from the server.
     // Guards against React StrictMode's double-mount: the cleanup fires before the server
     // ever sends displayQuestion, so hasDisplayedQuestionRef is still false then.
@@ -152,20 +167,28 @@ export default function HostDashboard(): JSX.Element {
     }, [ws])
 
     return (
-        <HostGameScreen
-            codeWithDash={codeWithDash}
-            currentQuestion={currentQuestion}
-            currentQuestionIndex={currentQuestionIndex}
-            gameState={gameState}
-            isFinalLeaderboard={isFinalLeaderboard}
-            leaderboard={leaderboard}
-            onEndGame={sendEndGame}
-            onNextQuestion={sendNextQuestion}
-            onShowPodium={hasPendingFinalPodium ? showPodium : undefined}
-            players={players}
-            questionExpiresAt={questionExpiresAt}
-            quizTitle={quiz?.title}
-            totalQuestions={totalQuestions}
-        />
+        <>
+            {isReconnecting ? (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/70 text-center backdrop-blur-sm">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
+                    <p className="text-muted-foreground">{t("game.reconnecting")}</p>
+                </div>
+            ) : null}
+            <HostGameScreen
+                codeWithDash={codeWithDash}
+                currentQuestion={currentQuestion}
+                currentQuestionIndex={currentQuestionIndex}
+                gameState={gameState}
+                isFinalLeaderboard={isFinalLeaderboard}
+                leaderboard={leaderboard}
+                onEndGame={sendEndGame}
+                onNextQuestion={sendNextQuestion}
+                onShowPodium={hasPendingFinalPodium ? showPodium : undefined}
+                players={players}
+                questionExpiresAt={questionExpiresAt}
+                quizTitle={quiz?.title}
+                totalQuestions={totalQuestions}
+            />
+        </>
     )
 }
