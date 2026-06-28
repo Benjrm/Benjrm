@@ -5,7 +5,7 @@ import { Toaster, toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import GameScreen from "@/components/GameScreen"
-import { GameStateEnum, parseDisplayQuestion, computeExpiresAt } from "@/hooks/useGameSession"
+import { GameStateEnum, parseDisplayQuestion } from "@/hooks/useGameSession"
 import type {
     GameState,
     GameQuestion,
@@ -71,13 +71,13 @@ export default function GamePage(): JSX.Element {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
     const [totalQuestions, setTotalQuestions] = useState(0)
     const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(null)
+    const [questionStartsAt, setQuestionStartsAt] = useState<number | null>(null)
     const [questionResult, setQuestionResult] = useState<QuestionResult | null>(null)
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
     const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
     const [playerItemOrder, setPlayerItemOrder] = useState<string[] | null>(null)
     const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false)
     const [initialSelectedAnswers, setInitialSelectedAnswers] = useState<string[]>([])
-    const [skipNextPreview, setSkipNextPreview] = useState(false)
 
     useSocketEvent("displayQuestion", (payload, timing) => {
         let isReconnect = false
@@ -113,13 +113,14 @@ export default function GamePage(): JSX.Element {
             }
         }
 
-        setSkipNextPreview(isReconnect)
         setHasSubmittedAnswer(alreadySubmitted)
         setInitialSelectedAnswers(restoredAnswers)
         setPlayerItemOrder(restoredItemOrder)
         setGameState(GameStateEnum.QUESTION)
         setCurrentQuestion(parseDisplayQuestion(payload))
-        setQuestionExpiresAt(computeExpiresAt(payload.seconds, timing))
+        const startsAt = timing ? new Date(timing).getTime() : Date.now()
+        setQuestionStartsAt(startsAt)
+        setQuestionExpiresAt(payload.seconds ? startsAt + payload.seconds * 1000 : null)
         setTotalQuestions(payload.totalQuestions)
         setCurrentQuestionIndex(payload.index)
         setQuestionResult(null)
@@ -223,7 +224,7 @@ export default function GamePage(): JSX.Element {
                 playerName={playerName}
                 questionExpiresAt={questionExpiresAt}
                 questionResult={questionResult}
-                skipPreview={skipNextPreview}
+                questionStartsAt={questionStartsAt}
                 totalQuestions={totalQuestions}
             />
         </>
