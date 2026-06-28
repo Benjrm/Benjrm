@@ -3,6 +3,11 @@ import type { JSX } from "react"
 import ProgressBar from "@/shadcn/components/ui/progress"
 import { cn } from "@/shadcn/lib/utils"
 
+function calculateProgress(left: number | null, total: number | null) {
+    if (left === null || total === null) return null
+    return Math.max(0, Math.min(100, (left / total) * 100))
+}
+
 interface TimerBarProps {
     timeLeft: number | null
     totalSeconds: number | null
@@ -16,10 +21,6 @@ export default function TimerBar({
     animationMs,
     className,
 }: TimerBarProps): JSX.Element | null {
-    function calculateProgress(left: number | null, total: number | null) {
-        if (left === null || total === null) return null
-        return Math.max(0, Math.min(100, (left / total) * 100))
-    }
     const [progress, setProgress] = useState(calculateProgress(timeLeft, totalSeconds))
 
     const indicatorClassName = (() => {

@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react"
 
+function calculateRemaining(expiresAt: number | null, shouldCeil: boolean) {
+    if (!expiresAt) return null
+    let time = (expiresAt - Date.now()) / 1000
+    if (shouldCeil) time = Math.ceil(time)
+    return Math.max(0, time)
+}
+
 export default function useQuestionTimer(
     questionExpiresAt: number | null,
     secondsToAnswer: number | null,
     ceil = true
 ): number | null {
-    function calculateRemaining(expiresAt: number | null, shouldCeil: boolean) {
-        if (!expiresAt) return null
-        let time = (expiresAt - Date.now()) / 1000
-        if (shouldCeil) time = Math.ceil(time)
-        return Math.max(0, time)
-    }
     const [timeLeft, setTimeLeft] = useState<number | null>(() => {
         if (questionExpiresAt) return calculateRemaining(questionExpiresAt, ceil)
         return secondsToAnswer

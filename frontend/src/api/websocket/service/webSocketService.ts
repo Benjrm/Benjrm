@@ -134,11 +134,11 @@ export default class WebSocketService {
         }
 
         ws.onclose = (e) => {
-            if (!hasOpened) {
+            if (hasOpened) {
+                this.everyCloseCallbacks.forEach((cb) => cb())
+            } else {
                 this.closeWithoutOpenCallbacks.forEach((cb) => cb())
                 this.closeWithoutOpenCallbacks.clear()
-            } else {
-                this.everyCloseCallbacks.forEach((cb) => cb())
             }
             this.cleanup(ws)
             if (!this.intentionalClose) {
@@ -150,8 +150,8 @@ export default class WebSocketService {
             }
         }
 
-        window.addEventListener("offline", this.offline)
-        window.addEventListener("online", this.online)
+        globalThis.addEventListener("offline", this.offline)
+        globalThis.addEventListener("online", this.online)
 
         ws.onerror = (error) => {
             console.error("WebSocket error:", error)
@@ -173,8 +173,8 @@ export default class WebSocketService {
             clearTimeout(this.pendingDisconnect)
         }
         this.pendingDisconnect = setTimeout(() => {
-            window.removeEventListener("offline", this.offline)
-            window.removeEventListener("online", this.online)
+            globalThis.removeEventListener("offline", this.offline)
+            globalThis.removeEventListener("online", this.online)
             this.reconnectUrl = null
             this.intentionalClose = true
             this.pendingDisconnect = null
@@ -195,7 +195,7 @@ export default class WebSocketService {
         }, delay)
     }
 
-    private offline = () => {
+    private readonly offline = () => {
         if (!this.isOffline) {
             this.isOffline = true
             // chrome uses a significant amount of cpu if a websocket is connected while being offline
@@ -204,7 +204,7 @@ export default class WebSocketService {
         }
     }
 
-    private online = () => {
+    private readonly online = () => {
         if (this.isOffline) {
             this.isOffline = false
             this.scheduleReconnect()
