@@ -10,6 +10,7 @@
             "@/*": ["./src/*"],
             "@shadcn/*": ["./src/shadcn/*"]
         },
+        "strictNullChecks": true,
         /* Bundler mode */
         "moduleResolution": "bundler",
         "allowImportingTsExtensions": true,

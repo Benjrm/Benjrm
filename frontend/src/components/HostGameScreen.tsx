@@ -2,10 +2,10 @@ import type { JSX } from "react"
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router"
 import { Toaster } from "sonner"
-import HostGameQuestionStatistic from "./HostGameQuestionStatistic"
 import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import HostGameQuestionStatistic from "./HostGameQuestionStatistic"
 import { Button } from "@/shadcn/components/ui/button"
 import HostDashboardSidebar from "@/components/HostDashboardSidebar"
 import GamePinBadge from "@/components/GamePinBadge"
@@ -184,9 +184,9 @@ export default function HostGameScreen({
                             <div className="mb-4 flex items-center justify-between">
                                 <span className="text-muted-foreground text-sm font-bold">
                                     {t("game.question.label", {
-                                current: currentQuestionIndex + 1,
-                                total: totalQuestions,
-                            })}
+                                        current: currentQuestionIndex + 1,
+                                        total: totalQuestions,
+                                    })}
                                 </span>
                                 {playersPreviewing && currentQuestion?.type !== "SLIDE" ? (
                                     <span className="text-muted-foreground text-sm font-semibold">
@@ -203,101 +203,104 @@ export default function HostGameScreen({
                                 )}
                             </div>
 
-                    {currentQuestion ? (
-                        <>
-                            {currentQuestion.type === "SLIDE" ? (
-                                <MarkdownPageComponent content={currentQuestion.text} />
-                            ) : (
+                            {currentQuestion ? (
                                 <>
-                                    <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-widest uppercase">
-                                        {t("game.question.current")}
-                                    </p>
-                                    <div className="text-xl font-bold sm:text-2xl [&_p]:m-0 [&_p]:text-xl [&_p]:font-bold sm:[&_p]:text-2xl">
-                                        <MarkdownComponent content={currentQuestion.text} />
-                                    </div>
+                                    {currentQuestion.type === "SLIDE" ? (
+                                        <MarkdownPageComponent content={currentQuestion.text} />
+                                    ) : (
+                                        <>
+                                            <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-widest uppercase">
+                                                {t("game.question.current")}
+                                            </p>
+                                            <div className="text-xl font-bold sm:text-2xl [&_p]:m-0 [&_p]:text-xl [&_p]:font-bold sm:[&_p]:text-2xl">
+                                                <MarkdownComponent content={currentQuestion.text} />
+                                            </div>
 
-                                    {currentQuestion.type === "ORDER" &&
-                                    currentQuestion.options.length > 0 ? (
-                                        <ol className="mt-6 flex flex-col gap-2">
-                                            {currentQuestion.options.map((opt, i) => (
-                                                <li
-                                                    key={opt.id}
-                                                    className="border-border bg-muted/40 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium"
-                                                >
-                                                    <span className="text-muted-foreground w-5 shrink-0 text-center font-bold">
-                                                        {i + 1}
-                                                    </span>
-                                                    <div className="[&_p]:m-0">
-                                                        <ReactMarkdown
-                                                            unwrapDisallowed
-                                                            remarkPlugins={[remarkGfm]}
-                                                            allowedElements={[
-                                                                "p",
-                                                                "strong",
-                                                                "em",
-                                                                "code",
-                                                                "del",
-                                                                "s",
-                                                            ]}
+                                            {currentQuestion.type === "ORDER" &&
+                                            currentQuestion.options.length > 0 ? (
+                                                <ol className="mt-6 flex flex-col gap-2">
+                                                    {currentQuestion.options.map((opt, i) => (
+                                                        <li
+                                                            key={opt.id}
+                                                            className="border-border bg-muted/40 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium"
                                                         >
-                                                            {opt.text}
-                                                        </ReactMarkdown>
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ol>
-                                    ) : null}
-                                    {currentQuestion.type !== "ORDER" &&
-                                    currentQuestion.options.length > 0 ? (
-                                        <div className="mt-6 grid grid-cols-2 gap-3">
-                                            {currentQuestion.options.map((opt, i) => (
-                                                <div
-                                                    key={opt.id}
-                                                    className={`rounded-xl border px-4 py-3 text-sm font-medium [&_p]:m-0 ${answerColors[i] ?? answerColors[0]}`}
-                                                >
-                                                    <ReactMarkdown
-                                                        unwrapDisallowed
-                                                        remarkPlugins={[remarkGfm]}
-                                                        allowedElements={[
-                                                            "p",
-                                                            "strong",
-                                                            "em",
-                                                            "code",
-                                                            "del",
-                                                            "s",
-                                                        ]}
-                                                    >
-                                                        {opt.text}
-                                                    </ReactMarkdown>
+                                                            <span className="text-muted-foreground w-5 shrink-0 text-center font-bold">
+                                                                {i + 1}
+                                                            </span>
+                                                            <div className="[&_p]:m-0">
+                                                                <ReactMarkdown
+                                                                    unwrapDisallowed
+                                                                    remarkPlugins={[remarkGfm]}
+                                                                    allowedElements={[
+                                                                        "p",
+                                                                        "strong",
+                                                                        "em",
+                                                                        "code",
+                                                                        "del",
+                                                                        "s",
+                                                                    ]}
+                                                                >
+                                                                    {opt.text}
+                                                                </ReactMarkdown>
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ol>
+                                            ) : null}
+                                            {currentQuestion.type !== "ORDER" &&
+                                            currentQuestion.options.length > 0 ? (
+                                                <div className="mt-6 grid grid-cols-2 gap-3">
+                                                    {currentQuestion.options.map((opt, i) => (
+                                                        <div
+                                                            key={opt.id}
+                                                            className={`rounded-xl border px-4 py-3 text-sm font-medium [&_p]:m-0 ${answerColors[i] ?? answerColors[0]}`}
+                                                        >
+                                                            <ReactMarkdown
+                                                                unwrapDisallowed
+                                                                remarkPlugins={[remarkGfm]}
+                                                                allowedElements={[
+                                                                    "p",
+                                                                    "strong",
+                                                                    "em",
+                                                                    "code",
+                                                                    "del",
+                                                                    "s",
+                                                                ]}
+                                                            >
+                                                                {opt.text}
+                                                            </ReactMarkdown>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : null}
+                                            ) : null}
+                                        </>
+                                    )}
                                 </>
+                            ) : (
+                                <p className="text-muted-foreground text-sm">
+                                    {t("game.question.noQuestion")}
+                                </p>
                             )}
+
+                            {gameState === GameStateEnum.QUESTION &&
+                            currentQuestion?.type !== "SLIDE" ? (
+                                <div className="mt-6 flex items-center gap-3 border-t pt-4">
+                                    <div className="border-muted-foreground/20 border-t-muted-foreground/60 h-4 w-4 animate-spin rounded-full border-2" />
+                                    <p className="text-muted-foreground text-sm">
+                                        {t("game.question.waitingForAnswers")}
+                                    </p>
+                                </div>
+                            ) : null}
+
+                            {gameState === GameStateEnum.LEADERBOARD ? (
+                                <div className="mt-6 border-t pt-4">
+                                    <p className="text-sm font-medium text-green-500">
+                                        {t("game.question.complete")}
+                                    </p>
+                                </div>
+                            ) : null}
                         </>
-                    ) : (
-                        <p className="text-muted-foreground text-sm">
-                            {t("game.question.noQuestion")}
-                        </p>
                     )}
-
-                    {gameState === GameStateEnum.QUESTION && currentQuestion?.type !== "SLIDE" ? (
-                        <div className="mt-6 flex items-center gap-3 border-t pt-4">
-                            <div className="border-muted-foreground/20 border-t-muted-foreground/60 h-4 w-4 animate-spin rounded-full border-2" />
-                            <p className="text-muted-foreground text-sm">
-                                {t("game.question.waitingForAnswers")}
-                            </p>
-                        </div>
-                    ) : null}
-
-                    {gameState === GameStateEnum.LEADERBOARD ? (
-                        <div className="mt-6 border-t pt-4">
-                            <p className="text-sm font-medium text-green-500">
-                                {t("game.question.complete")}
-                            </p>
-                        </div>
-                    ) : null}
                 </div>
 
                 {/* Sidebar */}

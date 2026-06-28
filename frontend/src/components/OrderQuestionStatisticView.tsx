@@ -1,5 +1,6 @@
 import type { JSX } from "react"
 import { Trophy } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { OptionStat } from "./HostGameQuestionStatistic.tsx"
 import type { QuestionStatistics } from "@/hooks/useQuestionStatistics.ts"
 
@@ -21,6 +22,7 @@ export default function OrderQuestionStatisticView({
     questionStatistics,
     totalAnswers,
 }: OrderQuestionStatisticViewProps): JSX.Element {
+    const { t } = useTranslation("translation")
     // total pairs = number of options - 1
     const totalPairs = options.length > 1 ? options.length - 1 : 0
     const orderStats =
@@ -36,7 +38,7 @@ export default function OrderQuestionStatisticView({
      *
      * This object is used to map the correct PairCount to the number of votes and percentage.
      */
-    const breakdownItems = []
+    const breakdownItems: { pairs: number; votes: number; percentage: number }[] = []
     for (let correctPairCount = totalPairs; correctPairCount >= 0; correctPairCount -= 1) {
         const votes = orderStats[correctPairCount] ?? 0
         const percentage = totalAnswers > 0 ? Math.round((votes / totalAnswers) * 100) : 0
@@ -48,7 +50,7 @@ export default function OrderQuestionStatisticView({
             {/* Correct Order column */}
             <div>
                 <h3 className="text-muted-foreground mb-4 text-sm font-semibold tracking-wide uppercase">
-                    Correct Order
+                    {t("game.host.orderQuestion.correctOrder")}
                 </h3>
                 <ol className="flex flex-col gap-3">
                     {options.map((opt, i) => (
@@ -69,7 +71,7 @@ export default function OrderQuestionStatisticView({
             <div className="flex flex-col gap-6">
                 <div>
                     <h3 className="text-muted-foreground mb-4 text-sm font-semibold tracking-wide uppercase">
-                        Results Breakdown
+                        {t("game.host.orderQuestion.resultsBreakdown")}
                     </h3>
                     {/* Summary Card */}
                     <div className="flex items-center gap-4 rounded-2xl border border-[#00D4E8]/20 bg-[#00D4E8]/5 p-5">
@@ -81,8 +83,9 @@ export default function OrderQuestionStatisticView({
                                 {correctPercentage}%
                             </div>
                             <div className="text-muted-foreground text-sm font-medium">
-                                of players got the correct answer ({correctPlayers} player
-                                {correctPlayers !== 1 ? "s" : ""})
+                                {t("game.host.orderQuestion.correctStats", {
+                                    count: correctPlayers,
+                                })}
                             </div>
                         </div>
                     </div>
@@ -92,27 +95,35 @@ export default function OrderQuestionStatisticView({
                 <div className="flex flex-col gap-4">
                     {breakdownItems.map((item) => {
                         const isPerfect = item.pairs === totalPairs
-                        const progressColor = isPerfect ? "bg-[#00D4E8]" : "bg-muted-foreground/40"
-                        const labelColor = isPerfect ? "text-[#00D4E8]" : "text-foreground"
                         return (
                             <div key={item.pairs} className="flex flex-col gap-1.5">
                                 <div className="flex items-center justify-between text-sm font-semibold">
                                     {/* Number of correctly ordered pairs */}
-                                    <span className={labelColor}>
+                                    <span
+                                        className={isPerfect ? "text-[#00D4E8]" : "text-foreground"}
+                                    >
                                         {isPerfect ? (
                                             <span>
-                                                Perfect ({item.pairs}/{totalPairs} pairs)
+                                                {t("game.host.orderQuestion.perfect", {
+                                                    pairs: item.pairs,
+                                                    total: totalPairs,
+                                                })}
                                             </span>
                                         ) : (
                                             <span>
-                                                {item.pairs}/{totalPairs} pairs correct
+                                                {t("game.host.orderQuestion.pairsCorrect", {
+                                                    pairs: item.pairs,
+                                                    total: totalPairs,
+                                                })}
                                             </span>
                                         )}
                                     </span>
                                     {/* Votes and percentage of votes */}
                                     <div className="flex items-center gap-3">
                                         <span className="text-muted-foreground text-xs font-medium">
-                                            {item.votes} player{item.votes !== 1 ? "s" : ""}
+                                            {t("game.host.orderQuestion.playerCount", {
+                                                count: item.votes,
+                                            })}
                                         </span>
                                         <span className="w-10 text-right font-bold">
                                             {item.percentage}%
@@ -122,7 +133,7 @@ export default function OrderQuestionStatisticView({
                                 {/* Progress bar */}
                                 <div className="bg-muted/40 h-2 w-full overflow-hidden rounded-full">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-500 ease-out ${progressColor}`}
+                                        className={`h-full rounded-full transition-all duration-500 ease-out ${isPerfect ? "bg-[#00D4E8]" : "bg-muted-foreground/40"}`}
                                         style={{ width: `${item.percentage}%` }}
                                     />
                                 </div>

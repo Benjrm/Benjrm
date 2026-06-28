@@ -1,5 +1,6 @@
 import type { JSX } from "react"
 import { Triangle, Diamond, Circle, Square, Check } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { OptionStat } from "./HostGameQuestionStatistic.tsx"
 
 interface ChoiceQuestionStatisticViewProps {
@@ -44,6 +45,7 @@ export default function ChoiceQuestionStatisticView({
     options,
     totalAnswers,
 }: ChoiceQuestionStatisticViewProps): JSX.Element {
+    const { t } = useTranslation("translation")
     return (
         <div className="flex flex-col gap-6">
             {options.map((opt, i) => {
@@ -67,7 +69,7 @@ export default function ChoiceQuestionStatisticView({
                                 <Check className="h-6 w-6 shrink-0 stroke-[3] text-[#00D4E8]" />
                             ) : null}
                             <div className="text-muted-foreground w-20 text-right text-sm font-medium">
-                                {opt.votes} vote{opt.votes !== 1 ? "s" : ""}
+                                {t("game.host.choiceQuestion.voteCount", { count: opt.votes })}
                             </div>
                             <div
                                 className={`w-12 text-right text-lg font-bold ${opt.isCorrect ? "text-[#00D4E8]" : "text-muted-foreground"}`}

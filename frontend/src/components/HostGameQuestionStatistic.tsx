@@ -1,4 +1,5 @@
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 import OrderQuestionStatisticView from "./OrderQuestionStatisticView.tsx"
 import ChoiceQuestionStatisticView from "./ChoiceQuestionStatisticView.tsx"
 import type { QuestionType } from "@/api/questions/questions.types.ts"
@@ -32,16 +33,20 @@ export default function HostGameQuestionStatistic({
     questionType,
     questionStatistics,
 }: HostGameQuestionStatisticProps): JSX.Element {
+    const { t } = useTranslation("translation")
     return (
         <div className="flex h-full flex-col justify-between">
             <div>
                 {/* Header */}
                 <div className="mb-6 flex items-center justify-between">
                     <span className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
-                        Results
+                        {t("game.host.results")}
                     </span>
                     <div className="bg-muted/50 rounded-full px-4 py-1 text-sm font-medium">
-                        {totalAnswers}/{expectedAnswers} answered
+                        {t("game.host.answeredCount", {
+                            count: totalAnswers,
+                            total: expectedAnswers,
+                        })}
                     </div>
                 </div>
 
@@ -64,7 +69,9 @@ export default function HostGameQuestionStatistic({
 
             {/* Footer */}
             <div className="border-border mt-8 flex items-center justify-between border-t pt-6">
-                <span className="text-muted-foreground text-sm font-medium">Question progress</span>
+                <span className="text-muted-foreground text-sm font-medium">
+                    {t("game.question.progress")}
+                </span>
                 <span className="text-lg font-bold">
                     {currentQuestionIndex + 1} / {totalQuestions}
                 </span>
