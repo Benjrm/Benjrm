@@ -38,7 +38,7 @@ function QuestionPreview({
                 </div>
             </div>
             <div className="w-full max-w-xl overflow-hidden">
-                <TimerBar timeLeft={remainingTime} totalSeconds={3} />
+                <TimerBar animationMs={250} timeLeft={remainingTime} totalSeconds={3} />
             </div>
         </div>
     )
@@ -86,7 +86,7 @@ export default function GameScreen({
     const { t } = useTranslation()
     const navigate = useNavigate()
     const [startsAt, setStartsAt] = useState<number | null>(null)
-    const previewTimer = useQuestionTimer(startsAt, null)
+    const previewTimer = useQuestionTimer(startsAt, null, false)
     const prevQuestionIndexRef = useRef(currentQuestionIndex)
 
     useEffect(() => {

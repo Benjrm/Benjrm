@@ -88,7 +88,7 @@ export default function QuestionCardContent({
                     }
                 />
 
-                <TimerBar timeLeft={timeLeft} totalSeconds={secondsToAnswer} />
+                <TimerBar animationMs={1000} timeLeft={timeLeft} totalSeconds={secondsToAnswer} />
 
                 <QuestionContainer question={questionText} />
 
