@@ -156,6 +156,7 @@ export default function HostGameScreen({
                             currentQuestionIndex={currentQuestionIndex}
                             expectedAnswers={players.length}
                             options={statisticOptions}
+                            questionStatistics={questionStatistics}
                             questionText={currentQuestion.text}
                             questionType={currentQuestion.type}
                             totalAnswers={totalAnswers}
