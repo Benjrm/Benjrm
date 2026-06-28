@@ -3,17 +3,22 @@
 import type { JSX } from "react"
 import { useEffect } from "react"
 import { toast, Toaster } from "sonner"
+import { useTranslation } from "react-i18next"
 import QuizCard from "@/components/QuizCard"
 import { useQuizzes } from "@/api/quizzes/quizzes.queries.ts"
 import type { Quiz } from "@/api/quizzes/quizzes.types.ts"
 
-function renderQuizzesContent(sortedQuizzes: Quiz[], isLoading: boolean): JSX.Element | null {
+function renderQuizzesContent(
+    sortedQuizzes: Quiz[],
+    isLoading: boolean,
+    noQuizzesText: string
+): JSX.Element | null {
     if (isLoading) {
         return null
     }
 
     if (sortedQuizzes.length === 0) {
-        return <p className="text-muted-foreground mt-4 text-sm">No quizzes available.</p>
+        return <p className="text-muted-foreground mt-4 text-sm">{noQuizzesText}</p>
     }
 
     return (
@@ -26,6 +31,7 @@ function renderQuizzesContent(sortedQuizzes: Quiz[], isLoading: boolean): JSX.El
 }
 
 export default function Quizzes(): JSX.Element {
+    const { t } = useTranslation()
     const { data: quizzes = [], isLoading, error } = useQuizzes()
     const sortedQuizzes = [...quizzes].sort(
         (firstQuiz, secondQuiz) =>
@@ -34,16 +40,16 @@ export default function Quizzes(): JSX.Element {
 
     useEffect(() => {
         if (isLoading) {
-            toast.loading("Loading quizzes...", { id: "quizzes-loading" })
+            toast.loading(t("dashboard.loadingQuizzes"), { id: "quizzes-loading" })
         } else {
             toast.dismiss("quizzes-loading")
             if (error) {
-                toast.error("Quizzes could not be loaded right now.", { id: "quizzes-error" })
+                toast.error(t("dashboard.quizzesError"), { id: "quizzes-error" })
             }
         }
-    }, [isLoading, error])
+    }, [isLoading, error, t])
 
-    const content = renderQuizzesContent(sortedQuizzes, isLoading)
+    const content = renderQuizzesContent(sortedQuizzes, isLoading, t("dashboard.noQuizzes"))
 
     return (
         <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">

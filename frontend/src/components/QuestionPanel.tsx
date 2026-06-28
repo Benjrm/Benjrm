@@ -1,5 +1,6 @@
 import type { JSX } from "react"
 import ReactMarkdown from "react-markdown"
+import { useTranslation } from "react-i18next"
 import remarkGfm from "remark-gfm"
 import rehypeRaw from "rehype-raw"
 import rehypeSanitize from "rehype-sanitize"
@@ -32,6 +33,7 @@ export default function QuestionPanel({
     questionType,
     timeLeft,
 }: QuestionPanelProps): JSX.Element {
+    const { t } = useTranslation()
     return (
         <div className="bg-muted/20 border-border/10 relative overflow-hidden rounded-[2rem] border p-6 shadow-2xl backdrop-blur-sm sm:p-8">
             <div className="pointer-events-none absolute -top-24 -right-16 h-60 w-60 rounded-full bg-[#00F2FF]/10 blur-3xl" />
@@ -39,7 +41,7 @@ export default function QuestionPanel({
 
             <div className="flex items-center justify-between">
                 <h3 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
-                    Current Question
+                    {t("game.question.currentLabel")}
                 </h3>
                 <CountdownDisplay timeLeft={timeLeft} variant="host" />
             </div>
@@ -50,7 +52,7 @@ export default function QuestionPanel({
                     rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
                     remarkPlugins={[remarkGfm]}
                 >
-                    {question || "Waiting for next question…"}
+                    {question || t("game.question.waitingForNext")}
                 </ReactMarkdown>
             </div>
 
@@ -95,7 +97,7 @@ export default function QuestionPanel({
 
             <div className="mt-6 border-t border-white/5 pt-6">
                 <div className="text-muted-foreground flex items-center justify-between">
-                    <span className="text-sm font-medium">Question progress</span>
+                    <span className="text-sm font-medium">{t("game.question.progress")}</span>
                     <span className="text-2xl font-black tracking-tight">
                         {currentQuestion}
                         {totalQuestions > 0 ? ` / ${totalQuestions}` : ""}

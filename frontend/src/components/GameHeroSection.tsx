@@ -3,6 +3,7 @@ import type { JSX } from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router"
 import { PlusSquare } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Input } from "@/shadcn/components/ui/input"
 import { Button } from "@/shadcn/components/ui/button"
 
@@ -11,6 +12,8 @@ interface GameHeroSectionProps {
 }
 
 export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps): JSX.Element {
+    const { t } = useTranslation()
+
     const [digits, setDigits] = useState("")
     const navigate = useNavigate()
 
@@ -30,11 +33,11 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                     {/* Code Input */}
                     <div className="max-w-xs space-y-2">
                         <Input
-                            aria-label="Input Code"
+                            aria-label={t("dashboard.hero.inputCodeAria")}
                             className="dark:text-foreground dark:placeholder:text-muted-foreground rounded-xl border-slate-200 bg-slate-50 px-4 py-5 text-base font-medium text-slate-900 transition-all placeholder:text-slate-500 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#00F2FF] dark:border-white/10 dark:bg-[#1C2028]"
                             inputMode="numeric"
                             onKeyDown={(e) => e.key === "Enter" && onJoinClick()}
-                            placeholder="Code"
+                            placeholder={t("dashboard.hero.codePlaceholder")}
                             type="text"
                             value={displayCode}
                             onChange={(e) =>
@@ -42,7 +45,7 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                             }
                         />
                         <p className="dark:text-muted-foreground pl-1 text-sm text-slate-500">
-                            Join via Code
+                            {t("dashboard.hero.joinViaCode")}
                         </p>
                     </div>
 
@@ -53,7 +56,7 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                             onClick={() => onJoinClick()}
                             type="button"
                         >
-                            START GAME
+                            {t("dashboard.hero.startGame")}
                             <svg fill="currentColor" height="10" viewBox="0 0 24 24" width="10">
                                 <path d="M5 3L19 12L5 21V3Z" />
                             </svg>
@@ -64,7 +67,7 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                             onClick={onAddQuizClick}
                             type="button"
                         >
-                            <span>Add Quiz</span>
+                            <span>{t("dashboard.hero.addQuiz")}</span>
                             <PlusSquare className="h-4 w-4 shrink-0 text-white/85" />
                         </Button>
                     </div>
@@ -73,7 +76,7 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
                 {/* Right Side: Image */}
                 <div className="relative min-h-56 flex-1 lg:min-h-0">
                     <img
-                        alt="People celebrating"
+                        alt={t("dashboard.hero.imageAlt")}
                         className="absolute inset-0 h-full w-full object-cover"
                         src="/pictures/happy_people.jpg"
                     />

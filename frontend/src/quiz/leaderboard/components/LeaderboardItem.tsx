@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { motion } from "framer-motion"
+import { useTranslation } from "react-i18next"
 import { Avatar, AvatarFallback } from "@shadcn/components/ui/avatar"
 import getRankingClassName from "@/quiz/leaderboard/utils/getRankingClassName"
 import getRankingDisplay from "@/quiz/leaderboard/utils/getRankingDisplay"
@@ -12,6 +13,7 @@ export interface LeaderboardItemProps {
 }
 
 export default function LeaderboardItem(leaderboardItemProps: LeaderboardItemProps): ReactNode {
+    const { t } = useTranslation()
     const { ranking, avatar, name, points } = leaderboardItemProps
     const rankingClassName = getRankingClassName(ranking)
     const initials = name.substring(0, 2).toUpperCase()
@@ -31,7 +33,9 @@ export default function LeaderboardItem(leaderboardItemProps: LeaderboardItemPro
                 <AvatarFallback>{avatar ?? initials}</AvatarFallback>
             </Avatar>
             <div className="font-semibold">{name}</div>
-            <div className="font-bold tabular-nums">{points} pts</div>
+            <div className="font-bold tabular-nums">
+                {points} {t("game.leaderboard.pts")}
+            </div>
         </motion.div>
     )
 }
