@@ -4,7 +4,7 @@ import OrderQuestionStatisticView from "./OrderQuestionStatisticView.tsx"
 import ChoiceQuestionStatisticView from "./ChoiceQuestionStatisticView.tsx"
 import type { QuestionType } from "@/api/questions/questions.types.ts"
 import type { QuestionStatistics } from "@/hooks/useQuestionStatistics.ts"
-import Badge from "@/shadcn/components/ui/badge"
+import { Badge } from "@/shadcn/components/ui/badge"
 
 export interface OptionStat {
     id: string
@@ -43,7 +43,7 @@ export default function HostGameQuestionStatistic({
                     <span className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
                         {t("game.host.results")}
                     </span>
-                    <Badge variant="secondary" className="px-4 py-3 text-sm">
+                    <Badge className="px-4 py-3 text-sm" variant="secondary">
                         {t("game.host.answeredCount", {
                             count: totalAnswers,
                             total: expectedAnswers,

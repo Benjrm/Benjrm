@@ -78,10 +78,7 @@ export default function ChoiceQuestionStatisticView({
                                 {percentage}%
                             </div>
                         </div>
-                        <ProgressBar
-                            value={percentage}
-                            indicatorClassName={style.progress}
-                        />
+                        <ProgressBar indicatorClassName={style.progress} value={percentage} />
                     </div>
                 )
             })}

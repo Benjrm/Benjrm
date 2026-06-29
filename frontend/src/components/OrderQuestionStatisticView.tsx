@@ -133,7 +133,9 @@ export default function OrderQuestionStatisticView({
                                 </div>
                                 <ProgressBar
                                     value={item.percentage}
-                                    indicatorClassName={isPerfect ? "bg-[#00D4E8]" : "bg-muted-foreground/75"}
+                                    indicatorClassName={
+                                        isPerfect ? "bg-[#00D4E8]" : "bg-muted-foreground/75"
+                                    }
                                 />
                             </div>
                         )
