@@ -483,6 +483,8 @@ impl GameSession {
             }
             GameSessionStatus::Question { idx, started, .. } => {
                 player.msg(Message::from(&PlayerMessage::Start)).await;
+                // TODO: remove (workaround for frontend registering listeners too late)
+                tokio::time::sleep(Duration::from_millis(200)).await;
 
                 let question = Arc::new(DisplayQuestionMessage::new(
                     &quiz.questions[*idx],
@@ -499,6 +501,8 @@ impl GameSession {
             }
             GameSessionStatus::Podium(leaderboard) => {
                 player.msg(Message::from(&PlayerMessage::Start)).await;
+                // TODO: remove (workaround for frontend registering listeners too late)
+                tokio::time::sleep(Duration::from_millis(200)).await;
                 player
                     .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
                         leaderboard: Arc::clone(leaderboard),
