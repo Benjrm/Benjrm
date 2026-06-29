@@ -24,3 +24,9 @@ make to ensure that we and future developers understand the reasoning behind our
 7. Using [**Keycloak**](https://www.keycloak.org/) as and self-hosted, example OIDC provider for authentication and authorization. See [0004-unsing-keycloak-as-an-self-hosted,-example-oidc-identity-provider.md](0004-using-keycloak-as-an-self-hosted,-example-oidc-identity-provider.md) for more details.
     > Note: Our backend is designed to be provider-agnostic and can work with any OIDC-compliant Identity Provider. For local development and reference purposes, a self-hosted Identity Provider such as Keycloak is provided.
 8. Using [**Docker**](https://www.docker.com/) for containerization. See [0006-using-docker-for-containerization.md](0006-using-docker-for-containerization.md) for more details.
+9. Using [**Trivy**](https://trivy.dev/) for vulnerability and misconfiguration scanning. See [0008-using-trivy-for-vulnerability-and-misconfiguration-scanning.md](0008-using-trivy-for-vulnerability-and-misconfiguration-scanning.md) for more details.
+10. Using [**SonarQube / SonarCloud**](https://www.sonarqube.org/) for static application security testing. See [0009-using-sonarqube-for-static-application-security-testing.md](0009-using-sonarqube-for-static-application-security-testing.md) for more details.
+11. Using [**Cargo Audit**](https://github.com/rustsec/rustsec) to scan Rust dependencies for security vulnerabilities. See [0010-using-cargo-audit-to-scan-rust-dependencies.md](0010-using-cargo-audit-to-scan-rust-dependencies.md) for more details.
+
+
+
