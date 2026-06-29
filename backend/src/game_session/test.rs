@@ -783,13 +783,16 @@ async fn play_dummy_quiz() {
     drop(session);
 
     match host_rx.recv().await.unwrap() {
-        HostMessage::ShowStatistics(AnswerStatistics::SingleChoice(stats)) => {
-            assert_eq!(stats.answers, 1);
-            assert_eq!(stats.answer_statistic.len(), answers.len());
-            for (statistic, answer) in stats.answer_statistic.iter().zip(answers) {
-                assert_eq!(statistic.option, answer)
+        HostMessage::ShowStatistics(stats) => match &*stats {
+            AnswerStatistics::SingleChoice(stats) => {
+                assert_eq!(stats.answers, 1);
+                assert_eq!(stats.answer_statistic.len(), answers.len());
+                for (statistic, answer) in stats.answer_statistic.iter().zip(answers) {
+                    assert_eq!(statistic.option, answer)
+                }
             }
-        }
+            x => panic!("invalid stats: {x:?}"),
+        },
         x => panic!("invalid message: {x:?}"),
     }
 

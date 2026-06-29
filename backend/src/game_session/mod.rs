@@ -121,6 +121,7 @@ pub enum GameSessionStatus {
     },
     Leaderboard {
         idx: usize,
+        statistics: Option<Arc<AnswerStatistics>>,
         leaderboard: Arc<Vec<LeaderboardEntry>>,
         is_final: bool,
     },
@@ -258,7 +259,7 @@ pub enum HostMessage {
         is_final: bool,
     },
     DisplayPodium,
-    ShowStatistics(AnswerStatistics),
+    ShowStatistics(Arc<AnswerStatistics>),
 }
 
 #[derive(Debug, Clone, Serialize)]

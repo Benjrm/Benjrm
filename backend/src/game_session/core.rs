@@ -230,12 +230,20 @@ impl GameSession {
 
         // send leaderboard after question if question has finished
         if let GameSessionStatus::Leaderboard {
+            statistics,
             leaderboard,
             is_final,
             ..
         } = &self.status
         {
             send_leaderboard(&mut self.host, leaderboard, *is_final).await;
+            if let Some(statistics) = statistics {
+                self.host
+                    .msg(Message::from(&HostMessage::ShowStatistics(Arc::clone(
+                        statistics,
+                    ))))
+                    .await;
+            }
         }
     }
 
@@ -693,9 +701,13 @@ impl GameSession {
                     OrderStatistics::new(models, answer_distribution, *answers),
                 )),
             };
-        if let Some(statistics) = statistics {
+
+        let statistics = statistics.map(Arc::new);
+        if let Some(statistics) = &statistics {
             self.host
-                .msg(Message::from(&HostMessage::ShowStatistics(statistics)))
+                .msg(Message::from(&HostMessage::ShowStatistics(Arc::clone(
+                    statistics,
+                ))))
                 .await;
         }
 
@@ -730,6 +742,7 @@ impl GameSession {
         let leaderboard = Arc::new(leaderboard);
         self.status = GameSessionStatus::Leaderboard {
             idx: *idx,
+            statistics,
             leaderboard: Arc::clone(&leaderboard),
             is_final,
         };
