@@ -231,12 +231,28 @@
         "host": {
             "dashboard": "Host Dashboard",
             "players": "{{count}} players",
+            "results": "Results",
+            "answeredCount": "{{count}}/{{total}} answered",
+            "choiceQuestion": {
+                "voteCount_one": "{{count}} vote",
+                "voteCount_other": "{{count}} votes"
+            },
             "timeLeft": "{{secs}}s left",
             "timesUp": "Time's up!",
             "showPodium": "Show Podium →",
             "endGame": "End Game & Exit",
             "showLeaderboard": "Show Leaderboard →",
-            "nextQuestion": "Next Question →"
+            "nextQuestion": "Next Question →",
+            "orderQuestion": {
+                "correctOrder": "Correct Order",
+                "resultsBreakdown": "Results Breakdown",
+                "correctStats_one": "of players got the correct answer ({{count}} player)",
+                "correctStats_other": "of players got the correct answer ({{count}} players)",
+                "perfect": "Perfect ({{pairs}}/{{total}} pairs)",
+                "pairsCorrect": "{{pairs}}/{{total}} pairs correct",
+                "playerCount_one": "{{count}} player",
+                "playerCount_other": "{{count}} players"
+            }
         },
         "player": {
             "host": "Host",
