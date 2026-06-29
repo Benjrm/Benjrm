@@ -2,6 +2,7 @@ import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import OrderQuestionStatisticView from "./OrderQuestionStatisticView.tsx"
 import ChoiceQuestionStatisticView from "./ChoiceQuestionStatisticView.tsx"
+import MarkdownComponent from "./markdown/MarkdownComponent.tsx"
 import type { QuestionType } from "@/api/questions/questions.types.ts"
 import type { QuestionStatistics } from "@/hooks/useQuestionStatistics.ts"
 import { Badge } from "@/shadcn/components/ui/badge"
@@ -53,7 +54,7 @@ export default function HostGameQuestionStatistic({
 
                 {/* Question */}
                 <h2 className="mb-10 text-2xl leading-snug font-bold sm:text-3xl">
-                    {questionText}
+                    <MarkdownComponent content={questionText} />
                 </h2>
 
                 {/* Statistics Content */}

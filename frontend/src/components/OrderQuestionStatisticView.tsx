@@ -1,6 +1,8 @@
 import type { JSX } from "react"
 import { Trophy } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import type { OptionStat } from "./HostGameQuestionStatistic.tsx"
 import type { QuestionStatistics } from "@/hooks/useQuestionStatistics.ts"
 import ProgressBar from "@/shadcn/components/ui/progress"
@@ -62,7 +64,15 @@ export default function OrderQuestionStatisticView({
                             <span className="h-6 w-6 shrink-0 text-center text-lg font-bold text-[#00D4E8]">
                                 {i + 1}
                             </span>
-                            {opt.text}
+                            <div className="[&_p]:m-0">
+                                <ReactMarkdown
+                                    unwrapDisallowed
+                                    allowedElements={["p", "strong", "em", "code", "del", "s"]}
+                                    remarkPlugins={[remarkGfm]}
+                                >
+                                    {opt.text}
+                                </ReactMarkdown>
+                            </div>
                         </li>
                     ))}
                 </ol>
