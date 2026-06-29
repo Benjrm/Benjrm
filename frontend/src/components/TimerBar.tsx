@@ -11,14 +11,14 @@ function calculateProgress(left: number | null, total: number | null) {
 interface TimerBarProps {
     timeLeft: number | null
     totalSeconds: number | null
-    animationMs: number
+    fastAnimation: boolean
     className?: string
 }
 
 export default function TimerBar({
     timeLeft,
     totalSeconds,
-    animationMs,
+    fastAnimation,
     className,
 }: TimerBarProps): JSX.Element | null {
     const [progress, setProgress] = useState(calculateProgress(timeLeft, totalSeconds))
@@ -29,19 +29,20 @@ export default function TimerBar({
         return "bg-red-500"
     })()
 
+    const indicatorAnimation = fastAnimation ? "duration-250" : "duration-1000"
+
     useEffect(() => {
         const id = setTimeout(() => {
-            setProgress(
-                calculateProgress(timeLeft ? timeLeft - animationMs / 1000 : null, totalSeconds)
-            )
+            const animationTime = fastAnimation ? 0.25 : 1
+            setProgress(calculateProgress(timeLeft ? timeLeft - animationTime : null, totalSeconds))
         })
         return () => clearTimeout(id)
-    }, [timeLeft, totalSeconds, animationMs])
+    }, [timeLeft, totalSeconds, fastAnimation])
 
     return (
         <ProgressBar
             className={cn("h-3", className)}
-            indicatorClassName={`duration-${animationMs} ${indicatorClassName}`}
+            indicatorClassName={`${indicatorAnimation} ${indicatorClassName}`}
             value={progress}
         />
     )

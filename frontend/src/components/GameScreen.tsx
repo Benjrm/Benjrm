@@ -38,7 +38,7 @@ function QuestionPreview({
                 </div>
             </div>
             <div className="w-full max-w-xl overflow-hidden">
-                <TimerBar animationMs={250} timeLeft={remainingTime} totalSeconds={3} />
+                <TimerBar fastAnimation timeLeft={remainingTime} totalSeconds={3} />
             </div>
         </div>
     )

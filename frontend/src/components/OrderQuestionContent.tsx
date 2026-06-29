@@ -188,8 +188,8 @@ export default function OrderQuestionContent({
                 />
 
                 <TimerBar
-                    animationMs={1000}
                     className="mb-6"
+                    fastAnimation={false}
                     timeLeft={timeLeft}
                     totalSeconds={secondsToAnswer ?? null}
                 />
