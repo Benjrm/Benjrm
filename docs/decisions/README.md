@@ -27,6 +27,10 @@ make to ensure that we and future developers understand the reasoning behind our
 9. Using [**Trivy**](https://trivy.dev/) for vulnerability and misconfiguration scanning. See [0008-using-trivy-for-vulnerability-and-misconfiguration-scanning.md](0008-using-trivy-for-vulnerability-and-misconfiguration-scanning.md) for more details.
 10. Using [**SonarQube / SonarCloud**](https://www.sonarqube.org/) for static application security testing. See [0009-using-sonarqube-for-static-application-security-testing.md](0009-using-sonarqube-for-static-application-security-testing.md) for more details.
 11. Using [**Cargo Audit**](https://github.com/rustsec/rustsec) to scan Rust dependencies for security vulnerabilities. See [0010-using-cargo-audit-to-scan-rust-dependencies.md](0010-using-cargo-audit-to-scan-rust-dependencies.md) for more details.
+12. Using [**Spectral**](https://stoplight.io/open-source/spectral) and [**Schemathesis**](https://schemathesis.readthedocs.io/) for API design linting and property-based API testing. See [0011-api-design-and-testing-frameworks.md](0011-api-design-and-testing-frameworks.md) for more details.
+13. Using [**ESLint + Prettier**](https://eslint.org/) (Frontend) and [**Clippy + Rustfmt**](https://github.com/rust-lang/rust-clippy) (Backend) for code linting and formatting. See [0012-code-quality-and-standards.md](0012-code-quality-and-standards.md) for more details.
+
+
 
 
 
