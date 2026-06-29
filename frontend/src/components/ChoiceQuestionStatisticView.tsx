@@ -2,6 +2,7 @@ import type { JSX } from "react"
 import { Triangle, Diamond, Circle, Square, Check } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { OptionStat } from "./HostGameQuestionStatistic.tsx"
+import ProgressBar from "@/shadcn/components/ui/progress"
 
 interface ChoiceQuestionStatisticViewProps {
     options: OptionStat[]
@@ -45,7 +46,7 @@ export default function ChoiceQuestionStatisticView({
     options,
     totalAnswers,
 }: ChoiceQuestionStatisticViewProps): JSX.Element {
-    const { t } = useTranslation("translation")
+    const { t } = useTranslation()
     return (
         <div className="flex flex-col gap-6">
             {options.map((opt, i) => {
@@ -77,12 +78,10 @@ export default function ChoiceQuestionStatisticView({
                                 {percentage}%
                             </div>
                         </div>
-                        <div className="bg-muted/40 h-2.5 w-full overflow-hidden rounded-full">
-                            <div
-                                className={`h-full rounded-full ${style.progress}`}
-                                style={{ width: `${percentage}%` }}
-                            />
-                        </div>
+                        <ProgressBar
+                            value={percentage}
+                            indicatorClassName={style.progress}
+                        />
                     </div>
                 )
             })}

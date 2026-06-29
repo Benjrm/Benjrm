@@ -3,6 +3,7 @@ import { Trophy } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { OptionStat } from "./HostGameQuestionStatistic.tsx"
 import type { QuestionStatistics } from "@/hooks/useQuestionStatistics.ts"
+import ProgressBar from "@/shadcn/components/ui/progress"
 
 interface OrderQuestionStatisticViewProps {
     options: OptionStat[]
@@ -22,7 +23,7 @@ export default function OrderQuestionStatisticView({
     questionStatistics,
     totalAnswers,
 }: OrderQuestionStatisticViewProps): JSX.Element {
-    const { t } = useTranslation("translation")
+    const { t } = useTranslation()
     // total pairs = number of options - 1
     const totalPairs = options.length > 1 ? options.length - 1 : 0
     const orderStats =
@@ -130,13 +131,10 @@ export default function OrderQuestionStatisticView({
                                         </span>
                                     </div>
                                 </div>
-                                {/* Progress bar */}
-                                <div className="bg-muted/40 h-2 w-full overflow-hidden rounded-full">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-500 ease-out ${isPerfect ? "bg-[#00D4E8]" : "bg-muted-foreground/40"}`}
-                                        style={{ width: `${item.percentage}%` }}
-                                    />
-                                </div>
+                                <ProgressBar
+                                    value={item.percentage}
+                                    indicatorClassName={isPerfect ? "bg-[#00D4E8]" : "bg-muted-foreground/75"}
+                                />
                             </div>
                         )
                     })}
