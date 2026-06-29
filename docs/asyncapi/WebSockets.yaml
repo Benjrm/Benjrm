@@ -55,6 +55,8 @@ channels:
         $ref: "#/components/messages/displayQuestion"
       displayLeaderboard:
         $ref: "#/components/messages/displayLeaderboard"
+      showStatistics:
+        $ref: "#/components/messages/showStatistics"
       endGame:
         $ref: "#/components/messages/endGame"
     tags:
@@ -323,6 +325,16 @@ operations:
       - $ref: "#/channels/sessionPlayer/messages/displayLeaderboard"
     tags:
       - name: Leaderboard
+  
+  sendShowStatistics:
+    description: "Send showStatistics command to Host"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/showStatistics"
+    tags:
+      - name: Questions
   
   receiveEndGame:
     description: "Receive endGame command from host"
@@ -608,6 +620,19 @@ components:
                 type: boolean
                 description: "Whether this leaderboard is the final quiz result"
     
+    showStatistics:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "showStatistics"
+          payload:
+            oneOf:
+              - $ref: "#/components/schemas/SingleChoiceStatistics"
+              - $ref: "#/components/schemas/MultipleChoiceStatistics"
+              - $ref: "#/components/schemas/OrderStatistics"
+    
     endGame:
       payload:
         type: object
@@ -710,3 +735,64 @@ components:
           type: integer
           format: uint32
           description: "Points received for the current question"
+
+    SingleChoiceStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          const: "SINGLE_CHOICE"
+        answers:
+          type: integer
+        answerStatistic:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnswerStatistic"
+          nullable: true
+
+    MultipleChoiceStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          const: "MULTIPLE_CHOICE"
+        answers:
+          type: integer
+        answerStatistic:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnswerStatistic"
+          nullable: true
+
+    OrderStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          const: "ORDER"
+        answers:
+          type: integer
+        correct:
+          type: array
+          items:
+            type: string
+            format: uuid
+        answerStatistic:
+          description: >
+            Array that maps the index to the count of players.
+            The index represents the count of correct option relationships (two options in the correct order)
+          type: array
+          items:
+            type: integer
+          nullable: true
+    
+    AnswerStatistic:
+      type: object
+      properties:
+        option:
+          type: string
+          format: uuid
+        votes:
+          type: integer
+        correct:
+          type: boolean

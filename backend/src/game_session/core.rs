@@ -3,11 +3,15 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            Channel, Command, DisplayQuestionMessage, GameSession, GameSessionError,
-            GameSessionHost, GameSessionPlayer, GameSessionStatus, GameSessions, HostCommand,
-            HostMessage, LeaderboardEntry, Message, PlayerCommand, PlayerMessage, SessionCode,
+            AnswerStatistic, AnswerStatistics, Channel, ChoiceStatistics, Command,
+            DisplayQuestionMessage, GameSession, GameSessionError, GameSessionHost,
+            GameSessionPlayer, GameSessionStatus, GameSessions, HostCommand, HostMessage,
+            LeaderboardEntry, Message, OrderStatistics, PlayerCommand, PlayerMessage, SessionCode,
         },
-        question::{Question, QuestionFilter, QuestionOptions},
+        question::{
+            Question, QuestionFilter, QuestionOptions,
+            answer::{choice::entity::AnswerChoiceModel, order::AnswerOrderModel},
+        },
         quiz::Quiz,
     },
     actix_web::rt,
@@ -277,10 +281,13 @@ impl GameSession {
                     }
                 })
             });
+
+        let options_len = quiz.questions[question].options.len();
         self.status = GameSessionStatus::Question {
             idx: question,
             started,
             answers: 0,
+            answer_distribution: vec![0; options_len],
             abort_handle,
         };
 
@@ -412,6 +419,7 @@ impl GameSession {
                     idx,
                     started,
                     answers,
+                    answer_distribution,
                     abort_handle,
                 } = &mut self.status
                 else {
@@ -420,8 +428,10 @@ impl GameSession {
                 let quiz = self.quiz.as_mut().ok_or(GameSessionError::QuizMissing)?;
                 let question = &quiz.questions[*idx];
 
-                let mut points = question.options.get_points(&answer)?;
+                let correct = question.options.get_correct(&answer)?;
+                let mut points = question.options.get_points(correct);
 
+                let mut answer_in_time = true;
                 if let Some(duration) = question.model.r#type.default_answer_duration() {
                     let elapsed = (Utc::now() - *started).num_milliseconds() as f64;
                     let max_time = (duration as f64) * 1000f64;
@@ -430,16 +440,42 @@ impl GameSession {
                         points = (points as f64 * factor.min(1.0)) as u32;
                     } else {
                         points = 0;
+                        answer_in_time = false;
                     }
                 }
 
                 player.add_points(points, question.model.id)?;
-                *answers += 1;
-                if *answers == self.players.len() {
-                    if let Some(handle) = abort_handle {
-                        handle.abort();
+
+                if answer_in_time {
+                    match &question.options {
+                        QuestionOptions::Slide => (),
+                        QuestionOptions::SingleChoice(_) | QuestionOptions::MultipleChoice(_) => {
+                            let mut visited = Vec::with_capacity(answer.len());
+                            for answer in answer {
+                                if let Some(pos) = question.options.position(answer)
+                                    && !visited.contains(&pos)
+                                {
+                                    if let Some(item) = answer_distribution.get_mut(pos) {
+                                        *item += 1;
+                                    }
+                                    visited.push(pos);
+                                }
+                            }
+                        }
+                        QuestionOptions::Order(_) => {
+                            if let Some(item) = answer_distribution.get_mut(correct) {
+                                *item += 1;
+                            }
+                        }
                     }
-                    self.end_question(None).await;
+
+                    *answers += 1;
+                    if *answers == self.players.len() {
+                        if let Some(handle) = abort_handle {
+                            handle.abort();
+                        }
+                        self.end_question(None).await;
+                    }
                 }
             }
         }
@@ -465,7 +501,13 @@ impl GameSession {
     }
 
     pub async fn end_question(&mut self, is_final: Option<bool>) {
-        let GameSessionStatus::Question { idx, .. } = &self.status else {
+        let GameSessionStatus::Question {
+            idx,
+            answers,
+            answer_distribution,
+            ..
+        } = &self.status
+        else {
             return;
         };
         let Some(quiz) = &self.quiz else {
@@ -474,8 +516,27 @@ impl GameSession {
 
         let is_final = is_final.unwrap_or(*idx + 1 >= quiz.questions.len());
         let question = &quiz.questions[*idx];
-        let correct_answers = Arc::new(question.options.correct_answer_list());
 
+        let statistics =
+            match &question.options {
+                QuestionOptions::Slide => None,
+                QuestionOptions::SingleChoice(models) => Some(AnswerStatistics::SingleChoice(
+                    ChoiceStatistics::new(models, answer_distribution, *answers),
+                )),
+                QuestionOptions::MultipleChoice(models) => Some(AnswerStatistics::MultipleChoice(
+                    ChoiceStatistics::new(models, answer_distribution, *answers),
+                )),
+                QuestionOptions::Order(models) => Some(AnswerStatistics::Order(
+                    OrderStatistics::new(models, answer_distribution, *answers),
+                )),
+            };
+        if let Some(statistics) = statistics {
+            self.host
+                .msg(Message::from(&HostMessage::ShowStatistics(statistics)))
+                .await;
+        }
+
+        let correct_answers = Arc::new(question.options.correct_answer_list());
         let mut leaderboard = Vec::with_capacity(self.players.len());
 
         let iterator = self.players.iter_mut().map(|player| {
@@ -571,8 +632,19 @@ impl GameSessionPlayer {
 }
 
 impl QuestionOptions {
-    pub fn get_points(&self, answer: &[Uuid]) -> Result<u32, GameSessionError> {
+    pub fn get_points(&self, correct: usize) -> u32 {
         let total_points = 1000;
+        let points_per_option = match self {
+            QuestionOptions::Slide => 0,
+            QuestionOptions::SingleChoice(_) => total_points,
+            QuestionOptions::MultipleChoice(models) => total_points / models.len(),
+            QuestionOptions::Order(models) => total_points / (models.len() - 1),
+        };
+
+        (correct * points_per_option).min(total_points) as u32
+    }
+
+    pub fn get_correct(&self, answer: &[Uuid]) -> Result<usize, GameSessionError> {
         match self {
             QuestionOptions::Slide => Err(GameSessionError::CannotAnswer),
             QuestionOptions::SingleChoice(models) => {
@@ -580,34 +652,32 @@ impl QuestionOptions {
                     return Err(GameSessionError::InvalidAnswerCount);
                 }
                 match models.iter().find(|x| x.id == answer[0]) {
-                    Some(answer) if answer.correct => Ok(total_points),
+                    Some(answer) if answer.correct => Ok(1),
                     Some(_) => Ok(0),
                     None => Err(GameSessionError::InvalidAnswer),
                 }
             }
             QuestionOptions::MultipleChoice(models) => {
-                let points_per_option = (total_points / models.len() as u32) as i32;
                 for id in answer {
                     if !models.iter().any(|x| x.id == *id) {
                         return Err(GameSessionError::InvalidAnswer);
                     }
                 }
-                let mut points: i32 = 0;
+                let mut correct: isize = 0;
                 for option in models {
                     if option.correct == answer.contains(&option.id) {
-                        points += points_per_option
+                        correct += 1;
                     } else {
-                        points -= points_per_option
+                        correct -= 1;
                     }
                 }
-                Ok(points.max(0) as u32)
+                Ok(correct.max(0) as usize)
             }
             QuestionOptions::Order(models) => {
-                let points_per_option = total_points / (models.len() - 1) as u32;
                 if models.len() != answer.len() || answer.len() < 2 {
                     return Err(GameSessionError::InvalidAnswerCount);
                 }
-                let mut points = 0;
+                let mut correct = 0;
                 for i in 0..(models.len() - 1) {
                     let current = answer
                         .iter()
@@ -618,10 +688,10 @@ impl QuestionOptions {
                         .position(|x| *x == models[i + 1].id)
                         .ok_or(GameSessionError::InvalidAnswer)?;
                     if next == current + 1 {
-                        points += points_per_option;
+                        correct += 1;
                     }
                 }
-                Ok(points)
+                Ok(correct)
             }
         }
     }
@@ -633,6 +703,55 @@ impl QuestionOptions {
                 models.iter().filter(|x| x.correct).map(|x| x.id).collect()
             }
             QuestionOptions::Order(models) => models.iter().map(|x| x.id).collect(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            QuestionOptions::Slide => 0,
+            QuestionOptions::SingleChoice(models) | QuestionOptions::MultipleChoice(models) => {
+                models.len()
+            }
+            QuestionOptions::Order(models) => models.len(),
+        }
+    }
+
+    pub fn position(&self, id: Uuid) -> Option<usize> {
+        match self {
+            QuestionOptions::Slide => None,
+            QuestionOptions::SingleChoice(models) | QuestionOptions::MultipleChoice(models) => {
+                models.iter().position(|x| x.id == id)
+            }
+            QuestionOptions::Order(models) => models.iter().position(|x| x.id == id),
+        }
+    }
+}
+
+impl ChoiceStatistics {
+    pub fn new(models: &[AnswerChoiceModel], distribution: &[usize], answers: usize) -> Self {
+        let answer_statistic = models
+            .iter()
+            .enumerate()
+            .map(|(i, model)| AnswerStatistic {
+                option: model.id,
+                votes: distribution[i],
+                correct: model.correct,
+            })
+            .collect();
+
+        Self {
+            answers,
+            answer_statistic,
+        }
+    }
+}
+
+impl OrderStatistics {
+    pub fn new(models: &[AnswerOrderModel], distribution: &[usize], answers: usize) -> Self {
+        Self {
+            answers,
+            correct: models.iter().map(|x| x.id).collect(),
+            answer_statistic: distribution.to_vec(),
         }
     }
 }

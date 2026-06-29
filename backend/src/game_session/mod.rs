@@ -101,6 +101,15 @@ pub enum GameSessionStatus {
         idx: usize,
         started: DateTime<Utc>,
         answers: usize,
+        /// This field behaves a bit different depending on the question type.
+        ///
+        /// # SingleChoice and MultipleChoice
+        /// This list has one entry for each answer option. Each entry is a counter of how many players have selected this option.
+        ///
+        /// # Order
+        /// The list has as many entries as there are answer options.
+        /// The index represents the count of correct option relationships (two options in the correct order) and the entry is a counter of how many players had this count of correct options.
+        answer_distribution: Vec<usize>,
         abort_handle: Option<JoinHandle<()>>,
     },
     Closed,
@@ -233,6 +242,7 @@ pub enum HostMessage {
         leaderboard: Arc<Vec<LeaderboardEntry>>,
         is_final: bool,
     },
+    ShowStatistics(AnswerStatistics),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -263,6 +273,36 @@ impl PartialOrd for LeaderboardEntry {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AnswerStatistics {
+    SingleChoice(ChoiceStatistics),
+    MultipleChoice(ChoiceStatistics),
+    Order(OrderStatistics),
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChoiceStatistics {
+    answers: usize,
+    answer_statistic: Vec<AnswerStatistic>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderStatistics {
+    answers: usize,
+    correct: Vec<Uuid>,
+    answer_statistic: Vec<usize>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AnswerStatistic {
+    pub option: Uuid,
+    pub votes: usize,
+    pub correct: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]

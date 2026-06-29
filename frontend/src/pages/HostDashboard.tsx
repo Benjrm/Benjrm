@@ -10,6 +10,7 @@ import HostGameScreen from "@/components/HostGameScreen"
 import { GameStateEnum } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
 import type { SessionPlayer } from "@/api/session"
+import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
 
 export default function HostDashboard(): JSX.Element {
     const { t } = useTranslation()
@@ -42,6 +43,7 @@ export default function HostDashboard(): JSX.Element {
     const [totalQuestions, setTotalQuestions] = useState(0)
     const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(null)
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
+    const [questionStatistics, setQuestionStatistics] = useState<QuestionStatistics | null>(null)
     const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
     const [hasPendingFinalPodium, setHasPendingFinalPodium] = useState(false)
     const pendingFinalLeaderboardRef = useRef<LeaderboardEntry[] | null>(null)
@@ -94,6 +96,10 @@ export default function HostDashboard(): JSX.Element {
         } else {
             setIsFinalLeaderboard(false)
         }
+    })
+
+    useSocketEvent("showStatistics", (payload) => {
+        setQuestionStatistics(payload)
     })
 
     useSocketEvent("addPlayer", ({ id, name, emoji }) => {
@@ -176,6 +182,7 @@ export default function HostDashboard(): JSX.Element {
             onShowPodium={hasPendingFinalPodium ? showFinalPodium : undefined}
             players={players}
             questionExpiresAt={questionExpiresAt}
+            questionStatistics={questionStatistics}
             quizTitle={quiz?.title}
             totalQuestions={totalQuestions}
         />
