@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import ThemeProvider from "./context/ThemeProvider"
+import AudioProvider from "./context/AudioProvider"
 import "./index.css"
 import App from "./App.tsx"
 import { WebSocketContext, websocketService } from "@/api/websocket"
@@ -39,9 +40,11 @@ root.render(
             <WebSocketContext value={websocketService}>
                 <BrowserRouter>
                     <ThemeProvider defaultTheme="auto" storageKey="theme">
-                        <Suspense fallback={<div>Loading...</div>}>
-                            <App />
-                        </Suspense>
+                        <AudioProvider>
+                            <Suspense fallback={<div>Loading...</div>}>
+                                <App />
+                            </Suspense>
+                        </AudioProvider>
                     </ThemeProvider>
                 </BrowserRouter>
             </WebSocketContext>

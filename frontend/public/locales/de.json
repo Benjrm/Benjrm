@@ -26,7 +26,8 @@
             "toggleMenu": "Menü umschalten",
             "openProfile": "Profil öffnen",
             "signIn": "ANMELDEN",
-            "logout": "Abmelden"
+            "logout": "Abmelden",
+            "toggleMute": "Musik umschalten"
         },
         "profileModal": {
             "title": "Profil",

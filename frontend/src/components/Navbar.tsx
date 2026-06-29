@@ -6,6 +6,7 @@ import { NavLink } from "react-router"
 import { Menu, UserCircle2, X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import ThemeToggle from "@/components/ThemeToggle"
+import MuteButton from "@/components/MuteButton"
 import NavItem from "@/components/NavItem"
 import AuthAction from "@/auth/components/AuthAction"
 import useAuthUser from "@/auth/hooks/useAuthUser"
@@ -45,6 +46,7 @@ export default function Navbar(): JSX.Element {
                 <div className="flex shrink-0 items-center gap-2 sm:gap-4">
                     <LanguageSwitcher />
                     <ThemeToggle />
+                    <MuteButton />
 
                     {user ? (
                         <>

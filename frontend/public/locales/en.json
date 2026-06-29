@@ -26,7 +26,8 @@
             "toggleMenu": "Toggle menu",
             "openProfile": "Open profile",
             "signIn": "SIGN IN",
-            "logout": "Logout"
+            "logout": "Logout",
+            "toggleMute": "Toggle music"
         },
         "profileModal": {
             "title": "Profile",

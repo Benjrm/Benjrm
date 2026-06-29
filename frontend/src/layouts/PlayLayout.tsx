@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react"
 import { Outlet, useParams } from "react-router"
 import { useHostWebSocket, usePlayerWebSocket } from "@/api/websocket"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
+import { useAudio } from "@/context/AudioContext"
 
 export default function PlayLayout(): JSX.Element {
     const codeParam = useParams().code
@@ -12,11 +13,13 @@ export default function PlayLayout(): JSX.Element {
     useHostWebSocket(isHost ? wsCode : undefined)
     usePlayerWebSocket(!isHost ? wsCode : undefined)
 
+    const { setAudioElement } = useAudio()
     const audioRef = useRef<HTMLAudioElement | null>(null)
     useEffect(() => {
         const audio = new Audio("/Clear_Path_Ahead.mp3")
         audio.loop = true
         audioRef.current = audio
+        setAudioElement(audio)
 
         const start = (): void => {
             audio.play().catch(() => undefined)
@@ -32,10 +35,11 @@ export default function PlayLayout(): JSX.Element {
         return () => {
             document.removeEventListener("click", start)
             document.removeEventListener("keydown", start)
+            setAudioElement(null)
             audio.pause()
             audio.src = ""
         }
-    }, [])
+    }, [setAudioElement])
 
     return <Outlet />
 }
