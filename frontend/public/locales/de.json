@@ -265,7 +265,8 @@
         "loadingLobby": "Lobby wird geladen…",
         "lobbyNotFound": {
             "title": "Quiz-Lobby nicht gefunden",
-            "description": "Keine Lobby mit dem Code {{code}} gefunden. Bitte überprüfe den Einladungscode und versuche es erneut."
+            "description": "Keine Lobby mit dem Code {{code}} gefunden. Bitte überprüfe den Einladungscode und versuche es erneut.",
+            "alreadyStarted": "Lobby wurde bereits gestartet"
         },
         "host": {
             "noTitle": "Kein Titel",

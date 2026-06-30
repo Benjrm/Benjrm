@@ -19,10 +19,10 @@ async fn create_one(
 ) -> Result<HttpResponse> {
     let (code, session) = app_data
         .game_sessions
-        .create_session(&app_data.db, user, create.quiz)
+        .create_session(&app_data.db, user.clone(), create.quiz)
         .await?;
     let session = session.lock().await;
-    Ok(HttpResponse::Created().json(session.to_dto(code)))
+    Ok(HttpResponse::Created().json(session.to_dto(code, Some(user))))
 }
 
 async fn create_one_with_quiz(
@@ -32,10 +32,10 @@ async fn create_one_with_quiz(
 ) -> Result<HttpResponse> {
     let (code, session) = app_data
         .game_sessions
-        .create_session(&app_data.db, user, Some(quiz.into_inner()))
+        .create_session(&app_data.db, user.clone(), Some(quiz.into_inner()))
         .await?;
     let session = session.lock().await;
-    Ok(HttpResponse::Created().json(session.to_dto(code)))
+    Ok(HttpResponse::Created().json(session.to_dto(code, Some(user))))
 }
 
 async fn get_one(
@@ -50,29 +50,26 @@ async fn get_one(
     if session.is_closed() {
         return Err(GameSessionError::InvalidCode.into());
     }
-    if user.0.as_ref() != Some(&session.host.user) {
-        return Err(GameSessionError::Forbidden.into());
-    }
-    Ok(HttpResponse::Ok().json(session.to_dto(code)))
+    Ok(HttpResponse::Ok().json(session.to_dto(code, user.0)))
 }
 
 async fn get_one_with_quiz(
     app_data: web::Data<AppData>,
-    user: User,
+    user: OptionalUser,
     path: web::Path<(Uuid, SessionCode)>,
 ) -> Result<HttpResponse> {
     let (quiz_id, code) = path.into_inner();
     let session = app_data.game_sessions.get_session(code).await?;
 
     let session = session.lock().await;
+    if session.is_closed() {
+        return Err(GameSessionError::InvalidCode.into());
+    }
     match &session.quiz {
         Some(quiz) if quiz.model.id == quiz_id => (),
         _ => return Err(GameSessionError::InvalidCode.into()),
     }
-    if session.host.user != user {
-        return Err(GameSessionError::Forbidden.into());
-    }
-    Ok(HttpResponse::Ok().json(session.to_dto(code)))
+    Ok(HttpResponse::Ok().json(session.to_dto(code, user.0)))
 }
 
 async fn delete(

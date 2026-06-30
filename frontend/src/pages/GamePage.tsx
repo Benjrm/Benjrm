@@ -15,6 +15,8 @@ import type {
 import PlayerLobby from "@/components/PlayerLobby"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import InvalidCode from "@/components/InvalidCode"
+import { getSession } from "@/api/session"
+import { ApiError } from "@/api/utils"
 
 function mergeStorage(key: string, patch: object): void {
     try {
@@ -31,7 +33,7 @@ function GamePageComponent({ code }: { code?: number }): JSX.Element {
     const navigate = useNavigate()
     usePlayerWebSocket(code)
     const ws = useWebSocketContext()
-    const { isInvalidCode } = useSessionStatus(code)
+    const { session } = useSessionStatus(code)
 
     const codeWithDash =
         code !== undefined
@@ -47,14 +49,27 @@ function GamePageComponent({ code }: { code?: number }): JSX.Element {
     // onEveryConnect fires immediately if the socket is already open (normal navigation),
     // so there is no visible flash on non-refresh transitions.
     const [isReconnecting, setIsReconnecting] = useState(true)
+    const [isInvalidCode, setIsInvalidCode] = useState(false)
     useEffect(() => {
         const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
-        const unsubConnect = ws.onEveryConnect(async () => setIsReconnecting(false))
+        const unsubConnect = ws.onEveryConnect(() => setIsReconnecting(false))
+        const unsubConnectFail = ws.onConnectFail(async () => {
+            if (code) {
+                try {
+                    await getSession(code)
+                } catch (e) {
+                    if (e instanceof ApiError && e.status === 404) {
+                        setIsInvalidCode(true)
+                    }
+                }
+            }
+        })
         return () => {
             unsubDisconnect()
             unsubConnect()
+            unsubConnectFail()
         }
-    }, [ws, navigate])
+    }, [ws, navigate, code])
 
     // Player identity
     const [name, setName] = useState<string>("")
@@ -275,8 +290,8 @@ function GamePageComponent({ code }: { code?: number }): JSX.Element {
         )
     }
 
-    if (isInvalidCode) {
-        return <InvalidCode codeWithDash={codeWithDash} />
+    if (isInvalidCode || session?.started) {
+        return <InvalidCode alreadyStarted={session?.started} codeWithDash={codeWithDash} />
     }
 
     return (
