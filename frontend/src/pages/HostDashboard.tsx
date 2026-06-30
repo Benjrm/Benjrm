@@ -15,10 +15,8 @@ import HostLobby from "@/components/HostLobby"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import InvalidCode from "@/components/InvalidCode"
 
-export default function HostDashboard(): JSX.Element {
+function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
     const { t } = useTranslation()
-    const codeParam = useParams().code
-    const code = codeParam !== null ? Number(codeParam) || undefined : undefined
     const navigate = useNavigate()
     const location = useLocation()
     useHostWebSocket(code)
@@ -229,4 +227,10 @@ export default function HostDashboard(): JSX.Element {
             )}
         </>
     )
+}
+
+export default function HostDashboard(): JSX.Element {
+    const codeParam = useParams().code
+    const code = codeParam !== null ? Number(codeParam) || undefined : undefined
+    return <HostDashboardComponent key={code} code={code} />
 }

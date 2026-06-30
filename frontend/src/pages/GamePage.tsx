@@ -26,10 +26,8 @@ function mergeStorage(key: string, patch: object): void {
     }
 }
 
-export default function GamePage(): JSX.Element {
+function GamePageComponent({ code }: { code?: number }): JSX.Element {
     const { t } = useTranslation()
-    const codeParam = useParams().code
-    const code = codeParam !== null ? Number(codeParam) || undefined : undefined
     const navigate = useNavigate()
     usePlayerWebSocket(code)
     const ws = useWebSocketContext()
@@ -328,4 +326,10 @@ export default function GamePage(): JSX.Element {
             )}
         </>
     )
+}
+
+export default function GamePage(): JSX.Element {
+    const codeParam = useParams().code
+    const code = codeParam !== null ? Number(codeParam) || undefined : undefined
+    return <GamePageComponent key={code} code={code} />
 }
