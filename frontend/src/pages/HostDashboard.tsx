@@ -14,6 +14,7 @@ import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
 import HostLobby from "@/components/HostLobby"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import InvalidCode from "@/components/InvalidCode"
+import { useAudio } from "@/context/AudioContext"
 
 function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
     const { t } = useTranslation()
@@ -184,6 +185,33 @@ function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
     const sendNextQuestion = useCallback((): void => {
         ws.send({ command: "nextQuestion" })
     }, [ws])
+
+    const { setAudioElement, playAudio } = useAudio()
+    const audioRef = useRef<HTMLAudioElement | null>(null)
+    useEffect(() => {
+        if (isInvalidCode) return undefined
+        if (audioRef.current === null) {
+            audioRef.current = new Audio("/Clear_Path_Ahead.mp3")
+            audioRef.current.loop = true
+        }
+        setAudioElement(audioRef.current)
+        playAudio()
+
+        const handleInteraction = (): void => {
+            playAudio()
+            document.removeEventListener("click", handleInteraction)
+            document.removeEventListener("keydown", handleInteraction)
+        }
+        document.addEventListener("click", handleInteraction)
+        document.addEventListener("keydown", handleInteraction)
+
+        return () => {
+            document.removeEventListener("click", handleInteraction)
+            document.removeEventListener("keydown", handleInteraction)
+            setAudioElement(null)
+            audioRef.current?.pause()
+        }
+    }, [setAudioElement, playAudio, isInvalidCode])
 
     if (isInvalidCode) {
         return <InvalidCode codeWithDash={codeWithDash} />
