@@ -27,7 +27,7 @@ export default function useSessionStatus(code: number | undefined): SessionStatu
             sessionError instanceof ApiError &&
             (sessionError.status === 403 || sessionError.status === 401)
 
-        const isInvalidCode = !!sessionError && !isPlayer
+        const isInvalidCode = sessionError instanceof ApiError && sessionError.status === 404
 
         return {
             isLoading,

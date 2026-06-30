@@ -30,7 +30,7 @@ export default function QRCode({ codeWithDash }: QRCodeProps): JSX.Element {
 
     const joinUrl =
         codeWithDash !== undefined
-            ? `${window.location.origin}/play/${codeWithDash.replace("-", "")}`
+            ? `${window.location.origin}/play/${codeWithDash.replace("-", "")}/game`
             : ""
 
     return (

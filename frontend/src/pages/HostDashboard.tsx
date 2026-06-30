@@ -3,14 +3,17 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
-import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
-import useSessionStatus from "@/api/session/hooks/useSessionStatus"
+import { useHostWebSocket, useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import HostGameScreen from "@/components/HostGameScreen"
 import { GameStateEnum, parseDisplayQuestion } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
+import { getSessionPlayers } from "@/api/session"
 import type { SessionPlayer } from "@/api/session"
 import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
+import HostLobby from "@/components/HostLobby"
+import useSessionStatus from "@/api/session/hooks/useSessionStatus"
+import InvalidCode from "@/components/InvalidCode"
 
 export default function HostDashboard(): JSX.Element {
     const { t } = useTranslation()
@@ -18,9 +21,10 @@ export default function HostDashboard(): JSX.Element {
     const code = codeParam !== null ? Number(codeParam) || undefined : undefined
     const navigate = useNavigate()
     const location = useLocation()
+    useHostWebSocket(code)
     const ws = useWebSocketContext()
+    const { isInvalidCode } = useSessionStatus(code)
 
-    const { isLoading: isSessionLoading, isHost } = useSessionStatus(code)
     const { data: quiz } = useSessionQuiz(code)
 
     const codeWithDash =
@@ -31,13 +35,8 @@ export default function HostDashboard(): JSX.Element {
               })(String(code).padStart(8, "0"))
             : undefined
 
-    useEffect(() => {
-        if (!isSessionLoading && !isHost) {
-            navigate(`/play/${codeParam ?? ""}`, { replace: true })
-        }
-    }, [isSessionLoading, isHost, navigate, codeParam])
-
-    const [gameState, setGameState] = useState<GameState>(GameStateEnum.PLAYING)
+    const [pendingStartId, setPendingStartId] = useState<number | null>(null)
+    const [gameState, setGameState] = useState<GameState>(GameStateEnum.LOBBY)
     const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(null)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
     const [totalQuestions, setTotalQuestions] = useState(0)
@@ -122,27 +121,28 @@ export default function HostDashboard(): JSX.Element {
         setPlayers((prev) => prev.filter((p) => p.id !== id))
     })
 
-    useSocketEvent(
-        "error",
-        useCallback(
-            (payload) => {
-                toast.error(payload.message ?? t("game.anErrorOccurred"))
-            },
-            [t]
-        )
+    const onKickPlayer = useCallback(
+        (playerId: string): void => {
+            ws.send({ command: "kickPlayer", payload: { id: playerId } })
+        },
+        [ws]
     )
 
-    // Send the first question as soon as the WebSocket is ready
-    const hasRequestedFirstQuestion = useRef(false)
-    useEffect(() => {
-        if (hasRequestedFirstQuestion.current) return undefined
-        const sendFirstQuestion = (): void => {
-            if (hasRequestedFirstQuestion.current) return
-            hasRequestedFirstQuestion.current = true
-            ws.send({ command: "nextQuestion" })
+    useSocketEvent("ok", (_payload, _timing, id) => {
+        if (id === pendingStartId) {
+            setPendingStartId(null)
+            setGameState(GameStateEnum.PLAYING)
         }
-        return ws.onConnect(sendFirstQuestion)
-    }, [ws])
+    })
+
+    useSocketEvent("error", (payload, _timing, id) => {
+        if (id === pendingStartId) {
+            setPendingStartId(null)
+            toast.error(payload.message || t("lobby.errors.failedToStart"))
+        } else {
+            toast.error(payload.message || t("game.anErrorOccurred"))
+        }
+    })
 
     // Start as true so the overlay shows until the WS is confirmed open.
     // onEveryConnect fires immediately if the socket is already open (normal navigation),
@@ -150,14 +150,26 @@ export default function HostDashboard(): JSX.Element {
     const [isReconnecting, setIsReconnecting] = useState(true)
     useEffect(() => {
         const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
-        const unsubConnect = ws.onEveryConnect(() => setIsReconnecting(false))
-        const unsubConnectFail = ws.onConnectFail(async () => navigate("/"))
+        const unsubConnect = ws.onEveryConnect(async () => {
+            setIsReconnecting(false)
+            if (code) setPlayers(await getSessionPlayers(code))
+        })
         return () => {
             unsubDisconnect()
             unsubConnect()
-            unsubConnectFail()
         }
-    }, [ws, navigate])
+    }, [ws, code, navigate])
+
+    const onStartGame = useCallback((): void => {
+        if (players.length === 0) {
+            toast.error(t("lobby.errors.waitingForPlayers"))
+            return
+        }
+        const id = Math.floor(Math.random() * 2 ** 31)
+        setPendingStartId(id)
+        ws.send({ id, command: "start" })
+        ws.send({ command: "nextQuestion" })
+    }, [players.length, ws, t])
 
     // Send endGame on unmount only after the first question was received from the server.
     // Guards against React StrictMode's double-mount: the cleanup fires before the server
@@ -175,6 +187,10 @@ export default function HostDashboard(): JSX.Element {
         ws.send({ command: "nextQuestion" })
     }, [ws])
 
+    if (isInvalidCode) {
+        return <InvalidCode codeWithDash={codeWithDash} />
+    }
+
     return (
         <>
             {isReconnecting ? (
@@ -183,23 +199,34 @@ export default function HostDashboard(): JSX.Element {
                     <p className="text-muted-foreground">{t("game.reconnecting")}</p>
                 </div>
             ) : null}
-            <HostGameScreen
-                codeWithDash={codeWithDash}
-                currentQuestion={currentQuestion}
-                currentQuestionIndex={currentQuestionIndex}
-                gameState={gameState}
-                isFinalLeaderboard={isFinalLeaderboard}
-                leaderboard={leaderboard}
-                onEndGame={sendEndGame}
-                onNextQuestion={sendNextQuestion}
-                onShowPodium={hasPendingFinalPodium ? showPodium : undefined}
-                players={players}
-                questionExpiresAt={questionExpiresAt}
-                questionStartsAt={questionStartsAt}
-                questionStatistics={questionStatistics}
-                quizTitle={quiz?.title}
-                totalQuestions={totalQuestions}
-            />
+            {gameState === GameStateEnum.LOBBY ? (
+                <HostLobby
+                    codeWithDash={codeWithDash}
+                    onKickPlayer={onKickPlayer}
+                    onStartGame={onStartGame}
+                    players={players}
+                    quiz={quiz}
+                    startPending={pendingStartId !== null}
+                />
+            ) : (
+                <HostGameScreen
+                    codeWithDash={codeWithDash}
+                    currentQuestion={currentQuestion}
+                    currentQuestionIndex={currentQuestionIndex}
+                    gameState={gameState}
+                    isFinalLeaderboard={isFinalLeaderboard}
+                    leaderboard={leaderboard}
+                    onEndGame={sendEndGame}
+                    onNextQuestion={sendNextQuestion}
+                    onShowPodium={hasPendingFinalPodium ? showPodium : undefined}
+                    players={players}
+                    questionExpiresAt={questionExpiresAt}
+                    questionStartsAt={questionStartsAt}
+                    questionStatistics={questionStatistics}
+                    quizTitle={quiz?.title}
+                    totalQuestions={totalQuestions}
+                />
+            )}
         </>
     )
 }

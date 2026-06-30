@@ -48,7 +48,7 @@ export default function LandingPage(): JSX.Element {
                                 setIsPending(true)
                                 try {
                                     await getSession(Number(digits))
-                                    navigate(`/play/${encodeURIComponent(digits)}`)
+                                    navigate(`/play/${encodeURIComponent(digits)}/game`)
                                 } catch (err) {
                                     if (!(err instanceof ApiError)) {
                                         setError(t("landing.errors.generic"))
@@ -57,9 +57,8 @@ export default function LandingPage(): JSX.Element {
                                     if (err.status === 404) {
                                         setError(t("landing.errors.lobbyNotFound"))
                                     } else {
-                                        // 401 (unauthenticated) or 403 (not the host) — the session
-                                        // exists or we can't verify; let WaitingRoom handle it.
-                                        navigate(`/play/${encodeURIComponent(digits)}`)
+                                        // 401 (unauthenticated) or 403 (not the host) — the session exists
+                                        navigate(`/play/${encodeURIComponent(digits)}/game`)
                                     }
                                 } finally {
                                     setIsPending(false)

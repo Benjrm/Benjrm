@@ -21,7 +21,7 @@ export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps
 
     function onJoinClick(): void {
         if (!digits) return
-        navigate(`/play/${encodeURIComponent(digits)}`)
+        navigate(`/play/${encodeURIComponent(digits)}/game`)
     }
 
     return (
