@@ -192,6 +192,7 @@
     "game": {
         "starting": "Spiel startet...",
         "getReady": "Mach dich bereit!",
+        "reconnecting": "Verbindung wird wiederhergestellt…",
         "hostClosed": "Host hat die Lobby geschlossen",
         "hostClosedLoading": "Host hat die Lobby geschlossen...",
         "playerLeft": "{{name}} hat das Spiel verlassen",

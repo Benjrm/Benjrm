@@ -1,6 +1,8 @@
 import type { JSX } from "react"
 import { Triangle, Diamond, Circle, Square, Check } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import type { OptionStat } from "./HostGameQuestionStatistic.tsx"
 import ProgressBar from "@/shadcn/components/ui/progress"
 
@@ -64,7 +66,13 @@ export default function ChoiceQuestionStatisticView({
                                 <Icon className="h-6 w-6 stroke-[2.5] text-white" />
                             </div>
                             <div className="flex-1 text-lg leading-tight font-semibold">
-                                {opt.text}
+                                <ReactMarkdown
+                                    unwrapDisallowed
+                                    allowedElements={["p", "strong", "em", "code", "del", "s"]}
+                                    remarkPlugins={[remarkGfm]}
+                                >
+                                    {opt.text}
+                                </ReactMarkdown>
                             </div>
                             {opt.isCorrect ? (
                                 <Check className="h-6 w-6 shrink-0 stroke-[3] text-[#00D4E8]" />

@@ -26,6 +26,8 @@ export interface QuestionCardContentProps {
     isHost: boolean
     currentQuestionIndex: number
     totalQuestions: number
+    initialHasSubmitted?: boolean
+    initialSelectedAnswers?: string[]
     onSendAnswer?: (id: string | string[]) => void
     onNextQuestion?: () => void
     type?: QuestionType
@@ -41,18 +43,20 @@ export default function QuestionCardContent({
     isHost,
     currentQuestionIndex,
     totalQuestions,
+    initialHasSubmitted = false,
+    initialSelectedAnswers = [],
     onSendAnswer,
     onNextQuestion,
     type,
 }: QuestionCardContentProps): JSX.Element {
     const { t } = useTranslation()
-    const [selectedAnswers, setSelectedAnswers] = useState<string[]>([])
-    const [hasSubmitted, setHasSubmitted] = useState(false)
+    const [selectedAnswers, setSelectedAnswers] = useState<string[]>(initialSelectedAnswers)
+    const [hasSubmitted, setHasSubmitted] = useState(initialHasSubmitted)
     const timeLeft = useQuestionTimer(questionExpiresAt ?? null, secondsToAnswer)
 
-    // Automatisches Absenden, wenn die Zeit bei 0 ankommt
+    // Automatisches Absenden, wenn die Zeit bei 0 ankommt (nur wenn Antwort ausgewählt)
     useEffect(() => {
-        if (timeLeft === 0 && !hasSubmitted && !isHost) {
+        if (timeLeft === 0 && !hasSubmitted && !isHost && selectedAnswers.length > 0) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setHasSubmitted(true)
             if (onSendAnswer) onSendAnswer(selectedAnswers)
@@ -84,7 +88,11 @@ export default function QuestionCardContent({
                     }
                 />
 
-                <TimerBar timeLeft={timeLeft} totalSeconds={secondsToAnswer} />
+                <TimerBar
+                    fastAnimation={false}
+                    timeLeft={timeLeft}
+                    totalSeconds={secondsToAnswer}
+                />
 
                 <QuestionContainer question={questionText} />
 
@@ -106,8 +114,12 @@ export default function QuestionCardContent({
                             className="bg-[#00D4E8] px-8 py-6 text-lg font-bold text-black hover:bg-[#00BDD0] disabled:bg-gray-600 disabled:text-gray-300"
                             disabled={hasSubmitted || selectedAnswers.length === 0}
                             onClick={() => {
-                                setHasSubmitted(true)
-                                if (onSendAnswer) onSendAnswer(selectedAnswers)
+                                try {
+                                    if (onSendAnswer) onSendAnswer(selectedAnswers)
+                                    setHasSubmitted(true)
+                                } catch {
+                                    // WS not ready; player can retry once connected
+                                }
                             }}
                         >
                             {hasSubmitted ? t("game.answer.sent") : t("game.answer.submit")}

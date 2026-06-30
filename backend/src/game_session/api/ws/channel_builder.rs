@@ -3,7 +3,8 @@ use {
         AppData,
         error::Error,
         game_session::{
-            Channel, Command, CommandTrait, GameSession, GameSessionError, Message, PlayerCommand,
+            Channel, Command, CommandTrait, GameSession, GameSessionError, GameSessionStatus,
+            Message, PlayerCommand,
             api::ws::{
                 Response,
                 channel::{WsChannel, send_msg_log_error},
@@ -115,41 +116,86 @@ impl WsChannelBuilder {
         }
     }
 
-    /// Wait for [`PlayerCommand::SetName`] and add player to [`GameSession`] on success.
+    /// Wait for [`PlayerCommand::SetName`] or [`PlayerCommand::Reconnect`] and add player or set channel on success.
     /// Timeouts after 15 minutes and ignores all other messages.
-    pub async fn wait_for_join(mut self) {
+    pub async fn wait_for_join(self) {
         let start = Instant::now();
-        while let Ok(cmd) = self.inner.recv::<Command<PlayerCommand>>().await {
-            if let Some(cmd) = cmd
-                && let PlayerCommand::SetName { name, emoji } = cmd.command
-            {
-                let id = Uuid::new_v4();
-                let emoji = match emoji {
-                    Some(emoji) => match emojis::get(&emoji) {
-                        Some(emoji) => Some(emoji),
-                        None => {
-                            self.inner
-                                .error(cmd.id, GameSessionError::InvalidEmoji.into())
-                                .await;
-                            continue;
+        let session = Arc::clone(&self.session);
+
+        // put self inside an option to allow calling `handle_join_cmd` (which might move self) multiple times (until the move of self is successful)
+        let mut self_optional = Some(self);
+        while let Some(_self) = &mut self_optional
+            && let Ok(cmd) = _self.inner.recv::<Command<PlayerCommand>>().await
+        {
+            if let Some(cmd) = cmd {
+                let cmd_id = cmd.id;
+                let res = Self::handle_join_cmd(&mut self_optional, &session, cmd).await;
+                match &mut self_optional {
+                    Some(_self) => {
+                        if let Err(err) = res {
+                            _self.inner.error(cmd_id, err.into()).await;
                         }
-                    },
-                    None => None,
-                };
-                let session = Arc::clone(&self.session);
-                let mut session = session.lock().await;
-                if let Err(err) = session.check_add_player(&name) {
-                    self.inner.error(cmd.id, err.into()).await;
-                    continue;
+                    }
+                    // if self_optional is None this means that self has been moved by successfully creating a channel
+                    None => return,
                 }
-                self.inner.ok(cmd.id).await;
-                let channel = self.build(id, GameSession::handle_player_cmd, remove_player_ws);
-                session.add_player(id, channel, name, emoji).await;
-                return;
             }
             if start.elapsed() > Duration::from_mins(15) {
                 return;
             }
         }
+    }
+
+    /// Handle [`PlayerCommand::SetName`] or [`PlayerCommand::Reconnect`].
+    ///
+    /// On success, `self_optional` is set to `None` and `Ok()` is returned.
+    /// If some error occures, `self_optional` remains unchanged and `Err()` is returned.
+    /// If `cmd` is some other command, `self_optional` remains unchanged and `Ok()` is returned.
+    async fn handle_join_cmd(
+        self_optional: &mut Option<Self>,
+        session: &Mutex<GameSession>,
+        cmd: Command<PlayerCommand>,
+    ) -> Result<(), GameSessionError> {
+        match cmd.command {
+            PlayerCommand::SetName { name, emoji } => {
+                let id = Uuid::new_v4();
+                let emoji = match emoji {
+                    Some(emoji) => Some(emojis::get(&emoji).ok_or(GameSessionError::InvalidEmoji)?),
+                    None => None,
+                };
+                let mut session = session.lock().await;
+                session.check_add_player(&name)?;
+
+                // Take `_self` out of `self_optional` to let `session.add_player` consume it
+                if let Some(mut _self) = self_optional.take() {
+                    _self.inner.ok(cmd.id).await;
+                    let channel = _self.build(id, GameSession::handle_player_cmd, remove_player_ws);
+                    session.add_player(cmd.id, id, channel, name, emoji).await;
+                }
+            }
+            PlayerCommand::Reconnect { id, secret } => {
+                let mut session = session.lock().await;
+                let player = GameSession::get_player_mut(&mut session.players, id)?;
+                player.check_set_channel(secret)?;
+
+                // Take `_self` out of `self_optional` to let `player.set_channel` consume it
+                if let Some(mut _self) = self_optional.take() {
+                    let channel_builder_id = _self.id;
+                    _self.inner.ok(cmd.id).await;
+                    let channel = _self.build(id, GameSession::handle_player_cmd, remove_player_ws);
+                    player.set_channel(cmd.id, channel).await;
+                    let player_id = player.id;
+                    // Remove from joining so game start doesn't cancel (kick) this reconnected connection.
+                    if let GameSessionStatus::Waiting(joining) = &mut session.status
+                        && let Some(pos) = joining.iter().position(|x| x.id() == channel_builder_id)
+                    {
+                        joining.swap_remove(pos);
+                    }
+                    session.update_player(player_id).await;
+                }
+            }
+            _ => (),
+        }
+        Ok(())
     }
 }

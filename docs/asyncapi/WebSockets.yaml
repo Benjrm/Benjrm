@@ -57,6 +57,10 @@ channels:
         $ref: "#/components/messages/displayLeaderboard"
       showStatistics:
         $ref: "#/components/messages/showStatistics"
+      showPodium:
+        $ref: "#/components/messages/showPodium"
+      displayPodium:
+        $ref: "#/components/messages/displayPodium"
       endGame:
         $ref: "#/components/messages/endGame"
     tags:
@@ -90,6 +94,10 @@ channels:
         $ref: "#/components/messages/questionResult"
       displayLeaderboard:
         $ref: "#/components/messages/displayLeaderboard"
+      connectResponse:
+        $ref: "#/components/messages/connectResponse"
+      reconnect:
+        $ref: "#/components/messages/reconnect"
     tags:
       - name: Sessions
 
@@ -336,6 +344,26 @@ operations:
     tags:
       - name: Questions
   
+  receiveShowPodium:
+    description: "Receive showPodium command from host"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/showPodium"
+    tags:
+      - name: Sessions
+  
+  sendDisplayPodium:
+    description: "Send displayPodium command to host"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/displayPodium"
+    tags:
+      - name: Sessions
+  
   receiveEndGame:
     description: "Receive endGame command from host"
     action: receive
@@ -343,6 +371,27 @@ operations:
       $ref: "#/channels/sessionHost"
     messages:
       - $ref: "#/channels/sessionHost/messages/endGame"
+    tags:
+      - name: Sessions
+
+  sendConnectResponse:
+    description: "Send user details to Player"
+    action: send
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/connectResponse"
+    tags:
+      - name: Sessions
+      - name: WebSocket
+  
+  receiveReconnect:
+    description: "Receive reconnect command from Player"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/reconnect"
     tags:
       - name: Sessions
 
@@ -558,6 +607,10 @@ components:
                     type: integer
                     format: uint32
                     nullable: true
+                  index:
+                    type: integer
+                  totalQuestions:
+                    type: integer
               - $ref: "#/components/schemas/DisplayQuestionOptions"
     
     answerQuestion:
@@ -633,6 +686,22 @@ components:
               - $ref: "#/components/schemas/MultipleChoiceStatistics"
               - $ref: "#/components/schemas/OrderStatistics"
     
+    showPodium:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "showPodium"
+    
+    displayPodium:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "displayPodium"
+    
     endGame:
       payload:
         type: object
@@ -640,6 +709,48 @@ components:
           command:
             type: string
             const: "endGame"
+
+    connectResponse:
+      payload:
+        type: object
+        properties:
+          id:
+            type: number
+          command:
+            type: string
+            const: "connectResponse"
+          payload:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              secret:
+                type: string
+              name:
+                type: string
+              emoji:
+                type: string
+                nullable: true
+                example: "😀"
+    
+    reconnect:
+      payload:
+        type: object
+        properties:
+          id:
+            type: number
+          command:
+            type: string
+            const: "reconnect"
+          payload:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              secret:
+                type: string
   
   schemas:
     DisplayQuestionOptions:

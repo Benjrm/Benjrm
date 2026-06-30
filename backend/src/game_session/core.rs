@@ -163,7 +163,7 @@ impl GameSession {
         Ok(())
     }
 
-    /// Set the host channel and close the old one.
+    /// Set the host channel and close the old one. Informs the new host of the currect state.
     /// Must only be called after successfully calling [`GameSession::check_set_host_channel`].
     pub async fn set_host_channel<T: Channel<HostMessage> + 'static>(&mut self, channel: T) {
         let channel = Box::new(channel);
@@ -171,6 +171,80 @@ impl GameSession {
             old_channel.close().await;
         }
         self.host.channel = Some(channel);
+        self.update_host().await;
+    }
+
+    /// send all messages that are required to restore the state to the host.
+    async fn update_host(&mut self) {
+        let Some(quiz) = &self.quiz else { return };
+
+        async fn send_leaderboard(
+            host: &mut GameSessionHost,
+            leaderboard: &Arc<Vec<LeaderboardEntry>>,
+            is_final: bool,
+        ) {
+            host.msg(Message::from(&HostMessage::DisplayLeaderboard {
+                leaderboard: Arc::clone(leaderboard),
+                is_final,
+            }))
+            .await;
+        }
+
+        let (idx, timing) = match &self.status {
+            GameSessionStatus::Waiting(_) => return,
+            GameSessionStatus::Started => return,
+            GameSessionStatus::Question { idx, started, .. } => (*idx, Some(*started)),
+            GameSessionStatus::Leaderboard { idx, .. } => (*idx, None),
+            GameSessionStatus::Podium(leaderboard) => {
+                send_leaderboard(&mut self.host, leaderboard, true).await;
+                self.host
+                    .msg(Message::from(&HostMessage::DisplayPodium))
+                    .await;
+                return;
+            }
+            GameSessionStatus::Closed => return,
+        };
+
+        let question = Arc::new(DisplayQuestionMessage::new(
+            &quiz.questions[idx],
+            idx,
+            quiz.questions.len(),
+        ));
+
+        // send leaderboard before question if currently on question screen
+        if let GameSessionStatus::Question {
+            leaderboard: Some(leaderboard),
+            ..
+        } = &self.status
+        {
+            send_leaderboard(&mut self.host, leaderboard, false).await;
+        }
+
+        self.host
+            .msg(Message {
+                id: None,
+                msg: &HostMessage::DisplayQuestion(question),
+                timing,
+            })
+            .await;
+
+        // send leaderboard after question if question has finished
+        if let GameSessionStatus::Leaderboard {
+            statistics,
+            leaderboard,
+            is_final,
+            ..
+        } = &self.status
+        {
+            send_leaderboard(&mut self.host, leaderboard, *is_final).await;
+            if let Some(statistics) = statistics {
+                self.host
+                    .msg(Message::from(&HostMessage::ShowStatistics(Arc::clone(
+                        statistics,
+                    ))))
+                    .await;
+            }
+        }
     }
 
     pub async fn handle_host_cmd(
@@ -217,6 +291,30 @@ impl GameSession {
             }
             HostCommand::NextQuestion => self.next_question(None, arc).await?,
             HostCommand::ShowQuestion { id } => self.next_question(Some(id), arc).await?,
+            HostCommand::ShowPodium => {
+                let leaderboard = match &self.status {
+                    GameSessionStatus::Leaderboard { leaderboard, .. } => Arc::clone(leaderboard),
+                    _ => return Err(GameSessionError::NoLeaderboard),
+                };
+                self.status = GameSessionStatus::Podium(Arc::clone(&leaderboard));
+
+                self.host
+                    .msg(Message::from(&HostMessage::DisplayPodium))
+                    .await;
+
+                let player_iterator = self.players.iter_mut().map(|player| {
+                    let leaderboard = Arc::clone(&leaderboard);
+                    async move {
+                        player
+                            .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
+                                leaderboard,
+                                is_final: true,
+                            }))
+                            .await;
+                    }
+                });
+                execute_futures(player_iterator).await;
+            }
             HostCommand::EndGame => {
                 self.end_question(Some(true)).await;
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
@@ -233,7 +331,6 @@ impl GameSession {
         arc: Arc<Mutex<Self>>,
     ) -> Result<(), GameSessionError> {
         match &mut self.status {
-            GameSessionStatus::Closed => return Err(GameSessionError::InvalidCode),
             GameSessionStatus::Waiting(_) => return Err(GameSessionError::NotStarted),
             GameSessionStatus::Started | GameSessionStatus::Leaderboard { .. } => (),
             GameSessionStatus::Question { abort_handle, .. } => {
@@ -242,6 +339,8 @@ impl GameSession {
                 }
                 self.end_question(None).await;
             }
+            GameSessionStatus::Podium(_) => return Err(GameSessionError::NoQuestionLeft),
+            GameSessionStatus::Closed => return Err(GameSessionError::InvalidCode),
         }
 
         let quiz = self.quiz.clone().ok_or(GameSessionError::QuizMissing)?;
@@ -253,7 +352,7 @@ impl GameSession {
                 .ok_or(GameSessionError::QuestionNotFound)?
         } else {
             let question = match self.status {
-                GameSessionStatus::Leaderboard { idx } => idx + 1,
+                GameSessionStatus::Leaderboard { idx, .. } => idx + 1,
                 _ => 0,
             };
             if question >= quiz.questions.len() {
@@ -282,6 +381,10 @@ impl GameSession {
                 })
             });
 
+        let leaderboard = match &self.status {
+            GameSessionStatus::Leaderboard { leaderboard, .. } => Some(Arc::clone(leaderboard)),
+            _ => None,
+        };
         let options_len = quiz.questions[question].options.len();
         self.status = GameSessionStatus::Question {
             idx: question,
@@ -289,11 +392,13 @@ impl GameSession {
             answers: 0,
             answer_distribution: vec![0; options_len],
             abort_handle,
+            leaderboard,
         };
 
         let total_questions = quiz.questions.len();
         let question = Arc::new(DisplayQuestionMessage::new(
             &quiz.questions[question],
+            question,
             total_questions,
         ));
 
@@ -328,6 +433,7 @@ impl GameSession {
     /// Must only be called after successfully calling [`GameSession::check_add_player`].
     pub async fn add_player<T: Channel<PlayerMessage> + 'static>(
         &mut self,
+        cmd_id: Option<u64>,
         id: Uuid,
         channel: T,
         name: String,
@@ -338,15 +444,30 @@ impl GameSession {
         {
             joining.swap_remove(pos);
         }
+        let secret = Uuid::new_v4();
 
-        let player = GameSessionPlayer {
+        let mut player = GameSessionPlayer {
             id,
+            secret,
             name,
             emoji,
             channel: Box::new(channel),
             points: 0,
             last_question: None,
         };
+
+        player
+            .msg(Message {
+                id: cmd_id,
+                msg: &PlayerMessage::ConnectResponse {
+                    id,
+                    secret,
+                    name: player.name.clone(),
+                    emoji,
+                },
+                timing: None,
+            })
+            .await;
 
         self.host
             .msg(Message::from(&HostMessage::AddPlayer {
@@ -357,6 +478,54 @@ impl GameSession {
             .await;
 
         self.players.push(player);
+    }
+
+    /// send messages to restore the current state to a player.
+    /// [`PlayerMessage::QuestionResult`] is not included because it's basically a response to [`PlayerCommand::AnswerQuestion`] and is not persisted.
+    pub async fn update_player(&mut self, player_id: Uuid) {
+        let Ok(player) = Self::get_player_mut(&mut self.players, player_id) else {
+            return;
+        };
+        let Some(quiz) = &self.quiz else {
+            return;
+        };
+
+        match &self.status {
+            GameSessionStatus::Waiting(_) => (),
+            GameSessionStatus::Started | GameSessionStatus::Leaderboard { .. } => {
+                player.msg(Message::from(&PlayerMessage::Start)).await
+            }
+            GameSessionStatus::Question { idx, started, .. } => {
+                player.msg(Message::from(&PlayerMessage::Start)).await;
+                // TODO: remove (workaround for frontend registering listeners too late)
+                tokio::time::sleep(Duration::from_millis(200)).await;
+
+                let question = Arc::new(DisplayQuestionMessage::new(
+                    &quiz.questions[*idx],
+                    *idx,
+                    quiz.questions.len(),
+                ));
+                player
+                    .msg(Message {
+                        id: None,
+                        msg: &PlayerMessage::DisplayQuestion(question),
+                        timing: Some(*started),
+                    })
+                    .await;
+            }
+            GameSessionStatus::Podium(leaderboard) => {
+                player.msg(Message::from(&PlayerMessage::Start)).await;
+                // TODO: remove (workaround for frontend registering listeners too late)
+                tokio::time::sleep(Duration::from_millis(200)).await;
+                player
+                    .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
+                        leaderboard: Arc::clone(leaderboard),
+                        is_final: true,
+                    }))
+                    .await;
+            }
+            GameSessionStatus::Closed => player.msg(Message::from(&PlayerMessage::GameEnded)).await,
+        }
     }
 
     pub async fn handle_player_cmd(
@@ -410,6 +579,7 @@ impl GameSession {
                     }))
                     .await;
             }
+            PlayerCommand::Reconnect { .. } => Err(GameSessionError::CommandNotAllowed)?,
             PlayerCommand::AnswerQuestion { answer } => {
                 let player = Self::get_player_mut(&mut self.players, id)?;
                 if matches!(self.status, GameSessionStatus::Leaderboard { .. }) {
@@ -421,6 +591,7 @@ impl GameSession {
                     answers,
                     answer_distribution,
                     abort_handle,
+                    ..
                 } = &mut self.status
                 else {
                     return Err(GameSessionError::NoCurrentQuestion);
@@ -530,9 +701,13 @@ impl GameSession {
                     OrderStatistics::new(models, answer_distribution, *answers),
                 )),
             };
-        if let Some(statistics) = statistics {
+
+        let statistics = statistics.map(Arc::new);
+        if let Some(statistics) = &statistics {
             self.host
-                .msg(Message::from(&HostMessage::ShowStatistics(statistics)))
+                .msg(Message::from(&HostMessage::ShowStatistics(Arc::clone(
+                    statistics,
+                ))))
                 .await;
         }
 
@@ -564,30 +739,20 @@ impl GameSession {
         execute_futures(iterator).await;
 
         leaderboard.sort();
-        self.status = GameSessionStatus::Leaderboard { idx: *idx };
-
         let leaderboard = Arc::new(leaderboard);
+        self.status = GameSessionStatus::Leaderboard {
+            idx: *idx,
+            statistics,
+            leaderboard: Arc::clone(&leaderboard),
+            is_final,
+        };
+
         self.host
             .msg(Message::from(&HostMessage::DisplayLeaderboard {
-                leaderboard: Arc::clone(&leaderboard),
+                leaderboard,
                 is_final,
             }))
             .await;
-
-        if is_final {
-            let player_iterator = self.players.iter_mut().map(|player| {
-                let leaderboard = Arc::clone(&leaderboard);
-                async move {
-                    player
-                        .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
-                            leaderboard,
-                            is_final,
-                        }))
-                        .await;
-                }
-            });
-            execute_futures(player_iterator).await;
-        }
     }
 }
 
@@ -602,6 +767,33 @@ impl GameSessionHost {
 }
 
 impl GameSessionPlayer {
+    pub fn check_set_channel(&self, secret: Uuid) -> Result<(), GameSessionError> {
+        if self.secret != secret {
+            return Err(GameSessionError::InvalidPlayerSecret);
+        }
+        Ok(())
+    }
+
+    pub async fn set_channel<T: Channel<PlayerMessage> + 'static>(
+        &mut self,
+        cmd_id: Option<u64>,
+        channel: T,
+    ) {
+        let old_channel = std::mem::replace(&mut self.channel, Box::new(channel));
+        old_channel.close().await;
+        self.msg(Message {
+            id: cmd_id,
+            msg: &PlayerMessage::ConnectResponse {
+                id: self.id,
+                secret: self.secret,
+                name: self.name.clone(),
+                emoji: self.emoji,
+            },
+            timing: None,
+        })
+        .await;
+    }
+
     pub async fn msg(&mut self, msg: Message<'_, PlayerMessage>) {
         if let Err(err) = self.channel.send(msg).await {
             log::error!("failed to send message to player {}: {err:?}", self.id)

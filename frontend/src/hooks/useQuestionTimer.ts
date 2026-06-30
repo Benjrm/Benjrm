@@ -1,26 +1,36 @@
 import { useEffect, useState } from "react"
 
+function calculateRemaining(expiresAt: number | null, shouldCeil: boolean) {
+    if (!expiresAt) return null
+    let time = (expiresAt - Date.now()) / 1000
+    if (shouldCeil) time = Math.ceil(time)
+    return Math.max(0, time)
+}
+
 export default function useQuestionTimer(
     questionExpiresAt: number | null,
-    secondsToAnswer: number | null
+    secondsToAnswer: number | null,
+    ceil = true
 ): number | null {
     const [timeLeft, setTimeLeft] = useState<number | null>(() => {
-        if (questionExpiresAt)
-            return Math.max(0, Math.ceil((questionExpiresAt - Date.now()) / 1000))
+        if (questionExpiresAt) return calculateRemaining(questionExpiresAt, ceil)
         return secondsToAnswer
     })
 
     useEffect(() => {
         const expiresAt =
             questionExpiresAt ?? (secondsToAnswer ? Date.now() + secondsToAnswer * 1000 : null)
-        if (expiresAt === null) return undefined
+        const init = setTimeout(() => setTimeLeft(calculateRemaining(expiresAt, ceil)))
         const timer = setInterval(() => {
-            const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
+            const remaining = calculateRemaining(expiresAt, ceil)
             setTimeLeft(remaining)
-            if (remaining <= 0) clearInterval(timer)
-        }, 500)
-        return () => clearInterval(timer)
-    }, [questionExpiresAt, secondsToAnswer])
+            if (remaining === null || remaining <= 0) clearInterval(timer)
+        }, 250)
+        return () => {
+            clearTimeout(init)
+            clearInterval(timer)
+        }
+    }, [questionExpiresAt, secondsToAnswer, ceil])
 
     return timeLeft
 }

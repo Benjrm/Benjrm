@@ -21,6 +21,7 @@ export interface ServerEvents {
         type: QuestionType
         options: { id: string; answer: string }[]
         seconds: number | null
+        index: number
         totalQuestions: number
     }
     questionResult: {
@@ -40,6 +41,7 @@ export interface ServerEvents {
         isFinal: boolean
     }
     showStatistics: QuestionStatistics
+    displayPodium: unknown
     addPlayer: {
         id: string
         name: string
@@ -56,4 +58,10 @@ export interface ServerEvents {
     kick: unknown
     start: unknown
     gameEnded: unknown
+    connectResponse: {
+        id: string
+        secret: string
+        name: string
+        emoji: string | null
+    }
 }

@@ -5,6 +5,22 @@ import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import useSessionPlayers from "@/api/session/hooks/useSessionPlayers"
 import type { QuestionType } from "@/api/questions/questions.types.ts"
 
+export function parseDisplayQuestion(payload: {
+    id: string
+    question: string
+    type: QuestionType
+    options?: { id: string; answer: string }[]
+    seconds?: number | null
+}): GameQuestion {
+    return {
+        id: payload.id,
+        type: payload.type,
+        text: payload.question,
+        options: (payload.options ?? []).map((opt) => ({ id: opt.id, text: opt.answer })),
+        seconds: payload.seconds ?? null,
+    }
+}
+
 export const AVAILABLE_EMOJIS = [
     "😀",
     "😃",

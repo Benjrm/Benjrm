@@ -192,6 +192,7 @@
     "game": {
         "starting": "Game is starting...",
         "getReady": "Get ready!",
+        "reconnecting": "Reconnecting…",
         "hostClosed": "Host has closed the lobby",
         "hostClosedLoading": "Host has closed the lobby...",
         "playerLeft": "{{name}} has left",

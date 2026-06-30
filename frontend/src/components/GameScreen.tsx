@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router"
 import { Toaster } from "sonner"
 import { useTranslation } from "react-i18next"
+import TimerBar from "./TimerBar"
 import QuestionCardContent from "@/components/QuestionCardContent"
 import InfoSlideContent from "@/components/InfoSlideContent"
 import OrderQuestionContent from "@/components/OrderQuestionContent"
@@ -15,17 +16,16 @@ import type {
     QuestionResult,
     LeaderboardEntry,
 } from "@/hooks/useGameSession"
+import useQuestionTimer from "@/hooks/useQuestionTimer"
 
-const PREVIEW_DURATION_MS = 2500
-
-function QuestionPreview({ question }: { question: { text: string } }): JSX.Element {
+function QuestionPreview({
+    question,
+    remainingTime,
+}: {
+    question: { text: string }
+    remainingTime: number
+}): JSX.Element {
     const { t } = useTranslation()
-    const [width, setWidth] = useState(100)
-
-    useEffect(() => {
-        const raf = requestAnimationFrame(() => setWidth(0))
-        return () => cancelAnimationFrame(raf)
-    }, [])
 
     return (
         <div className="flex min-h-[50vh] flex-col items-center justify-center gap-8 px-6 text-center">
@@ -37,14 +37,8 @@ function QuestionPreview({ question }: { question: { text: string } }): JSX.Elem
                     <MarkdownComponent content={question.text} />
                 </div>
             </div>
-            <div className="bg-muted/50 w-full max-w-xl overflow-hidden rounded-full">
-                <div
-                    className="h-2 rounded-full bg-[#00D4E8]"
-                    style={{
-                        width: `${width}%`,
-                        transition: `width ${PREVIEW_DURATION_MS}ms linear`,
-                    }}
-                />
+            <div className="w-full max-w-xl overflow-hidden">
+                <TimerBar fastAnimation timeLeft={remainingTime} totalSeconds={3} />
             </div>
         </div>
     )
@@ -57,12 +51,17 @@ interface GameScreenProps {
     totalQuestions: number
     questionResult: QuestionResult | null
     questionExpiresAt: number | null
+    questionStartsAt: number | null
     leaderboard: LeaderboardEntry[] | null
     isFinalLeaderboard: boolean
     playerName: string | undefined
     playerEmoji: string | undefined
+    playerItemOrder: string[] | null
+    hasSubmittedAnswer?: boolean
+    initialSelectedAnswers?: string[]
     onNextQuestion: () => void
     onSendAnswer: (answer: string | string[]) => void
+    onItemOrderChange: (ids: string[]) => void
 }
 
 export default function GameScreen({
@@ -72,17 +71,23 @@ export default function GameScreen({
     totalQuestions,
     questionResult,
     questionExpiresAt,
+    questionStartsAt,
     leaderboard,
     isFinalLeaderboard,
     playerName,
     playerEmoji,
+    playerItemOrder,
+    hasSubmittedAnswer = false,
+    initialSelectedAnswers = [],
     onNextQuestion,
     onSendAnswer,
+    onItemOrderChange,
 }: GameScreenProps): JSX.Element {
     const { t } = useTranslation()
     const navigate = useNavigate()
-    const [showingPreview, setShowingPreview] = useState(false)
-    const prevQuestionIndexRef = useRef(-1)
+    const [startsAt, setStartsAt] = useState<number | null>(null)
+    const previewTimer = useQuestionTimer(startsAt, null, false)
+    const prevQuestionIndexRef = useRef(currentQuestionIndex)
 
     useEffect(() => {
         if (
@@ -93,12 +98,12 @@ export default function GameScreen({
         ) {
             prevQuestionIndexRef.current = currentQuestionIndex
 
-            setShowingPreview(true)
-            const timer = setTimeout(() => setShowingPreview(false), PREVIEW_DURATION_MS)
-            return () => clearTimeout(timer)
+            setStartsAt(questionStartsAt)
         }
-        return undefined
-    }, [gameState, currentQuestion, currentQuestionIndex])
+        if (currentQuestionIndex === prevQuestionIndexRef.current && previewTimer === 0) {
+            setStartsAt(null)
+        }
+    }, [gameState, currentQuestion, currentQuestionIndex, questionStartsAt, previewTimer])
 
     function renderContent(): JSX.Element | null {
         if (gameState === GameStateEnum.LEADERBOARD && leaderboard) {
@@ -111,8 +116,8 @@ export default function GameScreen({
             )
         }
 
-        if (showingPreview && currentQuestion) {
-            return <QuestionPreview question={currentQuestion} />
+        if (currentQuestion && previewTimer) {
+            return <QuestionPreview question={currentQuestion} remainingTime={previewTimer} />
         }
         if (gameState === GameStateEnum.PLAYING) {
             return (
@@ -145,7 +150,10 @@ export default function GameScreen({
                     <OrderQuestionContent
                         key={currentQuestion.id}
                         currentQuestionIndex={currentQuestionIndex}
+                        initialHasAnswered={hasSubmittedAnswer}
+                        initialItemOrder={playerItemOrder ?? undefined}
                         isHost={false}
+                        onItemOrderChange={onItemOrderChange}
                         onNextQuestion={onNextQuestion}
                         onSendAnswer={(ids) => onSendAnswer(ids)}
                         options={currentQuestion.options}
@@ -163,6 +171,8 @@ export default function GameScreen({
                 <QuestionCardContent
                     key={currentQuestionIndex}
                     currentQuestionIndex={currentQuestionIndex}
+                    initialHasSubmitted={hasSubmittedAnswer}
+                    initialSelectedAnswers={initialSelectedAnswers}
                     isHost={false}
                     onNextQuestion={onNextQuestion}
                     onSendAnswer={onSendAnswer}

@@ -51,6 +51,10 @@ impl_err! {
         InvalidEmoji = BAD_REQUEST,
         #[error("Player not found")]
         PlayerNotFound = NOT_FOUND,
+        #[error("Command not allowed")]
+        CommandNotAllowed = BAD_REQUEST,
+        #[error("Invalid player secret")]
+        InvalidPlayerSecret = FORBIDDEN,
         #[error("Game session not started")]
         NotStarted = BAD_REQUEST,
         #[error("Game session already started")]
@@ -79,6 +83,8 @@ impl_err! {
         NoQuestionLeft = BAD_REQUEST,
         #[error("Quiz has no questions")]
         NoQuestions = BAD_REQUEST,
+        #[error("No leaderboard to show")]
+        NoLeaderboard = BAD_REQUEST,
     }
 }
 
@@ -111,11 +117,16 @@ pub enum GameSessionStatus {
         /// The index represents the count of correct option relationships (two options in the correct order) and the entry is a counter of how many players had this count of correct options.
         answer_distribution: Vec<usize>,
         abort_handle: Option<JoinHandle<()>>,
+        leaderboard: Option<Arc<Vec<LeaderboardEntry>>>,
     },
-    Closed,
     Leaderboard {
         idx: usize,
+        statistics: Option<Arc<AnswerStatistics>>,
+        leaderboard: Arc<Vec<LeaderboardEntry>>,
+        is_final: bool,
     },
+    Podium(Arc<Vec<LeaderboardEntry>>),
+    Closed,
 }
 
 pub struct GameSessionHost {
@@ -134,6 +145,7 @@ impl From<User> for GameSessionHost {
 
 pub struct GameSessionPlayer {
     id: Uuid,
+    secret: Uuid,
     name: String,
     emoji: Option<&'static Emoji>,
     channel: Box<dyn Channel<PlayerMessage>>,
@@ -224,25 +236,30 @@ pub trait CommandTrait: Sized {
 pub enum HostMessage {
     Ok,
     Error(ErrorResponse),
+    #[serde(rename_all = "camelCase")]
     AddPlayer {
         id: Uuid,
         name: String,
         emoji: Option<&'static Emoji>,
     },
+    #[serde(rename_all = "camelCase")]
     RenamePlayer {
         id: Uuid,
         name: String,
         emoji: Option<&'static Emoji>,
     },
+    #[serde(rename_all = "camelCase")]
     RemovePlayer {
         id: Uuid,
     },
     DisplayQuestion(Arc<DisplayQuestionMessage>),
+    #[serde(rename_all = "camelCase")]
     DisplayLeaderboard {
         leaderboard: Arc<Vec<LeaderboardEntry>>,
         is_final: bool,
     },
-    ShowStatistics(AnswerStatistics),
+    DisplayPodium,
+    ShowStatistics(Arc<AnswerStatistics>),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -318,6 +335,7 @@ pub enum HostCommand {
     Start,
     NextQuestion,
     ShowQuestion { id: Uuid },
+    ShowPodium,
     EndGame,
 }
 
@@ -344,6 +362,13 @@ pub enum PlayerMessage {
     Ok,
     Error(ErrorResponse),
     Kick,
+    #[serde(rename_all = "camelCase")]
+    ConnectResponse {
+        id: Uuid,
+        secret: Uuid,
+        name: String,
+        emoji: Option<&'static Emoji>,
+    },
     Start,
     GameEnded,
     DisplayQuestion(Arc<DisplayQuestionMessage>),
@@ -371,6 +396,7 @@ pub enum PlayerMessage {
 pub enum PlayerCommand {
     Pong { id: u32, timestamp: DateTime<Utc> },
     SetName { name: String, emoji: Option<String> },
+    Reconnect { id: Uuid, secret: Uuid },
     AnswerQuestion { answer: Vec<Uuid> },
 }
 
@@ -399,16 +425,18 @@ pub struct DisplayQuestionMessage {
     #[serde(flatten)]
     options: DisplayQuestionOptions,
     seconds: Option<u32>,
+    index: usize,
     total_questions: usize,
 }
 
 impl DisplayQuestionMessage {
-    pub fn new(value: &Question, total_questions: usize) -> Self {
+    pub fn new(value: &Question, index: usize, total_questions: usize) -> Self {
         Self {
             id: value.model.id,
             question: value.model.question.clone(),
             options: DisplayQuestionOptions::from(&value.options),
             seconds: value.model.r#type.default_answer_duration(),
+            index,
             total_questions,
         }
     }

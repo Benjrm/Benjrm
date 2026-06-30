@@ -43,6 +43,7 @@ interface HostGameScreenProps {
     currentQuestionIndex: number
     totalQuestions: number
     questionExpiresAt: number | null
+    questionStartsAt: number | null
     leaderboard: LeaderboardEntry[] | null
     isFinalLeaderboard: boolean
     players: { id: string; name: string; emoji: string | null }[]
@@ -60,6 +61,7 @@ export default function HostGameScreen({
     currentQuestionIndex,
     totalQuestions,
     questionExpiresAt,
+    questionStartsAt,
     leaderboard,
     isFinalLeaderboard,
     players,
@@ -81,12 +83,21 @@ export default function HostGameScreen({
             currentQuestionIndex !== prevQuestionIndexRef.current
         ) {
             prevQuestionIndexRef.current = currentQuestionIndex
-            setPlayersPreviewing(true)
-            const timer = setTimeout(() => setPlayersPreviewing(false), 2500)
-            return () => clearTimeout(timer)
+            if (questionStartsAt !== null) {
+                const time = questionStartsAt - Date.now()
+                const start = setTimeout(() => setPlayersPreviewing(time > 0))
+                let timer: number | null = null
+                if (time > 0) {
+                    timer = setTimeout(() => setPlayersPreviewing(false), time)
+                }
+                return () => {
+                    clearTimeout(start)
+                    if (timer !== null) clearTimeout(timer)
+                }
+            }
         }
         return undefined
-    }, [gameState, currentQuestionIndex])
+    }, [gameState, currentQuestionIndex, questionStartsAt])
 
     const { statisticOptions, totalAnswers } = useQuestionStatistics(
         currentQuestion,
