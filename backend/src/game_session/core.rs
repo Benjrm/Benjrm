@@ -27,7 +27,7 @@ use {
 impl GameSessions {
     pub fn new() -> Self {
         Self {
-            sessions: RwLock::new(HashMap::new()),
+            sessions: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -147,9 +147,21 @@ impl GameSession {
     }
 
     pub async fn close(&mut self) {
-        self.status = GameSessionStatus::Closed;
+        let status = std::mem::replace(&mut self.status, GameSessionStatus::Closed);
         if let Some(host_channel) = self.host.channel.take() {
             host_channel.close().await;
+        }
+
+        let futures = std::mem::take(&mut self.players)
+            .into_iter()
+            .map(|player| player.channel.close());
+
+        if let GameSessionStatus::Waiting(joining) = status {
+            let joining_futures = joining.into_iter().map(|joining| joining.cancel());
+            let futures = futures.chain(joining_futures);
+            execute_futures(futures).await;
+        } else {
+            execute_futures(futures).await;
         }
     }
 
@@ -251,7 +263,7 @@ impl GameSession {
         &mut self,
         cmd: Command<HostCommand>,
         arc: Arc<Mutex<Self>>,
-        _payload: SessionCode,
+        (sessions, code): &(GameSessions, SessionCode),
     ) -> Result<(), GameSessionError> {
         match cmd.command {
             HostCommand::Pong { .. } => (),
@@ -316,10 +328,11 @@ impl GameSession {
                 execute_futures(player_iterator).await;
             }
             HostCommand::EndGame => {
+                sessions.drop_session(*code).await;
                 self.end_question(Some(true)).await;
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
                     .await;
-                self.status = GameSessionStatus::Closed;
+                self.close().await
             }
         }
         Ok(())
@@ -532,7 +545,7 @@ impl GameSession {
         &mut self,
         cmd: Command<PlayerCommand>,
         _arc: Arc<Mutex<Self>>,
-        id: Uuid,
+        id: &Uuid,
     ) -> Result<(), GameSessionError> {
         match cmd.command {
             PlayerCommand::Pong { .. } => (),
@@ -540,7 +553,7 @@ impl GameSession {
                 let mut name_in_use = false;
                 let mut this_player = None;
                 for player in self.players.iter_mut() {
-                    if player.name == name && player.id != id {
+                    if player.name == name && player.id != *id {
                         name_in_use = true;
 
                         if this_player.is_some() {
@@ -548,7 +561,7 @@ impl GameSession {
                         }
                     }
 
-                    if player.id == id {
+                    if player.id == *id {
                         this_player = Some(player);
 
                         if name_in_use {
@@ -573,7 +586,7 @@ impl GameSession {
                 // handle_player_cmd is only called if the player is already joined, so a SetName command is always a rename
                 self.host
                     .msg(Message::from(&HostMessage::RenamePlayer {
-                        id,
+                        id: *id,
                         name: player.name.clone(),
                         emoji: player.emoji,
                     }))
@@ -581,7 +594,7 @@ impl GameSession {
             }
             PlayerCommand::Reconnect { .. } => Err(GameSessionError::CommandNotAllowed)?,
             PlayerCommand::AnswerQuestion { answer } => {
-                let player = Self::get_player_mut(&mut self.players, id)?;
+                let player = Self::get_player_mut(&mut self.players, *id)?;
                 if matches!(self.status, GameSessionStatus::Leaderboard { .. }) {
                     return Err(GameSessionError::TimeUp);
                 }

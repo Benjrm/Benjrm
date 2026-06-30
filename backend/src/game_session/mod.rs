@@ -89,7 +89,15 @@ impl_err! {
 }
 
 pub struct GameSessions {
-    sessions: RwLock<HashMap<SessionCode, Arc<Mutex<GameSession>>>>,
+    sessions: Arc<RwLock<HashMap<SessionCode, Arc<Mutex<GameSession>>>>>,
+}
+
+impl Clone for GameSessions {
+    fn clone(&self) -> Self {
+        Self {
+            sessions: Arc::clone(&self.sessions),
+        }
+    }
 }
 
 pub struct GameSession {

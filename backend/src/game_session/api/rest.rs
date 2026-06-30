@@ -1,7 +1,7 @@
 use {
     crate::{
         AppData,
-        auth::User,
+        auth::{OptionalUser, User},
         error::Result,
         game_session::{GameSessionError, GameSessionPlayer, SessionCode, api::NewSession},
     },
@@ -40,14 +40,17 @@ async fn create_one_with_quiz(
 
 async fn get_one(
     app_data: web::Data<AppData>,
-    user: User,
+    user: OptionalUser,
     code: web::Path<SessionCode>,
 ) -> Result<HttpResponse> {
     let code = code.into_inner();
     let session = app_data.game_sessions.get_session(code).await?;
 
     let session = session.lock().await;
-    if session.host.user != user {
+    if session.is_closed() {
+        return Err(GameSessionError::InvalidCode.into());
+    }
+    if user.0.as_ref() != Some(&session.host.user) {
         return Err(GameSessionError::Forbidden.into());
     }
     Ok(HttpResponse::Ok().json(session.to_dto(code)))

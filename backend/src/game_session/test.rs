@@ -334,7 +334,7 @@ async fn join() {
                     command: HostCommand::KickPlayer { id: player },
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await
             .unwrap();
@@ -373,7 +373,7 @@ async fn rename_player() {
                 },
             },
             session_arc.clone(),
-            player,
+            &player,
         )
         .await
         .unwrap();
@@ -407,7 +407,7 @@ async fn start() {
                     command: HostCommand::Start,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await;
         assert!(matches!(res, Err(GameSessionError::QuizMissing)));
@@ -427,7 +427,7 @@ async fn start() {
                     command: HostCommand::Start,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await;
         assert!(matches!(res, Err(GameSessionError::NoPlayers)));
@@ -459,7 +459,7 @@ async fn start() {
                     command: HostCommand::Start,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await
             .unwrap();
@@ -480,7 +480,7 @@ async fn start() {
                     command: HostCommand::Start,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await;
         assert!(matches!(res, Err(GameSessionError::AlreadyStarted)));
@@ -507,7 +507,7 @@ async fn kick_on_start() {
                 command: HostCommand::Start,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
         .await
         .unwrap();
@@ -541,7 +541,7 @@ async fn show_question() {
                 command: HostCommand::Start,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
         .await
         .unwrap();
@@ -570,7 +570,7 @@ async fn show_question() {
                     command,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await
             .unwrap();
@@ -642,7 +642,7 @@ async fn play_dummy_quiz() {
                 command: HostCommand::NextQuestion,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
         .await
         .unwrap();
@@ -674,7 +674,7 @@ async fn play_dummy_quiz() {
                 command: PlayerCommand::AnswerQuestion { answer: Vec::new() },
             },
             session_arc.clone(),
-            player_1_uuid,
+            &player_1_uuid,
         )
         .await;
     assert!(matches!(res, Err(GameSessionError::CannotAnswer)));
@@ -686,7 +686,7 @@ async fn play_dummy_quiz() {
                 command: HostCommand::NextQuestion,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
         .await
         .unwrap();
@@ -747,7 +747,7 @@ async fn play_dummy_quiz() {
                 },
             },
             session_arc.clone(),
-            player_1_uuid,
+            &player_1_uuid,
         )
         .await
         .unwrap();
@@ -761,7 +761,7 @@ async fn play_dummy_quiz() {
                 },
             },
             session_arc.clone(),
-            player_2_uuid,
+            &player_2_uuid,
         )
         .await;
     assert!(matches!(res, Err(GameSessionError::InvalidAnswerCount)));
@@ -775,7 +775,7 @@ async fn play_dummy_quiz() {
                 },
             },
             session_arc.clone(),
-            player_3_uuid,
+            &player_3_uuid,
         )
         .await;
     assert!(matches!(res, Err(GameSessionError::InvalidAnswer)));
@@ -855,7 +855,7 @@ async fn play_dummy_quiz() {
                     command: HostCommand::NextQuestion,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await;
 
@@ -885,7 +885,7 @@ async fn play_dummy_quiz() {
                                         command: HostCommand::ShowPodium,
                                     },
                                     session_arc.clone(),
-                                    code,
+                                    &(data.game_sessions.clone(), code),
                                 )
                                 .await
                                 .unwrap();
@@ -939,7 +939,7 @@ async fn play_dummy_quiz() {
                 command: HostCommand::EndGame,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
         .await
         .unwrap();

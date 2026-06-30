@@ -62,6 +62,25 @@ impl FromRequest for User {
     }
 }
 
+pub struct OptionalUser(pub Option<User>);
+
+impl FromRequest for OptionalUser {
+    type Error = actix_web::Error;
+    type Future = Ready<Result<Self, Self::Error>>;
+
+    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+        fn get_user(req: &HttpRequest) -> Result<OptionalUser, AuthError> {
+            let session = Session::extract(req).into_inner()?;
+            let user: Option<SessionUser> = session.get("user")?;
+            match user {
+                Some(user) => Ok(OptionalUser(Some(User { id: user.id }))),
+                None => Ok(OptionalUser(None)),
+            }
+        }
+        ready(get_user(req).map_err(|e| Error::from(e).into()))
+    }
+}
+
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/auth")
