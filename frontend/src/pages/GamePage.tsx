@@ -1,5 +1,5 @@
 import type { JSX } from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { Toaster, toast } from "sonner"
 import { useTranslation } from "react-i18next"
@@ -45,17 +45,6 @@ export default function GamePage(): JSX.Element {
 
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null
 
-    const { playerName, playerEmoji } = useMemo(() => {
-        if (!storageKey) return { playerName: undefined, playerEmoji: undefined }
-        try {
-            const raw = sessionStorage.getItem(storageKey)
-            const parsed = raw ? (JSON.parse(raw) as { name: string; emoji: string }) : null
-            return { playerName: parsed?.name, playerEmoji: parsed?.emoji }
-        } catch {
-            return { playerName: undefined, playerEmoji: undefined }
-        }
-    }, [storageKey])
-
     // Start as true so the overlay shows until the WS is confirmed open.
     // onEveryConnect fires immediately if the socket is already open (normal navigation),
     // so there is no visible flash on non-refresh transitions.
@@ -70,27 +59,20 @@ export default function GamePage(): JSX.Element {
     }, [ws, navigate])
 
     // Player identity
-    const [name, setName] = useState<string>(() => {
-        if (!storageKey) return ""
-        try {
-            const raw = sessionStorage.getItem(storageKey)
-            return raw ? (JSON.parse(raw) as { name: string }).name : ""
-        } catch {
-            return ""
-        }
-    })
-    const [emoji, setEmoji] = useState<string>(() => {
-        const fallback = AVAILABLE_EMOJIS[Math.floor(Math.random() * AVAILABLE_EMOJIS.length)]
-        if (!storageKey) return fallback
-        try {
-            const raw = sessionStorage.getItem(storageKey)
-            return raw ? (JSON.parse(raw) as { emoji: string }).emoji : fallback
-        } catch {
-            return fallback
-        }
-    })
+    const [name, setName] = useState<string>("")
+    const [emoji, setEmoji] = useState<string>(
+        () => AVAILABLE_EMOJIS[Math.floor(Math.random() * AVAILABLE_EMOJIS.length)]
+    )
     const [isEmojiOpen, setIsEmojiOpen] = useState(false)
-    const [nameSaved, setNameSaved] = useState(false)
+    const [nameSaved, setNameSaved] = useState(() => {
+        if (!storageKey) return false
+        try {
+            const raw = sessionStorage.getItem(storageKey)
+            return raw ? (JSON.parse(raw) as { nameSaved: boolean }).nameSaved : false
+        } catch {
+            return false
+        }
+    })
     const [nameError, setNameError] = useState<string | null>(null)
     const [saveNameId, setSaveNameId] = useState<number | null>(null)
 
@@ -120,6 +102,7 @@ export default function GamePage(): JSX.Element {
         if (id === saveNameId) {
             setSaveNameId(null)
             setNameSaved(true)
+            if (storageKey) sessionStorage.setItem(storageKey, JSON.stringify({ nameSaved: true }))
         }
     })
 
@@ -151,8 +134,7 @@ export default function GamePage(): JSX.Element {
         setSaveNameId(id)
         setNameError(null)
         ws.send({ id, command: "setName", payload: { name: trimmed, emoji } })
-        if (storageKey) sessionStorage.setItem(storageKey, JSON.stringify({ name: trimmed, emoji }))
-    }, [name, emoji, storageKey, ws])
+    }, [name, emoji, ws])
 
     const onPickEmoji = useCallback((nextEmoji: string): void => {
         setEmoji(nextEmoji)
@@ -335,9 +317,9 @@ export default function GamePage(): JSX.Element {
                     onItemOrderChange={handleItemOrderChange}
                     onNextQuestion={() => undefined}
                     onSendAnswer={sendAnswer}
-                    playerEmoji={playerEmoji}
+                    playerEmoji={emoji}
                     playerItemOrder={playerItemOrder}
-                    playerName={playerName}
+                    playerName={name}
                     questionExpiresAt={questionExpiresAt}
                     questionResult={questionResult}
                     questionStartsAt={questionStartsAt}
