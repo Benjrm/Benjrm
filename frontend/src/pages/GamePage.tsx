@@ -50,6 +50,7 @@ function GamePageComponent({ code }: { code?: number }): JSX.Element {
     // so there is no visible flash on non-refresh transitions.
     const [isReconnecting, setIsReconnecting] = useState(true)
     const [isInvalidCode, setIsInvalidCode] = useState(false)
+    const [isAlreadyStarted, setIsAlreadyStarted] = useState(false)
     useEffect(() => {
         const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
         const unsubConnect = ws.onEveryConnect(() => setIsReconnecting(false))
@@ -110,6 +111,24 @@ function GamePageComponent({ code }: { code?: number }): JSX.Element {
             if (serverEmoji) setEmoji(serverEmoji)
         }
     )
+
+    useEffect(() => {
+        if (session?.started) {
+            if (storageKey) {
+                try {
+                    const raw = sessionStorage.getItem(storageKey)
+                    const id = raw ? (JSON.parse(raw) as { id: string }).id : null
+                    // skip error handling for started session if we have an id
+                    if (id) return undefined
+                } catch {
+                    // not returning here is enough to trigger the error handling below
+                }
+            }
+            const id = setTimeout(() => setIsAlreadyStarted(true))
+            return () => clearTimeout(id)
+        }
+        return undefined
+    }, [session, storageKey])
 
     useSocketEvent("ok", (_payload, _timing, id) => {
         if (id === saveNameId) {
@@ -290,8 +309,8 @@ function GamePageComponent({ code }: { code?: number }): JSX.Element {
         )
     }
 
-    if (isInvalidCode || session?.started) {
-        return <InvalidCode alreadyStarted={session?.started} codeWithDash={codeWithDash} />
+    if (isInvalidCode || isAlreadyStarted) {
+        return <InvalidCode alreadyStarted={isAlreadyStarted} codeWithDash={codeWithDash} />
     }
 
     return (
