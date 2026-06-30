@@ -5,6 +5,7 @@ export interface AudioContextState {
     isMuted: boolean
     toggleMute: () => void
     setAudioElement: (audio: HTMLAudioElement | null) => void
+    playAudio: () => void
 }
 
 export const AudioContext = createContext<AudioContextState | undefined>(undefined)

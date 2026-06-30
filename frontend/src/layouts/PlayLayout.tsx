@@ -13,33 +13,31 @@ export default function PlayLayout(): JSX.Element {
     useHostWebSocket(isHost ? wsCode : undefined)
     usePlayerWebSocket(!isHost ? wsCode : undefined)
 
-    const { setAudioElement } = useAudio()
+    const { setAudioElement, playAudio } = useAudio()
     const audioRef = useRef<HTMLAudioElement | null>(null)
     useEffect(() => {
-        const audio = new Audio("/Clear_Path_Ahead.mp3")
-        audio.loop = true
-        audioRef.current = audio
-        setAudioElement(audio)
-
-        const start = (): void => {
-            audio.play().catch(() => undefined)
-            document.removeEventListener("click", start)
-            document.removeEventListener("keydown", start)
+        if (audioRef.current === null) {
+            audioRef.current = new Audio("/Clear_Path_Ahead.mp3")
+            audioRef.current.loop = true
         }
+        setAudioElement(audioRef.current)
+        playAudio()
 
-        audio.play().catch(() => {
-            document.addEventListener("click", start)
-            document.addEventListener("keydown", start)
-        })
+        const handleInteraction = (): void => {
+            playAudio()
+            document.removeEventListener("click", handleInteraction)
+            document.removeEventListener("keydown", handleInteraction)
+        }
+        document.addEventListener("click", handleInteraction)
+        document.addEventListener("keydown", handleInteraction)
 
         return () => {
-            document.removeEventListener("click", start)
-            document.removeEventListener("keydown", start)
+            document.removeEventListener("click", handleInteraction)
+            document.removeEventListener("keydown", handleInteraction)
             setAudioElement(null)
-            audio.pause()
-            audio.src = ""
+            audioRef.current?.pause()
         }
-    }, [setAudioElement])
+    }, [setAudioElement, playAudio])
 
     return <Outlet />
 }
