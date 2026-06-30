@@ -9,10 +9,10 @@ import GamePinForm from "@/components/GamePinForm"
 import Lobby from "@/components/Lobby"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
-import useSessionPlayers from "@/api/session/hooks/useSessionPlayers"
 import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import { AVAILABLE_EMOJIS } from "@/hooks/useGameSession"
 import type { Player } from "@/hooks/useGameSession"
+import { getSessionPlayers } from "@/api/session"
 
 export default function WaitingRoom(): JSX.Element {
     const { t } = useTranslation()
@@ -29,7 +29,6 @@ export default function WaitingRoom(): JSX.Element {
 
     const { isLoading: isLoadingSession, isHost, isPlayer, isInvalidCode } = useSessionStatus(code)
     const { data: quiz, isLoading: isLoadingQuiz } = useSessionQuiz(isHost ? code : undefined)
-    const { data: initialPlayers } = useSessionPlayers(isHost ? code : undefined)
 
     const ws = useWebSocketContext()
 
@@ -63,45 +62,52 @@ export default function WaitingRoom(): JSX.Element {
 
     // Player list (used by host to display joined players)
     const [players, setPlayers] = useState<Player[]>([])
-    const playersInitialized = useRef(false)
-    useEffect(() => {
-        if (initialPlayers && !playersInitialized.current) {
-            playersInitialized.current = true
-            setPlayers(initialPlayers)
-        }
-    }, [initialPlayers])
 
-    // WS connection tracking (player role only — determines when lobby is ready to show)
-    const [wsConnected, setWsConnected] = useState<boolean | undefined>(undefined)
+    // Start as true so the overlay shows until the WS is confirmed open.
+    // onEveryConnect fires immediately if the socket is already open (normal navigation),
+    // so there is no visible flash on non-refresh transitions.
+    const [isReconnecting, setIsReconnecting] = useState(true)
+    const [connectionFailed, setConnectionFailed] = useState(false)
     useEffect(() => {
-        if (!isPlayer) return undefined
-        const unsubOpen = ws.onConnect(() => setWsConnected(true))
-        const unsubFail = ws.onConnectFail(() => setWsConnected(false))
-        return (): void => {
-            unsubOpen()
-            unsubFail()
+        const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
+        const unsubConnect = ws.onEveryConnect(async () => {
+            setIsReconnecting(false)
+            setConnectionFailed(false)
+            if (isHost && code) setPlayers(await getSessionPlayers(code))
+        })
+        const unsubConnectFail = ws.onConnectFail(() => setConnectionFailed(true))
+        return () => {
+            unsubDisconnect()
+            unsubConnect()
+            unsubConnectFail()
         }
-    }, [isPlayer, ws])
+    }, [ws, isHost, code])
 
-    // Re-send saved name after WS reconnects
+    // Re-send saved name after WS reconnects (skipped when reconnect credentials exist)
     const nameSavedRef = useRef(nameSaved)
     useEffect(() => {
         nameSavedRef.current = nameSaved
     }, [nameSaved])
     useEffect(() => {
         if (!storageKey || isHost) return undefined
-        const unsub = ws.onConnect((): void => {
+        return ws.onEveryConnect((): void => {
             if (!nameSavedRef.current) return
             const savedRaw = sessionStorage.getItem(storageKey)
             if (!savedRaw) return
             try {
-                const saved = JSON.parse(savedRaw) as { name: string; emoji: string }
+                const saved = JSON.parse(savedRaw) as {
+                    name: string
+                    emoji: string
+                    id?: string
+                    secret?: string
+                }
+                // Skip if reconnect credentials exist — usePlayerWebSocket already sent reconnect
+                if (saved.id && saved.secret) return
                 ws.send({ command: "setName", payload: { name: saved.name, emoji: saved.emoji } })
             } catch {
                 // ignore malformed sessionStorage data
             }
         })
-        return unsub
     }, [storageKey, isHost, ws])
 
     // Player list socket events
@@ -125,12 +131,43 @@ export default function WaitingRoom(): JSX.Element {
         setPlayers((prev) => prev.filter((p) => p.id !== id))
     })
 
-    // Game started: players navigate to game page
-    useSocketEvent("start", () => {
+    // Navigate to game page — shared helper for start and fallback game events
+    const navigateToGame = useCallback(() => {
         if (!isPlayer) return
         if (code !== undefined) sessionStorage.setItem(`gameActive:${code}`, "1")
         navigate(`/play/${codeParam ?? ""}/game`)
-    })
+    }, [isPlayer, code, codeParam, navigate])
+
+    // Game started: players navigate to game page
+    useSocketEvent("start", navigateToGame)
+
+    // Fallback: if `start` was missed while reconnecting (host started during the refresh window),
+    // any subsequent game event signals the game is live — navigate now so the player can participate.
+    useSocketEvent("displayQuestion", navigateToGame)
+    useSocketEvent("displayLeaderboard", navigateToGame)
+    useSocketEvent("questionResult", navigateToGame)
+
+    // Persist player credentials for reconnect
+    useSocketEvent(
+        "connectResponse",
+        ({ id: playerId, secret, name: serverName, emoji: serverEmoji }) => {
+            if (!storageKey) return
+            try {
+                const existing = JSON.parse(sessionStorage.getItem(storageKey) ?? "{}")
+                sessionStorage.setItem(
+                    storageKey,
+                    JSON.stringify({ ...existing, id: playerId, secret })
+                )
+            } catch {
+                // ignore
+            }
+            // connectResponse confirms the player is in the session (initial join or reconnect).
+            // Restore lobby state so a refresh doesn't show the join form again.
+            setNameSaved(true)
+            if (serverName) setName(serverName)
+            if (serverEmoji) setEmoji(serverEmoji)
+        }
+    )
 
     // Server acknowledgements
     useSocketEvent("ok", (_payload, _timing, id) => {
@@ -152,7 +189,9 @@ export default function WaitingRoom(): JSX.Element {
         } else if (id === pendingStartId) {
             setPendingStartId(null)
             toast.error(payload.message || t("lobby.errors.failedToStart"))
-        } else {
+        } else if (id === undefined) {
+            // Only show toast for server-initiated errors (no id).
+            // Errors with unknown ids come from internal commands (e.g. reconnect) handled elsewhere.
             toast.error(payload.message || t("lobby.errors.somethingWentWrong"))
         }
     })
@@ -202,7 +241,7 @@ export default function WaitingRoom(): JSX.Element {
         ws.send({ id, command: "start" })
     }, [players.length, ws, t])
 
-    if (isLoadingSession || isLoadingQuiz || (isPlayer && wsConnected === undefined)) {
+    if (isLoadingSession || isLoadingQuiz || isReconnecting) {
         return (
             <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-4 py-24">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
@@ -211,7 +250,7 @@ export default function WaitingRoom(): JSX.Element {
         )
     }
 
-    if (isInvalidCode || !code || (isPlayer && wsConnected === false)) {
+    if (isInvalidCode || !code || connectionFailed) {
         return (
             <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-6 py-24">
                 <div className="w-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">

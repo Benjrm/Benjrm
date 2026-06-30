@@ -4,9 +4,9 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            Channel, ChannelError, Command, DisplayQuestionMessage, DisplayQuestionOptions,
-            GameSession, GameSessionError, HostCommand, HostMessage, Message, PlayerCommand,
-            PlayerMessage, api::ws::WsChannelError,
+            AnswerStatistics, Channel, ChannelError, Command, DisplayQuestionMessage,
+            DisplayQuestionOptions, GameSession, GameSessionError, HostCommand, HostMessage,
+            Message, PlayerCommand, PlayerMessage, api::ws::WsChannelError,
         },
         question::{
             NewQuestion, NewQuestionOptions, Question,
@@ -137,11 +137,26 @@ async fn dummy_player(
     name: &str,
 ) -> (Uuid, mpsc::Receiver<PlayerMessage>) {
     let player = Uuid::new_v4();
-    let (player_channel, _, player_rx) = DummyChanel::new();
+    let (player_channel, _, mut player_rx) = DummyChanel::new();
     session.check_add_player(name).unwrap();
     session
-        .add_player(player, player_channel, name.into(), None)
+        .add_player(None, player, player_channel, name.into(), None)
         .await;
+
+    match player_rx.recv().await.unwrap() {
+        PlayerMessage::ConnectResponse {
+            id,
+            secret,
+            name: response_name,
+            emoji,
+        } => {
+            assert_eq!(id, player);
+            assert_eq!(response_name, name);
+            assert_eq!(emoji, None);
+            assert_ne!(id, secret);
+        }
+        x => panic!("invalid message: {x:?}"),
+    }
 
     match host_rx.recv().await.unwrap() {
         HostMessage::AddPlayer {
@@ -284,12 +299,17 @@ async fn join() {
         session.check_add_player("cool name").unwrap();
         session
             .add_player(
+                None,
                 player,
                 player_channel,
                 "cool name".into(),
                 Some(emojis::get("😀").unwrap()),
             )
             .await;
+        assert!(matches!(
+            player_rx.recv().await.unwrap(),
+            PlayerMessage::ConnectResponse { .. }
+        ));
 
         match host_rx.recv().await.unwrap() {
             HostMessage::AddPlayer { id, name, emoji } => {
@@ -416,8 +436,12 @@ async fn start() {
         let (player_channel, _, mut player_rx) = DummyChanel::new();
         session.check_add_player("test").unwrap();
         session
-            .add_player(player, player_channel, "test".into(), None)
+            .add_player(None, player, player_channel, "test".into(), None)
             .await;
+        assert!(matches!(
+            player_rx.recv().await.unwrap(),
+            PlayerMessage::ConnectResponse { .. }
+        ));
 
         match rx.recv().await.unwrap() {
             HostMessage::AddPlayer { id, name, emoji } => {
@@ -556,6 +580,7 @@ async fn show_question() {
             match rx.recv().await.unwrap() {
                 HostMessage::DisplayQuestion(question) => host_question = Some(question),
                 HostMessage::DisplayLeaderboard { .. } => (),
+                HostMessage::ShowStatistics { .. } => (),
                 x => panic!("invalid message: {x:?}"),
             }
         }
@@ -758,6 +783,20 @@ async fn play_dummy_quiz() {
     drop(session);
 
     match host_rx.recv().await.unwrap() {
+        HostMessage::ShowStatistics(stats) => match &*stats {
+            AnswerStatistics::SingleChoice(stats) => {
+                assert_eq!(stats.answers, 1);
+                assert_eq!(stats.answer_statistic.len(), answers.len());
+                for (statistic, answer) in stats.answer_statistic.iter().zip(answers) {
+                    assert_eq!(statistic.option, answer)
+                }
+            }
+            x => panic!("invalid stats: {x:?}"),
+        },
+        x => panic!("invalid message: {x:?}"),
+    }
+
+    match host_rx.recv().await.unwrap() {
         HostMessage::DisplayLeaderboard {
             leaderboard,
             is_final,
@@ -808,7 +847,7 @@ async fn play_dummy_quiz() {
     let mut session = session_arc.lock().await;
 
     let mut first = true;
-    loop {
+    'outer: loop {
         let res = session
             .handle_host_cmd(
                 Command {
@@ -821,39 +860,53 @@ async fn play_dummy_quiz() {
             .await;
 
         if !first {
-            match host_rx.recv().await.unwrap() {
-                HostMessage::DisplayLeaderboard { is_final, .. } => {
-                    assert!(matches!(
-                        player_1_rx.recv().await.unwrap(),
-                        PlayerMessage::QuestionResult { .. }
-                    ));
-                    assert!(matches!(
-                        player_2_rx.recv().await.unwrap(),
-                        PlayerMessage::QuestionResult { .. }
-                    ));
-                    assert!(matches!(
-                        player_3_rx.recv().await.unwrap(),
-                        PlayerMessage::QuestionResult { .. }
-                    ));
-
-                    if is_final {
-                        assert!(matches!(res, Err(GameSessionError::NoQuestionLeft)));
+            for _ in 0..2 {
+                match host_rx.recv().await.unwrap() {
+                    HostMessage::DisplayLeaderboard { is_final, .. } => {
                         assert!(matches!(
                             player_1_rx.recv().await.unwrap(),
-                            PlayerMessage::DisplayLeaderboard { .. }
+                            PlayerMessage::QuestionResult { .. }
                         ));
                         assert!(matches!(
                             player_2_rx.recv().await.unwrap(),
-                            PlayerMessage::DisplayLeaderboard { .. }
+                            PlayerMessage::QuestionResult { .. }
                         ));
                         assert!(matches!(
                             player_3_rx.recv().await.unwrap(),
-                            PlayerMessage::DisplayLeaderboard { .. }
+                            PlayerMessage::QuestionResult { .. }
                         ));
-                        break;
+
+                        if is_final {
+                            assert!(matches!(res, Err(GameSessionError::NoQuestionLeft)));
+                            session
+                                .handle_host_cmd(
+                                    Command {
+                                        id: None,
+                                        command: HostCommand::ShowPodium,
+                                    },
+                                    session_arc.clone(),
+                                    code,
+                                )
+                                .await
+                                .unwrap();
+                            assert!(matches!(
+                                player_1_rx.recv().await.unwrap(),
+                                PlayerMessage::DisplayLeaderboard { .. }
+                            ));
+                            assert!(matches!(
+                                player_2_rx.recv().await.unwrap(),
+                                PlayerMessage::DisplayLeaderboard { .. }
+                            ));
+                            assert!(matches!(
+                                player_3_rx.recv().await.unwrap(),
+                                PlayerMessage::DisplayLeaderboard { .. }
+                            ));
+                            break 'outer;
+                        }
                     }
+                    HostMessage::ShowStatistics(_) => (),
+                    x => panic!("invalid message: {x:?}"),
                 }
-                x => panic!("invalid message: {x:?}"),
             }
         }
 

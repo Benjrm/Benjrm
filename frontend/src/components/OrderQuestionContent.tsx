@@ -38,8 +38,11 @@ interface Option {
 
 export interface OrderQuestionContentProps {
     currentQuestionIndex?: number
+    initialItemOrder?: string[]
+    initialHasAnswered?: boolean
     isHost?: boolean
     onNextQuestion?: () => void
+    onItemOrderChange?: (ids: string[]) => void
     options?: Option[]
     playerName?: string
     playerEmoji?: string
@@ -89,8 +92,11 @@ function SortableItem({ id, text }: { id: string; text: string }): JSX.Element {
 
 export default function OrderQuestionContent({
     currentQuestionIndex = 0,
+    initialItemOrder,
+    initialHasAnswered = false,
     isHost = false,
     onNextQuestion,
+    onItemOrderChange,
     options = [],
     playerName,
     playerEmoji,
@@ -101,8 +107,16 @@ export default function OrderQuestionContent({
     onSendAnswer,
 }: OrderQuestionContentProps): JSX.Element {
     const { t } = useTranslation()
-    const [items, setItems] = useState<Option[]>(options)
-    const [hasAnswered, setHasAnswered] = useState(false)
+    const [items, setItems] = useState<Option[]>(() => {
+        if (initialItemOrder && initialItemOrder.length > 0) {
+            const ordered = initialItemOrder
+                .map((id) => options.find((o) => o.id === id))
+                .filter((o): o is Option => o !== undefined)
+            return ordered.length === options.length ? ordered : options
+        }
+        return options
+    })
+    const [hasAnswered, setHasAnswered] = useState(initialHasAnswered)
     const timeLeft = useQuestionTimer(questionExpiresAt ?? null, secondsToAnswer ?? null)
 
     // Automatisches Senden, wenn die Zeit abläuft
@@ -143,7 +157,9 @@ export default function OrderQuestionContent({
             setItems((prevItems) => {
                 const oldIndex = prevItems.findIndex((item) => item.id === active.id)
                 const newIndex = prevItems.findIndex((item) => item.id === over.id)
-                return arrayMove(prevItems, oldIndex, newIndex)
+                const next = arrayMove(prevItems, oldIndex, newIndex)
+                onItemOrderChange?.(next.map((i) => i.id))
+                return next
             })
         }
     }
@@ -173,6 +189,7 @@ export default function OrderQuestionContent({
 
                 <TimerBar
                     className="mb-6"
+                    fastAnimation={false}
                     timeLeft={timeLeft}
                     totalSeconds={secondsToAnswer ?? null}
                 />

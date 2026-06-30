@@ -193,6 +193,7 @@
     "game": {
         "starting": "Spiel startet...",
         "getReady": "Mach dich bereit!",
+        "reconnecting": "Verbindung wird wiederhergestellt…",
         "hostClosed": "Host hat die Lobby geschlossen",
         "hostClosedLoading": "Host hat die Lobby geschlossen...",
         "playerLeft": "{{name}} hat das Spiel verlassen",
@@ -231,12 +232,28 @@
         "host": {
             "dashboard": "Host Dashboard",
             "players": "{{count}} Spieler",
+            "results": "Ergebnisse",
+            "answeredCount": "{{count}}/{{total}} beantwortet",
+            "choiceQuestion": {
+                "voteCount_one": "{{count}} Stimme",
+                "voteCount_other": "{{count}} Stimmen"
+            },
             "timeLeft": "{{secs}}s übrig",
             "timesUp": "Zeit abgelaufen!",
             "showPodium": "Podium zeigen →",
             "endGame": "Spiel beenden & verlassen",
             "showLeaderboard": "Rangliste zeigen →",
-            "nextQuestion": "Nächste Frage →"
+            "nextQuestion": "Nächste Frage →",
+            "orderQuestion": {
+                "correctOrder": "Richtige Reihenfolge",
+                "resultsBreakdown": "Ergebnisübersicht",
+                "correctStats_one": "der Spieler haben die richtige Antwort gegeben ({{count}} Spieler)",
+                "correctStats_other": "der Spieler haben die richtige Antwort gegeben ({{count}} Spieler)",
+                "perfect": "Perfekt ({{pairs}}/{{total}} Paare)",
+                "pairsCorrect": "{{pairs}}/{{total}} Paare richtig",
+                "playerCount_one": "{{count}} Spieler",
+                "playerCount_other": "{{count}} Spieler"
+            }
         },
         "player": {
             "host": "Host",

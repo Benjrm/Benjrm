@@ -8,10 +8,9 @@ import { useAudio } from "@/context/AudioContext"
 export default function PlayLayout(): JSX.Element {
     const codeParam = useParams().code
     const code = codeParam !== null ? Number(codeParam) || undefined : undefined
-    const { isLoading, isHost } = useSessionStatus(code)
-    const wsCode = isLoading ? undefined : code
-    useHostWebSocket(isHost ? wsCode : undefined)
-    usePlayerWebSocket(!isHost ? wsCode : undefined)
+    const { isHost } = useSessionStatus(code)
+    useHostWebSocket(isHost ? code : undefined)
+    usePlayerWebSocket(isHost ? undefined : code)
 
     const { setAudioElement, playAudio } = useAudio()
     const audioRef = useRef<HTMLAudioElement | null>(null)

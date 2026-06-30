@@ -3,11 +3,15 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            Channel, Command, DisplayQuestionMessage, GameSession, GameSessionError,
-            GameSessionHost, GameSessionPlayer, GameSessionStatus, GameSessions, HostCommand,
-            HostMessage, LeaderboardEntry, Message, PlayerCommand, PlayerMessage, SessionCode,
+            AnswerStatistic, AnswerStatistics, Channel, ChoiceStatistics, Command,
+            DisplayQuestionMessage, GameSession, GameSessionError, GameSessionHost,
+            GameSessionPlayer, GameSessionStatus, GameSessions, HostCommand, HostMessage,
+            LeaderboardEntry, Message, OrderStatistics, PlayerCommand, PlayerMessage, SessionCode,
         },
-        question::{Question, QuestionFilter, QuestionOptions},
+        question::{
+            Question, QuestionFilter, QuestionOptions,
+            answer::{choice::entity::AnswerChoiceModel, order::AnswerOrderModel},
+        },
         quiz::Quiz,
     },
     actix_web::rt,
@@ -159,7 +163,7 @@ impl GameSession {
         Ok(())
     }
 
-    /// Set the host channel and close the old one.
+    /// Set the host channel and close the old one. Informs the new host of the currect state.
     /// Must only be called after successfully calling [`GameSession::check_set_host_channel`].
     pub async fn set_host_channel<T: Channel<HostMessage> + 'static>(&mut self, channel: T) {
         let channel = Box::new(channel);
@@ -167,6 +171,80 @@ impl GameSession {
             old_channel.close().await;
         }
         self.host.channel = Some(channel);
+        self.update_host().await;
+    }
+
+    /// send all messages that are required to restore the state to the host.
+    async fn update_host(&mut self) {
+        let Some(quiz) = &self.quiz else { return };
+
+        async fn send_leaderboard(
+            host: &mut GameSessionHost,
+            leaderboard: &Arc<Vec<LeaderboardEntry>>,
+            is_final: bool,
+        ) {
+            host.msg(Message::from(&HostMessage::DisplayLeaderboard {
+                leaderboard: Arc::clone(leaderboard),
+                is_final,
+            }))
+            .await;
+        }
+
+        let (idx, timing) = match &self.status {
+            GameSessionStatus::Waiting(_) => return,
+            GameSessionStatus::Started => return,
+            GameSessionStatus::Question { idx, started, .. } => (*idx, Some(*started)),
+            GameSessionStatus::Leaderboard { idx, .. } => (*idx, None),
+            GameSessionStatus::Podium(leaderboard) => {
+                send_leaderboard(&mut self.host, leaderboard, true).await;
+                self.host
+                    .msg(Message::from(&HostMessage::DisplayPodium))
+                    .await;
+                return;
+            }
+            GameSessionStatus::Closed => return,
+        };
+
+        let question = Arc::new(DisplayQuestionMessage::new(
+            &quiz.questions[idx],
+            idx,
+            quiz.questions.len(),
+        ));
+
+        // send leaderboard before question if currently on question screen
+        if let GameSessionStatus::Question {
+            leaderboard: Some(leaderboard),
+            ..
+        } = &self.status
+        {
+            send_leaderboard(&mut self.host, leaderboard, false).await;
+        }
+
+        self.host
+            .msg(Message {
+                id: None,
+                msg: &HostMessage::DisplayQuestion(question),
+                timing,
+            })
+            .await;
+
+        // send leaderboard after question if question has finished
+        if let GameSessionStatus::Leaderboard {
+            statistics,
+            leaderboard,
+            is_final,
+            ..
+        } = &self.status
+        {
+            send_leaderboard(&mut self.host, leaderboard, *is_final).await;
+            if let Some(statistics) = statistics {
+                self.host
+                    .msg(Message::from(&HostMessage::ShowStatistics(Arc::clone(
+                        statistics,
+                    ))))
+                    .await;
+            }
+        }
     }
 
     pub async fn handle_host_cmd(
@@ -213,6 +291,30 @@ impl GameSession {
             }
             HostCommand::NextQuestion => self.next_question(None, arc).await?,
             HostCommand::ShowQuestion { id } => self.next_question(Some(id), arc).await?,
+            HostCommand::ShowPodium => {
+                let leaderboard = match &self.status {
+                    GameSessionStatus::Leaderboard { leaderboard, .. } => Arc::clone(leaderboard),
+                    _ => return Err(GameSessionError::NoLeaderboard),
+                };
+                self.status = GameSessionStatus::Podium(Arc::clone(&leaderboard));
+
+                self.host
+                    .msg(Message::from(&HostMessage::DisplayPodium))
+                    .await;
+
+                let player_iterator = self.players.iter_mut().map(|player| {
+                    let leaderboard = Arc::clone(&leaderboard);
+                    async move {
+                        player
+                            .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
+                                leaderboard,
+                                is_final: true,
+                            }))
+                            .await;
+                    }
+                });
+                execute_futures(player_iterator).await;
+            }
             HostCommand::EndGame => {
                 self.end_question(Some(true)).await;
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
@@ -229,7 +331,6 @@ impl GameSession {
         arc: Arc<Mutex<Self>>,
     ) -> Result<(), GameSessionError> {
         match &mut self.status {
-            GameSessionStatus::Closed => return Err(GameSessionError::InvalidCode),
             GameSessionStatus::Waiting(_) => return Err(GameSessionError::NotStarted),
             GameSessionStatus::Started | GameSessionStatus::Leaderboard { .. } => (),
             GameSessionStatus::Question { abort_handle, .. } => {
@@ -238,6 +339,8 @@ impl GameSession {
                 }
                 self.end_question(None).await;
             }
+            GameSessionStatus::Podium(_) => return Err(GameSessionError::NoQuestionLeft),
+            GameSessionStatus::Closed => return Err(GameSessionError::InvalidCode),
         }
 
         let quiz = self.quiz.clone().ok_or(GameSessionError::QuizMissing)?;
@@ -249,7 +352,7 @@ impl GameSession {
                 .ok_or(GameSessionError::QuestionNotFound)?
         } else {
             let question = match self.status {
-                GameSessionStatus::Leaderboard { idx } => idx + 1,
+                GameSessionStatus::Leaderboard { idx, .. } => idx + 1,
                 _ => 0,
             };
             if question >= quiz.questions.len() {
@@ -277,16 +380,25 @@ impl GameSession {
                     }
                 })
             });
+
+        let leaderboard = match &self.status {
+            GameSessionStatus::Leaderboard { leaderboard, .. } => Some(Arc::clone(leaderboard)),
+            _ => None,
+        };
+        let options_len = quiz.questions[question].options.len();
         self.status = GameSessionStatus::Question {
             idx: question,
             started,
             answers: 0,
+            answer_distribution: vec![0; options_len],
             abort_handle,
+            leaderboard,
         };
 
         let total_questions = quiz.questions.len();
         let question = Arc::new(DisplayQuestionMessage::new(
             &quiz.questions[question],
+            question,
             total_questions,
         ));
 
@@ -321,6 +433,7 @@ impl GameSession {
     /// Must only be called after successfully calling [`GameSession::check_add_player`].
     pub async fn add_player<T: Channel<PlayerMessage> + 'static>(
         &mut self,
+        cmd_id: Option<u64>,
         id: Uuid,
         channel: T,
         name: String,
@@ -331,15 +444,30 @@ impl GameSession {
         {
             joining.swap_remove(pos);
         }
+        let secret = Uuid::new_v4();
 
-        let player = GameSessionPlayer {
+        let mut player = GameSessionPlayer {
             id,
+            secret,
             name,
             emoji,
             channel: Box::new(channel),
             points: 0,
             last_question: None,
         };
+
+        player
+            .msg(Message {
+                id: cmd_id,
+                msg: &PlayerMessage::ConnectResponse {
+                    id,
+                    secret,
+                    name: player.name.clone(),
+                    emoji,
+                },
+                timing: None,
+            })
+            .await;
 
         self.host
             .msg(Message::from(&HostMessage::AddPlayer {
@@ -350,6 +478,54 @@ impl GameSession {
             .await;
 
         self.players.push(player);
+    }
+
+    /// send messages to restore the current state to a player.
+    /// [`PlayerMessage::QuestionResult`] is not included because it's basically a response to [`PlayerCommand::AnswerQuestion`] and is not persisted.
+    pub async fn update_player(&mut self, player_id: Uuid) {
+        let Ok(player) = Self::get_player_mut(&mut self.players, player_id) else {
+            return;
+        };
+        let Some(quiz) = &self.quiz else {
+            return;
+        };
+
+        match &self.status {
+            GameSessionStatus::Waiting(_) => (),
+            GameSessionStatus::Started | GameSessionStatus::Leaderboard { .. } => {
+                player.msg(Message::from(&PlayerMessage::Start)).await
+            }
+            GameSessionStatus::Question { idx, started, .. } => {
+                player.msg(Message::from(&PlayerMessage::Start)).await;
+                // TODO: remove (workaround for frontend registering listeners too late)
+                tokio::time::sleep(Duration::from_millis(200)).await;
+
+                let question = Arc::new(DisplayQuestionMessage::new(
+                    &quiz.questions[*idx],
+                    *idx,
+                    quiz.questions.len(),
+                ));
+                player
+                    .msg(Message {
+                        id: None,
+                        msg: &PlayerMessage::DisplayQuestion(question),
+                        timing: Some(*started),
+                    })
+                    .await;
+            }
+            GameSessionStatus::Podium(leaderboard) => {
+                player.msg(Message::from(&PlayerMessage::Start)).await;
+                // TODO: remove (workaround for frontend registering listeners too late)
+                tokio::time::sleep(Duration::from_millis(200)).await;
+                player
+                    .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
+                        leaderboard: Arc::clone(leaderboard),
+                        is_final: true,
+                    }))
+                    .await;
+            }
+            GameSessionStatus::Closed => player.msg(Message::from(&PlayerMessage::GameEnded)).await,
+        }
     }
 
     pub async fn handle_player_cmd(
@@ -403,6 +579,7 @@ impl GameSession {
                     }))
                     .await;
             }
+            PlayerCommand::Reconnect { .. } => Err(GameSessionError::CommandNotAllowed)?,
             PlayerCommand::AnswerQuestion { answer } => {
                 let player = Self::get_player_mut(&mut self.players, id)?;
                 if matches!(self.status, GameSessionStatus::Leaderboard { .. }) {
@@ -412,7 +589,9 @@ impl GameSession {
                     idx,
                     started,
                     answers,
+                    answer_distribution,
                     abort_handle,
+                    ..
                 } = &mut self.status
                 else {
                     return Err(GameSessionError::NoCurrentQuestion);
@@ -420,8 +599,10 @@ impl GameSession {
                 let quiz = self.quiz.as_mut().ok_or(GameSessionError::QuizMissing)?;
                 let question = &quiz.questions[*idx];
 
-                let mut points = question.options.get_points(&answer)?;
+                let correct = question.options.get_correct(&answer)?;
+                let mut points = question.options.get_points(correct);
 
+                let mut answer_in_time = true;
                 if let Some(duration) = question.model.r#type.default_answer_duration() {
                     let elapsed = (Utc::now() - *started).num_milliseconds() as f64;
                     let max_time = (duration as f64) * 1000f64;
@@ -430,16 +611,42 @@ impl GameSession {
                         points = (points as f64 * factor.min(1.0)) as u32;
                     } else {
                         points = 0;
+                        answer_in_time = false;
                     }
                 }
 
                 player.add_points(points, question.model.id)?;
-                *answers += 1;
-                if *answers == self.players.len() {
-                    if let Some(handle) = abort_handle {
-                        handle.abort();
+
+                if answer_in_time {
+                    match &question.options {
+                        QuestionOptions::Slide => (),
+                        QuestionOptions::SingleChoice(_) | QuestionOptions::MultipleChoice(_) => {
+                            let mut visited = Vec::with_capacity(answer.len());
+                            for answer in answer {
+                                if let Some(pos) = question.options.position(answer)
+                                    && !visited.contains(&pos)
+                                {
+                                    if let Some(item) = answer_distribution.get_mut(pos) {
+                                        *item += 1;
+                                    }
+                                    visited.push(pos);
+                                }
+                            }
+                        }
+                        QuestionOptions::Order(_) => {
+                            if let Some(item) = answer_distribution.get_mut(correct) {
+                                *item += 1;
+                            }
+                        }
                     }
-                    self.end_question(None).await;
+
+                    *answers += 1;
+                    if *answers == self.players.len() {
+                        if let Some(handle) = abort_handle {
+                            handle.abort();
+                        }
+                        self.end_question(None).await;
+                    }
                 }
             }
         }
@@ -465,7 +672,13 @@ impl GameSession {
     }
 
     pub async fn end_question(&mut self, is_final: Option<bool>) {
-        let GameSessionStatus::Question { idx, .. } = &self.status else {
+        let GameSessionStatus::Question {
+            idx,
+            answers,
+            answer_distribution,
+            ..
+        } = &self.status
+        else {
             return;
         };
         let Some(quiz) = &self.quiz else {
@@ -474,8 +687,31 @@ impl GameSession {
 
         let is_final = is_final.unwrap_or(*idx + 1 >= quiz.questions.len());
         let question = &quiz.questions[*idx];
-        let correct_answers = Arc::new(question.options.correct_answer_list());
 
+        let statistics =
+            match &question.options {
+                QuestionOptions::Slide => None,
+                QuestionOptions::SingleChoice(models) => Some(AnswerStatistics::SingleChoice(
+                    ChoiceStatistics::new(models, answer_distribution, *answers),
+                )),
+                QuestionOptions::MultipleChoice(models) => Some(AnswerStatistics::MultipleChoice(
+                    ChoiceStatistics::new(models, answer_distribution, *answers),
+                )),
+                QuestionOptions::Order(models) => Some(AnswerStatistics::Order(
+                    OrderStatistics::new(models, answer_distribution, *answers),
+                )),
+            };
+
+        let statistics = statistics.map(Arc::new);
+        if let Some(statistics) = &statistics {
+            self.host
+                .msg(Message::from(&HostMessage::ShowStatistics(Arc::clone(
+                    statistics,
+                ))))
+                .await;
+        }
+
+        let correct_answers = Arc::new(question.options.correct_answer_list());
         let mut leaderboard = Vec::with_capacity(self.players.len());
 
         let iterator = self.players.iter_mut().map(|player| {
@@ -503,30 +739,20 @@ impl GameSession {
         execute_futures(iterator).await;
 
         leaderboard.sort();
-        self.status = GameSessionStatus::Leaderboard { idx: *idx };
-
         let leaderboard = Arc::new(leaderboard);
+        self.status = GameSessionStatus::Leaderboard {
+            idx: *idx,
+            statistics,
+            leaderboard: Arc::clone(&leaderboard),
+            is_final,
+        };
+
         self.host
             .msg(Message::from(&HostMessage::DisplayLeaderboard {
-                leaderboard: Arc::clone(&leaderboard),
+                leaderboard,
                 is_final,
             }))
             .await;
-
-        if is_final {
-            let player_iterator = self.players.iter_mut().map(|player| {
-                let leaderboard = Arc::clone(&leaderboard);
-                async move {
-                    player
-                        .msg(Message::from(&PlayerMessage::DisplayLeaderboard {
-                            leaderboard,
-                            is_final,
-                        }))
-                        .await;
-                }
-            });
-            execute_futures(player_iterator).await;
-        }
     }
 }
 
@@ -541,6 +767,33 @@ impl GameSessionHost {
 }
 
 impl GameSessionPlayer {
+    pub fn check_set_channel(&self, secret: Uuid) -> Result<(), GameSessionError> {
+        if self.secret != secret {
+            return Err(GameSessionError::InvalidPlayerSecret);
+        }
+        Ok(())
+    }
+
+    pub async fn set_channel<T: Channel<PlayerMessage> + 'static>(
+        &mut self,
+        cmd_id: Option<u64>,
+        channel: T,
+    ) {
+        let old_channel = std::mem::replace(&mut self.channel, Box::new(channel));
+        old_channel.close().await;
+        self.msg(Message {
+            id: cmd_id,
+            msg: &PlayerMessage::ConnectResponse {
+                id: self.id,
+                secret: self.secret,
+                name: self.name.clone(),
+                emoji: self.emoji,
+            },
+            timing: None,
+        })
+        .await;
+    }
+
     pub async fn msg(&mut self, msg: Message<'_, PlayerMessage>) {
         if let Err(err) = self.channel.send(msg).await {
             log::error!("failed to send message to player {}: {err:?}", self.id)
@@ -571,8 +824,19 @@ impl GameSessionPlayer {
 }
 
 impl QuestionOptions {
-    pub fn get_points(&self, answer: &[Uuid]) -> Result<u32, GameSessionError> {
+    pub fn get_points(&self, correct: usize) -> u32 {
         let total_points = 1000;
+        let points_per_option = match self {
+            QuestionOptions::Slide => 0,
+            QuestionOptions::SingleChoice(_) => total_points,
+            QuestionOptions::MultipleChoice(models) => total_points / models.len(),
+            QuestionOptions::Order(models) => total_points / (models.len() - 1),
+        };
+
+        (correct * points_per_option).min(total_points) as u32
+    }
+
+    pub fn get_correct(&self, answer: &[Uuid]) -> Result<usize, GameSessionError> {
         match self {
             QuestionOptions::Slide => Err(GameSessionError::CannotAnswer),
             QuestionOptions::SingleChoice(models) => {
@@ -580,34 +844,32 @@ impl QuestionOptions {
                     return Err(GameSessionError::InvalidAnswerCount);
                 }
                 match models.iter().find(|x| x.id == answer[0]) {
-                    Some(answer) if answer.correct => Ok(total_points),
+                    Some(answer) if answer.correct => Ok(1),
                     Some(_) => Ok(0),
                     None => Err(GameSessionError::InvalidAnswer),
                 }
             }
             QuestionOptions::MultipleChoice(models) => {
-                let points_per_option = (total_points / models.len() as u32) as i32;
                 for id in answer {
                     if !models.iter().any(|x| x.id == *id) {
                         return Err(GameSessionError::InvalidAnswer);
                     }
                 }
-                let mut points: i32 = 0;
+                let mut correct: isize = 0;
                 for option in models {
                     if option.correct == answer.contains(&option.id) {
-                        points += points_per_option
+                        correct += 1;
                     } else {
-                        points -= points_per_option
+                        correct -= 1;
                     }
                 }
-                Ok(points.max(0) as u32)
+                Ok(correct.max(0) as usize)
             }
             QuestionOptions::Order(models) => {
-                let points_per_option = total_points / (models.len() - 1) as u32;
                 if models.len() != answer.len() || answer.len() < 2 {
                     return Err(GameSessionError::InvalidAnswerCount);
                 }
-                let mut points = 0;
+                let mut correct = 0;
                 for i in 0..(models.len() - 1) {
                     let current = answer
                         .iter()
@@ -618,10 +880,10 @@ impl QuestionOptions {
                         .position(|x| *x == models[i + 1].id)
                         .ok_or(GameSessionError::InvalidAnswer)?;
                     if next == current + 1 {
-                        points += points_per_option;
+                        correct += 1;
                     }
                 }
-                Ok(points)
+                Ok(correct)
             }
         }
     }
@@ -633,6 +895,55 @@ impl QuestionOptions {
                 models.iter().filter(|x| x.correct).map(|x| x.id).collect()
             }
             QuestionOptions::Order(models) => models.iter().map(|x| x.id).collect(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            QuestionOptions::Slide => 0,
+            QuestionOptions::SingleChoice(models) | QuestionOptions::MultipleChoice(models) => {
+                models.len()
+            }
+            QuestionOptions::Order(models) => models.len(),
+        }
+    }
+
+    pub fn position(&self, id: Uuid) -> Option<usize> {
+        match self {
+            QuestionOptions::Slide => None,
+            QuestionOptions::SingleChoice(models) | QuestionOptions::MultipleChoice(models) => {
+                models.iter().position(|x| x.id == id)
+            }
+            QuestionOptions::Order(models) => models.iter().position(|x| x.id == id),
+        }
+    }
+}
+
+impl ChoiceStatistics {
+    pub fn new(models: &[AnswerChoiceModel], distribution: &[usize], answers: usize) -> Self {
+        let answer_statistic = models
+            .iter()
+            .enumerate()
+            .map(|(i, model)| AnswerStatistic {
+                option: model.id,
+                votes: distribution[i],
+                correct: model.correct,
+            })
+            .collect();
+
+        Self {
+            answers,
+            answer_statistic,
+        }
+    }
+}
+
+impl OrderStatistics {
+    pub fn new(models: &[AnswerOrderModel], distribution: &[usize], answers: usize) -> Self {
+        Self {
+            answers,
+            correct: models.iter().map(|x| x.id).collect(),
+            answer_statistic: distribution.to_vec(),
         }
     }
 }

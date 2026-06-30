@@ -7,9 +7,10 @@ import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import HostGameScreen from "@/components/HostGameScreen"
-import { GameStateEnum } from "@/hooks/useGameSession"
+import { GameStateEnum, parseDisplayQuestion } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
 import type { SessionPlayer } from "@/api/session"
+import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
 
 export default function HostDashboard(): JSX.Element {
     const { t } = useTranslation()
@@ -41,10 +42,11 @@ export default function HostDashboard(): JSX.Element {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
     const [totalQuestions, setTotalQuestions] = useState(0)
     const [questionExpiresAt, setQuestionExpiresAt] = useState<number | null>(null)
+    const [questionStartsAt, setQuestionStartsAt] = useState<number | null>(null)
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
+    const [questionStatistics, setQuestionStatistics] = useState<QuestionStatistics | null>(null)
     const [isFinalLeaderboard, setIsFinalLeaderboard] = useState(false)
     const [hasPendingFinalPodium, setHasPendingFinalPodium] = useState(false)
-    const pendingFinalLeaderboardRef = useRef<LeaderboardEntry[] | null>(null)
     const [players, setPlayers] = useState<SessionPlayer[]>(
         (location.state as { players?: SessionPlayer[] } | null)?.players ?? []
     )
@@ -57,23 +59,30 @@ export default function HostDashboard(): JSX.Element {
         ws.send({ command: "endGame" })
     }, [ws])
 
+    const sendShowPodium = useCallback((): void => {
+        ws.send({ command: "showPodium" })
+    }, [ws])
+
+    const showPodium = useCallback((): void => {
+        setIsFinalLeaderboard(true)
+        setHasPendingFinalPodium(false)
+        sendShowPodium()
+    }, [sendShowPodium])
+
+    useSocketEvent("displayPodium", () => {
+        setIsFinalLeaderboard(true)
+        setHasPendingFinalPodium(false)
+    })
+
     useSocketEvent("displayQuestion", (payload, timing) => {
         hasDisplayedQuestionRef.current = true
         setGameState(GameStateEnum.QUESTION)
-        setCurrentQuestion({
-            id: payload.id,
-            type: payload.type,
-            text: payload.question,
-            options: (payload.options ?? []).map((opt: { id: string; answer: string }) => ({
-                id: opt.id,
-                text: opt.answer,
-            })),
-            seconds: payload.seconds ?? null,
-        })
-        const startedAt = timing ? new Date(timing).getTime() : Date.now()
-        setQuestionExpiresAt(payload.seconds ? startedAt + payload.seconds * 1000 : null)
+        setCurrentQuestion(parseDisplayQuestion(payload))
+        const startsAt = timing ? new Date(timing).getTime() : Date.now()
+        setQuestionStartsAt(startsAt)
+        setQuestionExpiresAt(payload.seconds ? startsAt + payload.seconds * 1000 : null)
         setTotalQuestions(payload.totalQuestions)
-        setCurrentQuestionIndex((prev) => prev + 1)
+        setCurrentQuestionIndex(payload.index)
     })
 
     useSocketEvent("displayLeaderboard", (payload) => {
@@ -84,16 +93,18 @@ export default function HostDashboard(): JSX.Element {
         if (isFinal) {
             if (currentQuestion?.type === "SLIDE") {
                 // Slide questions have no result screen — jump straight to podium
-                setIsFinalLeaderboard(true)
-                sendEndGame()
+                showPodium()
             } else {
-                // Buffer — wait for host to click "Show Podium →"
-                pendingFinalLeaderboardRef.current = payload.leaderboard
                 setHasPendingFinalPodium(true)
             }
         } else {
             setIsFinalLeaderboard(false)
+            setHasPendingFinalPodium(false)
         }
+    })
+
+    useSocketEvent("showStatistics", (payload) => {
+        setQuestionStatistics(payload)
     })
 
     useSocketEvent("addPlayer", ({ id, name, emoji }) => {
@@ -109,11 +120,6 @@ export default function HostDashboard(): JSX.Element {
                 `${leaving.emoji ? `${leaving.emoji} ` : ""}${t("game.playerLeft", { name: leaving.name })}`
             )
         setPlayers((prev) => prev.filter((p) => p.id !== id))
-    })
-
-    useSocketEvent("gameEnded", () => {
-        gameEndedRef.current = true
-        navigate("/")
     })
 
     useSocketEvent(
@@ -138,6 +144,21 @@ export default function HostDashboard(): JSX.Element {
         return ws.onConnect(sendFirstQuestion)
     }, [ws])
 
+    // Start as true so the overlay shows until the WS is confirmed open.
+    // onEveryConnect fires immediately if the socket is already open (normal navigation),
+    // so there is no visible flash on non-refresh transitions.
+    const [isReconnecting, setIsReconnecting] = useState(true)
+    useEffect(() => {
+        const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
+        const unsubConnect = ws.onEveryConnect(() => setIsReconnecting(false))
+        const unsubConnectFail = ws.onConnectFail(async () => navigate("/"))
+        return () => {
+            unsubDisconnect()
+            unsubConnect()
+            unsubConnectFail()
+        }
+    }, [ws, navigate])
+
     // Send endGame on unmount only after the first question was received from the server.
     // Guards against React StrictMode's double-mount: the cleanup fires before the server
     // ever sends displayQuestion, so hasDisplayedQuestionRef is still false then.
@@ -154,30 +175,31 @@ export default function HostDashboard(): JSX.Element {
         ws.send({ command: "nextQuestion" })
     }, [ws])
 
-    const showFinalPodium = useCallback((): void => {
-        const pending = pendingFinalLeaderboardRef.current
-        if (!pending) return
-        setLeaderboard(pending)
-        setIsFinalLeaderboard(true)
-        setHasPendingFinalPodium(false)
-        sendEndGame()
-    }, [sendEndGame])
-
     return (
-        <HostGameScreen
-            codeWithDash={codeWithDash}
-            currentQuestion={currentQuestion}
-            currentQuestionIndex={currentQuestionIndex}
-            gameState={gameState}
-            isFinalLeaderboard={isFinalLeaderboard}
-            leaderboard={leaderboard}
-            onEndGame={sendEndGame}
-            onNextQuestion={sendNextQuestion}
-            onShowPodium={hasPendingFinalPodium ? showFinalPodium : undefined}
-            players={players}
-            questionExpiresAt={questionExpiresAt}
-            quizTitle={quiz?.title}
-            totalQuestions={totalQuestions}
-        />
+        <>
+            {isReconnecting ? (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/70 text-center backdrop-blur-sm">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/10 border-t-[#00D4E8]" />
+                    <p className="text-muted-foreground">{t("game.reconnecting")}</p>
+                </div>
+            ) : null}
+            <HostGameScreen
+                codeWithDash={codeWithDash}
+                currentQuestion={currentQuestion}
+                currentQuestionIndex={currentQuestionIndex}
+                gameState={gameState}
+                isFinalLeaderboard={isFinalLeaderboard}
+                leaderboard={leaderboard}
+                onEndGame={sendEndGame}
+                onNextQuestion={sendNextQuestion}
+                onShowPodium={hasPendingFinalPodium ? showPodium : undefined}
+                players={players}
+                questionExpiresAt={questionExpiresAt}
+                questionStartsAt={questionStartsAt}
+                questionStatistics={questionStatistics}
+                quizTitle={quiz?.title}
+                totalQuestions={totalQuestions}
+            />
+        </>
     )
 }
