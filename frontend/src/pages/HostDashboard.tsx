@@ -1,6 +1,6 @@
 import type { JSX } from "react"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useLocation, useNavigate, useParams } from "react-router"
+import { useLocation, useParams } from "react-router"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { useHostWebSocket, useSocketEvent, useWebSocketContext } from "@/api/websocket"
@@ -12,17 +12,15 @@ import { getSessionPlayers } from "@/api/session"
 import type { SessionPlayer } from "@/api/session"
 import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
 import HostLobby from "@/components/HostLobby"
-import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import InvalidCode from "@/components/InvalidCode"
 import { useAudio } from "@/context/AudioContext"
+import useWebSocketConnectError from "@/api/websocket/hooks/useWebSocketConnectError"
 
 function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
     const { t } = useTranslation()
-    const navigate = useNavigate()
     const location = useLocation()
     useHostWebSocket(code)
     const ws = useWebSocketContext()
-    const { isInvalidCode } = useSessionStatus(code)
 
     const { data: quiz } = useSessionQuiz(code)
 
@@ -143,21 +141,15 @@ function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
         }
     })
 
-    // Start as true so the overlay shows until the WS is confirmed open.
-    // onEveryConnect fires immediately if the socket is already open (normal navigation),
-    // so there is no visible flash on non-refresh transitions.
-    const [isReconnecting, setIsReconnecting] = useState(true)
-    useEffect(() => {
-        const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
-        const unsubConnect = ws.onEveryConnect(async () => {
-            setIsReconnecting(false)
-            if (code) setPlayers(await getSessionPlayers(code))
-        })
-        return () => {
-            unsubDisconnect()
-            unsubConnect()
-        }
-    }, [ws, code, navigate])
+    const { isReconnecting, isInvalidCode, unableToConnect } = useWebSocketConnectError(ws, code)
+
+    useEffect(
+        () =>
+            ws.onEveryConnect(async () => {
+                if (code) setPlayers(await getSessionPlayers(code))
+            }),
+        [ws, code]
+    )
 
     const onStartGame = useCallback((): void => {
         if (players.length === 0) {
@@ -213,8 +205,8 @@ function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
         }
     }, [setAudioElement, playAudio, isInvalidCode])
 
-    if (isInvalidCode) {
-        return <InvalidCode codeWithDash={codeWithDash} />
+    if (isInvalidCode || unableToConnect) {
+        return <InvalidCode codeWithDash={codeWithDash} unableToConnect={unableToConnect} />
     }
 
     return (

@@ -6,22 +6,30 @@ import GamePinForm from "./GamePinForm"
 export default function InvalidCode({
     codeWithDash,
     alreadyStarted,
+    unableToConnect,
 }: {
     codeWithDash?: string
     alreadyStarted?: boolean
+    unableToConnect?: boolean
 }): JSX.Element {
     const { t } = useTranslation()
     const navigate = useNavigate()
 
+    let description: string
+    if (unableToConnect)
+        description = t("lobby.unableToConnect.description", { code: codeWithDash })
+    else if (alreadyStarted) description = t("lobby.lobbyNotFound.alreadyStarted")
+    else description = t("lobby.lobbyNotFound.description", { code: codeWithDash })
+
     return (
         <section className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-6 py-24">
             <div className="w-full rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-red-500">
-                <h1 className="text-base font-bold">{t("lobby.lobbyNotFound.title")}</h1>
-                <p className="mt-1 text-sm">
-                    {alreadyStarted
-                        ? t("lobby.lobbyNotFound.alreadyStarted")
-                        : t("lobby.lobbyNotFound.description", { code: codeWithDash })}
-                </p>
+                <h1 className="text-base font-bold">
+                    {unableToConnect
+                        ? t("lobby.unableToConnect.title")
+                        : t("lobby.lobbyNotFound.title")}
+                </h1>
+                <p className="mt-1 text-sm">{description}</p>
             </div>
             <GamePinForm
                 onJoin={(digits) => {

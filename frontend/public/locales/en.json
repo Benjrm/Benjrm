@@ -267,7 +267,11 @@
         "lobbyNotFound": {
             "title": "Quiz lobby not found",
             "description": "No lobby with the code {{code}} was found. Please check the invitation code and try again.",
-            "alreadyStarted": "Lobby has already been started"
+            "alreadyStarted": "Lobby has already been started."
+        },
+        "unableToConnect": {
+            "title": "Unable to connect",
+            "description": "Connection to lobby with the code {{code}} repeatedly failed."
         },
         "host": {
             "noTitle": "No title",
