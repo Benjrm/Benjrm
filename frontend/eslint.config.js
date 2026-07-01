@@ -135,7 +135,7 @@ export default defineConfig([
             "eol-last": "error",
             "unused-imports/no-unused-imports": "error",
             "import-x/no-unused-modules": [
-                "warn",
+                "error",
                 {
                     unusedExports: true,
                     src: ["src"],

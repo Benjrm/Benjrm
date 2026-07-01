@@ -11,7 +11,7 @@ import { Button } from "@/shadcn/components/ui/button"
 import type { QuestionType } from "@/features/question/types/questions.ts"
 import useQuestionTimer from "@/features/question/hooks/useQuestionTimer"
 
-export interface QuestionOption {
+interface QuestionOption {
     id: string
     text: string
 }

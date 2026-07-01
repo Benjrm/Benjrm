@@ -111,7 +111,7 @@ type RemoveOptions<T> = Omit<T, "options">
 /**
  * API response for a informational slide without answer options.
  */
-export interface SlideQuestionResponse
+interface SlideQuestionResponse
     extends BaseQuestionResponse, RemoveNextAndPrev<SlideQuestionRequest> {}
 
 interface OrderQuestionOptionResponse extends Identifier, OrderQuestionOptionRequest {}

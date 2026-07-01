@@ -15,7 +15,7 @@ function createFriendlyApiError(status = 500): ApiError {
     return new ApiError(status, message)
 }
 
-export async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise<T> {
+async function fetcher<T>(path: string, opts: FetchOptions = {}): Promise<T> {
     const { method = "GET", body, headers, signal } = opts
     const url = `/api/v1${path}`
 
