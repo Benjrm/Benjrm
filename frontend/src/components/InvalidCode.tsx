@@ -33,7 +33,7 @@ export default function InvalidCode({
             </div>
             <GamePinForm
                 onJoin={(digits) => {
-                    navigate(`/play/${encodeURIComponent(digits)}/game`)
+                    navigate(`/play/${encodeURIComponent(digits)}`)
                 }}
             />
         </section>

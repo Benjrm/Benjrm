@@ -48,14 +48,14 @@ export default function LandingPage(): JSX.Element {
                                 setIsPending(true)
                                 try {
                                     await getSession(Number(digits))
-                                    navigate(`/play/${encodeURIComponent(digits)}/game`)
+                                    navigate(`/play/${encodeURIComponent(digits)}`)
                                 } catch (err) {
                                     if (!(err instanceof ApiError)) {
                                         setError(t("landing.errors.generic"))
                                         return
                                     }
                                     if (err.status === 200) {
-                                        navigate(`/play/${encodeURIComponent(digits)}/game`)
+                                        navigate(`/play/${encodeURIComponent(digits)}`)
                                     } else if (err.status === 404) {
                                         setError(t("landing.errors.lobbyNotFound"))
                                     } else {

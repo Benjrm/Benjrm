@@ -46,7 +46,7 @@ const routes: RouteObject[] = [
             {
                 path: "/play/:code",
                 children: [
-                    { path: "game", element: <GamePage /> },
+                    { index: true, element: <GamePage /> },
                     { path: "host", element: <HostDashboard /> },
                 ],
             },
