@@ -29,6 +29,13 @@ make to ensure that we and future developers understand the reasoning behind our
 11. Using [**Cargo Audit**](https://github.com/rustsec/rustsec) to scan Rust dependencies for security vulnerabilities. See [0010-using-cargo-audit-to-scan-rust-dependencies.md](0010-using-cargo-audit-to-scan-rust-dependencies.md) for more details.
 12. Using [**Spectral**](https://stoplight.io/open-source/spectral) and [**Schemathesis**](https://schemathesis.readthedocs.io/) for API design linting and property-based API testing. See [0011-api-design-and-testing-frameworks.md](0011-api-design-and-testing-frameworks.md) for more details.
 13. Using [**ESLint + Prettier**](https://eslint.org/) (Frontend) and [**Clippy + Rustfmt**](https://github.com/rust-lang/rust-clippy) (Backend) for code linting and formatting. See [0012-code-quality-and-standards.md](0012-code-quality-and-standards.md) for more details.
+14. Using [**react-i18next**](https://react.i18next.com/) with [**i18next**](https://www.i18next.com/) for internationalization. See [0013-using-react-i18next-for-internationalization.md](0013-using-react-i18next-for-internationalization.md) for more details.
+15. Using [**Discord**](https://discord.com/) and [**WhatsApp**](https://www.whatsapp.com/) for team communication. See [0014-using-discord-and-whatsapp-for-team-communication.md](0014-using-discord-and-whatsapp-for-team-communication.md) for more details.
+16. Using [**Google Docs**](https://docs.google.com/) and [**GitHub Wiki**](https://docs.github.com/en/communities/documenting-your-project-with-wikis) for documentation. See [0015-using-google-docs-and-github-wiki-for-documentation.md](0015-using-google-docs-and-github-wiki-for-documentation.md) for more details.
+17. Using [**YouTrack**](https://www.jetbrains.com/youtrack/) for project management, sprint planning, and time tracking. See [0016-using-youtrack-for-project-management.md](0016-using-youtrack-for-project-management.md) for more details.
+18. Using [**Miro**](https://miro.com/) for visual collaboration including competitive analysis and story mapping. See [0017-using-miro-for-visual-collaboration.md](0017-using-miro-for-visual-collaboration.md) for more details.
+19. Using [**Figma**](https://www.figma.com/) for wireframes, mockups, and interactive prototypes. See [0018-using-figma-for-ux-design.md](0018-using-figma-for-ux-design.md) for more details.
+20. Using [**OpenAPI**](https://www.openapis.org/) and [**AsyncAPI**](https://www.asyncapi.com/) for API documentation. See [0019-using-openapi-and-asyncapi-for-api-documentation.md](0019-using-openapi-and-asyncapi-for-api-documentation.md) for more details.
 
 
 
