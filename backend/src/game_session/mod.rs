@@ -266,7 +266,7 @@ pub struct Command<T> {
 pub trait CommandTrait: Sized {
     /// Parses a JSON byte slice into a command of the implementing type.
     fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error>;
-    /// Returns the pong response data after the serer sends a ping out to the client.
+    /// Returns the pong response data after the server sends a ping out to the client.
     fn pong(&self) -> Option<(u32, DateTime<Utc>)>;
     /// Returns the unique id of the command, if it has one.
     fn id(&self) -> Option<u64>;
