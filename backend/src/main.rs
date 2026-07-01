@@ -21,6 +21,14 @@ mod update_value;
 
 pub use app_data::AppData;
 
+/// Starts the HTTP server and runs the backend-application.
+///
+/// ## Security Notes
+/// - Debug builds use a fixed session key (not secure, but stable for tests)
+/// - Release builds generate a secure random key at startup
+///
+/// ## Configuration
+/// - `PORT`: HTTP server port (defaults to `80`)
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let _ = dotenvy::dotenv(); // ignore missing `.env` file
@@ -101,11 +109,18 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
+/// Health check endpoint.
+///
+/// Returns a simple `200 OK` response.
 fn healthcheck_resource() -> Resource {
     web::resource("/health")
         .route(web::get().to(async || HttpResponse::Ok().content_type(mime::TEXT_PLAIN).body("OK")))
 }
 
+/// Default handler for unknown routes.
+///
+/// Returns `404 Not Found` for any unmatched request.
+/// Used as a fallback inside API scopes.
 fn not_found_route() -> Route {
     Route::new().to(async || HttpResponse::NotFound().finish())
 }

@@ -12,6 +12,7 @@ use {
     uuid::Uuid,
 };
 
+/// Creates a new game session with the provided quiz from the message body and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn create_one(
     app_data: web::Data<AppData>,
     user: User,
@@ -25,6 +26,7 @@ async fn create_one(
     Ok(HttpResponse::Created().json(session.to_dto(code)))
 }
 
+/// Creates a new game session with the provided quiz from the path parameter and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn create_one_with_quiz(
     app_data: web::Data<AppData>,
     user: User,
@@ -38,6 +40,7 @@ async fn create_one_with_quiz(
     Ok(HttpResponse::Created().json(session.to_dto(code)))
 }
 
+/// Retrieves a game session by its code and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn get_one(
     app_data: web::Data<AppData>,
     user: User,
@@ -53,6 +56,7 @@ async fn get_one(
     Ok(HttpResponse::Ok().json(session.to_dto(code)))
 }
 
+/// Retrieves a game session by its code and quiz id and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn get_one_with_quiz(
     app_data: web::Data<AppData>,
     user: User,
@@ -72,6 +76,7 @@ async fn get_one_with_quiz(
     Ok(HttpResponse::Ok().json(session.to_dto(code)))
 }
 
+/// Deletes a game session by its code and returns a 204 No Content response.
 async fn delete(
     app_data: web::Data<AppData>,
     user: User,
@@ -85,6 +90,7 @@ async fn delete(
     Ok(HttpResponse::NoContent().finish())
 }
 
+/// Deletes a game session by its code and quiz id and returns a 204 No Content response.
 async fn delete_with_quiz(
     app_data: web::Data<AppData>,
     user: User,
@@ -107,6 +113,7 @@ async fn delete_with_quiz(
     Ok(HttpResponse::NoContent().finish())
 }
 
+/// Gets the quiz associated with a game session by its code.
 async fn get_quiz(
     app_data: web::Data<AppData>,
     user: User,
@@ -128,6 +135,7 @@ async fn get_quiz(
     }
 }
 
+/// Gets the quiz associated with a game session by its code and quiz id.
 async fn get_quiz_with_quiz_id(
     app_data: web::Data<AppData>,
     user: User,
@@ -151,6 +159,7 @@ async fn get_quiz_with_quiz_id(
     }
 }
 
+/// Transforms the list of players in a game session.
 fn player_list_response(
     user: &User,
     host: &User,
@@ -177,6 +186,7 @@ fn player_list_response(
     Ok(HttpResponse::Ok().json(res_players))
 }
 
+/// Returns a response containing the list of players in a game session.
 async fn get_players(
     app_data: web::Data<AppData>,
     user: User,
@@ -191,6 +201,7 @@ async fn get_players(
     player_list_response(&user, &session.host.user, &session.players)
 }
 
+/// Returns a response containing the list of players in a game session with a specific quiz id.
 async fn get_players_with_quiz(
     app_data: web::Data<AppData>,
     user: User,
@@ -207,6 +218,7 @@ async fn get_players_with_quiz(
     player_list_response(&user, &session.host.user, &session.players)
 }
 
+/// Initializes the REST routes for the game session API.
 pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
     cfg.service(web::resource("/sessions").route(web::post().to(create_one)));
     cfg.service(

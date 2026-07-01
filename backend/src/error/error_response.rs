@@ -1,5 +1,6 @@
 use {crate::error::Error, awc::http::StatusCode, serde::Serialize, std::fmt};
 
+/// Struct to hold the error response information
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {

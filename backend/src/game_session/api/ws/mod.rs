@@ -16,6 +16,7 @@ mod inner_channel;
 
 pub use {channel::WsChannelError, handler::init};
 
+/// A struct representing a player who is in the process of joining a game session via WebSocket.
 struct WsJoining {
     id: u64,
     handle: JoinHandle<()>,
@@ -45,6 +46,7 @@ impl fmt::Debug for WsJoining {
     }
 }
 
+/// A struct representing the ancknowladgement of a ping message sent by the client over WebSocket.
 #[derive(Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 enum Response {
@@ -52,11 +54,13 @@ enum Response {
     Error(ErrorResponse),
 }
 
+/// The ping payload sent over WebSockets.
 #[derive(Serialize)]
 struct Ping {
     id: u32,
 }
 
+/// A struct wrapping a [`Ping`] into a command similar to [`HostCommand`](crate::game_session::HostCommand) or [`PlayerCommand`](crate::game_session::PlayerCommand).
 #[derive(Serialize)]
 struct PingCommand {
     command: &'static str,

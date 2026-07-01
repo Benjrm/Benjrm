@@ -3,6 +3,14 @@ use {
     std::path::PathBuf,
 };
 
+/// Application-wide shared state.
+///
+/// `AppData` is constructed once at startup and passed into handlers.
+/// It contains all core services required by the application, including:
+/// - database connection and migrations
+/// - authentication
+/// - static content
+/// - in-memory game session storage
 pub struct AppData {
     pub db: sea_orm::DbConn,
     pub imprint: StaticFile,
@@ -12,6 +20,15 @@ pub struct AppData {
 }
 
 impl AppData {
+    /// Creates application state from environment configuration.
+    ///
+    /// This will:
+    /// - read configuration paths from `CONFIG_DIR`
+    /// - connect to the database using `DATABASE_URL`
+    /// - run database migrations
+    /// - load static content
+    /// - initialize authentication
+    /// - create in-memory game session storage
     pub async fn from_env() -> Self {
         let config_dir = PathBuf::from(std::env::var("CONFIG_DIR").unwrap_or(String::from(".")));
         // Setup the database and run the migrator
@@ -45,6 +62,10 @@ impl AppData {
     }
 }
 
+/// Test-only application state container.
+///
+/// Uses an in-memory SQLite database and minimal dependencies
+/// suitable for isolated tests.
 #[cfg(test)]
 pub struct TestAppData {
     pub db: sea_orm::DbConn,
@@ -72,6 +93,9 @@ impl TestAppData {
         TestAppData { db, game_sessions }
     }
 
+    /// Inserts and returns a dummy user Uuid in the database.
+    ///
+    /// Useful for tests that require authenticated users.
     pub async fn dummy_user_id(&self) -> uuid::Uuid {
         use {
             crate::auth::entity::ActiveUser,
@@ -95,6 +119,9 @@ impl TestAppData {
         user.id
     }
 
+    /// Inserts a dummy user id and returns a full dummy [`User`](crate::auth::User).
+    ///
+    /// Useful for tests that require authenticated users.
     pub async fn dummy_user(&self) -> crate::auth::User {
         let id = self.dummy_user_id().await;
         crate::auth::User { id }

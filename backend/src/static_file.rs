@@ -4,6 +4,13 @@ use {
     std::path::Path,
 };
 
+/// Represents a static file that can be served over HTTP.
+///
+/// **Hint:** [`StaticFile`] is sensitive to wether a build is debug or not.
+/// - **Release:** file is read once and embedded into memory
+/// - **Debug:** file is read from disk on each request
+///
+/// This allows fast, stable production serving while still supporting live file editing during development.
 pub struct StaticFile {
     content_type: &'static str,
     content_disposition: String,
@@ -14,6 +21,16 @@ pub struct StaticFile {
 }
 
 impl StaticFile {
+    /// Loads a static file from the given configuration directory.
+    ///
+    /// The file is identified by `filename` and assigned a fixed content-type.
+    ///
+    /// ## Behavior
+    /// - Release: file is loaded once and stored in memory
+    /// - Debug: only the file path is stored and read dynamically
+    ///
+    /// ## Panics
+    /// Panics if the file cannot be read in release mode.
     pub async fn new(
         config_dir: impl AsRef<Path>,
         filename: &str,
@@ -55,6 +72,16 @@ current directory: {}"#,
         }
     }
 
+    /// Builds an HTTP response containing the file contents.
+    ///
+    /// ## Behavior
+    /// - Release: serves embedded in-memory data
+    /// - Debug: reads file from disk on every request
+    ///
+    /// Returns:
+    /// - `200 OK` with file content if successful
+    /// - `404 Not Found` (debug mode only) if file is missing
+    /// - `500 Internal Server Error` on unexpected I/O errors (debug mode only)
     pub async fn get_response(&self) -> HttpResponse {
         #[cfg(not(debug_assertions))]
         return HttpResponse::Ok()

@@ -1,8 +1,23 @@
+/// Frontend serving layer.
+///
+/// This module exposes a single Actix handler that serves the frontend application in both production and development modes.
+///
+/// ## Modes
+///
+/// - **Release mode (`not(debug_assertions)`):**
+///   Serves pre-built static assets embedded into the binary.
+///
+/// - **Debug mode (`debug_assertions`):**
+///   Proxies requests to the frontend development server (e.g. Vite).
 use {
     actix_web::{Route, web},
     awc::http::Method,
 };
 
+/// Production static file server.
+///
+/// Serves files embedded at compile time via generated asset map.
+/// Falls back to `index.html` for routing.
 #[cfg(not(debug_assertions))]
 mod serve_frontend {
     use actix_web::{
@@ -15,6 +30,9 @@ mod serve_frontend {
         static ref DATA: std::collections::HashMap<&'static str, static_files::Resource> = generate();
     }
 
+    /// Serves a static file from embedded frontend assets.
+    ///
+    /// This only accepts `GET` requests
     pub async fn serve_file(req: HttpRequest) -> HttpResponse {
         if req.method() != Method::GET {
             return HttpResponse::NotFound().finish();
@@ -32,6 +50,12 @@ mod serve_frontend {
     }
 }
 
+/// Development proxy for frontend requests.
+///
+/// Forwards requests to the frontend dev server (typically [Vite](https://vite.dev)),
+/// preserving a small subset of HTTP headers.
+///
+/// Requires an `awc::Client` in Actix application state.
 #[cfg(debug_assertions)]
 mod serve_frontend {
     use {
@@ -39,6 +63,10 @@ mod serve_frontend {
         actix_web::{HttpRequest, HttpResponse},
     };
 
+    /// Forwards the request to the frontend development server.
+    ///
+    /// By default, requests are forwarded to `http://localhost:5173`.
+    /// The host can get rewritten by setting the envioronment variable `FRONTEND_HOST` to something else (e.g. `example.com`).
     pub async fn serve_file(req: HttpRequest) -> HttpResponse {
         let client = match req.app_data::<awc::Client>() {
             Some(client) => client,
@@ -77,6 +105,9 @@ mod serve_frontend {
     }
 }
 
+/// Registers the frontend handler as the default service.
+///
+/// All unmatched routes are handled by the frontend.
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.default_service(
         Route::new()

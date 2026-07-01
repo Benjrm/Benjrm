@@ -1,11 +1,14 @@
+/// Macro to implement a base error type that can be used in the application to wrap all other error types
 macro_rules! impl_base_err {
     ($($name:ident($field:ty)),* $(,)?) => {
         paste::paste! {
+            /// Define the error enum with the provided variants
             #[derive(Debug)]
             pub enum Error {
                 $($name($field),)*
             }
 
+            /// Implement methods that are required to fully implement the [`ResponseError`] trait for the error enum
             impl Error {
                 pub fn category(&self) -> &'static str {
                     match self {
@@ -65,6 +68,11 @@ macro_rules! impl_err {
         paste::paste! {
             #[derive(Debug, thiserror::Error)]
             $(#[$enum_meta])*
+            ///
+            /// ---
+            /// Define the error enum with the provided variants
+            ///
+            /// This enum is used to represent errors that can occur in the application. Each variant corresponds to a specific error type and has an associated HTTP status code.
             pub enum $error {
                 $(
                     $(#[$meta])*
@@ -80,6 +88,7 @@ macro_rules! impl_err {
             }
 
             impl $error {
+                /// Gets the category of the error
                 pub fn error(&self) -> &'static str {
                     match self {
                         $(Self::$name$(($crate::error::impl_err!($($field),*)))? => stringify!([< $name:snake >]),)*
@@ -87,6 +96,7 @@ macro_rules! impl_err {
                     }
                 }
 
+                /// Gets the [`StatusCode`](awc::http::StatusCode) for the error
                 pub fn status(&self) -> awc::http::StatusCode {
                     match self {
                         $(Self::$name$(($crate::error::impl_err!($($field),*)))? => awc::http::StatusCode::$status,)*

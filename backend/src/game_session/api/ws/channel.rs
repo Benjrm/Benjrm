@@ -10,6 +10,12 @@ use {
     tokio::task::JoinHandle,
 };
 
+/// A WebSocket connection to a single game client.
+///
+/// A [`WsChannel`] owns the sending part of the WebSocket connection and the background task responsible for processing incoming messages.
+/// It provides the transport layer between a player and a [`GameSession`](crate::game_session::GameSession).
+///
+/// Instances are typically created by using the [`WsChannelBuilder`](super::channel_builder::WsChannelBuilder) rather than constructed directly.
 pub struct WsChannel {
     pub(super) id: u64,
     pub(super) tx: actix_ws::Session,
@@ -17,12 +23,16 @@ pub struct WsChannel {
     pub(super) handle: JoinHandle<()>,
 }
 
+/// Errors that can occur while sending a WebSocket message.
 #[derive(Debug)]
 pub enum WsChannelError {
     Serialization(serde_json::Error),
     Tx(actix_ws::Closed),
 }
 
+/// Attempts to send a message over the WebSocket connection.
+///
+/// Any error encountered while serializing or transmitting the message is logged.
 pub(super) async fn send_msg_log_error<T: Serialize>(
     tx: &mut actix_ws::Session,
     msg: Message<'_, T>,
@@ -32,6 +42,12 @@ pub(super) async fn send_msg_log_error<T: Serialize>(
     }
 }
 
+/// Sends a message over the WebSocket connection.
+///
+/// # Errors
+///
+/// - Returns [`WsChannelError::Serialization`] if the message cannot be serialized to JSON
+/// - or [`WsChannelError::Tx`] if the WebSocket connection is closed before the message can be sent
 async fn send_msg<T: Serialize>(
     tx: &mut actix_ws::Session,
     msg: Message<'_, T>,
