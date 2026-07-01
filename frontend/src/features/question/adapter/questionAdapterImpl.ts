@@ -1,5 +1,5 @@
 import type { QuestionAdapter } from "@/features/question/adapter/questionAdapter.ts"
-import QuestionApiAdapter from "@/features/question/adapter/questionApiAdapter.ts"
+import QuestionApiAdapter from "@/features/question/api/questionApiAdapter.ts"
 import type {
     Question,
     QuestionRequest,
