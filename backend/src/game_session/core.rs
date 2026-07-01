@@ -38,7 +38,7 @@ impl GameSessions {
     /// - Optionally loads a quiz owned by the host
     /// - Initializes the session in [`GameSessionStatus::Waiting`]
     /// - Stores the session only in memory (not persisted)
-    /// 
+    ///
     /// ## Session Codes
     /// - In debug mode, session codes are generated sequentially starting from 1.
     /// - In release mode, session codes are generated randomly and checked for uniqueness.
@@ -117,7 +117,7 @@ impl GameSessions {
     }
 
     /// Removes a session without closing it and without permission check.
-    /// 
+    ///
     /// Intended for internal cleanup operations.
     pub async fn drop_session(&self, code: SessionCode) {
         let mut sessions = self.sessions.write().await;
@@ -229,7 +229,7 @@ impl GameSession {
             quiz.questions.len(),
         ));
 
-        // send leaderboard before question if currently on question screen
+        // Send leaderboard before question if currently on question screen
         if let GameSessionStatus::Question {
             leaderboard: Some(leaderboard),
             ..
@@ -246,7 +246,7 @@ impl GameSession {
             })
             .await;
 
-        // send leaderboard after question if question has finished
+        // Send leaderboard after question if question has finished
         if let GameSessionStatus::Leaderboard {
             statistics,
             leaderboard,
@@ -266,7 +266,7 @@ impl GameSession {
     }
 
     /// Handles a command sent by the host of the session.
-    /// 
+    ///
     /// This is where the session state is updated based on the host's commands, such as starting the game or moving to the next question.
     pub async fn handle_host_cmd(
         &mut self,
@@ -600,7 +600,7 @@ impl GameSession {
                 }
                 player.name = name;
 
-                // handle_player_cmd is only called if the player is already joined, so a SetName command is always a rename
+                // `handle_player_cmd`` is only called if the player is already joined, so a SetName command is always a rename
                 self.host
                     .msg(Message::from(&HostMessage::RenamePlayer {
                         id,

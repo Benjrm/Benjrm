@@ -67,7 +67,7 @@ impl<Model: OptionModel> UpdateLinkedOptions<Model> {
     /// Updates an existing option in-place.
     ///
     /// The option is located by its ID. If found, its fields are updated.
-    /// 
+    ///
     /// # Errors
     /// - [`QuestionError::AnswerNotFound`] if the option does not exist
     /// - [`QuestionError::DuplicateAnswerId`] if the option appears before the current
@@ -161,7 +161,7 @@ impl<Model: OptionModel> UpdateLinkedOptions<Model> {
     ///
     /// Then a vector of all persisted options is returned.
     pub async fn execute(self, txn: &DatabaseTransaction) -> Result<Vec<Model>, QuestionError> {
-        // insert new options before updating prev and next for all options
+        // Insert new options before updating prev and next for all options
         for option in &self.options {
             if matches!(option.active_model.id(), Set(_)) {
                 let mut model = option.active_model.clone();

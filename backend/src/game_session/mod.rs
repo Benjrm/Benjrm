@@ -248,7 +248,7 @@ impl<'a, T: Serialize> From<&'a T> for Message<'a, T> {
 }
 
 /// A command sent from a client to the server.
-/// 
+///
 /// Optionally id is set, the id needs to be unique on the client side (e.g. a simple counter).
 /// This id is used to identify wich answer belongs to wich command send.
 /// The server simply passes the id back to the client in the response, so the client can match the response to the command.
@@ -355,7 +355,7 @@ pub struct ChoiceStatistics {
 }
 
 /// Statistics for ordering-based questions.
-/// 
+///
 /// Contains total number of answers submitted and a breakdown of how many players got each possible count of correct relationships.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -375,6 +375,7 @@ pub struct AnswerStatistic {
     pub correct: bool,
 }
 
+/// A variant of [`Command`] that is used for sending information from the [`Host`](GameSessionHost) to the server.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(
     tag = "command",
@@ -382,8 +383,6 @@ pub struct AnswerStatistic {
     rename_all = "camelCase",
     deny_unknown_fields
 )]
-
-/// A variant of [`Command`] that is used for sending information from the [`Host`](GameSessionHost) to the server.
 pub enum HostCommand {
     Pong { id: u32, timestamp: DateTime<Utc> },
     KickPlayer { id: Uuid },

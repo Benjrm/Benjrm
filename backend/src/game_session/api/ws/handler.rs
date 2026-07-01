@@ -1,15 +1,23 @@
 use {
     crate::{
-        AppData, auth::User, error::Error, game_session::{
-            GameSession, GameSessionError, GameSessionStatus, HostMessage, Message, SessionCode, api::ws::{WsJoining, channel_builder::WsChannelBuilder},
+        AppData,
+        auth::User,
+        error::Error,
+        game_session::{
+            GameSession, GameSessionError, GameSessionStatus, HostMessage, Message, SessionCode,
+            api::ws::{WsJoining, channel_builder::WsChannelBuilder},
         },
-    }, actix_web::{HttpRequest, HttpResponse, rt, web}, std::{sync::Arc, time::Duration}, tokio::{sync::Mutex, time::sleep}, uuid::Uuid,
+    },
+    actix_web::{HttpRequest, HttpResponse, rt, web},
+    std::{sync::Arc, time::Duration},
+    tokio::{sync::Mutex, time::sleep},
+    uuid::Uuid,
 };
 
 /// Upgrades the host connection to a WebSocket.
 ///
 /// After the connection is established, the host is registered with the game.
-/// 
+///
 /// If the host disconnects, the session remains active for up to 15 minutes to allow the host to reconnect.
 /// If no reconnection occurs within that period, the session is closed automatically.
 async fn get_host_ws(
@@ -40,7 +48,7 @@ async fn get_host_ws(
 }
 
 /// Waits 15 minutes before checking whether the disconnected host channel has been replaced.
-/// 
+///
 /// If the host has not reconnected, the game session is removed from the session manager and all remaining connections are closed.
 async fn remove_host_ws(
     app_data: web::Data<AppData>,

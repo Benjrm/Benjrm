@@ -113,7 +113,7 @@ impl QuizModel {
     }
 
     /// Retrieves all questions for the quiz, optionally filtering by hidden status.
-    /// 
+    ///
     /// Questions are returned in linked order (prev/next pointers).
     pub async fn get_questions(
         &self,

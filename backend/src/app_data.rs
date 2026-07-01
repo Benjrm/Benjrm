@@ -64,8 +64,7 @@ impl AppData {
 
 /// Test-only application state container.
 ///
-/// Uses an in-memory SQLite database and minimal dependencies
-/// suitable for isolated tests.
+/// Uses an in-memory SQLite database and minimal dependencies suitable for isolated tests.
 #[cfg(test)]
 pub struct TestAppData {
     pub db: sea_orm::DbConn,
@@ -144,9 +143,9 @@ pub fn env_var(key: &str) -> String {
 ///
 /// # Arguments
 ///
-/// * `key` - Name of the environment variable
-/// * `default_name` - Name of the environment variable required to generate a default value. Can also be "FIRST_VAR and SECOND_VAR".
-/// * `default` - Function to generate the default value
+/// - `key` - Name of the environment variable
+/// - `default_name` - Name of the environment variable required to generate a default value. Can also be "FIRST_VAR and SECOND_VAR".
+/// - `default` - Function to generate the default value
 pub fn env_var_default(
     key: &str,
     default_name: &str,
