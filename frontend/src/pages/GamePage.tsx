@@ -31,21 +31,7 @@ function mergeStorage(key: string, patch: object): void {
 function GamePageComponent({ code }: { code?: number }): JSX.Element {
     const { t } = useTranslation()
     const navigate = useNavigate()
-    usePlayerWebSocket(code)
-    const ws = useWebSocketContext()
-    const { session } = useSessionStatus(code)
-
-    const codeWithDash = useCodeWithDash(code)
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null
-
-    const { isReconnecting, isInvalidCode, unableToConnect } = useWebSocketConnectError(ws, code)
-
-    // Player identity
-    const [name, setName] = useState<string>("")
-    const [emoji, setEmoji] = useState<string>(
-        () => AVAILABLE_EMOJIS[Math.floor(Math.random() * AVAILABLE_EMOJIS.length)]
-    )
-    const [isEmojiOpen, setIsEmojiOpen] = useState(false)
     const [nameSaved, setNameSaved] = useState(() => {
         if (!storageKey) return false
         try {
@@ -55,6 +41,20 @@ function GamePageComponent({ code }: { code?: number }): JSX.Element {
             return false
         }
     })
+    usePlayerWebSocket(code, setNameSaved)
+    const ws = useWebSocketContext()
+    const { session } = useSessionStatus(code)
+
+    const codeWithDash = useCodeWithDash(code)
+
+    const { isReconnecting, isInvalidCode, unableToConnect } = useWebSocketConnectError(ws, code)
+
+    // Player identity
+    const [name, setName] = useState<string>("")
+    const [emoji, setEmoji] = useState<string>(
+        () => AVAILABLE_EMOJIS[Math.floor(Math.random() * AVAILABLE_EMOJIS.length)]
+    )
+    const [isEmojiOpen, setIsEmojiOpen] = useState(false)
     const [nameError, setNameError] = useState<string | null>(null)
     const [saveNameId, setSaveNameId] = useState<number | null>(null)
 
@@ -111,7 +111,7 @@ function GamePageComponent({ code }: { code?: number }): JSX.Element {
         if (id === saveNameId) {
             setSaveNameId(null)
             setNameError(payload.message)
-        } else {
+        } else if (!(payload.category === "session" && payload.error === "player_not_found")) {
             toast.error(payload.message || t("lobby.errors.somethingWentWrong"))
         }
     })
