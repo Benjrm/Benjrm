@@ -6,7 +6,8 @@ use {
             AnswerStatistic, AnswerStatistics, Channel, ChoiceStatistics, Command,
             DisplayQuestionMessage, GameSession, GameSessionError, GameSessionHost,
             GameSessionPlayer, GameSessionStatus, GameSessions, HostCommand, HostMessage,
-            LeaderboardEntry, Message, OrderStatistics, PlayerCommand, PlayerMessage, SessionCode,
+            LeaderboardEntry, Message, OrderStatistics, Player, PlayerCommand, PlayerMessage,
+            SessionCode,
         },
         question::{
             Question, QuestionFilter, QuestionOptions,
@@ -184,6 +185,11 @@ impl GameSession {
 
     /// send all messages that are required to restore the state to the host.
     async fn update_host(&mut self) {
+        let players = self.players.iter().map(Player::from).collect();
+        self.host
+            .msg(Message::from(&HostMessage::SetPlayers { players }))
+            .await;
+
         let Some(quiz) = &self.quiz else { return };
 
         async fn send_leaderboard(
@@ -479,11 +485,9 @@ impl GameSession {
             .await;
 
         self.host
-            .msg(Message::from(&HostMessage::AddPlayer {
-                id,
-                name: player.name.clone(),
-                emoji: player.emoji,
-            }))
+            .msg(Message::from(&HostMessage::AddPlayer(Player::from(
+                &player,
+            ))))
             .await;
 
         self.players.push(player);
@@ -577,11 +581,9 @@ impl GameSession {
 
                 // handle_player_cmd is only called if the player is already joined, so a SetName command is always a rename
                 self.host
-                    .msg(Message::from(&HostMessage::RenamePlayer {
-                        id: *id,
-                        name: player.name.clone(),
-                        emoji: player.emoji,
-                    }))
+                    .msg(Message::from(&HostMessage::RenamePlayer(Player::from(
+                        &*player,
+                    ))))
                     .await;
             }
             PlayerCommand::Reconnect { .. } => Err(GameSessionError::CommandNotAllowed)?,

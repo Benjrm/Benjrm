@@ -8,7 +8,6 @@ import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import HostGameScreen from "@/components/HostGameScreen"
 import { GameStateEnum, parseDisplayQuestion } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
-import { getSessionPlayers } from "@/api/session"
 import type { SessionPlayer } from "@/api/session"
 import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
 import HostLobby from "@/components/HostLobby"
@@ -111,6 +110,7 @@ function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
             )
         setPlayers((prev) => prev.filter((p) => p.id !== id))
     })
+    useSocketEvent("setPlayers", ({ players: newPlayers }) => setPlayers(newPlayers))
 
     const onKickPlayer = useCallback(
         (playerId: string): void => {
@@ -136,14 +136,6 @@ function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
     })
 
     const { isReconnecting, isInvalidCode, unableToConnect } = useWebSocketConnectError(ws, code)
-
-    useEffect(
-        () =>
-            ws.onEveryConnect(async () => {
-                if (code) setPlayers(await getSessionPlayers(code))
-            }),
-        [ws, code]
-    )
 
     const onStartGame = useCallback((): void => {
         if (players.length === 0) {
