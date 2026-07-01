@@ -14,15 +14,13 @@ import { ApiError } from "@/shared/utils/apiUtils"
 import { getQuiz } from "@/features/quiz/api/quizzes.api.ts"
 import type { Question, UpdateQuestionRequest } from "@/features/question/types/questions.types.ts"
 import {
-    questionToQuestionRequest,
-    questionToUpdateQuestionRequest,
-} from "@/features/question/mapper/question.mapper.ts"
-import {
     addOptionToQuestion,
     removeOptionFromQuestion,
     updateOptionInQuestionAtIndex,
 } from "@/features/question/utils/questionUtils.ts"
 import QuestionQueueError from "@/features/question/queue/queue.error.ts"
+import questionToQuestionRequest from "@/features/question/mapper/questionToQuestionRequest.ts"
+import questionToUpdateQuestionRequest from "@/features/question/mapper/questionToUpdateQuestionRequest.ts"
 
 export interface QuestionError {
     missingQuestion: boolean

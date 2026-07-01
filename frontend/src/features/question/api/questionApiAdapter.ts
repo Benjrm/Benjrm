@@ -6,7 +6,7 @@ import type {
     QuestionResponse,
     UpdateQuestionRequest,
 } from "@/features/question/types/questions.types.ts"
-import { toQuestion } from "@/features/question/mapper/question.mapper.ts"
+import toQuestion from "@/features/question/mapper/toQuestion.ts"
 
 export default class QuestionApiAdapter implements QuestionAdapter {
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
