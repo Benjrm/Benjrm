@@ -60,9 +60,10 @@ async fn remove_host_ws(
         && channel.id() == id
     {
         log::info!("Deleting session {code} due to inactivity");
-        app_data.game_sessions.drop_session(code).await;
         session.host.channel = None;
         session.close().await;
+        drop(session);
+        app_data.game_sessions.drop_session(code).await;
     }
 }
 

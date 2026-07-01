@@ -115,21 +115,17 @@ impl GameSessions {
         user: &User,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
-        let mut sessions = self.sessions.write().await;
-        let session = match sessions.get(&code) {
-            Some(session) => Arc::clone(session),
-            None => return Err(GameSessionError::InvalidCode),
-        };
+        let session = self.get_session(code).await?;
 
-        let mut session = session.lock().await;
-        if &session.host.user != user {
-            return Err(GameSessionError::Forbidden);
+        {
+            let mut session = session.lock().await;
+            if &session.host.user != user {
+                return Err(GameSessionError::Forbidden);
+            }
+            session.close().await;
         }
 
-        sessions.remove(&code);
-        drop(sessions);
-
-        session.close().await;
+        self.sessions.write().await.remove(&code);
 
         Ok(())
     }
