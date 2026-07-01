@@ -1,4 +1,5 @@
-import type { Identifier, ReadonlyMetadata } from "@/shared/utils/apiUtils.ts"
+import type { Identifier } from "@/shared/types/identifier.ts"
+import type { ReadonlyMetadata } from "@/shared/types/readonlyMetadata.ts"
 
 /**
  * Common properties shared by all question types.

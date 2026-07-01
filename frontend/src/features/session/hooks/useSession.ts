@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query"
 import type { UseQueryResult } from "@tanstack/react-query"
 
 import sessionKeys from "@/features/session/utils/sessionKeys"
-import { getSession } from "@/features/session/api/session"
-import type { Session } from "@/features/session/api/session"
+
+import type { Session } from "@/features/session/types/session.ts"
+import getSession from "@/features/session/api/getSession.ts"
 
 /**
  * Hook to get a session by code.

@@ -1,58 +1,16 @@
-import type { Modifier } from "@dnd-kit/core"
-import type { TFunction } from "i18next"
-import tempId from "@/shared/utils/tempId"
 import type {
     Question,
     QuestionRequest,
-    QuestionType,
     UpdateQuestionRequest,
-} from "@/features/question/types/questions.types.ts"
-import type { QueueItem } from "@/features/question/queue/queue.types.ts"
+} from "@/features/question/types/questions.ts"
+import type { QueueItem } from "@/features/question/queue/types.ts"
+import tempId from "@/shared/utils/tempId.ts"
 import assertNever from "@/shared/utils/assertNever.ts"
 
-export function getQuestionPreviewText(
-    text: string | undefined,
-    type?: QuestionType,
-    t?: TFunction
-): string {
-    const firstLine =
-        text
-            ?.split("\n")
-            .map((l) => l.trim())
-            .find((l) => l.length > 0) ?? ""
-    const cleaned = firstLine
-        .replace(/^#+\s*/, "")
-        .replace(/[*_~`]/g, "")
-        .replace(/\[(.*?)\]\(.*?\)/g, "$1")
-        .trim()
-
-    if (t) {
-        return (
-            cleaned ||
-            (type === "SLIDE"
-                ? t("quizEditor.editor.untitledSlide")
-                : t("quizEditor.editor.untitledQuestion"))
-        )
-    }
-    return cleaned || (type === "SLIDE" ? "Untitled slide" : "Untitled question")
-}
-
-export function createEmptyQuestion(): Question {
-    return {
-        id: tempId(),
-        question: "",
-        created: new Date(),
-        modified: new Date(),
-        type: "SINGLE_CHOICE",
-        options: [
-            { id: tempId(), answer: "", correct: false },
-            { id: tempId(), answer: "", correct: false },
-        ],
-        hidden: false,
-    }
-}
-
-export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueItem[]): Question[] {
+export default function applyQueueToQuestions(
+    baseQuestions: Question[],
+    queue: QueueItem[]
+): Question[] {
     if (queue.length === 0) return baseQuestions
 
     let draftQuestions = [...baseQuestions]
@@ -218,29 +176,4 @@ export function applyQueueToQuestions(baseQuestions: Question[], queue: QueueIte
     })
 
     return draftQuestions
-}
-
-export const restrictToVerticalAxis: Modifier = ({ transform }) => ({
-    ...transform,
-    x: 0,
-})
-
-export const restrictToParentElement: Modifier = ({
-    containerNodeRect,
-    draggingNodeRect,
-    transform,
-}) => {
-    if (!draggingNodeRect || !containerNodeRect) return transform
-
-    return {
-        ...transform,
-        x: Math.min(
-            Math.max(transform.x, containerNodeRect.left - draggingNodeRect.left),
-            containerNodeRect.right - draggingNodeRect.right
-        ),
-        y: Math.min(
-            Math.max(transform.y, containerNodeRect.top - draggingNodeRect.top),
-            containerNodeRect.bottom - draggingNodeRect.bottom
-        ),
-    }
 }

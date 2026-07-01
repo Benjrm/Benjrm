@@ -8,7 +8,7 @@ import QuestionContainer from "@/features/question/views/QuestionContainer"
 import AnswerOption from "@/features/question/views/AnswerOption"
 import TimerBar from "@/features/question/views/TimerBar"
 import { Button } from "@/shadcn/components/ui/button"
-import type { QuestionType } from "@/features/question/types/questions.types.ts"
+import type { QuestionType } from "@/features/question/types/questions.ts"
 import useQuestionTimer from "@/features/question/hooks/useQuestionTimer"
 
 export interface QuestionOption {
@@ -16,7 +16,7 @@ export interface QuestionOption {
     text: string
 }
 
-export interface QuestionCardContentProps {
+interface QuestionCardContentProps {
     questionText: string
     options: QuestionOption[]
     secondsToAnswer: number | null

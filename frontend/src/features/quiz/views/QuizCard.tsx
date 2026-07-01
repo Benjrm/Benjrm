@@ -3,8 +3,8 @@
 import type { JSX } from "react"
 import { Link } from "react-router"
 import { useTranslation } from "react-i18next"
-import { PlayQuizButton } from "@/features/quiz/views/PlayQuizButton"
-import type { Quiz } from "@/features/quiz/types/quizzes.types.ts"
+import PlayQuizButton from "@/features/quiz/views/PlayQuizButton"
+import type { Quiz } from "@/features/quiz/types/quizzes.ts"
 
 interface QuizCardProps {
     quiz: Quiz

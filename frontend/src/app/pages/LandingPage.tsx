@@ -5,8 +5,8 @@ import type { JSX } from "react"
 import { useNavigate } from "react-router"
 import { useTranslation } from "react-i18next"
 import GamePinForm from "@/features/session/views/GamePinForm"
-import { getSession } from "@/features/session/api/session"
-import { ApiError } from "@/shared/utils/apiUtils"
+import ApiError from "@/shared/types/apiError.ts"
+import getSession from "@/features/session/api/getSession.ts"
 
 export default function LandingPage(): JSX.Element {
     const navigate = useNavigate()

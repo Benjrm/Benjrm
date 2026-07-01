@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query"
 import type { UseQueryResult } from "@tanstack/react-query"
 
 import sessionKeys from "@/features/session/utils/sessionKeys"
-import { getSessionQuiz } from "@/features/session/api/session"
-import type { Quiz } from "@/features/quiz/types/quizzes.types.ts"
+import type { Quiz } from "@/features/quiz/types/quizzes.ts"
+import getSessionQuiz from "@/features/session/api/getSessionQuiz.ts"
 
 /**
  * Hook to get the quiz in a session.

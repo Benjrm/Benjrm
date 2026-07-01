@@ -1,5 +1,5 @@
-import type { QuestionType } from "@/features/question/types/questions.types.ts"
-import type { QuestionStatistics } from "@/features/question/hooks/useQuestionStatistics"
+import type { QuestionType } from "@/features/question/types/questions.ts"
+import type { QuestionStatistics } from "@/features/question/types/statistics.ts"
 
 /**
  * Maps server commands to their respective payload types.

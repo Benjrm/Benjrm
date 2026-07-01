@@ -14,11 +14,11 @@ import {
 } from "@/shadcn/components/ui/select"
 import { Textarea } from "@/shadcn/components/ui/textarea"
 import { Button } from "@/shadcn/components/ui/button"
-import { useTheme } from "@/shared/context/ThemeContext"
-import type { QuestionError } from "@/features/quiz/hooks/useQuizEditor"
-import type { QuestionType, Question } from "@/features/question/types/questions.types.ts"
-import { updateQuestionWithPatch } from "@/features/question/utils/questionUtils.ts"
-import questionTypes from "@/features/question/constants/questions.constants.ts"
+import type { QuestionType, Question } from "@/features/question/types/questions.ts"
+import updateQuestionWithPatch from "@/features/question/utils/updateQuestionWithPatch.ts"
+import questionTypes from "@/features/question/constants/questionTypes.ts"
+import type { QuestionError } from "@/features/quiz/types/questionError.ts"
+import useTheme from "@/shared/hooks/useTheme.ts"
 
 interface QuestionEditorProps {
     question: Question

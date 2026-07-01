@@ -1,25 +1,12 @@
 // frontend/src/context/ThemeContext.ts
 
-import { createContext, useContext } from "react"
-
-export type Theme = "dark" | "light" | "auto"
-
-export interface ThemeProviderState {
-    theme: Theme
-    setTheme: (theme: Theme) => void
-}
+import { createContext } from "react"
+import type { ThemeProviderState } from "@/shared/types/themeProviderState.ts"
 
 const initialState: ThemeProviderState = {
     theme: "auto",
     setTheme: () => null,
 }
 
-export const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
-
-export const useTheme = (): ThemeProviderState => {
-    const context = useContext(ThemeProviderContext)
-    if (context === undefined) {
-        throw new Error("useTheme must be used within a ThemeProvider")
-    }
-    return context
-}
+const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+export default ThemeProviderContext

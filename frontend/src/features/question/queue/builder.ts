@@ -4,7 +4,7 @@ import type {
     QueueItem,
     ReorderQueueItem,
     UpdateQuestionQueueItem,
-} from "@/features/question/queue/queue.types.ts"
+} from "@/features/question/queue/types.ts"
 
 function buildCreateQuestionQueueItem(
     questionId: string,

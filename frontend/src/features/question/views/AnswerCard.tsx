@@ -3,11 +3,11 @@
 import type { JSX } from "react"
 import { Check, Trash2, X } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import getAnswerVisuals from "@/shared/utils/answerVisuals"
+import getAnswerVisuals from "@/features/question/utils/getAnswerVisuals.ts"
 import { Button } from "@/shadcn/components/ui/button"
 import AnswerContent from "@/features/question/views/AnswerContent"
 
-export interface AnswerCardProps {
+interface AnswerCardProps {
     // visual props are optional; can be derived from `index`
     icon?: string
     accent?: string

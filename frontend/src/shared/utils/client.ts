@@ -1,9 +1,9 @@
 // frontend/src/api/client.ts
 
-import { ApiError } from "./apiUtils"
+import ApiError from "../types/apiError.ts"
 import i18n from "@/app/i18n"
 
-export interface FetchOptions {
+interface FetchOptions {
     method?: string
     body?: unknown
     headers?: HeadersInit

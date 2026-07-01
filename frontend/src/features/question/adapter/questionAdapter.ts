@@ -2,7 +2,7 @@ import type {
     Question,
     QuestionRequest,
     UpdateQuestionRequest,
-} from "@/features/question/types/questions.types.ts"
+} from "@/features/question/types/questions.ts"
 
 /**
  * {@link https://en.wikipedia.org/wiki/Adapter_pattern Adapter pattern} for the question's api.

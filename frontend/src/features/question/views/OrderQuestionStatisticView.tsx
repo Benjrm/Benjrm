@@ -3,9 +3,8 @@ import { Trophy } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import type { OptionStat } from "./HostGameQuestionStatistic.tsx"
-import type { QuestionStatistics } from "@/features/question/hooks/useQuestionStatistics.ts"
 import ProgressBar from "@/shadcn/components/ui/progress"
+import type { OptionStat, QuestionStatistics } from "@/features/question/types/statistics.ts"
 
 interface OrderQuestionStatisticViewProps {
     options: OptionStat[]

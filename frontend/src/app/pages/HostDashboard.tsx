@@ -8,19 +8,20 @@ import useSocketEvent from "@/shared/hooks/useSocketEvent"
 import useWebSocketContext from "@/shared/hooks/useWebSocketContext"
 import useSessionQuiz from "@/features/session/hooks/useSessionQuiz"
 import HostGameScreen from "@/features/session/views/HostGameScreen"
-import { GameStateEnum, parseDisplayQuestion } from "@/features/session/hooks/useGameSession"
-import type {
-    GameState,
-    GameQuestion,
-    LeaderboardEntry,
-} from "@/features/session/hooks/useGameSession"
-import type { SessionPlayer } from "@/features/session/api/session"
-import type { QuestionStatistics } from "@/features/question/hooks/useQuestionStatistics"
 import HostLobby from "@/features/session/views/HostLobby"
 import InvalidCode from "@/features/session/views/InvalidCode"
-import { useAudio } from "@/shared/context/AudioContext"
 import useWebSocketConnectError from "@/shared/hooks/useWebSocketConnectError"
 import useCodeWithDash from "@/features/session/utils/useCodeWithDash"
+import { GameStateEnum } from "@/features/session/types/session.ts"
+import type {
+    GameQuestion,
+    GameState,
+    LeaderboardEntry,
+    SessionPlayer,
+} from "@/features/session/types/session.ts"
+import type { QuestionStatistics } from "@/features/question/types/statistics.ts"
+import parseDisplayQuestion from "@/features/question/utils/parseDisplayQuestion.ts"
+import useAudio from "@/shared/hooks/useAudio.ts"
 
 function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
     const { t } = useTranslation()

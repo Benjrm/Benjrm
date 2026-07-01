@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import QuizCard from "@/features/quiz/views/QuizCard"
 import CategoryHeader from "@/shared/views/CategoryHeader"
 import { Button } from "@/shadcn/components/ui/button"
-import type { Quiz } from "@/features/quiz/types/quizzes.types.ts"
+import type { Quiz } from "@/features/quiz/types/quizzes.ts"
 
 interface DiscoverSectionProps {
     quizzes: Quiz[]

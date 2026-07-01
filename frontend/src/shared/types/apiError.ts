@@ -1,13 +1,4 @@
-export interface Identifier {
-    id: string
-}
-
-export interface ReadonlyMetadata {
-    created: string
-    modified: string
-}
-
-export class ApiError extends Error {
+class ApiError extends Error {
     status: number
 
     category: string
@@ -41,3 +32,4 @@ export class ApiError extends Error {
         }
     }
 }
+export default ApiError

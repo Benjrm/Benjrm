@@ -1,4 +1,4 @@
-import type { LeaderboardItem } from "@/features/session/leaderboard/api/leaderboardItem.ts"
+import type { LeaderboardItem } from "@/features/session/leaderboard/types/leaderboardItem.ts"
 import type { LeaderboardItemProps } from "@/features/session/leaderboard/components/LeaderboardItem.tsx"
 
 export default function getLeaderboardItemPropsList(

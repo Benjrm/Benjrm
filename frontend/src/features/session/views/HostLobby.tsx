@@ -6,7 +6,8 @@ import Lobby from "./Lobby"
 import QRCode from "@/features/session/views/QRCode"
 import StartQuizButton from "@/features/quiz/views/StartQuizButton"
 import { Button } from "@/shadcn/components/ui/button"
-import type { Player } from "@/features/session/hooks/useGameSession"
+
+import type { Player } from "@/features/session/types/session.ts"
 
 interface HostLobbyProps {
     codeWithDash?: string

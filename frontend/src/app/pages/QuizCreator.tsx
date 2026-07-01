@@ -19,13 +19,11 @@ import CreateQuizModal from "@/features/quiz/views/CreateQuizModal"
 import QuestionEditor from "@/features/question/views/QuestionEditor"
 import QuestionSidebar from "@/features/question/views/QuestionSidebar"
 import SettingsPanel from "@/features/question/views/SettingsPanel"
-import {
-    restrictToVerticalAxis,
-    restrictToParentElement,
-    getQuestionPreviewText,
-} from "@/features/quiz/utils/quizUtils"
+import { restrictToParentElement } from "@/features/quiz/utils/restrictToParentElement.ts"
 import useQuizEditor from "@/features/quiz/hooks/useQuizEditor"
 import QuizCreatorHeader from "@/features/quiz/views/QuizCreatorHeader.tsx"
+import getQuestionPreviewText from "@/features/quiz/utils/getQuestionPreviewText.ts"
+import restrictToVerticalAxis from "@/features/quiz/utils/restrictToVerticalAxis.ts"
 
 export default function QuizCreator(): JSX.Element {
     const { t } = useTranslation()

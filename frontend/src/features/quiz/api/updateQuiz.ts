@@ -1,0 +1,8 @@
+import type { Quiz, QuizDto, UpdateQuiz } from "@/features/quiz/types/quizzes.ts"
+import { apiPatch } from "@/shared/utils/client.ts"
+import toQuiz from "@/features/quiz/mapper/toQuiz.ts"
+
+export default async function updateQuiz(quizId: string, data: UpdateQuiz): Promise<Quiz> {
+    const dto = await apiPatch<QuizDto>(`/quizzes/${quizId}`, data)
+    return toQuiz(dto)
+}

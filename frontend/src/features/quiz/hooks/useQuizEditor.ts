@@ -1,34 +1,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { arrayMove } from "@dnd-kit/sortable"
-import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core"
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
-import { useQuiz, useDeleteQuiz } from "@/features/quiz/hooks/quizzes.queries.ts"
+import { useDeleteQuiz, useQuiz } from "@/features/quiz/hooks/quizzes.queries.ts"
 import useQuestions from "@/features/question/hooks/useQuestions"
 import questionKeys from "@/features/question/utils/questionKeys"
-import { createEmptyQuestion, applyQueueToQuestions } from "@/features/quiz/utils/quizUtils"
 import tempId from "@/shared/utils/tempId"
 import useQuestionChangeQueue from "@/features/question/hooks/useQuestionChangeQueue"
-import { ApiError } from "@/shared/utils/apiUtils"
-import { getQuiz } from "@/features/quiz/api/quizzes.api.ts"
-import type { Question, UpdateQuestionRequest } from "@/features/question/types/questions.types.ts"
-import {
-    addOptionToQuestion,
-    removeOptionFromQuestion,
-    updateOptionInQuestionAtIndex,
-} from "@/features/question/utils/questionUtils.ts"
-import QuestionQueueError from "@/features/question/queue/queue.error.ts"
+import ApiError from "@/shared/types/apiError.ts"
+import type { Question, UpdateQuestionRequest } from "@/features/question/types/questions.ts"
+import QuestionQueueError from "@/features/question/queue/error.ts"
 import questionToQuestionRequest from "@/features/question/mapper/questionToQuestionRequest.ts"
 import questionToUpdateQuestionRequest from "@/features/question/mapper/questionToUpdateQuestionRequest.ts"
+import removeOptionFromQuestion from "@/features/question/utils/removeOptionFromQuestion.ts"
+import addOptionToQuestion from "@/features/question/utils/addOptionToQuestion.ts"
+import updateOptionInQuestionAtIndex from "@/features/question/utils/updateOptionInQuestionAtIndex.ts"
+import getQuiz from "@/features/quiz/api/getQuiz.ts"
+import type { QuestionError } from "@/features/quiz/types/questionError.ts"
+import createEmptyQuestion from "@/features/quiz/utils/createEmptyQuestion.ts"
+import applyQueueToQuestions from "@/features/quiz/utils/applyQueueToQuestions.ts"
 
-export interface QuestionError {
-    missingQuestion: boolean
-    missingAnswers: number[]
-    missingCorrectAnswer: boolean
-}
-
-export interface UseQuizEditorResult {
+interface UseQuizEditorResult {
     quiz: unknown
     quizTitle: string
     quizDescription: string

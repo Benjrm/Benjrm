@@ -2,7 +2,7 @@ import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import getAnswerVisuals from "@/shared/utils/answerVisuals"
+import getAnswerVisuals from "@/features/question/utils/getAnswerVisuals.ts"
 
 interface AnswerOptionProps {
     index: number

@@ -1,4 +1,4 @@
-import type { Question, QuestionResponse } from "@/features/question/types/questions.types.ts"
+import type { Question, QuestionResponse } from "@/features/question/types/questions.ts"
 
 /**
  * Converts a question's api response object to the question domain model used within the frontend application.

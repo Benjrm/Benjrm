@@ -29,14 +29,15 @@ import TimerBar from "@/features/question/views/TimerBar"
 import QuestionHeader from "@/features/question/views/QuestionHeader"
 import QuestionContainer from "@/features/question/views/QuestionContainer"
 import useQuestionTimer from "@/features/question/hooks/useQuestionTimer"
-import { restrictToVerticalAxis, restrictToParentElement } from "@/features/quiz/utils/quizUtils"
+import restrictToParentElement from "@/features/quiz/utils/restrictToParentElement.ts"
+import restrictToVerticalAxis from "@/features/quiz/utils/restrictToVerticalAxis.ts"
 
 interface Option {
     id: string
     text: string
 }
 
-export interface OrderQuestionContentProps {
+interface OrderQuestionContentProps {
     currentQuestionIndex?: number
     initialItemOrder?: string[]
     initialHasAnswered?: boolean

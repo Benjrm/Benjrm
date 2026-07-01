@@ -10,7 +10,7 @@ import {
     DialogTitle,
 } from "@shadcn/components/ui/dialog.tsx"
 import { Button } from "@shadcn/components/ui/button.tsx"
-import { PlayQuizButton } from "@/features/quiz/views/PlayQuizButton.tsx"
+import PlayQuizButton from "@/features/quiz/views/PlayQuizButton.tsx"
 
 interface QuizCreatorHeaderProps {
     setIsEditModalOpen: (value: boolean) => void

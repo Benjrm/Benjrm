@@ -9,14 +9,14 @@ import InfoSlideContent from "@/features/question/views/InfoSlideContent"
 import OrderQuestionContent from "@/features/question/views/OrderQuestionContent"
 import MarkdownComponent from "@/shared/views/markdown/MarkdownComponent"
 import LeaderboardAnimationScreen from "@/features/session/views/LeaderboardAnimationScreen"
-import { GameStateEnum } from "@/features/session/hooks/useGameSession"
-import type {
-    GameState,
-    GameQuestion,
-    QuestionResult,
-    LeaderboardEntry,
-} from "@/features/session/hooks/useGameSession"
 import useQuestionTimer from "@/features/question/hooks/useQuestionTimer"
+import { GameStateEnum } from "@/features/session/types/session.ts"
+import type {
+    GameQuestion,
+    GameState,
+    LeaderboardEntry,
+    QuestionResult,
+} from "@/features/session/types/session.ts"
 
 function QuestionPreview({
     question,

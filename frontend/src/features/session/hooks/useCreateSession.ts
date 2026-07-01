@@ -6,8 +6,9 @@ import { useNavigate } from "react-router"
 import { toast } from "sonner"
 
 import sessionKeys from "@/features/session/utils/sessionKeys"
-import { createSession, getSessionErrorMessage } from "@/features/session/api/session"
-import type { CreateSessionInput, Session } from "@/features/session/api/session"
+import type { CreateSessionInput, Session } from "@/features/session/types/session.ts"
+import createSession from "@/features/session/api/createSession.ts"
+import getSessionErrorMessage from "@/features/session/utils/getSessionErrorMessage.ts"
 
 /**
  * Hook to create a session.

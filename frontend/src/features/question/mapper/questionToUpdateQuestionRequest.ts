@@ -1,4 +1,4 @@
-import type { Question, UpdateQuestionRequest } from "@/features/question/types/questions.types.ts"
+import type { Question, UpdateQuestionRequest } from "@/features/question/types/questions.ts"
 import assertNever from "@/shared/utils/assertNever.ts"
 
 /**

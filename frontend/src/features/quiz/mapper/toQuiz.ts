@@ -1,4 +1,4 @@
-import type { Quiz, QuizDto } from "@/features/quiz/types/quizzes.types.ts"
+import type { Quiz, QuizDto } from "@/features/quiz/types/quizzes.ts"
 
 export default function toQuiz(dto: QuizDto): Quiz {
     return {

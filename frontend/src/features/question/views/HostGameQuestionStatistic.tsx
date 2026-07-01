@@ -3,18 +3,12 @@ import { useTranslation } from "react-i18next"
 import OrderQuestionStatisticView from "./OrderQuestionStatisticView.tsx"
 import ChoiceQuestionStatisticView from "./ChoiceQuestionStatisticView.tsx"
 import MarkdownComponent from "@/shared/views/markdown/MarkdownComponent"
-import type { QuestionType } from "@/features/question/types/questions.types.ts"
-import type { QuestionStatistics } from "@/features/question/hooks/useQuestionStatistics.ts"
+import type { QuestionType } from "@/features/question/types/questions.ts"
+
 import { Badge } from "@/shadcn/components/ui/badge"
+import type { OptionStat, QuestionStatistics } from "@/features/question/types/statistics.ts"
 
-export interface OptionStat {
-    id: string
-    text: string
-    votes: number
-    isCorrect: boolean
-}
-
-export interface HostGameQuestionStatisticProps {
+interface HostGameQuestionStatisticProps {
     questionText: string
     options: OptionStat[]
     totalAnswers: number

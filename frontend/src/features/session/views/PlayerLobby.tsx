@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next"
 import Lobby from "./Lobby"
 import ProfilePicker from "@/features/user/views/ProfilePicker"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
-import { AVAILABLE_EMOJIS } from "@/features/session/hooks/useGameSession"
+
+import AVAILABLE_EMOJIS from "@/features/session/constants/availableEmojis.ts"
 
 interface PlayerLobbyProps {
     codeWithDash?: string

@@ -1,9 +1,9 @@
 import { useMemo } from "react"
 import useSession from "./useSession"
-import type { Session } from "@/features/session/api/session"
-import { ApiError } from "@/shared/utils/apiUtils"
+import ApiError from "@/shared/types/apiError.ts"
+import type { Session } from "@/features/session/types/session.ts"
 
-export interface SessionStatus {
+interface SessionStatus {
     isLoading: boolean
     isHost: boolean
     isPlayer: boolean

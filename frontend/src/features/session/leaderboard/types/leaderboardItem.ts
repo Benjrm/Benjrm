@@ -1,6 +1,3 @@
-/**
- * API response type for a single item in the leaderboard.
- */
 export interface LeaderboardItem {
     /** Optional path to the player's avatar resource */
     avatar?: string

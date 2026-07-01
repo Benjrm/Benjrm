@@ -6,13 +6,17 @@ import useCreateSession from "@/features/session/hooks/useCreateSession"
 import { Button } from "@/shadcn/components/ui/button"
 import { cn } from "@/shadcn/lib/utils"
 
-export interface PlayQuizButtonProps {
+interface PlayQuizButtonProps {
     quizId: string | undefined
     className?: string
     disabled?: boolean
 }
 
-export function PlayQuizButton({ quizId, className, disabled }: PlayQuizButtonProps): JSX.Element {
+export default function PlayQuizButton({
+    quizId,
+    className,
+    disabled,
+}: Readonly<PlayQuizButtonProps>): JSX.Element {
     const { t } = useTranslation()
     const createSessionMutation = useCreateSession()
 

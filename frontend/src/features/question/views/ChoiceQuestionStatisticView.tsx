@@ -3,8 +3,8 @@ import { Triangle, Diamond, Circle, Square, Check } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import type { OptionStat } from "./HostGameQuestionStatistic.tsx"
 import ProgressBar from "@/shadcn/components/ui/progress"
+import type { OptionStat } from "@/features/question/types/statistics.ts"
 
 interface ChoiceQuestionStatisticViewProps {
     options: OptionStat[]

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import type { UseQueryResult } from "@tanstack/react-query"
 import questionKeys from "@/features/question/utils/questionKeys.ts"
 import questionAdapterImpl from "@/features/question/adapter/questionAdapterImpl.ts"
-import type { Question } from "@/features/question/types/questions.types.ts"
+import type { Question } from "@/features/question/types/questions.ts"
 
 export default function useQuestions(quizId?: string): UseQueryResult<Question[]> {
     return useQuery({

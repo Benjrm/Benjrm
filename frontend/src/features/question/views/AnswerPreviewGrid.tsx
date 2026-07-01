@@ -1,8 +1,8 @@
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
-import getAnswerVisuals from "@/shared/utils/answerVisuals"
+import getAnswerVisuals from "@/features/question/utils/getAnswerVisuals.ts"
 import MarkdownComponent from "@/shared/views/markdown/MarkdownComponent"
-import type { QuestionOption, QuestionType } from "@/features/question/types/questions.types.ts"
+import type { QuestionOption, QuestionType } from "@/features/question/types/questions.ts"
 
 interface Props {
     options: QuestionOption[]

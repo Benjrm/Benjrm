@@ -9,7 +9,7 @@ import "./app/index.css"
 import App from "@/app/App"
 import WebSocketContext from "@/shared/context/WebSocketContext"
 import websocketService from "@/shared/utils/singleton"
-import { ApiError } from "@/shared/utils/apiUtils"
+import ApiError from "@/shared/types/apiError.ts"
 import "./app/i18n"
 
 const queryClient = new QueryClient({

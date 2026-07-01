@@ -4,7 +4,7 @@ import type {
     Question,
     QuestionRequest,
     UpdateQuestionRequest,
-} from "@/features/question/types/questions.types.ts"
+} from "@/features/question/types/questions.ts"
 
 class QuestionAdapterImpl implements QuestionAdapter {
     private readonly service: QuestionAdapter

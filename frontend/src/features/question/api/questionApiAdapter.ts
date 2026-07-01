@@ -5,7 +5,7 @@ import type {
     QuestionRequest,
     QuestionResponse,
     UpdateQuestionRequest,
-} from "@/features/question/types/questions.types.ts"
+} from "@/features/question/types/questions.ts"
 import toQuestion from "@/features/question/mapper/toQuestion.ts"
 
 export default class QuestionApiAdapter implements QuestionAdapter {

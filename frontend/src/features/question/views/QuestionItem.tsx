@@ -4,8 +4,8 @@ import { GripVertical, Trash2 } from "lucide-react"
 import type { MouseEvent, KeyboardEvent, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@shadcn/components/ui/button.tsx"
-import { getQuestionPreviewText } from "@/features/quiz/utils/quizUtils"
-import type { Question } from "@/features/question/types/questions.types.ts"
+import type { Question } from "@/features/question/types/questions.ts"
+import getQuestionPreviewText from "@/features/quiz/utils/getQuestionPreviewText.ts"
 
 interface QuestionProps {
     question: Pick<Question, "id" | "question" | "type">

@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react"
+import { createContext } from "react"
 
 export interface AudioContextState {
     isAudioActive: boolean
@@ -9,11 +9,3 @@ export interface AudioContextState {
 }
 
 export const AudioContext = createContext<AudioContextState | undefined>(undefined)
-
-export function useAudio(): AudioContextState {
-    const context = useContext(AudioContext)
-    if (context === undefined) {
-        throw new Error("useAudio must be used within an AudioProvider")
-    }
-    return context
-}

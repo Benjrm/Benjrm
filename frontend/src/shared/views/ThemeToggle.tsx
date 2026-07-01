@@ -3,8 +3,9 @@
 import { Sun, Moon, Monitor } from "lucide-react"
 import type { JSX } from "react"
 import { Button } from "@shadcn/components/ui/button"
-import { useTheme } from "@/shared/context/ThemeContext"
-import type { Theme } from "@/shared/context/ThemeContext"
+
+import type { Theme } from "@/shared/types/theme.ts"
+import useTheme from "@/shared/hooks/useTheme.ts"
 
 const themes: Theme[] = ["light", "dark", "auto"]
 

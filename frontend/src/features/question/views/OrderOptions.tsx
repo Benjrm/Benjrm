@@ -16,8 +16,9 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useTranslation } from "react-i18next"
 import SortableOrderOption from "@/features/question/views/SortableOrderOption"
 import { Button } from "@/shadcn/components/ui/button"
-import { restrictToVerticalAxis, restrictToParentElement } from "@/features/quiz/utils/quizUtils"
-import type { QuestionOption } from "@/features/question/types/questions.types.ts"
+import restrictToParentElement from "@/features/quiz/utils/restrictToParentElement.ts"
+import type { QuestionOption } from "@/features/question/types/questions.ts"
+import restrictToVerticalAxis from "@/features/quiz/utils/restrictToVerticalAxis.ts"
 
 interface OrderOptionsProps {
     options: QuestionOption[]

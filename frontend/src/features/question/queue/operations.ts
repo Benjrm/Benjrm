@@ -6,7 +6,7 @@ import type {
     QueueItem,
     ReorderQueueItem,
     UpdateQuestionQueueItem,
-} from "@/features/question/queue/queue.types.ts"
+} from "@/features/question/queue/types.ts"
 import assertNever from "@/shared/utils/assertNever.ts"
 
 async function processCreateOp<QI extends Extract<QueueItem, CreateQuestionQueueItem>>(

@@ -2,9 +2,9 @@ import type { ReactNode } from "react"
 import { AnimatePresence } from "framer-motion"
 import getLeaderboardItemPropsList from "@/features/session/leaderboard/utils/getLeaderboardItemPropsList.ts"
 import LeaderboardItem from "@/features/session/leaderboard/components/LeaderboardItem.tsx"
-import type { LeaderboardItem as LeaderboardItemType } from "@/features/session/leaderboard/api/leaderboardItem.ts"
+import type { LeaderboardItem as LeaderboardItemType } from "@/features/session/leaderboard/types/leaderboardItem.ts"
 
-export interface LeaderboardProps {
+interface LeaderboardProps {
     items: LeaderboardItemType[]
     title?: string
 }

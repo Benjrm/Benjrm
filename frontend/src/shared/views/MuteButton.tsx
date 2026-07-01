@@ -2,7 +2,8 @@ import type { JSX } from "react"
 import { Volume2, VolumeX } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@shadcn/components/ui/button"
-import { useAudio } from "@/shared/context/AudioContext"
+
+import useAudio from "@/shared/hooks/useAudio.ts"
 
 export default function MuteButton(): JSX.Element | null {
     const { t } = useTranslation()

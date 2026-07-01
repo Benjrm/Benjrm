@@ -1,4 +1,4 @@
-import type { ApiError } from "@/shared/utils/apiUtils.ts"
+import type ApiError from "@/shared/types/apiError.ts"
 
 export default class QuestionQueueError extends Error {
     question: string | undefined

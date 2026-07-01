@@ -3,14 +3,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import type { UseQueryResult, UseMutationResult } from "@tanstack/react-query"
 import useQuestionQueueStorage from "@/features/question/hooks/useQuestionQueueStorage"
-import type { NewQuiz, Quiz, UpdateQuiz } from "@/features/quiz/types/quizzes.types.ts"
-import {
-    createQuiz,
-    deleteQuiz,
-    getQuiz,
-    getQuizzes,
-    updateQuiz,
-} from "@/features/quiz/api/quizzes.api.ts"
+import type { NewQuiz, Quiz, UpdateQuiz } from "@/features/quiz/types/quizzes.ts"
+import deleteQuiz from "@/features/quiz/api/deleteQuiz.ts"
+import createQuiz from "@/features/quiz/api/createQuiz.ts"
+import updateQuiz from "@/features/quiz/api/updateQuiz.ts"
+import getQuizzes from "@/features/quiz/api/getQuizzes.ts"
+import getQuiz from "@/features/quiz/api/getQuiz.ts"
 
 // Query Keys
 export const quizKeys = {

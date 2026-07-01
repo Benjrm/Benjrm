@@ -1,4 +1,4 @@
-import type { QuestionType } from "@/features/question/types/questions.types.ts"
+import type { QuestionType } from "@/features/question/types/questions.ts"
 
 /**
  * List with all available question types.

@@ -6,7 +6,7 @@ import { toast, Toaster } from "sonner"
 import { useTranslation } from "react-i18next"
 import QuizCard from "@/features/quiz/views/QuizCard"
 import { useQuizzes } from "@/features/quiz/hooks/quizzes.queries.ts"
-import type { Quiz } from "@/features/quiz/types/quizzes.types.ts"
+import type { Quiz } from "@/features/quiz/types/quizzes.ts"
 
 function renderQuizzesContent(
     sortedQuizzes: Quiz[],

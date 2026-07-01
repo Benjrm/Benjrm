@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import type WebSocketService from "@/shared/utils/webSocketService"
-import { getSession } from "@/features/session/api/session"
-import { ApiError } from "@/shared/utils/apiUtils"
+import ApiError from "@/shared/types/apiError.ts"
+import getSession from "@/features/session/api/getSession.ts"
 
 interface Error {
     isReconnecting: boolean

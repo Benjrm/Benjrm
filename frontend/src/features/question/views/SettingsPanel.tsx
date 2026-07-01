@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import AnswerPreviewGrid from "./AnswerPreviewGrid"
 import { ScrollArea } from "@/shadcn/components/ui/scroll-area"
 import MarkdownComponent from "@/shared/views/markdown/MarkdownComponent"
-import type { Question } from "@/features/question/types/questions.types.ts"
+import type { Question } from "@/features/question/types/questions.ts"
 
 interface SettingsPanelProps {
     question: Question

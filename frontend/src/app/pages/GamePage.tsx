@@ -7,22 +7,20 @@ import usePlayerWebSocket from "@/features/session/hooks/usePlayerWebSocket"
 import useSocketEvent from "@/shared/hooks/useSocketEvent"
 import useWebSocketContext from "@/shared/hooks/useWebSocketContext"
 import GameScreen from "@/features/session/views/GameScreen"
-import {
-    AVAILABLE_EMOJIS,
-    GameStateEnum,
-    parseDisplayQuestion,
-} from "@/features/session/hooks/useGameSession"
-import type {
-    GameState,
-    GameQuestion,
-    QuestionResult,
-    LeaderboardEntry,
-} from "@/features/session/hooks/useGameSession"
 import PlayerLobby from "@/features/session/views/PlayerLobby"
 import useSessionStatus from "@/features/session/hooks/useSessionStatus"
 import InvalidCode from "@/features/session/views/InvalidCode"
 import useWebSocketConnectError from "@/shared/hooks/useWebSocketConnectError"
 import useCodeWithDash from "@/features/session/utils/useCodeWithDash"
+import parseDisplayQuestion from "@/features/question/utils/parseDisplayQuestion.ts"
+import AVAILABLE_EMOJIS from "@/features/session/constants/availableEmojis.ts"
+import { GameStateEnum } from "@/features/session/types/session.ts"
+import type {
+    GameQuestion,
+    GameState,
+    LeaderboardEntry,
+    QuestionResult,
+} from "@/features/session/types/session.ts"
 
 function mergeStorage(key: string, patch: object): void {
     try {
