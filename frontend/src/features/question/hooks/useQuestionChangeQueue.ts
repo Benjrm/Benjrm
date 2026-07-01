@@ -2,7 +2,10 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 import useQuestionQueueStorage from "@/features/question/hooks/useQuestionQueueStorage.ts"
 import type { QueueItem } from "@/features/question/queue/queue.types.ts"
 import reducer from "@/features/question/queue/queue.reducer.ts"
-import type { QuestionRequest, UpdateQuestionRequest } from "@/features/question/types/questions.types.ts"
+import type {
+    QuestionRequest,
+    UpdateQuestionRequest,
+} from "@/features/question/types/questions.types.ts"
 import processQueue, { sortQueue } from "@/features/question/queue/queue.operations.ts"
 
 export interface UseQuestionChangeQueueReturn {
