@@ -49,7 +49,7 @@ impl OptionModel for AnswerOrderModel {
 impl NewOption<AnswerOrderModel> for NewAnswerOrder {
     type Active = ActiveAnswerChoice;
 
-    /// Returns always `true` because order questions do not define correctness of an answer option.
+    /// Returns always `true` because order questions don't define correctness of an answer option.
     ///
     /// This is a workaround to satisfy the [`NewOption`] trait, which requires a `correct` method.
     /// In the context of order questions, the correctness is determined by the order of the answers rather than their individual content.

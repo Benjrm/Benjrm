@@ -168,14 +168,16 @@ pub struct GameSessionPlayer {
 
 /// A trait representing a Channel for a game session.
 ///
-/// The `Channel` trait is used to abstract the communication mechanism between the server and the clients (players and host) in a game session.
+/// The [`Channel`] trait is used to abstract the communication mechanism between the server and the clients (players and host) in a game session.
 #[async_trait::async_trait]
 pub trait Channel<Msg: Serialize>: Send {
     /// Sends a message over the channel. If the message has a timing field, it will be adjusted by the time delta of the channel.
     async fn send(&mut self, msg: Message<'_, Msg>) -> Result<(), ChannelError>;
-    /// Closes the channel. This will terminate the listener and close the underlying WebSocket connection.
+    /// This will terminate the listener and close the underlying channel connection.
     async fn close(self: Box<Self>);
-    /// Returns a unique id for the channel.
+    /// Returns a unique id for the channel
+    ///
+    /// **Hint:** Must be the same as of [`Joining::id`].
     fn id(&self) -> u64;
 
     /// Generates a unique id that can be used used as return value of [`Channel::id`].
@@ -249,7 +251,7 @@ impl<'a, T: Serialize> From<&'a T> for Message<'a, T> {
 
 /// A command sent from a client to the server.
 ///
-/// Optionally id is set, the id needs to be unique on the client side (e.g. a simple counter).
+/// If id is set, the id needs to be unique on the client side (e.g. a simple counter).
 /// This id is used to identify wich answer belongs to wich command send.
 /// The server simply passes the id back to the client in the response, so the client can match the response to the command.
 #[derive(Debug, Clone, Deserialize)]
@@ -264,7 +266,7 @@ pub struct Command<T> {
 pub trait CommandTrait: Sized {
     /// Parses a JSON byte slice into a command of the implementing type.
     fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error>;
-    /// Implements the pong handler when the server sends a ping message to the client and waits for the pong response.
+    /// Returns the pong response data after the serer sends a ping out to the client.
     fn pong(&self) -> Option<(u32, DateTime<Utc>)>;
     /// Returns the unique id of the command, if it has one.
     fn id(&self) -> Option<u64>;
@@ -335,7 +337,7 @@ impl PartialOrd for LeaderboardEntry {
     }
 }
 
-/// Represents aggregated answer statistics for a question, grouped by question type.
+/// Represents aggregated answer statistics for a question.
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AnswerStatistics {

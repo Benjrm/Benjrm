@@ -30,9 +30,9 @@ where
 pub trait UpdateOption {
     /// Returns the unique id of the option.
     fn id(&self) -> Uuid;
-    /// Returns if a choice answer is correct.
+    /// Returns if the correctness of a answer got changed during a update.
     ///
-    /// This could return [`None`] if the correctness of a answer is not specifiable (e.g., for [`Order`](crate::question::entity::QuestionType::Order) questions).
+    /// If changed it returns [`Some<bool>`], if not [`None`] .
     fn correct(&self) -> Option<bool>;
 }
 
@@ -61,7 +61,7 @@ where
     fn set(&mut self, update: Update);
     /// Returns the active value of the option ID.
     fn id(&self) -> &ActiveValue<Uuid>;
-    /// Returns the `prev`` linked option ID in a linked-list ordering.
+    /// Returns the `prev` linked option ID in a linked-list ordering.
     fn prev(&self) -> &ActiveValue<Option<Uuid>>;
     /// Sets the previous linked option ID.
     ///

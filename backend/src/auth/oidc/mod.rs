@@ -27,7 +27,7 @@ impl Oidc {
     /// This function reads the necessary configuration from environment variables.
     /// It fetches the OIDC well-known configuration from the issuer URL and constructs the OIDC client accordingly.
     /// If available, missing environment variables will be filled in using the well-known configuration.
-    /// If any required environment variable is missing or can't be filled discovered through the well-known configuration, it will panic with an appropriate error message.
+    /// If any required environment variable is missing or can't be discovered through the well-known configuration, it will panic with an appropriate error message.
     pub async fn from_env() -> Self {
         let issuer_url = Url::parse(&env_var("OIDC_ISSUER_URL")).expect("Parse OIDC_ISSUER_URL");
 

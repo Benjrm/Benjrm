@@ -117,7 +117,7 @@ impl QuizModel {
         Ok(())
     }
 
-    // Updates the modified date of a quiz.
+    /// Updates the modified date of a quiz.
     pub async fn update_modified(
         self,
         date: DateTime<Utc>,

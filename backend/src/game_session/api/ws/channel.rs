@@ -46,7 +46,7 @@ pub(super) async fn send_msg_log_error<T: Serialize>(
 ///
 /// # Errors
 ///
-/// - Returns [`WsChannelError::Serialization`] if the message cannot be serialized to JSON
+/// - Returns [`WsChannelError::Serialization`] if the message can't be serialized to JSON
 /// - or [`WsChannelError::Tx`] if the WebSocket connection is closed before the message can be sent
 async fn send_msg<T: Serialize>(
     tx: &mut actix_ws::Session,

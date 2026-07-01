@@ -163,7 +163,7 @@ impl From<NewQuestion> for UpdateQuestion {
     }
 }
 
-/// Answer options for a existing question, this also defines if the type of question may get changed.
+/// Answer options to update a existing question, this also defines if the type of question may get changed.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(
     tag = "type",
@@ -189,7 +189,7 @@ impl UpdateQuestionOptions {
         }
     }
 
-    /// Deserializes the options only if the type and option option fields are present.
+    /// Deserializes the options only if the type or option fields is present (or both).
     pub fn deserialize_optional<'de, D>(deserializer: D) -> Result<Option<Self>, D::Error>
     where
         D: Deserializer<'de>,
@@ -281,14 +281,14 @@ pub trait LinkedItem {
 
 /// Sorts a collection of linked items into their correct order inplace.
 ///
-/// The function sorts elements out of a doubly-linked list via their `prev` and `next` values.
+/// The function sorts elements out of a doubly linked list via their return of [`prev`](LinkedItem::prev) and [`next`](LinkedItem::next) functioins.
 ///
 /// Returns `Some(Vec<T>)` if a valid continuous chain can be formed, otherwise `None` is returned.
 ///
 /// The validation rules are:
-/// - Exactly one item must have set `prev` to [`None`] (used as first element).
-/// - Each item must correctly reference the previous item via `prev`.
-/// - After sorting, the last element must have set `next` to [`None`].
+/// - Exactly one item must return [`None`] from [`prev`](LinkedItem::prev) (used as first element).
+/// - Each item must correctly reference the neighboring elements using [`prev`](LinkedItem::prev) and [`next`](LinkedItem::next).
+/// - After sorting, the last element must return [`None`] from [`next`](LinkedItem::next) (used as last element).
 pub fn sort_linked_items<T: LinkedItem>(mut items: Vec<T>) -> Option<Vec<T>> {
     if items.is_empty() {
         return Some(items);

@@ -8,7 +8,7 @@ macro_rules! impl_base_err {
                 $($name($field),)*
             }
 
-            /// Implement methods that are required to fully implement the [`ResponseError`] trait for the error enum
+            /// Implement methods that are required to fully implement the [`ResponseError`](actix_web::error::ResponseError) trait for the error enum
             impl Error {
                 pub fn category(&self) -> &'static str {
                     match self {

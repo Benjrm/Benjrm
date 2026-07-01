@@ -49,7 +49,7 @@ impl<Model: OptionModel> UpdateLinkedOptions<Model> {
     ///
     /// A new UUID is generated for the option.
     ///
-    /// If the option is marked correct, `correct_found` is set to `true`.
+    /// If the option is marked correct, [`correct_found`](UpdateLinkedOptions<Model>::correct_found) is set to `true`.
     pub fn add_new(&mut self, new: Model::New) {
         let id = Uuid::new_v4();
         let option = LinkedOption {

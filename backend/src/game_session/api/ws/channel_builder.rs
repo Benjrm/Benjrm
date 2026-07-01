@@ -51,7 +51,6 @@ impl WsChannelBuilder {
     }
 
     /// Create a new [`WsChannel`] and spawn a new listener. To terminate the listener, call [`WsChannel::close`].
-    /// Builds a [`WsChannel`] and starts processing incoming commands.
     ///
     /// This method consumes the builder and spawns a background task that continuously receives commands from the WebSocket connection.
     pub fn build<

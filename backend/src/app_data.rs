@@ -5,7 +5,7 @@ use {
 
 /// Application-wide shared state.
 ///
-/// `AppData` is constructed once at startup and passed into handlers.
+/// [`AppData`] is constructed once at startup and passed into handlers.
 /// It contains all core services required by the application, including:
 /// - database connection and migrations
 /// - authentication

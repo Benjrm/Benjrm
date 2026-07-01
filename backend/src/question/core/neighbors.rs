@@ -15,7 +15,7 @@ use {
     uuid::Uuid,
 };
 
-/// A struct representing a liked list of Uuids, which can be used to modify questions in a quiz by specifying the position of a question relative to its neighbors.
+/// A variant representing a position (like an index) of a question relative to its neighbors in the question doubly linked list.
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub enum Position {
@@ -48,7 +48,7 @@ impl Position {
     }
 }
 
-/// A struct representing a doubly linked list of questions.
+/// A struct representing the neighboring [`QuestionModels`](QuestionModel) of a [`QuestionModel`] in the question linked list.
 pub struct Neighbors {
     prev: Option<QuestionModel>,
     next: Option<QuestionModel>,
@@ -77,7 +77,7 @@ impl Neighbors {
         }
     }
 
-    /// Retrieves the neighboring questions of a given question in a quiz, based on the specified [`Position`] (either the previous or next question).
+    /// Retrieves the neighboring questions of a given [`Position`] in a quiz.
     pub async fn get(
         quiz: &QuizModel,
         pos: Position,
@@ -131,7 +131,7 @@ impl Neighbors {
         }
     }
 
-    /// Moves a new question by its id between the current neighbors, updating the `prev` and `next` fields of the neighboring questions in the database.
+    /// Moves a new question by its id between the current neighbors, updating the [`prev`](QuestionModel::prev) and [`next`](QuestionModel::prev) fields of the neighboring questions in the database.
     pub async fn move_between(
         self,
         txn: &DatabaseTransaction,

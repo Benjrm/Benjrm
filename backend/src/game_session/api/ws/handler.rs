@@ -73,6 +73,7 @@ async fn remove_host_ws(
 ///
 /// Player connections are only accepted while the session is in waiting state.
 /// The connection enters a temporary "joining" state where it waits for a valid [`SetName`](crate::game_session::PlayerCommand::SetName).
+/// While in "joining" state, the [`Reconnect`](crate::game_session::PlayerCommand::Reconnect) command is also allowed.
 /// Once the player successfully joins, the connection is promoted to a normal player channel.
 ///
 /// Returns an error if the game has already started.
@@ -111,7 +112,9 @@ async fn get_player_ws(
     Ok(res)
 }
 
-/// Removes a disconnected player from the session while notifying the host that the player has left.
+/// Waits 15 minutes before checking whether the disconnected player channel has been replaced.
+///
+/// If the player has not reconnected, the player gets removed from the session while notifying the host.
 pub(super) async fn remove_player_ws(
     _app_data: web::Data<AppData>,
     session: Arc<Mutex<GameSession>>,

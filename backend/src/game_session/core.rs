@@ -40,9 +40,9 @@ impl GameSessions {
     /// - Stores the session only in memory (not persisted)
     ///
     /// ## Session Codes
-    /// - In debug mode, session codes are generated sequentially starting from 1.
-    /// - In release mode, session codes are generated randomly and checked for uniqueness.
-    ///    - If a unique code cannot be generated after 10 attempts, an error is returned (rare situation).
+    /// - In debug builds, session codes are generated sequentially starting from 1.
+    /// - In release builds, session codes are generated randomly and checked for uniqueness.
+    ///    - If a unique code can't be generated after 10 attempts, an error is returned (rare situation).
     pub async fn create_session(
         &self,
         conn: &impl ConnectionTrait,
@@ -351,7 +351,6 @@ impl GameSession {
     /// If `id` is [`Some(id)`](Option::Some<Uuid>), it will show the question with that id.
     ///
     /// If the session is currently in a question, it will end that question first.
-    /// The player points will not get applied if players already answered during the previous question.
     async fn next_question(
         &mut self,
         id: Option<Uuid>,
@@ -600,7 +599,7 @@ impl GameSession {
                 }
                 player.name = name;
 
-                // `handle_player_cmd`` is only called if the player is already joined, so a SetName command is always a rename
+                // `handle_player_cmd` is only called if the player is already joined, so a `SetName` command is always a rename
                 self.host
                     .msg(Message::from(&HostMessage::RenamePlayer {
                         id,
@@ -841,7 +840,7 @@ impl GameSessionPlayer {
 
     /// Adds points for the player for a specific question.
     /// If the player has already answered that question, it returns an error.
-    /// Points do not get applied until [`GameSessionPlayer::apply_points`] is called for that question.
+    /// Points don't get applied until [`GameSessionPlayer::apply_points`] is called for that question.
     pub fn add_points(&mut self, points: u32, question: Uuid) -> Result<(), GameSessionError> {
         if let Some((_, uuid)) = self.last_question
             && uuid == question
@@ -870,15 +869,7 @@ impl QuestionOptions {
     /// Calculates the points for a given answer based on how many correct elements were identified.
     /// The scoring system is normalized to a total of **1000 points per question**.
     ///
-    /// This function only determines how many *correct options* the answer achieved.
-    /// The final score is computed by multiplying this value with the per-option score.
-    ///
-    /// **Hint:**
-    /// - [`Slide`](QuestionOptions::Slide) questions cannot be answered and always return an error.
-    /// - [`SingleChoice`](QuestionOptions::SingleChoice) returns `1` if correct, otherwise `0`.
-    /// - [`MultipleChoice`](QuestionOptions::MultipleChoice) counts how many selections match the
-    ///   correctness state (selected correct + unselected incorrect).
-    /// - [`Order`](QuestionOptions::Order) counts how many adjacent pairs are in the correct order.
+    /// The final score is computed by multiplying the result from [`get_correct`](Self::get_correct) with the per-option score.
     pub fn get_points(&self, correct: usize) -> u32 {
         let total_points = 1000;
         let points_per_option = match self {
@@ -892,6 +883,13 @@ impl QuestionOptions {
     }
 
     /// Calculates the number of correct options for a given answer based on the question type.
+    ///
+    /// **Hint:**
+    /// - [`Slide`](QuestionOptions::Slide) questions can't be answered and always return an error.
+    /// - [`SingleChoice`](QuestionOptions::SingleChoice) returns `1` if correct, otherwise `0`.
+    /// - [`MultipleChoice`](QuestionOptions::MultipleChoice) counts how many selections match the
+    ///   correctness state (selected correct + unselected incorrect).
+    /// - [`Order`](QuestionOptions::Order) counts how many adjacent pairs are in the correct order.
     pub fn get_correct(&self, answer: &[Uuid]) -> Result<usize, GameSessionError> {
         match self {
             QuestionOptions::Slide => Err(GameSessionError::CannotAnswer),
@@ -947,7 +945,7 @@ impl QuestionOptions {
     /// Returns a list of the correct answer IDs for the question.
     ///
     /// **Hint:**
-    /// - [`Slide`](QuestionOptions::Slide) questions do not have correct answers, so this will return an empty list.
+    /// - [`Slide`](QuestionOptions::Slide) questions don't have correct answers, so this will return an empty list.
     /// - [`SingleChoice`](QuestionOptions::SingleChoice) and [`MultipleChoice`](QuestionOptions::MultipleChoice) questions return the IDs of the correct options.
     /// - [`Order`](QuestionOptions::Order) questions return the IDs of the options in the correct order.
     pub fn correct_answer_list(&self) -> Vec<Uuid> {

@@ -6,7 +6,7 @@ use {
 
 /// Represents a static file that can be served over HTTP.
 ///
-/// **Hint:** [`StaticFile`] is sensitive to wether a build is debug or not.
+/// **Hint:** [`StaticFile`] is sensitive to whether a build is debug or not.
 /// - **Release:** file is read once and embedded into memory
 /// - **Debug:** file is read from disk on each request
 ///
@@ -30,7 +30,7 @@ impl StaticFile {
     /// - Debug: only the file path is stored and read dynamically
     ///
     /// ## Panics
-    /// Panics if the file cannot be read in release mode.
+    /// Panics if the file can't be read in release builds.
     pub async fn new(
         config_dir: impl AsRef<Path>,
         filename: &str,
@@ -80,8 +80,8 @@ current directory: {}"#,
     ///
     /// Returns:
     /// - `200 OK` with file content if successful
-    /// - `404 Not Found` (debug mode only) if file is missing
-    /// - `500 Internal Server Error` on unexpected I/O errors (debug mode only)
+    /// - `404 Not Found` (debug only) if file is missing
+    /// - `500 Internal Server Error` on unexpected I/O errors (debug only)
     pub async fn get_response(&self) -> HttpResponse {
         #[cfg(not(debug_assertions))]
         return HttpResponse::Ok()

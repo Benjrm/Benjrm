@@ -1,14 +1,11 @@
-/// Frontend serving layer.
-///
-/// This module exposes a single Actix handler that serves the frontend application in both production and development modes.
-///
-/// ## Modes
-///
-/// - **Release mode (`not(debug_assertions)`):**
-///   Serves pre-built static assets embedded into the binary.
-///
-/// - **Debug mode (`debug_assertions`):**
-///   Proxies requests to the frontend development server (e.g. Vite).
+//! Frontend serving layer.
+//!
+//! This module exposes a single Actix handler that serves the frontend application in both production and development modes.
+//!
+//! ## Modes
+//!
+//! - **Release (`not(debug_assertions)`):** Serves pre-built static assets embedded into the binary.
+//! - **Debug (`debug_assertions`):** Proxies requests to the frontend development server (typically [Vite](https://vite.dev)).
 use {
     actix_web::{Route, web},
     awc::http::Method,
@@ -55,7 +52,7 @@ mod serve_frontend {
 /// Forwards requests to the frontend dev server (typically [Vite](https://vite.dev)),
 /// preserving a small subset of HTTP headers.
 ///
-/// Requires an `awc::Client` in Actix application state.
+/// Requires an [`awc::Client`] in Actix application state.
 #[cfg(debug_assertions)]
 mod serve_frontend {
     use {

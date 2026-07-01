@@ -5,7 +5,7 @@ pub mod entity;
 #[cfg(test)]
 mod test;
 
-/// A struct representing a new answer for a choice question such.
+/// A struct representing a new answer for a choice question.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct NewAnswerChoice {

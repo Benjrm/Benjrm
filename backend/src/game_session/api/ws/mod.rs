@@ -46,7 +46,7 @@ impl fmt::Debug for WsJoining {
     }
 }
 
-/// A struct representing the ancknowladgement of a ping message sent by the client over WebSocket.
+/// A variant representing the ancknowladgement of a ping message sent by the client over WebSocket.
 #[derive(Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 enum Response {

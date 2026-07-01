@@ -93,7 +93,7 @@ impl QuizModel {
         })
     }
 
-    /// Retrieves a question by its unique id, ensuring that it belongs to the current quiz.
+    /// Retrieves a question by its id, ensuring that it belongs to the current quiz.
     pub async fn get_question(
         &self,
         conn: &impl ConnectionTrait,

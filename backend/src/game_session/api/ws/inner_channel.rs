@@ -31,7 +31,7 @@ pub(super) struct InnerChannel {
 }
 
 impl InnerChannel {
-    /// Creates a new `InnerChannel` with the given WebSocket session and message stream.
+    /// Creates a new [`InnerChannel`] with the given WebSocket session and message stream.
     ///
     /// The channel starts with no measured clock offset and an empty history of ping samples.
     /// Therfore the offset measurement will be inaccurate until a few (num of [`RingDelta::COUNT`]) pings have been exchanged.
@@ -49,7 +49,7 @@ impl InnerChannel {
 
     /// Receives the next WebSocket message.
     ///
-    /// This functino also tracks if the connection is stil alive by waiting for a message for up to 4 seconds.
+    /// This function also tracks if the connection is stil alive by waiting for a message for up to 4 seconds.
     /// If no message is received within that time, the timeout counter is incremented.
     ///
     /// After four consecutive timeouts, or if the WebSocket connection is closed, this function returns [`Closed`].

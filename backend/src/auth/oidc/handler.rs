@@ -235,10 +235,10 @@ async fn delete_user(
 ///
 /// ```bash
 /// # Authenticate as dummy user 1
-/// curl -c cookies.txt http://localhost/login/dummy/1
+/// curl -c cookies.txt http://localhost/auth/login/dummy/1
 ///
 /// # Make an authenticated request using the saved session
-/// curl -b cookies.txt http://localhost/user
+/// curl -b cookies.txt http://localhost/auth/user
 /// ```
 #[cfg(debug_assertions)]
 async fn dummy_login(
@@ -303,7 +303,7 @@ async fn fetch_insert_db_user(conn: &impl ConnectionTrait, sub: &str) -> Result<
 /// Registers the authentication-related HTTP routes.
 ///
 /// In debug builds, the dummy login gets also registerd:
-/// - `GET /login/dummy/{id}`
+/// - `GET /auth/login/dummy/{id}`
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/login").route(web::get().to(login)));
     cfg.service(web::resource("/oidc/callback").route(web::get().to(callback)));
