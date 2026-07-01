@@ -126,7 +126,7 @@ impl GameSessions {
             session.close().await;
         }
 
-        self.sessions.write().await.remove(&code);
+        self.drop_session(code).await;
 
         Ok(())
     }

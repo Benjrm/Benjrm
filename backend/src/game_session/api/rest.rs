@@ -3,11 +3,9 @@ use {
         AppData,
         auth::{OptionalUser, User},
         error::Result,
-        game_session::{GameSessionError, GameSessionPlayer, SessionCode, api::NewSession},
+        game_session::{GameSessionError, GameSessionPlayer, Player, SessionCode, api::NewSession},
     },
     actix_web::{HttpResponse, web},
-    emojis::Emoji,
-    serde::Serialize,
     std::sync::Arc,
     uuid::Uuid,
 };
@@ -160,21 +158,8 @@ fn player_list_response(
         return Err(GameSessionError::Forbidden.into());
     }
 
-    #[derive(Serialize)]
-    struct Player {
-        id: Uuid,
-        name: String,
-        emoji: Option<&'static Emoji>,
-    }
-    let mut res_players = Vec::new();
-    for player in players {
-        res_players.push(Player {
-            id: player.id,
-            name: player.name.clone(),
-            emoji: player.emoji,
-        })
-    }
-    Ok(HttpResponse::Ok().json(res_players))
+    let players: Vec<_> = players.iter().map(Player::from).collect();
+    Ok(HttpResponse::Ok().json(players))
 }
 
 async fn get_players(
