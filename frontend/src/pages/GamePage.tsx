@@ -16,6 +16,7 @@ import PlayerLobby from "@/components/PlayerLobby"
 import useSessionStatus from "@/api/session/hooks/useSessionStatus"
 import InvalidCode from "@/components/InvalidCode"
 import useWebSocketConnectError from "@/api/websocket/hooks/useWebSocketConnectError"
+import useCodeWithDash from "@/hooks/useCodeWithDash"
 
 function mergeStorage(key: string, patch: object): void {
     try {
@@ -34,14 +35,7 @@ function GamePageComponent({ code }: { code?: number }): JSX.Element {
     const ws = useWebSocketContext()
     const { session } = useSessionStatus(code)
 
-    const codeWithDash =
-        code !== undefined
-            ? ((s) => {
-                  const mid = Math.floor(s.length / 2)
-                  return `${s.slice(0, mid)}-${s.slice(mid)}`
-              })(String(code).padStart(8, "0"))
-            : undefined
-
+    const codeWithDash = useCodeWithDash(code)
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null
 
     const { isReconnecting, isInvalidCode, unableToConnect } = useWebSocketConnectError(ws, code)

@@ -15,6 +15,7 @@ import HostLobby from "@/components/HostLobby"
 import InvalidCode from "@/components/InvalidCode"
 import { useAudio } from "@/context/AudioContext"
 import useWebSocketConnectError from "@/api/websocket/hooks/useWebSocketConnectError"
+import useCodeWithDash from "@/hooks/useCodeWithDash"
 
 function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
     const { t } = useTranslation()
@@ -23,14 +24,7 @@ function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
     const ws = useWebSocketContext()
 
     const { data: quiz } = useSessionQuiz(code)
-
-    const codeWithDash =
-        code !== undefined
-            ? ((s) => {
-                  const mid = Math.floor(s.length / 2)
-                  return `${s.slice(0, mid)}-${s.slice(mid)}`
-              })(String(code).padStart(8, "0"))
-            : undefined
+    const codeWithDash = useCodeWithDash(code)
 
     const [pendingStartId, setPendingStartId] = useState<number | null>(null)
     const [gameState, setGameState] = useState<GameState>(GameStateEnum.LOBBY)
