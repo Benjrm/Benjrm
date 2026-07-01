@@ -266,7 +266,12 @@
         "loadingLobby": "Lobby wird geladen…",
         "lobbyNotFound": {
             "title": "Quiz-Lobby nicht gefunden",
-            "description": "Keine Lobby mit dem Code {{code}} gefunden. Bitte überprüfe den Einladungscode und versuche es erneut."
+            "description": "Keine Lobby mit dem Code {{code}} gefunden. Bitte überprüfe den Einladungscode und versuche es erneut.",
+            "alreadyStarted": "Lobby wurde bereits gestartet."
+        },
+        "unableToConnect": {
+            "title": "Verbindung kann nicht hergestellt werden",
+            "description": "Die Verbindung zu der Lobby mit dem Code {{code}} ist wiederholt fehlgeschlagen."
         },
         "host": {
             "noTitle": "Kein Titel",

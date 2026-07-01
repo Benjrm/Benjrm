@@ -1,5 +1,8 @@
 use {
-    crate::game_session::{GameSession, SessionCode},
+    crate::{
+        auth::User,
+        game_session::{GameSession, GameSessionStatus, SessionCode},
+    },
     serde::{Deserialize, Serialize},
     uuid::Uuid,
 };
@@ -14,16 +17,26 @@ struct NewSession {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GameSessionDto {
     code: SessionCode,
+    is_host: bool,
+    started: bool,
     quiz: Option<Uuid>,
 }
 
 impl GameSession {
-    pub fn to_dto(&self, code: SessionCode) -> GameSessionDto {
+    pub fn to_dto(&self, code: SessionCode, user: Option<User>) -> GameSessionDto {
+        let is_host = user.as_ref() == Some(&self.host.user);
+        let quiz = match is_host {
+            true => self.quiz.as_ref().map(|x| x.model.id),
+            false => None,
+        };
         GameSessionDto {
             code,
-            quiz: self.quiz.as_ref().map(|x| x.model.id),
+            is_host,
+            started: !matches!(self.status, GameSessionStatus::Waiting(_)),
+            quiz,
         }
     }
 }

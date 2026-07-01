@@ -23,7 +23,7 @@ use {
 pub struct WsChannelBuilder {
     pub(super) id: u64,
     pub(super) inner: InnerChannel,
-    pub(super) app_data: web::Data<AppData>,
+    pub(super) app_data: Arc<AppData>,
     pub(super) session: Arc<Mutex<GameSession>>,
 }
 
@@ -38,7 +38,7 @@ impl WsChannelBuilder {
         Self {
             id,
             inner: InnerChannel::new(tx, rx),
-            app_data,
+            app_data: app_data.into_inner(),
             session,
         }
     }
@@ -46,16 +46,16 @@ impl WsChannelBuilder {
     /// Create a new [`WsChannel`] and spawn a new listener. To terminate the listener, call [`WsChannel::close`].
     pub fn build<
         Cmd: CommandTrait + 'static,
-        Payload: Copy + 'static,
+        Payload: 'static,
         HandleCmd: AsyncFn(
                 &mut GameSession,
                 Cmd,
                 Arc<Mutex<GameSession>>,
-                Payload,
+                &Payload,
             ) -> Result<(), GameSessionError>
             + Send
             + 'static,
-        HandleDelete: AsyncFn(web::Data<AppData>, Arc<Mutex<GameSession>>, u64, Payload) + Send + 'static,
+        HandleDelete: AsyncFn(Arc<AppData>, Arc<Mutex<GameSession>>, u64, Payload) + Send + 'static,
     >(
         mut self,
         payload: Payload,
@@ -73,7 +73,7 @@ impl WsChannelBuilder {
                         &mut *self.session.lock().await,
                         cmd,
                         Arc::clone(&self.session),
-                        payload,
+                        &payload,
                     )
                     .await;
 

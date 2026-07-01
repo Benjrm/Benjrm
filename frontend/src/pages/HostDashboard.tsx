@@ -1,43 +1,32 @@
 import type { JSX } from "react"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useLocation, useNavigate, useParams } from "react-router"
+import { useLocation, useParams } from "react-router"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
-import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
-import useSessionStatus from "@/api/session/hooks/useSessionStatus"
+import { useHostWebSocket, useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import useSessionQuiz from "@/api/session/hooks/useSessionQuiz"
 import HostGameScreen from "@/components/HostGameScreen"
 import { GameStateEnum, parseDisplayQuestion } from "@/hooks/useGameSession"
 import type { GameState, GameQuestion, LeaderboardEntry } from "@/hooks/useGameSession"
 import type { SessionPlayer } from "@/api/session"
 import type { QuestionStatistics } from "@/hooks/useQuestionStatistics"
+import HostLobby from "@/components/HostLobby"
+import InvalidCode from "@/components/InvalidCode"
+import { useAudio } from "@/context/AudioContext"
+import useWebSocketConnectError from "@/api/websocket/hooks/useWebSocketConnectError"
+import useCodeWithDash from "@/hooks/useCodeWithDash"
 
-export default function HostDashboard(): JSX.Element {
+function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
     const { t } = useTranslation()
-    const codeParam = useParams().code
-    const code = codeParam !== null ? Number(codeParam) || undefined : undefined
-    const navigate = useNavigate()
     const location = useLocation()
+    useHostWebSocket(code)
     const ws = useWebSocketContext()
 
-    const { isLoading: isSessionLoading, isHost } = useSessionStatus(code)
     const { data: quiz } = useSessionQuiz(code)
+    const codeWithDash = useCodeWithDash(code)
 
-    const codeWithDash =
-        code !== undefined
-            ? ((s) => {
-                  const mid = Math.floor(s.length / 2)
-                  return `${s.slice(0, mid)}-${s.slice(mid)}`
-              })(String(code).padStart(8, "0"))
-            : undefined
-
-    useEffect(() => {
-        if (!isSessionLoading && !isHost) {
-            navigate(`/play/${codeParam ?? ""}`, { replace: true })
-        }
-    }, [isSessionLoading, isHost, navigate, codeParam])
-
-    const [gameState, setGameState] = useState<GameState>(GameStateEnum.PLAYING)
+    const [pendingStartId, setPendingStartId] = useState<number | null>(null)
+    const [gameState, setGameState] = useState<GameState>(GameStateEnum.LOBBY)
     const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(null)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
     const [totalQuestions, setTotalQuestions] = useState(0)
@@ -121,43 +110,43 @@ export default function HostDashboard(): JSX.Element {
             )
         setPlayers((prev) => prev.filter((p) => p.id !== id))
     })
+    useSocketEvent("setPlayers", ({ players: newPlayers }) => setPlayers(newPlayers))
 
-    useSocketEvent(
-        "error",
-        useCallback(
-            (payload) => {
-                toast.error(payload.message ?? t("game.anErrorOccurred"))
-            },
-            [t]
-        )
+    const onKickPlayer = useCallback(
+        (playerId: string): void => {
+            ws.send({ command: "kickPlayer", payload: { id: playerId } })
+        },
+        [ws]
     )
 
-    // Send the first question as soon as the WebSocket is ready
-    const hasRequestedFirstQuestion = useRef(false)
-    useEffect(() => {
-        if (hasRequestedFirstQuestion.current) return undefined
-        const sendFirstQuestion = (): void => {
-            if (hasRequestedFirstQuestion.current) return
-            hasRequestedFirstQuestion.current = true
-            ws.send({ command: "nextQuestion" })
+    useSocketEvent("ok", (_payload, _timing, id) => {
+        if (id === pendingStartId) {
+            setPendingStartId(null)
+            setGameState(GameStateEnum.PLAYING)
         }
-        return ws.onConnect(sendFirstQuestion)
-    }, [ws])
+    })
 
-    // Start as true so the overlay shows until the WS is confirmed open.
-    // onEveryConnect fires immediately if the socket is already open (normal navigation),
-    // so there is no visible flash on non-refresh transitions.
-    const [isReconnecting, setIsReconnecting] = useState(true)
-    useEffect(() => {
-        const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
-        const unsubConnect = ws.onEveryConnect(() => setIsReconnecting(false))
-        const unsubConnectFail = ws.onConnectFail(async () => navigate("/"))
-        return () => {
-            unsubDisconnect()
-            unsubConnect()
-            unsubConnectFail()
+    useSocketEvent("error", (payload, _timing, id) => {
+        if (id === pendingStartId) {
+            setPendingStartId(null)
+            toast.error(payload.message || t("lobby.errors.failedToStart"))
+        } else {
+            toast.error(payload.message || t("game.anErrorOccurred"))
         }
-    }, [ws, navigate])
+    })
+
+    const { isReconnecting, isInvalidCode, unableToConnect } = useWebSocketConnectError(ws, code)
+
+    const onStartGame = useCallback((): void => {
+        if (players.length === 0) {
+            toast.error(t("lobby.errors.waitingForPlayers"))
+            return
+        }
+        const id = Math.floor(Math.random() * 2 ** 31)
+        setPendingStartId(id)
+        ws.send({ id, command: "start" })
+        ws.send({ command: "nextQuestion" })
+    }, [players.length, ws, t])
 
     // Send endGame on unmount only after the first question was received from the server.
     // Guards against React StrictMode's double-mount: the cleanup fires before the server
@@ -175,6 +164,37 @@ export default function HostDashboard(): JSX.Element {
         ws.send({ command: "nextQuestion" })
     }, [ws])
 
+    const { setAudioElement, playAudio } = useAudio()
+    const audioRef = useRef<HTMLAudioElement | null>(null)
+    useEffect(() => {
+        if (isInvalidCode) return undefined
+        if (audioRef.current === null) {
+            audioRef.current = new Audio("/Clear_Path_Ahead.mp3")
+            audioRef.current.loop = true
+        }
+        setAudioElement(audioRef.current)
+        playAudio()
+
+        const handleInteraction = (): void => {
+            playAudio()
+            document.removeEventListener("click", handleInteraction)
+            document.removeEventListener("keydown", handleInteraction)
+        }
+        document.addEventListener("click", handleInteraction)
+        document.addEventListener("keydown", handleInteraction)
+
+        return () => {
+            document.removeEventListener("click", handleInteraction)
+            document.removeEventListener("keydown", handleInteraction)
+            setAudioElement(null)
+            audioRef.current?.pause()
+        }
+    }, [setAudioElement, playAudio, isInvalidCode])
+
+    if (isInvalidCode || unableToConnect) {
+        return <InvalidCode codeWithDash={codeWithDash} unableToConnect={unableToConnect} />
+    }
+
     return (
         <>
             {isReconnecting ? (
@@ -183,23 +203,40 @@ export default function HostDashboard(): JSX.Element {
                     <p className="text-muted-foreground">{t("game.reconnecting")}</p>
                 </div>
             ) : null}
-            <HostGameScreen
-                codeWithDash={codeWithDash}
-                currentQuestion={currentQuestion}
-                currentQuestionIndex={currentQuestionIndex}
-                gameState={gameState}
-                isFinalLeaderboard={isFinalLeaderboard}
-                leaderboard={leaderboard}
-                onEndGame={sendEndGame}
-                onNextQuestion={sendNextQuestion}
-                onShowPodium={hasPendingFinalPodium ? showPodium : undefined}
-                players={players}
-                questionExpiresAt={questionExpiresAt}
-                questionStartsAt={questionStartsAt}
-                questionStatistics={questionStatistics}
-                quizTitle={quiz?.title}
-                totalQuestions={totalQuestions}
-            />
+            {gameState === GameStateEnum.LOBBY ? (
+                <HostLobby
+                    codeWithDash={codeWithDash}
+                    onKickPlayer={onKickPlayer}
+                    onStartGame={onStartGame}
+                    players={players}
+                    quiz={quiz}
+                    startPending={pendingStartId !== null}
+                />
+            ) : (
+                <HostGameScreen
+                    codeWithDash={codeWithDash}
+                    currentQuestion={currentQuestion}
+                    currentQuestionIndex={currentQuestionIndex}
+                    gameState={gameState}
+                    isFinalLeaderboard={isFinalLeaderboard}
+                    leaderboard={leaderboard}
+                    onEndGame={sendEndGame}
+                    onNextQuestion={sendNextQuestion}
+                    onShowPodium={hasPendingFinalPodium ? showPodium : undefined}
+                    players={players}
+                    questionExpiresAt={questionExpiresAt}
+                    questionStartsAt={questionStartsAt}
+                    questionStatistics={questionStatistics}
+                    quizTitle={quiz?.title}
+                    totalQuestions={totalQuestions}
+                />
+            )}
         </>
     )
+}
+
+export default function HostDashboard(): JSX.Element {
+    const codeParam = useParams().code
+    const code = codeParam !== null ? Number(codeParam) || undefined : undefined
+    return <HostDashboardComponent key={code} code={code} />
 }
