@@ -9,7 +9,11 @@ import useWebSocketContext from "@/shared/hooks/useWebSocketContext"
 import useSessionQuiz from "@/features/session/hooks/useSessionQuiz"
 import HostGameScreen from "@/features/session/views/HostGameScreen"
 import { GameStateEnum, parseDisplayQuestion } from "@/features/session/hooks/useGameSession"
-import type { GameState, GameQuestion, LeaderboardEntry } from "@/features/session/hooks/useGameSession"
+import type {
+    GameState,
+    GameQuestion,
+    LeaderboardEntry,
+} from "@/features/session/hooks/useGameSession"
 import type { SessionPlayer } from "@/features/session/api/session"
 import type { QuestionStatistics } from "@/features/question/hooks/useQuestionStatistics"
 import HostLobby from "@/features/session/views/HostLobby"

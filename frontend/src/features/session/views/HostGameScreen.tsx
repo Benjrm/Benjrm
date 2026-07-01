@@ -13,7 +13,11 @@ import Leaderboard from "@/features/session/leaderboard/components/Leaderboard"
 import MarkdownPageComponent from "@/shared/views/markdown/MarkdownPageComponent"
 import MarkdownComponent from "@/shared/views/markdown/MarkdownComponent"
 import { GameStateEnum } from "@/features/session/hooks/useGameSession"
-import type { GameState, GameQuestion, LeaderboardEntry } from "@/features/session/hooks/useGameSession"
+import type {
+    GameState,
+    GameQuestion,
+    LeaderboardEntry,
+} from "@/features/session/hooks/useGameSession"
 import useQuestionStatistics from "@/features/question/hooks/useQuestionStatistics"
 import type { QuestionStatistics } from "@/features/question/hooks/useQuestionStatistics"
 

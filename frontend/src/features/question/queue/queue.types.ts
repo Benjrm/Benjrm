@@ -1,4 +1,7 @@
-import type { QuestionRequest, UpdateQuestionRequest } from "@/features/question/types/questions.types.ts"
+import type {
+    QuestionRequest,
+    UpdateQuestionRequest,
+} from "@/features/question/types/questions.types.ts"
 
 /**
  * Base structure for all queue items.
