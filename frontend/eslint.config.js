@@ -8,6 +8,7 @@ import { rules as prettierConfigRules } from "eslint-config-prettier"
 import i18next from "eslint-plugin-i18next"
 import prettierPlugin from "eslint-plugin-prettier"
 import reactRefresh from "eslint-plugin-react-refresh"
+import unusedImports from "eslint-plugin-unused-imports"
 import globals from "globals"
 
 const gitignorePath = path.resolve(".", ".gitignore")
@@ -116,6 +117,7 @@ export default defineConfig([
         },
         plugins: {
             "react-refresh": reactRefresh,
+            "unused-imports": unusedImports,
         },
         rules: {
             "react/react-in-jsx-scope": "off",
@@ -131,6 +133,26 @@ export default defineConfig([
             "@typescript-eslint/no-explicit-any": "error",
             camelcase: "error",
             "eol-last": "error",
+            "unused-imports/no-unused-imports": "error",
+            "import-x/no-unused-modules": [
+                "warn",
+                {
+                    unusedExports: true,
+                    src: ["src"],
+                    ignoreExports: ["src/main.tsx", "src/shadcn/**"],
+                },
+            ],
+            "@typescript-eslint/no-unused-vars": [
+                "error",
+                {
+                    vars: "all",
+                    args: "after-used",
+                    ignoreRestSiblings: true,
+                    argsIgnorePattern: "^_",
+                    varsIgnorePattern: "^_",
+                    caughtErrorsIgnorePattern: "^_",
+                },
+            ],
         },
     },
 ])
