@@ -19,10 +19,9 @@ export default function useSessionStatus(code: number | undefined): SessionStatu
     const { data: session, isLoading, error: sessionError } = useSession(code)
 
     return useMemo(() => {
-        // If we have session data, the user is the host
         const isHost = session?.isHost ?? false
 
-        // A 403 or 401 error indirectly indicates that the user is a player
+        // If the session exists but the user is not the host, this means that the user is a player
         const isPlayer = session !== undefined && !session.isHost
 
         const isInvalidCode = sessionError instanceof ApiError && sessionError.status === 404

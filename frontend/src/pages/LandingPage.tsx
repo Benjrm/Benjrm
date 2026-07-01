@@ -54,11 +54,12 @@ export default function LandingPage(): JSX.Element {
                                         setError(t("landing.errors.generic"))
                                         return
                                     }
-                                    if (err.status === 404) {
+                                    if (err.status === 200) {
+                                        navigate(`/play/${encodeURIComponent(digits)}/game`)
+                                    } else if (err.status === 404) {
                                         setError(t("landing.errors.lobbyNotFound"))
                                     } else {
-                                        // 401 (unauthenticated) or 403 (not the host) — the session exists
-                                        navigate(`/play/${encodeURIComponent(digits)}/game`)
+                                        setError(t("landing.errors.generic"))
                                     }
                                 } finally {
                                     setIsPending(false)

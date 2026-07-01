@@ -50,7 +50,7 @@ async fn get_one(
     if session.is_closed() {
         return Err(GameSessionError::InvalidCode.into());
     }
-    Ok(HttpResponse::Ok().json(session.to_dto(code, user.0)))
+    Ok(HttpResponse::Ok().json(session.to_dto(code, user.into())))
 }
 
 async fn get_one_with_quiz(
@@ -69,7 +69,7 @@ async fn get_one_with_quiz(
         Some(quiz) if quiz.model.id == quiz_id => (),
         _ => return Err(GameSessionError::InvalidCode.into()),
     }
-    Ok(HttpResponse::Ok().json(session.to_dto(code, user.0)))
+    Ok(HttpResponse::Ok().json(session.to_dto(code, user.into())))
 }
 
 async fn delete(

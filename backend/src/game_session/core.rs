@@ -149,9 +149,7 @@ impl GameSession {
             host_channel.close().await;
         }
 
-        let futures = std::mem::take(&mut self.players)
-            .into_iter()
-            .map(|player| player.channel.close());
+        let futures = self.players.drain(..).map(|player| player.channel.close());
 
         if let GameSessionStatus::Waiting(joining) = status {
             let joining_futures = joining.into_iter().map(|joining| joining.cancel());

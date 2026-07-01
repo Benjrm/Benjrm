@@ -62,7 +62,7 @@ impl FromRequest for User {
     }
 }
 
-pub struct OptionalUser(pub Option<User>);
+pub struct OptionalUser(Option<User>);
 
 impl FromRequest for OptionalUser {
     type Error = actix_web::Error;
@@ -78,6 +78,12 @@ impl FromRequest for OptionalUser {
             }
         }
         ready(get_user(req).map_err(|e| Error::from(e).into()))
+    }
+}
+
+impl From<OptionalUser> for Option<User> {
+    fn from(value: OptionalUser) -> Self {
+        value.0
     }
 }
 
