@@ -54,9 +54,7 @@ export default function LandingPage(): JSX.Element {
                                         setError(t("landing.errors.generic"))
                                         return
                                     }
-                                    if (err.status === 200) {
-                                        navigate(`/play/${encodeURIComponent(digits)}`)
-                                    } else if (err.status === 404) {
+                                    if (err.status === 404) {
                                         setError(t("landing.errors.lobbyNotFound"))
                                     } else {
                                         setError(t("landing.errors.generic"))
