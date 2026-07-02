@@ -90,42 +90,42 @@ Please refer to the [API-related documentation](docs/api/README.md).
 erDiagram
     user {
         uuid id PK
-        string subject
-        datetime registered
-        datetime last_login
+        string subject UK "unique"
+        datetime registered "default: now()"
+        datetime last_login "default: now()"
     }
     quiz {
         uuid id PK
         uuid user FK
         string title
-        text description
-        boolean hidden
-        datetime created
-        datetime modified
+        text description "nullable"
+        boolean hidden "default: false"
+        datetime created "default: now()"
+        datetime modified "default: now()"
     }
     question {
         uuid id PK
         uuid quiz FK
-        enum type
+        enum type "Slide, SingleChoice, MultipleChoice, Order"
         string question
-        boolean hidden
-        uuid prev FK
-        uuid next FK
-        datetime created
-        datetime modified
+        boolean hidden "default: false"
+        uuid prev FK "nullable"
+        uuid next FK "nullable"
+        datetime created "default: now()"
+        datetime modified "default: now()"
     }
     answer_choice {
         uuid id PK
         uuid question FK
-        boolean correct
+        boolean correct "default: false"
         string answer
-        uuid prev FK
-        uuid next FK
+        uuid prev FK "nullable"
+        uuid next FK "nullable"
     }
 
     user ||--o{ quiz : "owns"
     quiz ||--o{ question : "contains"
     question ||--o{ answer_choice : "has"
-    question ||--o| question : "prev/next"
-    answer_choice ||--o| answer_choice : "prev/next"
+    question o|--o| question : "prev/next"
+    answer_choice o|--o| answer_choice : "prev/next"
 ```
