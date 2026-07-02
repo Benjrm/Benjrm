@@ -159,7 +159,6 @@ impl WsChannelBuilder {
 
     /// Handle [`PlayerCommand::SetName`] or [`PlayerCommand::Reconnect`].
     ///
-    /// On success, `self_optional` is set to `None` and `Ok()` is returned.
     /// If some error occures, `self_optional` remains unchanged and `Err()` is returned.
     /// If `cmd` is some other command, `self_optional` remains unchanged and `Ok()` is returned.
     async fn handle_join_cmd(

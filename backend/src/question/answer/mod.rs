@@ -30,7 +30,7 @@ where
 pub trait UpdateOption {
     /// Returns the unique id of the option.
     fn id(&self) -> Uuid;
-    /// Returns if the correctness of a answer got changed during a update.
+    /// Returns if the correctness of an answer got changed during an update.
     ///
     /// If changed it returns [`Some<bool>`], if not [`None`] .
     fn correct(&self) -> Option<bool>;

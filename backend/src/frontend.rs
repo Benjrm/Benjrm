@@ -63,7 +63,7 @@ mod serve_frontend {
     /// Forwards the request to the frontend development server.
     ///
     /// By default, requests are forwarded to `http://localhost:5173`.
-    /// The host can get rewritten by setting the envioronment variable `FRONTEND_HOST` to something else (e.g. `example.com`).
+    /// The host can get rewritten by setting the environment variable `FRONTEND_HOST` to something else (e.g. `example.com`).
     pub async fn serve_file(req: HttpRequest) -> HttpResponse {
         let client = match req.app_data::<awc::Client>() {
             Some(client) => client,
@@ -94,7 +94,7 @@ mod serve_frontend {
             Ok(req) => req,
             Err(e) => {
                 return HttpResponse::InternalServerError().body(format!(
-                    "Send request error: {e:?}. Is the frontend dev server runing?"
+                    "Send request error: {e:?}. Is the frontend dev server running?"
                 ));
             }
         };

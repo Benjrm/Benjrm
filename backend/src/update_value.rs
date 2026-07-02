@@ -94,6 +94,7 @@ impl<T: Into<Value> + Nullable> From<UpdateOption<T>> for ActiveValue<Option<T>>
     }
 }
 
+/// A struct that holds a type parameter.
 struct UpdateOptionVisitor<T> {
     marker: PhantomData<T>,
 }

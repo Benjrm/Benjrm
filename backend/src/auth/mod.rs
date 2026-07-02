@@ -17,7 +17,7 @@ impl_err! {
     enum AuthError {
         #[error("Unauthenticated")]
         Unauthenticated = UNAUTHORIZED,
-        #[error("Error extracting sesion")]
+        #[error("Error extracting session")]
         SessionExtract(#[from] actix_web::Error) = INTERNAL_SERVER_ERROR,
         #[error("Error reading authentication from session")]
         SessionGet(#[from] actix_session::SessionGetError) = INTERNAL_SERVER_ERROR,
@@ -32,7 +32,7 @@ struct SessionUser {
     id_token: Option<String>,
 }
 
-/// Stuct to hold the user information used in the application
+/// Struct to hold the user information used in the application
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct User {

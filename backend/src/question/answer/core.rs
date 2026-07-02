@@ -144,7 +144,7 @@ impl<Model: OptionModel> UpdateLinkedOptions<Model> {
         Ok(())
     }
 
-    /// Persist all changes made to the anwer options in the database
+    /// Persist all changes made to the answer options in the database
     ///
     /// This includes:
     /// - inserting new options

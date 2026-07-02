@@ -41,7 +41,7 @@ struct Path {
 
 /// Handle the login request for OIDC authentication
 ///
-/// **Note:** This function stores the before login path to redirect the user back to it after a successfull login.
+/// **Note:** This function stores the before login path to redirect the user back to it after a successful login.
 async fn login(data: web::Data<AppData>, session: Session, path: web::Query<Path>) -> HttpResponse {
     let (auth_url, csrf_token, pkce_verifier, nonce) = data.oidc.client.authorization_url();
 
@@ -78,9 +78,9 @@ struct OauthResponse {
 
 /// Handle the callback request for OIDC authentication
 ///
-/// If the [`redirect_path`](State::redirect_path) was previouls set, the user is redirected to that path after a successful login.
+/// If the [`redirect_path`](State::redirect_path) was previously set, the user is redirected to that path after a successful login.
 /// Only relative paths beginning with `/` are accepted.
-/// The default redirect is `/dashboard`, this could be due to a error or unset path.
+/// The default redirect is `/dashboard`, this could be due to an error or unset path.
 async fn callback(
     data: web::Data<AppData>,
     session: Session,
@@ -230,7 +230,7 @@ async fn delete_user(
 /// # Example
 ///
 /// Log in as `dummy_user_1` using curl. Or just type the url in your browser address bar.
-/// Unlike the normal login, the user is not redirected uppon success.
+/// Unlike the normal login, the user is not redirected upon success.
 /// The dummy login returns the [`SessionUser`].
 ///
 /// ```bash
@@ -302,7 +302,7 @@ async fn fetch_insert_db_user(conn: &impl ConnectionTrait, sub: &str) -> Result<
 
 /// Registers the authentication-related HTTP routes.
 ///
-/// In debug builds, the dummy login gets also registerd:
+/// In debug builds, the dummy login gets also registered:
 /// - `GET /auth/login/dummy/{id}`
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/login").route(web::get().to(login)));

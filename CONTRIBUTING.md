@@ -24,7 +24,7 @@ Detailed setup instructions are available in the respective folders:
  
 ## Git Flow and Pull Request Guidelines 
  
-Pushing directly to `main` (or `master`) is not allowed (and therfore disabled), this applies to maintainers as well. All changes must go through a Pull Request (PR). If your Pull Request relates to an Issue, make sure to reference it properly in the PR description (e.g. `Closes #123`). 
+Pushing directly to `main` (or `master`) is not allowed (and therefore disabled), this applies to maintainers as well. All changes must go through a Pull Request (PR). If your Pull Request relates to an Issue, make sure to reference it properly in the PR description (e.g. `Closes #123`). 
  
 ### Branch Naming 
  

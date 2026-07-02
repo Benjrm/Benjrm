@@ -46,7 +46,7 @@ impl fmt::Debug for WsJoining {
     }
 }
 
-/// A variant representing the ancknowladgement of a Player Command (e.g. [`SetName`](crate::game_session::PlayerCommand::SetName)) before having the full [`GameSessionPlayer`](crate::game_session::GameSessionPlayer).
+/// A variant representing the acknowledgement of a Player Command (e.g. [`SetName`](crate::game_session::PlayerCommand::SetName)) before having the full [`GameSessionPlayer`](crate::game_session::GameSessionPlayer).
 #[derive(Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 enum Response {

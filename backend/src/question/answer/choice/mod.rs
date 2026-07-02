@@ -25,7 +25,7 @@ pub struct UpdateAnswerChoice {
     pub correct: UpdateValue<bool>,
 }
 
-/// A variant of either [`NewAnswerChoice`] or [`UpdateAnswerChoice`] to handle a update to a question that can have new or existing answers.
+/// A variant of either [`NewAnswerChoice`] or [`UpdateAnswerChoice`] to handle an update to a question that can have new or existing answers.
 #[derive(Debug, Clone)]
 pub enum UpdateAnswerChoiceEnum {
     New(NewAnswerChoice),

@@ -178,7 +178,7 @@ impl QuestionModel {
 
     /// Retrieves the answer options for the question in correct order.
     ///
-    /// **Error:** Returns [`CurruptedAnswerList`](QuestionError::CorruptedAnswerList) if the answer options are not linked correctly in the database.
+    /// **Error:** Returns [`CorruptedAnswerList`](QuestionError::CorruptedAnswerList) if the answer options are not linked correctly in the database.
     pub async fn get_answers(self, conn: &impl ConnectionTrait) -> Result<Question, QuestionError> {
         let options = match self.r#type {
             QuestionType::Slide => QuestionOptions::Slide,

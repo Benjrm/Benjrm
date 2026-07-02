@@ -132,7 +132,7 @@ pub fn env_var(key: &str) -> String {
     match std::env::var(key) {
         Ok(x) => x,
         Err(_) => {
-            panic!("Missing environement variable: {key}");
+            panic!("Missing environment variable: {key}");
         }
     }
 }
@@ -157,7 +157,7 @@ pub fn env_var_default(
             Some(x) => x,
             None => {
                 panic!(
-                    "Missing environement variable: {key} (set {default_name} to use a generated default)"
+                    "Missing environment variable: {key} (set {default_name} to use a generated default)"
                 )
             }
         },

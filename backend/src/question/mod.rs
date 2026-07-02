@@ -163,7 +163,7 @@ impl From<NewQuestion> for UpdateQuestion {
     }
 }
 
-/// Answer options to update a existing question, this also defines if the type of question may get changed.
+/// Answer options to update an existing question, this also defines if the type of question may get changed.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(
     tag = "type",
@@ -281,7 +281,7 @@ pub trait LinkedItem {
 
 /// Sorts a collection of linked items into their correct order inplace.
 ///
-/// The function sorts elements out of a doubly linked list via their return of [`prev`](LinkedItem::prev) and [`next`](LinkedItem::next) functioins.
+/// The function sorts elements out of a doubly linked list via their return of [`prev`](LinkedItem::prev) and [`next`](LinkedItem::next) functions.
 ///
 /// Returns `Some(Vec<T>)` if a valid continuous chain can be formed, otherwise `None` is returned.
 ///
@@ -310,7 +310,7 @@ pub fn sort_linked_items<T: LinkedItem>(mut items: Vec<T>) -> Option<Vec<T>> {
     Some(items)
 }
 
-/// This struct holds information to filter a qestions search
+/// This struct holds information to filter a questions search
 #[derive(Deserialize, Debug, Clone, Default)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct QuestionFilter {

@@ -188,7 +188,7 @@ impl GameSession {
         Ok(())
     }
 
-    /// Set the host channel and close the old one. Informs the new host of the currect state.
+    /// Set the host channel and close the old one. Informs the new host of the current state.
     /// Must only be called after successfully calling [`GameSession::check_set_host_channel`].
     pub async fn set_host_channel<T: Channel<HostMessage> + 'static>(&mut self, channel: T) {
         let channel = Box::new(channel);

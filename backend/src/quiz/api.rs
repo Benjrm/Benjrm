@@ -19,7 +19,7 @@ async fn create_one(
     Ok(HttpResponse::Created().json(quiz))
 }
 
-/// Retrieves all quizzzes belonging to a given user, optionally filtered by the provided query parameters.
+/// Retrieves all quizzes belonging to a given user, optionally filtered by the provided query parameters.
 async fn get_many(
     app_data: web::Data<AppData>,
     filter: web::Query<QuizFilter>,

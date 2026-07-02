@@ -52,7 +52,7 @@ impl From<UpdateAnswerOrder> for UpdateAnswerChoice {
 /// A struct wrapping an [`AnswerChoiceModel`] to represent an answer option for an order question.
 ///
 /// This is necessary because order questions are stored in the same tables as choice questions, and are mostly handled by the same code.
-/// This struct allows for different implementations arround the [`AnswerChoiceModel`] that are specific to order questions.
+/// This struct allows for different implementations around the [`AnswerChoiceModel`] that are specific to order questions.
 #[derive(Debug, Clone)]
 pub struct AnswerOrderModel {
     pub choice: AnswerChoiceModel,
@@ -97,7 +97,7 @@ impl From<AnswerOrderModel> for AnswerChoiceModel {
     }
 }
 
-/// A variant of either [`NewAnswerOrder`] or [`UpdateAnswerOrder`] to handle a update to a question that can have new or existing answers.
+/// A variant of either [`NewAnswerOrder`] or [`UpdateAnswerOrder`] to handle an update to a question that can have new or existing answers.
 #[derive(Debug, Clone)]
 pub enum UpdateAnswerOrderEnum {
     New(NewAnswerOrder),

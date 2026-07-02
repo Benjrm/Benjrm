@@ -35,7 +35,7 @@ mod test;
 
 pub use api::init;
 
-/// A type alias to make clear that somwhere a [`SessionCode`] is used.
+/// A type alias to make clear that somewhere a [`SessionCode`] is used.
 pub type SessionCode = u32;
 
 impl_err! {
@@ -90,7 +90,7 @@ impl_err! {
     }
 }
 
-/// Wrapper arround all active in-memory game sessions.
+/// Wrapper around all active in-memory game sessions.
 pub struct GameSessions {
     sessions: Arc<RwLock<HashMap<SessionCode, Arc<Mutex<GameSession>>>>>,
 }
@@ -163,7 +163,7 @@ impl From<User> for GameSessionHost {
 
 /// Represents a player connected to a game session.
 ///
-/// Each player maintains a points buffer that is flushed to the final score when a quesiton is finalized.
+/// Each player maintains a points buffer that is flushed to the final score when a question is finalized.
 pub struct GameSessionPlayer {
     id: Uuid,
     secret: Uuid,
@@ -188,7 +188,7 @@ pub trait Channel<Msg: Serialize>: Send {
     /// **Hint:** Must be the same as of [`Joining::id`].
     fn id(&self) -> u64;
 
-    /// Generates a unique id that can be used used as return value of [`Channel::id`].
+    /// Generates a unique id that can be used as return value of [`Channel::id`].
     fn generate_id() -> u64
     where
         Self: Sized,
@@ -240,7 +240,7 @@ impl<T: Serialize> Clone for Message<'_, T> {
     fn clone(&self) -> Self {
         Self {
             id: self.id,
-            // The `msg` field is a reference, so insteaf of cloning it, the reference is copied.
+            // The `msg` field is a reference, so instead of cloning it, the reference is copied.
             msg: self.msg,
             timing: self.timing,
         }
@@ -550,7 +550,7 @@ impl From<&QuestionOptions> for DisplayQuestionOptions {
     }
 }
 
-/// A struct representing a option for a question that can be answered by the players.
+/// A struct representing an option for a question that can be answered by the players.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnswerOption {

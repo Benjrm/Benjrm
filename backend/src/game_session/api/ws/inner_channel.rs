@@ -34,7 +34,7 @@ impl InnerChannel {
     /// Creates a new [`InnerChannel`] with the given WebSocket session and message stream.
     ///
     /// The channel starts with no measured clock offset and an empty history of ping samples.
-    /// Therfore the offset measurement will be inaccurate until a few (num of [`RingDelta::COUNT`]) pings have been exchanged.
+    /// Therefore the offset measurement will be inaccurate until a few (num of [`RingDelta::COUNT`]) pings have been exchanged.
     pub fn new(tx: actix_ws::Session, rx: MessageStream) -> Self {
         Self {
             tx,
@@ -75,7 +75,7 @@ impl InnerChannel {
 
     /// Receive a command and manage pings.
     ///
-    /// This function ensures that pings are exchanged regulary and calculates the average time difference for the last pings.
+    /// This function ensures that pings are exchanged regularly and calculates the average time difference for the last pings.
     ///
     /// A return value of `None` can have multiple reasons:
     /// - The operation timed out. In this case, a ping is sent.
