@@ -57,9 +57,7 @@ export default function LandingPage(): JSX.Element {
                                     if (err.status === 404) {
                                         setError(t("landing.errors.lobbyNotFound"))
                                     } else {
-                                        // 401 (unauthenticated) or 403 (not the host) — the session
-                                        // exists or we can't verify; let WaitingRoom handle it.
-                                        navigate(`/play/${encodeURIComponent(digits)}`)
+                                        setError(t("landing.errors.generic"))
                                     }
                                 } finally {
                                     setIsPending(false)

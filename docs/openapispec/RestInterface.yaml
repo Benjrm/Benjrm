@@ -933,18 +933,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
         '404':
           description: Not Found
           content:
@@ -1240,18 +1228,6 @@ paths:
                 $ref: '#/components/schemas/Session'
         '400':
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden
           content:
             application/json:
               schema:
@@ -1946,10 +1922,16 @@ components:
       properties:
         code:
           $ref: '#/components/schemas/SessionCode'
+        isHost:
+          type: boolean
+          description: whether the user that made the request is the host
+        started:
+          type: boolean
         quiz:
           type: string
           format: uuid
           nullable: true
+          description: only included if isHost is true
     
     SessionPlayer:
       type: object
