@@ -10,6 +10,9 @@ The pipeline ensures that every code change goes through a standardized set of q
 To save time and resources, all workflows that are currently running for the same branch or tag are terminated. 
 
 ### Pipeline Structure
+![An example Image of our CI/CD Pipeline that shows the structure.](image.png)
+An example of this Pipeline with all successful checks can be seen [here](https://github.com/Benjrm/Benjrm/actions/runs/28535992259).
+
 To avoid unnecessary runtime for API tests, we check whether the [OpenAPI](../openapispec) or [AsyncAPI](../asyncapi) specifications have changed at all. If there are no changes, we do not need to retest the API. However, if changes have occurred, the corresponding API test and API documentation workflows are executed. This ensures that our API documentation and functionality are always up to date.
 
 Furthermore, every time the pipeline is triggered, we perform our standard quality and security checks (linting, security, and tests) by invoking and running the corresponding workflows.
@@ -66,3 +69,35 @@ Initially, only the digests (hashes) of the individual architectures are pushed 
 After the individual architectures have been built, the `merge-images` job handles the finalization, during which the tags are dynamically created (`dev` for the main branch, SemVer and `latest` for releases). This versioning system makes it possible to trace the executed code and to roll back to older versions (e.g. v1.0.0). Releases must be created manually on GitHub.
 
 At the end of the workflow, `docker buildx imagetools create` is used to merge all previously created architectures into a multi-architecture manifest. This allows users to simply select `benjrm/benjrm:latest`, after which Docker automatically selects the image suitable for the respective processor.
+
+## API Validation & Testing ([`spectral.yaml`](../../.github/workflows/spectral.yaml), [`schemathesis.yaml`](../../.github/workflows/schemathesis.yaml))
+To ensure that our API specifications are syntactically correct and that our backend implementation matches them, we use two separate workflows. These are both triggered by the [`ci.yaml`](../../.github/workflows/ci.yaml) workflow.
+
+1. **API Validation (Spectral):** We use Spectral to enforce style guides and lint our OpenAPI and AsyncAPI specifications. For more detailed information on how Spectral is integrated and how to view its results, please check out the [API documentation](../api/README.md#integrated-into-ci-pipeline).
+2. **API Testing (Schemathesis):** We use Schemathesis to test the features of our API. This workflow uses Docker Compose to create a temporary test environment and generates test requests based on our OpenAPI specification to verify the backend's behavior. If you want more details about how Schemathesis is integrated, check out the [API documentation](../api/README.md#integrated-into-ci-pipeline-1).
+
+Both workflows are only executed when changes are made to the API specifications to save time and resources.
+
+## Documentation Deployment ([`githubpages.yaml`](../../.github/workflows/githubpages.yaml))
+This workflow deploys our API documentation to GitHub Pages. It runs separately to the main pipeline and is triggered any time changes are pushed to the `main` branch that affect the documentation files in the `docs/` directory.
+
+The deployment process consists of:
+1. **OpenAPI (REST):** Publish the Swagger UI files and the OpenAPI specification. For more details, see the [OpenAPI Deployment Documentation](../api/README.md#api-documentation-with-swagger-ui-deployed-to-github-pages).
+2. **AsyncAPI (WebSockets):** We use the `@asyncapi/cli` to generate an HTML documentation from our AsyncAPI specification. For more details, see the [WebSocket Deployment Documentation](../api/README.md#websocket-documentation-with-asyncapi-deployed-to-github-pages).
+
+Once we have all of the files, we package them up and deploy them using GitHub Actions directly to our GitHub Pages environment.
+
+## CI/CD Environment Secrets & Variables
+
+To run the CI/CD pipeline successfully, several secrets and variables need to be configured in the GitHub repository.
+
+### Secrets
+* `GITHUB_TOKEN`: This is a built-in token automatically provided by GitHub. The [`build_push_container.yaml`](../../.github/workflows/build_push_container.yaml) workflow uses this secret to authenticate with the GitHub Container Registry (GHCR) so we can push our finished Docker images.
+* `SONAR_TOKEN`: This token contains the authentication token for our SonarQube instance. This is required in the [`security.yaml`](../../.github/workflows/security.yaml) workflow to perform the SAST scan.
+
+### Variables
+* `SONAR_HOST_URL`: The URL where our SonarQube server is reachable.
+* `SONAR_PROJECT_KEY`: The unique project key for our project in SonarQube.
+
+### Environments
+* **Local `.env` for API Testing:** When the Schemathesis API tests are running, the pipeline automatically copies the `.env.example` file to the `.env` file. This allows that the Docker Compose stack can start up without any real secrets having to be exposed in the pipeline environment.
