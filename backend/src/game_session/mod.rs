@@ -92,7 +92,15 @@ impl_err! {
 
 /// Wrapper arround all active in-memory game sessions.
 pub struct GameSessions {
-    sessions: RwLock<HashMap<SessionCode, Arc<Mutex<GameSession>>>>,
+    sessions: Arc<RwLock<HashMap<SessionCode, Arc<Mutex<GameSession>>>>>,
+}
+
+impl Clone for GameSessions {
+    fn clone(&self) -> Self {
+        Self {
+            sessions: Arc::clone(&self.sessions),
+        }
+    }
 }
 
 /// A single running quiz game session.
@@ -278,21 +286,15 @@ pub trait CommandTrait: Sized {
 pub enum HostMessage {
     Ok,
     Error(ErrorResponse),
-    #[serde(rename_all = "camelCase")]
-    AddPlayer {
-        id: Uuid,
-        name: String,
-        emoji: Option<&'static Emoji>,
-    },
-    #[serde(rename_all = "camelCase")]
-    RenamePlayer {
-        id: Uuid,
-        name: String,
-        emoji: Option<&'static Emoji>,
-    },
+    AddPlayer(Player),
+    RenamePlayer(Player),
     #[serde(rename_all = "camelCase")]
     RemovePlayer {
         id: Uuid,
+    },
+    #[serde(rename_all = "camelCase")]
+    SetPlayers {
+        players: Vec<Player>,
     },
     DisplayQuestion(Arc<DisplayQuestionMessage>),
     #[serde(rename_all = "camelCase")]
@@ -305,6 +307,24 @@ pub enum HostMessage {
 }
 
 /// A struct representing a leaderboard entry for a player in the game session.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Player {
+    pub id: Uuid,
+    pub name: String,
+    pub emoji: Option<&'static Emoji>,
+}
+
+impl From<&GameSessionPlayer> for Player {
+    fn from(value: &GameSessionPlayer) -> Self {
+        Self {
+            id: value.id,
+            name: value.name.clone(),
+            emoji: value.emoji,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LeaderboardEntry {

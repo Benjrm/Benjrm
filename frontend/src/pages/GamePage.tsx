@@ -1,17 +1,22 @@
 import type { JSX } from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { Toaster, toast } from "sonner"
 import { useTranslation } from "react-i18next"
-import { useSocketEvent, useWebSocketContext } from "@/api/websocket"
+import { usePlayerWebSocket, useSocketEvent, useWebSocketContext } from "@/api/websocket"
 import GameScreen from "@/components/GameScreen"
-import { GameStateEnum, parseDisplayQuestion } from "@/hooks/useGameSession"
+import { AVAILABLE_EMOJIS, GameStateEnum, parseDisplayQuestion } from "@/hooks/useGameSession"
 import type {
     GameState,
     GameQuestion,
     QuestionResult,
     LeaderboardEntry,
 } from "@/hooks/useGameSession"
+import PlayerLobby from "@/components/PlayerLobby"
+import useSessionStatus from "@/api/session/hooks/useSessionStatus"
+import InvalidCode from "@/components/InvalidCode"
+import useWebSocketConnectError from "@/api/websocket/hooks/useWebSocketConnectError"
+import useCodeWithDash from "@/hooks/useCodeWithDash"
 
 function mergeStorage(key: string, patch: object): void {
     try {
@@ -23,50 +28,123 @@ function mergeStorage(key: string, patch: object): void {
     }
 }
 
-export default function GamePage(): JSX.Element {
+function GamePageComponent({ code }: { code?: number }): JSX.Element {
     const { t } = useTranslation()
-    const codeParam = useParams().code
-    const code = codeParam !== null ? Number(codeParam) || undefined : undefined
     const navigate = useNavigate()
-    const ws = useWebSocketContext()
-
-    const gameActive = code !== undefined && sessionStorage.getItem(`gameActive:${code}`) === "1"
-    useEffect(() => {
-        if (gameActive) return
-        navigate(`/play/${codeParam ?? ""}`, { replace: true })
-    }, [gameActive, navigate, codeParam])
-
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null
-
-    const { playerName, playerEmoji } = useMemo(() => {
-        if (!storageKey) return { playerName: undefined, playerEmoji: undefined }
+    const [nameSaved, setNameSaved] = useState(() => {
+        if (!storageKey) return false
         try {
             const raw = sessionStorage.getItem(storageKey)
-            const parsed = raw ? (JSON.parse(raw) as { name: string; emoji: string }) : null
-            return { playerName: parsed?.name, playerEmoji: parsed?.emoji }
+            return raw ? (JSON.parse(raw) as { nameSaved: boolean }).nameSaved : false
         } catch {
-            return { playerName: undefined, playerEmoji: undefined }
+            return false
         }
-    }, [storageKey])
+    })
+    usePlayerWebSocket(code, setNameSaved)
+    const ws = useWebSocketContext()
+    const { session } = useSessionStatus(code)
 
-    // Start as true so the overlay shows until the WS is confirmed open.
-    // onEveryConnect fires immediately if the socket is already open (normal navigation),
-    // so there is no visible flash on non-refresh transitions.
-    const [isReconnecting, setIsReconnecting] = useState(true)
-    useEffect(() => {
-        const unsubDisconnect = ws.onEveryDisconnect(() => setIsReconnecting(true))
-        const unsubConnect = ws.onEveryConnect(() => setIsReconnecting(false))
-        const unsubConnectFail = ws.onConnectFail(async () => navigate("/"))
-        return () => {
-            unsubDisconnect()
-            unsubConnect()
-            unsubConnectFail()
+    const codeWithDash = useCodeWithDash(code)
+
+    const { isReconnecting, isInvalidCode, unableToConnect } = useWebSocketConnectError(ws, code)
+
+    // Player identity
+    const [name, setName] = useState<string>("")
+    const [emoji, setEmoji] = useState<string>(
+        () => AVAILABLE_EMOJIS[Math.floor(Math.random() * AVAILABLE_EMOJIS.length)]
+    )
+    const [isEmojiOpen, setIsEmojiOpen] = useState(false)
+    const [nameError, setNameError] = useState<string | null>(null)
+    const [saveNameId, setSaveNameId] = useState<number | null>(null)
+
+    // Persist player credentials for reconnect
+    useSocketEvent(
+        "connectResponse",
+        ({ id: playerId, secret, name: serverName, emoji: serverEmoji }) => {
+            if (!storageKey) return
+            try {
+                const existing = JSON.parse(sessionStorage.getItem(storageKey) ?? "{}")
+                sessionStorage.setItem(
+                    storageKey,
+                    JSON.stringify({ ...existing, id: playerId, secret })
+                )
+            } catch {
+                // ignore
+            }
+            // connectResponse confirms the player is in the session (initial join or reconnect).
+            // Restore lobby state so a refresh doesn't show the join form again.
+            setNameSaved(true)
+            setName(serverName)
+            if (serverEmoji) setEmoji(serverEmoji)
         }
-    }, [ws, navigate])
+    )
+
+    const [isAlreadyStarted, setIsAlreadyStarted] = useState(false)
+    useEffect(() => {
+        if (session?.started) {
+            if (storageKey) {
+                try {
+                    const raw = sessionStorage.getItem(storageKey)
+                    const id = raw ? (JSON.parse(raw) as { id: string }).id : null
+                    // skip error handling for started session if we have an id
+                    if (id) return undefined
+                } catch {
+                    // not returning here is enough to trigger the error handling below
+                }
+            }
+            const id = setTimeout(() => setIsAlreadyStarted(true))
+            return () => clearTimeout(id)
+        }
+        return undefined
+    }, [session, storageKey])
+
+    useSocketEvent("ok", (_payload, _timing, id) => {
+        if (id === saveNameId) {
+            setSaveNameId(null)
+            setNameSaved(true)
+            if (storageKey) sessionStorage.setItem(storageKey, JSON.stringify({ nameSaved: true }))
+        }
+    })
+
+    useSocketEvent("error", (payload, _timing, id) => {
+        if (id === saveNameId) {
+            setSaveNameId(null)
+            setNameError(payload.message)
+        } else if (!(payload.category === "session" && payload.error === "player_not_found")) {
+            toast.error(payload.message || t("lobby.errors.somethingWentWrong"))
+        }
+    })
+
+    useSocketEvent("kick", () => {
+        if (storageKey) sessionStorage.removeItem(storageKey)
+        toast.error(t("lobby.errors.kicked"))
+        setTimeout(async () => {
+            try {
+                await navigate("/")
+            } catch {
+                // ignore navigation errors
+            }
+        }, 2000)
+    })
+
+    const onSaveName = useCallback((): void => {
+        const trimmed = name.trim()
+        if (!trimmed) return
+        const id = Math.floor(Math.random() * 2 ** 31)
+        setSaveNameId(id)
+        setNameError(null)
+        ws.send({ id, command: "setName", payload: { name: trimmed, emoji } })
+    }, [name, emoji, ws])
+
+    const onPickEmoji = useCallback((nextEmoji: string): void => {
+        setEmoji(nextEmoji)
+        setIsEmojiOpen(false)
+    }, [])
 
     // Lazy initializers read the snapshot once on mount to restore state after a page refresh.
     // sessionStorage reads are synchronous and fast, so calling getGameSnapshot per field is fine.
-    const [gameState, setGameState] = useState<GameState>(GameStateEnum.PLAYING)
+    const [gameState, setGameState] = useState<GameState>(GameStateEnum.LOBBY)
     const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(null)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
     const [totalQuestions, setTotalQuestions] = useState(0)
@@ -78,6 +156,10 @@ export default function GamePage(): JSX.Element {
     const [playerItemOrder, setPlayerItemOrder] = useState<string[] | null>(null)
     const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false)
     const [initialSelectedAnswers, setInitialSelectedAnswers] = useState<string[]>([])
+
+    useSocketEvent("start", () => {
+        setGameState(GameStateEnum.PLAYING)
+    })
 
     useSocketEvent("displayQuestion", (payload, timing) => {
         let isReconnect = false
@@ -143,11 +225,9 @@ export default function GamePage(): JSX.Element {
     useSocketEvent("gameEnded", () => {
         if (storageKey) sessionStorage.removeItem(storageKey)
         if (isFinalLeaderboard) {
-            if (code !== undefined) sessionStorage.removeItem(`gameActive:${code}`)
             navigate("/")
         } else {
             // Host ended game early (before last question finished)
-            if (code !== undefined) sessionStorage.removeItem(`gameActive:${code}`)
             setHostEndedGame(true)
         }
     })
@@ -156,7 +236,6 @@ export default function GamePage(): JSX.Element {
         if (!hostEndedGame) return undefined
         toast.error(t("game.hostClosed"))
         const timer = setTimeout(() => {
-            if (code !== undefined) sessionStorage.removeItem(`gameActive:${code}`)
             navigate("/")
         }, 3000)
         return () => clearTimeout(timer)
@@ -199,6 +278,16 @@ export default function GamePage(): JSX.Element {
         )
     }
 
+    if (isInvalidCode || isAlreadyStarted || unableToConnect) {
+        return (
+            <InvalidCode
+                alreadyStarted={isAlreadyStarted}
+                codeWithDash={codeWithDash}
+                unableToConnect={unableToConnect}
+            />
+        )
+    }
+
     return (
         <>
             <Toaster richColors />
@@ -208,25 +297,48 @@ export default function GamePage(): JSX.Element {
                     <p className="text-muted-foreground">{t("game.reconnecting")}</p>
                 </div>
             ) : null}
-            <GameScreen
-                currentQuestion={currentQuestion}
-                currentQuestionIndex={currentQuestionIndex}
-                gameState={gameState}
-                hasSubmittedAnswer={hasSubmittedAnswer}
-                initialSelectedAnswers={initialSelectedAnswers}
-                isFinalLeaderboard={isFinalLeaderboard}
-                leaderboard={leaderboard}
-                onItemOrderChange={handleItemOrderChange}
-                onNextQuestion={() => undefined}
-                onSendAnswer={sendAnswer}
-                playerEmoji={playerEmoji}
-                playerItemOrder={playerItemOrder}
-                playerName={playerName}
-                questionExpiresAt={questionExpiresAt}
-                questionResult={questionResult}
-                questionStartsAt={questionStartsAt}
-                totalQuestions={totalQuestions}
-            />
+            {gameState === GameStateEnum.LOBBY ? (
+                <PlayerLobby
+                    codeWithDash={codeWithDash}
+                    emoji={emoji}
+                    isEmojiOpen={isEmojiOpen}
+                    name={name}
+                    nameError={nameError}
+                    namePending={saveNameId !== null}
+                    nameSaved={nameSaved}
+                    onCloseEmoji={setIsEmojiOpen}
+                    onNameChange={setName}
+                    onOpenEmoji={() => setIsEmojiOpen(true)}
+                    onPickEmoji={onPickEmoji}
+                    onSaveName={onSaveName}
+                />
+            ) : (
+                <GameScreen
+                    currentQuestion={currentQuestion}
+                    currentQuestionIndex={currentQuestionIndex}
+                    gameState={gameState}
+                    hasSubmittedAnswer={hasSubmittedAnswer}
+                    initialSelectedAnswers={initialSelectedAnswers}
+                    isFinalLeaderboard={isFinalLeaderboard}
+                    leaderboard={leaderboard}
+                    onItemOrderChange={handleItemOrderChange}
+                    onNextQuestion={() => undefined}
+                    onSendAnswer={sendAnswer}
+                    playerEmoji={emoji}
+                    playerItemOrder={playerItemOrder}
+                    playerName={name}
+                    questionExpiresAt={questionExpiresAt}
+                    questionResult={questionResult}
+                    questionStartsAt={questionStartsAt}
+                    totalQuestions={totalQuestions}
+                />
+            )}
         </>
     )
+}
+
+export default function GamePage(): JSX.Element {
+    const codeParam = useParams().code
+    const code = codeParam !== null ? Number(codeParam) || undefined : undefined
+    return <GamePageComponent key={code} code={code} />
 }

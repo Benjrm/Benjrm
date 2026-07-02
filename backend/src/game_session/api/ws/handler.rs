@@ -4,7 +4,8 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            GameSession, GameSessionError, GameSessionStatus, HostMessage, Message, SessionCode,
+            GameSession, GameSessionError, GameSessionStatus, GameSessions, HostMessage, Message,
+            SessionCode,
             api::ws::{WsJoining, channel_builder::WsChannelBuilder},
         },
     },
@@ -39,8 +40,12 @@ async fn get_host_ws(
     let mut session = session.lock().await;
 
     session.check_set_host_channel(&user).map_err(Error::from)?;
-    let channel_builder = WsChannelBuilder::new(tx, rx, app_data, session_arc);
-    let channel = channel_builder.build(code, GameSession::handle_host_cmd, remove_host_ws);
+    let channel_builder = WsChannelBuilder::new(tx, rx, app_data.clone(), session_arc);
+    let channel = channel_builder.build(
+        (app_data.game_sessions.clone(), code),
+        GameSession::handle_host_cmd,
+        remove_host_ws,
+    );
 
     session.set_host_channel(channel).await;
 
@@ -51,10 +56,10 @@ async fn get_host_ws(
 ///
 /// If the host has not reconnected, the game session is removed from the session manager and all remaining connections are closed.
 async fn remove_host_ws(
-    app_data: web::Data<AppData>,
+    app_data: Arc<AppData>,
     session: Arc<Mutex<GameSession>>,
     id: u64,
-    code: SessionCode,
+    (_, code): (GameSessions, SessionCode),
 ) {
     sleep(Duration::from_mins(15)).await;
     let mut session = session.lock().await;
@@ -63,9 +68,10 @@ async fn remove_host_ws(
         && channel.id() == id
     {
         log::info!("Deleting session {code} due to inactivity");
-        app_data.game_sessions.drop_session(code).await;
         session.host.channel = None;
         session.close().await;
+        drop(session);
+        app_data.game_sessions.drop_session(code).await;
     }
 }
 
@@ -116,7 +122,7 @@ async fn get_player_ws(
 ///
 /// If the player has not reconnected, the player gets removed from the session while notifying the host.
 pub(super) async fn remove_player_ws(
-    _app_data: web::Data<AppData>,
+    _app_data: Arc<AppData>,
     session: Arc<Mutex<GameSession>>,
     channel_id: u64,
     player_id: Uuid,

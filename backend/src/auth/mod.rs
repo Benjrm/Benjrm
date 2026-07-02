@@ -67,6 +67,38 @@ impl FromRequest for User {
     }
 }
 
+/// An optional authenticated user extracted from the current session.
+///
+/// This extractor attempts to read the authenticated user from the request's session.
+/// If a user is present, it returns `OptionalUser(Some(User))`.
+/// If no user is stored in the session, it returns `OptionalUser(None)`.
+///
+/// **Note:** [`OptionalUser`] implements [`Into<Option<User>>`].
+pub struct OptionalUser(Option<User>);
+
+impl FromRequest for OptionalUser {
+    type Error = actix_web::Error;
+    type Future = Ready<Result<Self, Self::Error>>;
+
+    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+        fn get_user(req: &HttpRequest) -> Result<OptionalUser, AuthError> {
+            let session = Session::extract(req).into_inner()?;
+            let user: Option<SessionUser> = session.get("user")?;
+            match user {
+                Some(user) => Ok(OptionalUser(Some(User { id: user.id }))),
+                None => Ok(OptionalUser(None)),
+            }
+        }
+        ready(get_user(req).map_err(|e| Error::from(e).into()))
+    }
+}
+
+impl From<OptionalUser> for Option<User> {
+    fn from(value: OptionalUser) -> Self {
+        value.0
+    }
+}
+
 /// Initialize the authentication routes
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(
