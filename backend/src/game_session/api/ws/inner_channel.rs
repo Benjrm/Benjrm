@@ -31,6 +31,10 @@ pub(super) struct InnerChannel {
 }
 
 impl InnerChannel {
+    /// Creates a new [`InnerChannel`] with the given WebSocket session and message stream.
+    ///
+    /// The channel starts with no measured clock offset and an empty history of ping samples.
+    /// Therefore the offset measurement will be inaccurate until a few (num of [`RingDelta::COUNT`]) pings have been exchanged.
     pub fn new(tx: actix_ws::Session, rx: MessageStream) -> Self {
         Self {
             tx,
@@ -43,6 +47,12 @@ impl InnerChannel {
         }
     }
 
+    /// Receives the next WebSocket message.
+    ///
+    /// This function also tracks if the connection is stil alive by waiting for a message for up to 4 seconds.
+    /// If no message is received within that time, the timeout counter is incremented.
+    ///
+    /// After four consecutive timeouts, or if the WebSocket connection is closed, this function returns [`Closed`].
     async fn recv_msg(&mut self) -> Result<Option<actix_ws::Message>, Closed> {
         tokio::select! {
             _ = sleep(Duration::from_secs(4)) => {
@@ -65,7 +75,7 @@ impl InnerChannel {
 
     /// Receive a command and manage pings.
     ///
-    /// This function ensures that pings are exchanged regulary and calculates the average time difference for the last pings.
+    /// This function ensures that pings are exchanged regularly and calculates the average time difference for the last pings.
     ///
     /// A return value of `None` can have multiple reasons:
     /// - The operation timed out. In this case, a ping is sent.
@@ -131,6 +141,9 @@ impl InnerChannel {
         Ok(cmd)
     }
 
+    /// Sends a message to the connected client.
+    ///
+    /// Serialization and transmission errors are ignored.
     async fn msg(&mut self, id: Option<u64>, msg: &Response) {
         let msg = Message {
             id,
@@ -142,23 +155,27 @@ impl InnerChannel {
         }
     }
 
+    /// Sends an "ok" response as acknowledgment for a received command.
     pub(super) async fn ok(&mut self, id: Option<u64>) {
         self.msg(id, &Response::Ok).await;
     }
 
+    /// Send an [`Error`] response for a received command.
     pub(super) async fn error(&mut self, id: Option<u64>, err: Error) {
         self.msg(id, &Response::Error(err.into())).await;
     }
 }
 
-/// Stores a ring buffer of [`TimeDelta`]s.
+/// A Fixed-size ring buffer used to smooth [`TimeDeltas`](TimeDelta).
 pub(super) struct RingDelta {
     pos: usize,
     deltas: [TimeDelta; Self::COUNT],
 }
 
 impl RingDelta {
+    /// The number of [`TimeDeltas`](TimeDelta) to store in the ring buffer.
     const COUNT: usize = 5;
+    /// Creates a new `RingDelta` with all [`TimeDeltas`](TimeDelta) initialized to zero.
     fn new() -> Self {
         Self {
             pos: 0,
@@ -166,11 +183,13 @@ impl RingDelta {
         }
     }
 
+    /// Inserts a new [`TimeDelta`] into the ring buffer, overwriting the oldest value if the buffer is full.
     fn insert(&mut self, new: TimeDelta) {
         self.deltas[self.pos] = new;
         self.pos = (self.pos + 1) % Self::COUNT;
     }
 
+    /// Calculates the average of the stored [`TimeDeltas`](TimeDelta).
     fn avg(&self) -> TimeDelta {
         let mut total_delta = TimeDelta::zero();
         for delta in self.deltas {

@@ -20,6 +20,9 @@ use {
     uuid::Uuid,
 };
 
+/// Builder for creating a new [`WsChannel`]. This struct is used to configure the channel before it is built.
+///
+/// A [`WsChannelBuilder`] owns the underlying WebSocket connection until it is converted into a [`WsChannel`] with [`Self::build`].
 pub struct WsChannelBuilder {
     pub(super) id: u64,
     pub(super) inner: InnerChannel,
@@ -28,6 +31,10 @@ pub struct WsChannelBuilder {
 }
 
 impl WsChannelBuilder {
+    /// Creates a new [`WsChannelBuilder`] for a [`WsChannel`] connection.
+    ///
+    /// **Hint:** The returned builder does not start processing incoming messages.
+    /// Call [`Self::build`] to spawn the processing task.
     pub fn new(
         tx: actix_ws::Session,
         rx: MessageStream,
@@ -44,6 +51,8 @@ impl WsChannelBuilder {
     }
 
     /// Create a new [`WsChannel`] and spawn a new listener. To terminate the listener, call [`WsChannel::close`].
+    ///
+    /// This method consumes the builder and spawns a background task that continuously receives commands from the WebSocket connection.
     pub fn build<
         Cmd: CommandTrait + 'static,
         Payload: 'static,
@@ -116,13 +125,15 @@ impl WsChannelBuilder {
         }
     }
 
-    /// Wait for [`PlayerCommand::SetName`] or [`PlayerCommand::Reconnect`] and add player or set channel on success.
-    /// Timeouts after 15 minutes and ignores all other messages.
+    /// Waits for a player to join or reconnect to the game.
+    ///
+    /// Only [`PlayerCommand::SetName`] and [`PlayerCommand::Reconnect`] commands are processed.
+    /// All other incoming messages are ignored.
     pub async fn wait_for_join(self) {
         let start = Instant::now();
         let session = Arc::clone(&self.session);
 
-        // put self inside an option to allow calling `handle_join_cmd` (which might move self) multiple times (until the move of self is successful)
+        // Put self inside an option to allow calling `handle_join_cmd` (which might move self) multiple times (until the move of self is successful)
         let mut self_optional = Some(self);
         while let Some(_self) = &mut self_optional
             && let Ok(cmd) = _self.inner.recv::<Command<PlayerCommand>>().await
@@ -136,7 +147,7 @@ impl WsChannelBuilder {
                             _self.inner.error(cmd_id, err.into()).await;
                         }
                     }
-                    // if self_optional is None this means that self has been moved by successfully creating a channel
+                    // If self_optional is None this means that self has been moved by successfully creating a channel
                     None => return,
                 }
             }
@@ -149,7 +160,7 @@ impl WsChannelBuilder {
     /// Handle [`PlayerCommand::SetName`] or [`PlayerCommand::Reconnect`].
     ///
     /// On success, `self_optional` is set to `None` and `Ok()` is returned.
-    /// If some error occures, `self_optional` remains unchanged and `Err()` is returned.
+    /// If some error occurs, `self_optional` remains unchanged and `Err()` is returned.
     /// If `cmd` is some other command, `self_optional` remains unchanged and `Ok()` is returned.
     async fn handle_join_cmd(
         self_optional: &mut Option<Self>,

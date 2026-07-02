@@ -8,6 +8,9 @@ use {
 };
 
 impl Error {
+    /// Converts Actix JSON extraction errors into a standardized API error.
+    ///
+    /// This function is intended to be used as the [`JsonConfig::error_handler`](actix_web::web::JsonConfig::error_handler) for the application.
     pub fn json_handler(err: JsonPayloadError, _req: &HttpRequest) -> actix_web::Error {
         let error_str = match &err {
             JsonPayloadError::OverflowKnownLength { .. } | JsonPayloadError::Overflow { .. } => {
@@ -28,6 +31,9 @@ impl Error {
         .into()
     }
 
+    /// Converts Actix path extraction errors into a standardized API error.
+    ///
+    /// This function is intended to be used as the [`PathConfig::error_handler`](actix_web::web::PathConfig::error_handler) for the application.
     pub fn path_handler(err: PathError, _req: &HttpRequest) -> actix_web::Error {
         let error_str = match &err {
             PathError::Deserialize(_) => "deserialize",
@@ -43,6 +49,9 @@ impl Error {
         .into()
     }
 
+    /// Converts Actix query payload errors into a standardized API error.
+    ///
+    /// This function is intended to be used as the [`QueryConfig::error_handler`](actix_web::web::QueryConfig::error_handler) for the application.
     pub fn query_handler(err: QueryPayloadError, _req: &HttpRequest) -> actix_web::Error {
         let error_str = match &err {
             QueryPayloadError::Deserialize(_) => "deserialize",
@@ -60,10 +69,17 @@ impl Error {
 }
 
 impl ResponseError for Error {
+    /// Returns the [`StatusCode`] associated with this error.
     fn status_code(&self) -> StatusCode {
         self.status()
     }
 
+    /// Converts this error into an HTTP response.
+    ///
+    /// Errors are logged at different levels:
+    /// - Client errors (`4xx`) are logged as [`Warn`](log::Level::Warn).
+    /// - Server errors (`5xx`) are logged as [`Error`](log::Level::Error).
+    /// - HTTP `418` responses are logged at the [`Debug`](log::Level::Debug) level for testing purposes.
     fn error_response(&self) -> HttpResponse {
         match self.status_code().as_u16() {
             418 => log::debug!("{self:?}"),

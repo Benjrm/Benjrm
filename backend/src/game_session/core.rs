@@ -26,12 +26,24 @@ use {
 };
 
 impl GameSessions {
+    /// Creates a new instance of [`GameSessions`].
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-
+    /// Creates a new game session.
+    ///
+    /// # Behavior
+    ///
+    /// - Optionally loads a quiz owned by the host
+    /// - Initializes the session in [`GameSessionStatus::Waiting`]
+    /// - Stores the session only in memory (not persisted)
+    ///
+    /// ## Session Codes
+    /// - In debug builds, session codes are generated sequentially starting from 1.
+    /// - In release builds, session codes are generated randomly and checked for uniqueness.
+    ///    - If a unique code can't be generated after 10 attempts, an error is returned (rare situation).
     pub async fn create_session(
         &self,
         conn: &impl ConnectionTrait,
@@ -92,6 +104,7 @@ impl GameSessions {
         Ok((code, game))
     }
 
+    /// Retrieves a game session by its code.
     pub async fn get_session(
         &self,
         code: SessionCode,
@@ -104,13 +117,15 @@ impl GameSessions {
         }
     }
 
-    /// Remove session without closing it and without permission check.
+    /// Removes a session without closing it and without permission check.
+    ///
+    /// Intended for internal cleanup operations.
     pub async fn drop_session(&self, code: SessionCode) {
         let mut sessions = self.sessions.write().await;
         sessions.remove(&code);
     }
 
-    /// Remove and close session.
+    /// Remove and closes a session.
     pub async fn delete_session(
         &self,
         user: &User,
@@ -139,10 +154,12 @@ impl Default for GameSessions {
 }
 
 impl GameSession {
+    /// Checks if the session is closed.
     pub fn is_closed(&self) -> bool {
         matches!(self.status, GameSessionStatus::Closed)
     }
 
+    /// Closes the session and its host channel.
     pub async fn close(&mut self) {
         let status = std::mem::replace(&mut self.status, GameSessionStatus::Closed);
         if let Some(host_channel) = self.host.channel.take() {
@@ -160,6 +177,7 @@ impl GameSession {
         }
     }
 
+    /// Checks if the given user is the host of the session and if the session is not closed.
     pub fn check_set_host_channel(&self, user: &User) -> Result<(), GameSessionError> {
         if self.is_closed() {
             return Err(GameSessionError::InvalidCode);
@@ -170,7 +188,7 @@ impl GameSession {
         Ok(())
     }
 
-    /// Set the host channel and close the old one. Informs the new host of the currect state.
+    /// Set the host channel and close the old one. Informs the new host of the current state.
     /// Must only be called after successfully calling [`GameSession::check_set_host_channel`].
     pub async fn set_host_channel<T: Channel<HostMessage> + 'static>(&mut self, channel: T) {
         let channel = Box::new(channel);
@@ -181,7 +199,7 @@ impl GameSession {
         self.update_host().await;
     }
 
-    /// send all messages that are required to restore the state to the host.
+    /// Send all messages that are required to restore the state to the host.
     async fn update_host(&mut self) {
         let players = self.players.iter().map(Player::from).collect();
         self.host
@@ -223,7 +241,7 @@ impl GameSession {
             quiz.questions.len(),
         ));
 
-        // send leaderboard before question if currently on question screen
+        // Send leaderboard before question if currently on question screen
         if let GameSessionStatus::Question {
             leaderboard: Some(leaderboard),
             ..
@@ -240,7 +258,7 @@ impl GameSession {
             })
             .await;
 
-        // send leaderboard after question if question has finished
+        // Send leaderboard after question if question has finished
         if let GameSessionStatus::Leaderboard {
             statistics,
             leaderboard,
@@ -259,6 +277,9 @@ impl GameSession {
         }
     }
 
+    /// Handles a command sent by the host of the session.
+    ///
+    /// This is where the session state is updated based on the host's commands, such as starting the game or moving to the next question.
     pub async fn handle_host_cmd(
         &mut self,
         cmd: Command<HostCommand>,
@@ -338,6 +359,11 @@ impl GameSession {
         Ok(())
     }
 
+    /// Moves the session to the next question.
+    /// If `id` is [`None`], it will move to the next question in order.
+    /// If `id` is [`Some(id)`](Option::Some<Uuid>), it will show the question with that id.
+    ///
+    /// If the session is currently in a question, it will end that question first.
     async fn next_question(
         &mut self,
         id: Option<Uuid>,
@@ -432,6 +458,8 @@ impl GameSession {
         Ok(())
     }
 
+    /// Checks if the session is currently in a state where a new player can join.
+    /// Also checks if the given name is already taken by another player in the session.
     pub fn check_add_player(&self, name: &str) -> Result<(), GameSessionError> {
         if !matches!(self.status, GameSessionStatus::Waiting(_)) {
             return Err(GameSessionError::AlreadyStarted);
@@ -491,7 +519,7 @@ impl GameSession {
         self.players.push(player);
     }
 
-    /// send messages to restore the current state to a player.
+    /// Send messages to restore the current state to a player.
     /// [`PlayerMessage::QuestionResult`] is not included because it's basically a response to [`PlayerCommand::AnswerQuestion`] and is not persisted.
     pub async fn update_player(&mut self, player_id: Uuid) {
         let Ok(player) = Self::get_player_mut(&mut self.players, player_id) else {
@@ -535,6 +563,7 @@ impl GameSession {
         }
     }
 
+    /// Handles a command sent by the players of the session.
     pub async fn handle_player_cmd(
         &mut self,
         cmd: Command<PlayerCommand>,
@@ -577,7 +606,7 @@ impl GameSession {
                 }
                 player.name = name;
 
-                // handle_player_cmd is only called if the player is already joined, so a SetName command is always a rename
+                // `handle_player_cmd` is only called if the player is already joined, so a `SetName` command is always a rename
                 self.host
                     .msg(Message::from(&HostMessage::RenamePlayer(Player::from(
                         &*player,
@@ -658,6 +687,7 @@ impl GameSession {
         Ok(())
     }
 
+    /// Retrieves a mutable reference to a player in the session by their ID.
     pub fn get_player_mut(
         players: &mut [GameSessionPlayer],
         id: Uuid,
@@ -668,6 +698,9 @@ impl GameSession {
             .ok_or(GameSessionError::PlayerNotFound)
     }
 
+    /// Broadcasts a message to all players in a session.
+    ///
+    /// Futures are executed concurrently with bounded parallelism (by using [`execute_futures`]).
     pub async fn notify_all_players(&mut self, msg: Message<'_, PlayerMessage>) {
         let iterator = self
             .players
@@ -676,6 +709,7 @@ impl GameSession {
         execute_futures(iterator).await
     }
 
+    /// Ends the current question, calculates points for players, and sends the results to both the host and players.
     pub async fn end_question(&mut self, is_final: Option<bool>) {
         let GameSessionStatus::Question {
             idx,
@@ -762,6 +796,7 @@ impl GameSession {
 }
 
 impl GameSessionHost {
+    /// Sends a message to the host of the session.
     pub async fn msg(&mut self, msg: Message<'_, HostMessage>) {
         if let Some(channel) = &mut self.channel
             && let Err(err) = channel.send(msg).await
@@ -772,6 +807,7 @@ impl GameSessionHost {
 }
 
 impl GameSessionPlayer {
+    /// Checks if the provided secret matches the player's secret.
     pub fn check_set_channel(&self, secret: Uuid) -> Result<(), GameSessionError> {
         if self.secret != secret {
             return Err(GameSessionError::InvalidPlayerSecret);
@@ -779,6 +815,7 @@ impl GameSessionPlayer {
         Ok(())
     }
 
+    /// Sets the player's communication channel, replacing any existing channel and sending a connection response message to the player.
     pub async fn set_channel<T: Channel<PlayerMessage> + 'static>(
         &mut self,
         cmd_id: Option<u64>,
@@ -799,12 +836,16 @@ impl GameSessionPlayer {
         .await;
     }
 
+    /// Sends a message to the player.
     pub async fn msg(&mut self, msg: Message<'_, PlayerMessage>) {
         if let Err(err) = self.channel.send(msg).await {
             log::error!("failed to send message to player {}: {err:?}", self.id)
         }
     }
 
+    /// Adds points for the player for a specific question.
+    /// If the player has already answered that question, it returns an error.
+    /// Points don't get applied until [`GameSessionPlayer::apply_points`] is called for that question.
     pub fn add_points(&mut self, points: u32, question: Uuid) -> Result<(), GameSessionError> {
         if let Some((_, uuid)) = self.last_question
             && uuid == question
@@ -815,6 +856,7 @@ impl GameSessionPlayer {
         Ok(())
     }
 
+    /// Applies the points from the last answered question to the player's total points.
     pub fn apply_points(&mut self, question: Uuid) -> u32 {
         let mut points = 0;
         if let Some((new_points, uuid)) = self.last_question
@@ -829,6 +871,10 @@ impl GameSessionPlayer {
 }
 
 impl QuestionOptions {
+    /// Calculates the points for a given answer based on how many correct elements were identified.
+    /// The scoring system is normalized to a total of **1000 points per question**.
+    ///
+    /// The final score is computed by multiplying the result from [`get_correct`](Self::get_correct) with the per-option score.
     pub fn get_points(&self, correct: usize) -> u32 {
         let total_points = 1000;
         let points_per_option = match self {
@@ -841,6 +887,14 @@ impl QuestionOptions {
         (correct * points_per_option).min(total_points) as u32
     }
 
+    /// Calculates the number of correct options for a given answer based on the question type.
+    ///
+    /// **Hint:**
+    /// - [`Slide`](QuestionOptions::Slide) questions can't be answered and always return an error.
+    /// - [`SingleChoice`](QuestionOptions::SingleChoice) returns `1` if correct, otherwise `0`.
+    /// - [`MultipleChoice`](QuestionOptions::MultipleChoice) counts how many selections match the
+    ///   correctness state (selected correct + unselected incorrect).
+    /// - [`Order`](QuestionOptions::Order) counts how many adjacent pairs are in the correct order.
     pub fn get_correct(&self, answer: &[Uuid]) -> Result<usize, GameSessionError> {
         match self {
             QuestionOptions::Slide => Err(GameSessionError::CannotAnswer),
@@ -893,6 +947,12 @@ impl QuestionOptions {
         }
     }
 
+    /// Returns a list of the correct answer IDs for the question.
+    ///
+    /// **Hint:**
+    /// - [`Slide`](QuestionOptions::Slide) questions don't have correct answers, so this will return an empty list.
+    /// - [`SingleChoice`](QuestionOptions::SingleChoice) and [`MultipleChoice`](QuestionOptions::MultipleChoice) questions return the IDs of the correct options.
+    /// - [`Order`](QuestionOptions::Order) questions return the IDs of the options in the correct order.
     pub fn correct_answer_list(&self) -> Vec<Uuid> {
         match self {
             QuestionOptions::Slide => Vec::new(),
@@ -903,6 +963,7 @@ impl QuestionOptions {
         }
     }
 
+    /// Returns the number of answer options for the question.
     pub fn len(&self) -> usize {
         match self {
             QuestionOptions::Slide => 0,
@@ -913,6 +974,7 @@ impl QuestionOptions {
         }
     }
 
+    /// Returns the position of a specific answer ID within the question's options if found.
     pub fn position(&self, id: Uuid) -> Option<usize> {
         match self {
             QuestionOptions::Slide => None,
@@ -925,6 +987,7 @@ impl QuestionOptions {
 }
 
 impl ChoiceStatistics {
+    /// Creates a new instance of [`ChoiceStatistics`] based on the provided answer models, distribution of answers, and total number of answers.
     pub fn new(models: &[AnswerChoiceModel], distribution: &[usize], answers: usize) -> Self {
         let answer_statistic = models
             .iter()
@@ -944,6 +1007,7 @@ impl ChoiceStatistics {
 }
 
 impl OrderStatistics {
+    /// Creates a new instance of [`OrderStatistics`] based on the provided answer models, distribution of answers, and total number of answers.
     pub fn new(models: &[AnswerOrderModel], distribution: &[usize], answers: usize) -> Self {
         Self {
             answers,
@@ -954,7 +1018,7 @@ impl OrderStatistics {
 }
 
 /// Executes up to 64 futures in parallel.
-/// If the iterator yields more than 64 futures, an additional future is added each time a future finishes.
+/// After a future completes, it will start the next one from the iterator until all futures are completed.
 async fn execute_futures<T>(mut iterator: T)
 where
     T: Iterator,

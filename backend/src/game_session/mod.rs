@@ -35,9 +35,11 @@ mod test;
 
 pub use api::init;
 
+/// A type alias to make clear that somewhere a [`SessionCode`] is used.
 pub type SessionCode = u32;
 
 impl_err! {
+    /// Error type for game-session errors
     enum GameSessionError {
         #[error("Invalid code")]
         InvalidCode = NOT_FOUND,
@@ -88,6 +90,7 @@ impl_err! {
     }
 }
 
+/// Wrapper around all active in-memory game sessions.
 pub struct GameSessions {
     sessions: Arc<RwLock<HashMap<SessionCode, Arc<Mutex<GameSession>>>>>,
 }
@@ -100,6 +103,7 @@ impl Clone for GameSessions {
     }
 }
 
+/// A single running quiz game session.
 pub struct GameSession {
     status: GameSessionStatus,
     host: GameSessionHost,
@@ -107,6 +111,9 @@ pub struct GameSession {
     quiz: Option<Arc<Quiz<Question>>>,
 }
 
+/// Represents the current state of a game session.
+///
+/// Some states carry additional metadata such as the current question index, the start time of the question, and the number of answers received.
 #[derive(Debug)]
 pub enum GameSessionStatus {
     Waiting(Vec<Box<dyn Joining>>),
@@ -137,6 +144,9 @@ pub enum GameSessionStatus {
     Closed,
 }
 
+/// Represents the host of a game session.
+///
+/// The host owns the session and controls game flow (start, next question, kick players, etc.).
 pub struct GameSessionHost {
     user: User,
     channel: Option<Box<dyn Channel<HostMessage>>>,
@@ -151,6 +161,9 @@ impl From<User> for GameSessionHost {
     }
 }
 
+/// Represents a player connected to a game session.
+///
+/// Each player maintains a points buffer that is flushed to the final score when a question is finalized.
 pub struct GameSessionPlayer {
     id: Uuid,
     secret: Uuid,
@@ -161,12 +174,21 @@ pub struct GameSessionPlayer {
     last_question: Option<(u32, Uuid)>,
 }
 
+/// A trait representing a Channel for a game session.
+///
+/// The [`Channel`] trait is used to abstract the communication mechanism between the server and the clients (players and host) in a game session.
 #[async_trait::async_trait]
 pub trait Channel<Msg: Serialize>: Send {
+    /// Sends a message over the channel. If the message has a timing field, it will be adjusted by the time delta of the channel.
     async fn send(&mut self, msg: Message<'_, Msg>) -> Result<(), ChannelError>;
+    /// This will terminate the listener and close the underlying channel connection.
     async fn close(self: Box<Self>);
+    /// Returns a unique id for the channel
+    ///
+    /// **Hint:** Must be the same as of [`Joining::id`].
     fn id(&self) -> u64;
 
+    /// Generates a unique id that can be used as return value of [`Channel::id`].
     fn generate_id() -> u64
     where
         Self: Sized,
@@ -176,6 +198,7 @@ pub trait Channel<Msg: Serialize>: Send {
     }
 }
 
+/// Errors that can occur when sending over a channel.
 #[derive(Debug)]
 pub enum ChannelError {
     Ws(WsChannelError),
@@ -187,13 +210,21 @@ impl From<WsChannelError> for ChannelError {
     }
 }
 
+/// A trait representing a player who is in the process of joining a game session.
 #[async_trait::async_trait]
 pub trait Joining: Debug + Send {
     /// Cancel joining (i.e. kick player).
     async fn cancel(self: Box<Self>);
+    /// Returns a unique id for the joining player.
     fn id(&self) -> u64;
 }
 
+/// A message sent from the server to a client.
+///
+/// Contains:
+/// - optional request ID (for command acknowledgements)
+/// - payload data
+/// - optional timing metadata (for synchronized gameplay events)
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Message<'a, T: Serialize> {
@@ -209,6 +240,7 @@ impl<T: Serialize> Clone for Message<'_, T> {
     fn clone(&self) -> Self {
         Self {
             id: self.id,
+            // The `msg` field is a reference, so instead of cloning it, the reference is copied.
             msg: self.msg,
             timing: self.timing,
         }
@@ -225,6 +257,11 @@ impl<'a, T: Serialize> From<&'a T> for Message<'a, T> {
     }
 }
 
+/// A command sent from a client to the server.
+///
+/// If id is set, the id needs to be unique on the client side (e.g. a simple counter).
+/// This id is used to identify wich answer belongs to wich command send.
+/// The server simply passes the id back to the client in the response, so the client can match the response to the command.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Command<T> {
@@ -233,12 +270,17 @@ pub struct Command<T> {
     pub command: T,
 }
 
+/// A trait for command types that can be sent from the client.
 pub trait CommandTrait: Sized {
+    /// Parses a JSON byte slice into a command of the implementing type.
     fn parse_json(data: &[u8]) -> Result<Self, serde_json::Error>;
+    /// Returns the pong response data after the server sends a ping out to the client.
     fn pong(&self) -> Option<(u32, DateTime<Utc>)>;
+    /// Returns the unique id of the command, if it has one.
     fn id(&self) -> Option<u64>;
 }
 
+/// A variant of [`Message`] that is used for sending information from the server to the [`Host`](GameSessionHost).
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 pub enum HostMessage {
@@ -264,6 +306,7 @@ pub enum HostMessage {
     ShowStatistics(Arc<AnswerStatistics>),
 }
 
+/// A struct representing a leaderboard entry for a player in the game session.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
@@ -293,6 +336,7 @@ pub struct LeaderboardEntry {
 }
 
 impl PartialEq for LeaderboardEntry {
+    /// Compares two [`LeaderboardEntries`](LeaderboardEntry) for equality based on their total points.
     fn eq(&self, other: &Self) -> bool {
         self.total_points == other.total_points
     }
@@ -301,6 +345,7 @@ impl PartialEq for LeaderboardEntry {
 impl Eq for LeaderboardEntry {}
 
 impl Ord for LeaderboardEntry {
+    /// This method returns the ordering of two [`LeaderboardEntries`](LeaderboardEntry) based on their total points.
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         other.total_points.cmp(&self.total_points)
     }
@@ -312,6 +357,7 @@ impl PartialOrd for LeaderboardEntry {
     }
 }
 
+/// Represents aggregated answer statistics for a question.
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AnswerStatistics {
@@ -320,6 +366,9 @@ pub enum AnswerStatistics {
     Order(OrderStatistics),
 }
 
+/// Statistics for choice questions.
+///
+/// Contains total number of answers submitted and a breakdown per answer option.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChoiceStatistics {
@@ -327,6 +376,9 @@ pub struct ChoiceStatistics {
     answer_statistic: Vec<AnswerStatistic>,
 }
 
+/// Statistics for ordering-based questions.
+///
+/// Contains total number of answers submitted and a breakdown of how many players got each possible count of correct relationships.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OrderStatistics {
@@ -335,6 +387,9 @@ pub struct OrderStatistics {
     answer_statistic: Vec<usize>,
 }
 
+/// Statistics for a single answer option.
+///
+/// Used in [`ChoiceStatistics`] to describe how often a specific option was selected and whether it is correct.
 #[derive(Debug, Clone, Serialize)]
 pub struct AnswerStatistic {
     pub option: Uuid,
@@ -342,6 +397,7 @@ pub struct AnswerStatistic {
     pub correct: bool,
 }
 
+/// A variant of [`Command`] that is used for sending information from the [`Host`](GameSessionHost) to the server.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(
     tag = "command",
@@ -376,6 +432,7 @@ impl CommandTrait for Command<HostCommand> {
     }
 }
 
+/// A variant of [`Message`] that is used for sending information from the server to the [`Player`](GameSessionPlayer).
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 pub enum PlayerMessage {
@@ -406,6 +463,7 @@ pub enum PlayerMessage {
     },
 }
 
+/// A variant of [`Command`] that is used for sending information from the [`Player`](GameSessionPlayer) to the server.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(
     tag = "command",
@@ -437,6 +495,7 @@ impl CommandTrait for Command<PlayerCommand> {
     }
 }
 
+/// A struct representing a Question to get displayed to the clients in a session.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DisplayQuestionMessage {
@@ -462,6 +521,7 @@ impl DisplayQuestionMessage {
     }
 }
 
+/// A variant that is used for sending the question content (answer options, etc.) to the clients.
 #[derive(Debug, Serialize)]
 #[serde(tag = "type", content = "options", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum DisplayQuestionOptions {
@@ -490,6 +550,7 @@ impl From<&QuestionOptions> for DisplayQuestionOptions {
     }
 }
 
+/// A struct representing an option for a question that can be answered by the players.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnswerOption {
