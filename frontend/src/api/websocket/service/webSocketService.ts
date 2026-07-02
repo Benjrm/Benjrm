@@ -20,6 +20,8 @@ export default class WebSocketService {
 
     private readonly everyCloseCallbacks = new Set<() => void>()
 
+    private reconnectFailedCallbacks = new Set<() => void>()
+
     private pendingDisconnect: ReturnType<typeof setTimeout> | null = null
 
     private reconnectUrl: string | null = null
@@ -184,7 +186,11 @@ export default class WebSocketService {
     }
 
     private scheduleReconnect(): void {
-        if (!this.reconnectUrl || this.reconnectAttempts >= 5) return
+        if (!this.reconnectUrl || this.reconnectAttempts >= 5) {
+            this.reconnectFailedCallbacks.forEach((cb) => cb())
+            this.reconnectFailedCallbacks.clear()
+            return
+        }
         let delay = Math.min(1000 * 2 ** this.reconnectAttempts, 16000)
         if (this.reconnectAttempts === 0) delay = 10
         this.reconnectAttempts += 1
@@ -253,6 +259,18 @@ export default class WebSocketService {
         this.closeWithoutOpenCallbacks.add(callback)
         return () => {
             this.closeWithoutOpenCallbacks.delete(callback)
+        }
+    }
+
+    /**
+     * Registers a callback to fire once if the connection or reconnection finally fails
+     * (i.e., the connection is constantly refused or the session code was not found).
+     * @returns An unsubscribe function.
+     */
+    public onReconnectFail(callback: () => void): () => void {
+        this.reconnectFailedCallbacks.add(callback)
+        return () => {
+            this.reconnectFailedCallbacks.delete(callback)
         }
     }
 

@@ -55,6 +55,9 @@ export interface ServerEvents {
     removePlayer: {
         id: string
     }
+    setPlayers: {
+        players: { id: string; name: string; emoji: string | null }[]
+    }
     kick: unknown
     start: unknown
     gameEnded: unknown

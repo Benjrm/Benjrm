@@ -23,7 +23,7 @@ export default function useCreateSession(): UseMutationResult<Session, Error, Cr
             queryClient.setQueryData(sessionKeys.detail(session.code), session)
             toast.success("Quiz session started successfully!")
             const code = String(session.code).padStart(8, "0")
-            navigate(`/play/${code}`)
+            navigate(`/play/${code}/host`)
         },
         onError: (error) => {
             toast.error(

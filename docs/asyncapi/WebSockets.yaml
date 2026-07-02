@@ -43,6 +43,8 @@ channels:
         $ref: "#/components/messages/renamePlayer"
       removePlayer:
         $ref: "#/components/messages/removePlayer"
+      setPlayers:
+        $ref: "#/components/messages/setPlayers"
       kickPlayer:
         $ref: "#/components/messages/kickPlayer"
       start:
@@ -201,6 +203,16 @@ operations:
       $ref: "#/channels/sessionHost"
     messages:
       - $ref: "#/channels/sessionHost/messages/removePlayer"
+    tags:
+      - name: Sessions
+
+  sendSetPlayers:
+    description: "Send setPlayers command"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/setPlayers"
     tags:
       - name: Sessions
   
@@ -467,16 +479,7 @@ components:
             type: string
             const: "addPlayer"
           payload:
-            type: object
-            properties:
-              id:
-                type: string
-                format: uuid
-              name:
-                type: string
-              emoji:
-                type: string
-                example: "😀"
+            $ref: "#/components/schemas/Player"
     
     renamePlayer:
       payload:
@@ -486,16 +489,7 @@ components:
             type: string
             const: "renamePlayer"
           payload:
-            type: object
-            properties:
-              id:
-                type: string
-                format: uuid
-              name:
-                type: string
-              emoji:
-                type: string
-                example: "😀"
+            $ref: "#/components/schemas/Player"
     
     removePlayer:
       payload:
@@ -510,6 +504,21 @@ components:
               id:
                 type: string
                 format: uuid
+
+    setPlayers:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "setPlayers"
+          payload:
+            type: object
+            properties:
+              players:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Player"
     
     kickPlayer:
       payload:
@@ -753,6 +762,18 @@ components:
                 type: string
   
   schemas:
+    Player:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        emoji:
+          type: string
+          example: "😀"
+    
     DisplayQuestionOptions:
       oneOf:
         - $ref: "#/components/schemas/DisplaySlideOptions"

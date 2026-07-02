@@ -8,7 +8,11 @@ import type WebSocketService from "@/api/websocket/service/webSocketService.ts"
  * stale data from a previous session), the `id` and `secret` are removed from sessionStorage so
  * the player can join fresh via `setName` instead.
  */
-export default function sendReconnect(ws: WebSocketService, storageKey: string): void {
+export default function sendReconnect(
+    ws: WebSocketService,
+    storageKey: string,
+    setNameSaved: (value: boolean) => void
+): void {
     const raw = sessionStorage.getItem(storageKey)
     if (!raw) return
 
@@ -34,6 +38,7 @@ export default function sendReconnect(ws: WebSocketService, storageKey: string):
         resolved = true
         unsubOk()
         unsubErr()
+        setNameSaved(true)
     })
 
     unsubErr = ws.subscribe("error", (_payload, _timing, id) => {
@@ -41,10 +46,12 @@ export default function sendReconnect(ws: WebSocketService, storageKey: string):
         resolved = true
         unsubOk()
         unsubErr()
+        setNameSaved(false)
         try {
             const current = JSON.parse(sessionStorage.getItem(storageKey) ?? "{}")
             delete current.id
             delete current.secret
+            delete current.nameSaved
             sessionStorage.setItem(storageKey, JSON.stringify(current))
         } catch {
             // ignore
