@@ -9,13 +9,16 @@ import sendReconnect from "@/api/websocket/hooks/sendReconnect.ts"
  * Only intended for session players (non-hosts).
  * @param code The session code to connect to.
  */
-export default function usePlayerWebSocket(code: number | string | undefined): void {
+export default function usePlayerWebSocket(
+    code: number | string | undefined,
+    setNameSaved: (value: boolean) => void
+): void {
     useWebSocket(code, "ws/player")
     const ws = useWebSocketContext()
 
     useEffect(() => {
         if (!code) return undefined
         const storageKey = `waitingRoom:${code}`
-        return ws.onEveryConnect(() => sendReconnect(ws, storageKey))
-    }, [code, ws])
+        return ws.onEveryConnect(() => sendReconnect(ws, storageKey, setNameSaved))
+    }, [code, ws, setNameSaved])
 }

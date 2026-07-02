@@ -8,7 +8,6 @@ import RootLayout from "./layouts/RootLayout"
 import PublicLayout from "./layouts/PublicLayout"
 import QuizCreator from "./pages/QuizCreator"
 import OrderQuestion from "./pages/OrderQuestion"
-import WaitingRoom from "./pages/WaitingRoom"
 import DownloadableMarkdown from "./components/DownloadableMarkdown"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
@@ -16,7 +15,6 @@ import Quizzes from "@/pages/Quizzes.tsx"
 import InfoSlide from "@/pages/InfoSlide.tsx"
 import GamePage from "@/pages/GamePage.tsx"
 import HostDashboard from "@/pages/HostDashboard.tsx"
-import PlayLayout from "@/layouts/PlayLayout.tsx"
 
 const routes: RouteObject[] = [
     {
@@ -47,10 +45,8 @@ const routes: RouteObject[] = [
             },
             {
                 path: "/play/:code",
-                element: <PlayLayout />,
                 children: [
-                    { index: true, element: <WaitingRoom /> },
-                    { path: "game", element: <GamePage /> },
+                    { index: true, element: <GamePage /> },
                     { path: "host", element: <HostDashboard /> },
                 ],
             },
