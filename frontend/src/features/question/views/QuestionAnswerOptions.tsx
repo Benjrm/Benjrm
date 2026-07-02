@@ -1,5 +1,3 @@
-// frontend/src/components/QuestionAnswerOptions.tsx
-
 import type { JSX } from "react"
 import OrderOptions from "./OrderOptions"
 import StandardOptions from "./StandardOptions"

@@ -1,5 +1,3 @@
-// frontend/src/components/OrderOptions.tsx
-
 import type { JSX } from "react"
 import { Plus } from "lucide-react"
 import {

@@ -1,5 +1,3 @@
-// frontend/src/pages/LandingPage.tsx
-
 import { useState } from "react"
 import type { JSX } from "react"
 import { useNavigate } from "react-router"

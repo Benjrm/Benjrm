@@ -1,5 +1,3 @@
-// frontend/src/components/AnswerCard.tsx
-
 import type { JSX } from "react"
 import { Check, Trash2, X } from "lucide-react"
 import { useTranslation } from "react-i18next"

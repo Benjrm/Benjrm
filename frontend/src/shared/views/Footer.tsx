@@ -1,5 +1,3 @@
-// frontend/src/components/Footer.tsx
-
 import type { JSX } from "react"
 import { NavLink } from "react-router"
 import { useTranslation } from "react-i18next"

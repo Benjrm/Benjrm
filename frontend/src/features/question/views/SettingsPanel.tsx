@@ -1,5 +1,3 @@
-// frontend/src/components/SettingsPanel.tsx
-
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import AnswerPreviewGrid from "./AnswerPreviewGrid"

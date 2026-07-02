@@ -1,5 +1,5 @@
 import type { QuestionAdapter } from "@/features/question/adapter/questionAdapter.ts"
-import { apiDelete, apiGet, apiPatch, apiPost } from "@/shared/utils/client.ts"
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/shared/utils/apiClient.ts"
 import type {
     Question,
     QuestionRequest,

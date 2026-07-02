@@ -1,5 +1,3 @@
-// frontend/src/components/Navbar.tsx
-
 import type { JSX } from "react"
 import { useState } from "react"
 import { NavLink } from "react-router"

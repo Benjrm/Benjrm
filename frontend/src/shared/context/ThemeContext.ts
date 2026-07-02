@@ -1,5 +1,3 @@
-// frontend/src/context/ThemeContext.ts
-
 import { createContext } from "react"
 import type { ThemeProviderState } from "@/shared/types/themeProviderState.ts"
 

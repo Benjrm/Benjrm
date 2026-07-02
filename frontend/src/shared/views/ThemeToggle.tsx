@@ -1,5 +1,3 @@
-// frontend/src/components/ThemeToggle.tsx
-
 import { Sun, Moon, Monitor } from "lucide-react"
 import type { JSX } from "react"
 import { Button } from "@shadcn/components/ui/button"

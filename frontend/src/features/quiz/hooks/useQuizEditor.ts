@@ -4,7 +4,6 @@ import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
-import { useDeleteQuiz, useQuiz } from "@/features/quiz/hooks/quizzes.queries.ts"
 import useQuestions from "@/features/question/hooks/useQuestions"
 import questionKeys from "@/features/question/utils/questionKeys"
 import tempId from "@/shared/utils/tempId"
@@ -18,9 +17,11 @@ import removeOptionFromQuestion from "@/features/question/utils/removeOptionFrom
 import addOptionToQuestion from "@/features/question/utils/addOptionToQuestion.ts"
 import updateOptionInQuestionAtIndex from "@/features/question/utils/updateOptionInQuestionAtIndex.ts"
 import getQuiz from "@/features/quiz/api/getQuiz.ts"
-import type { QuestionError } from "@/features/quiz/types/questionError.ts"
+import type { QuestionError } from "@/features/question/types/questionError.ts"
 import createEmptyQuestion from "@/features/quiz/utils/createEmptyQuestion.ts"
 import applyQueueToQuestions from "@/features/quiz/utils/applyQueueToQuestions.ts"
+import useQuiz from "@/features/quiz/hooks/useQuiz.ts"
+import useDeleteQuiz from "@/features/quiz/hooks/useDeleteQuiz.ts"
 
 interface UseQuizEditorResult {
     quiz: unknown

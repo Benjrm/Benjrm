@@ -1,5 +1,3 @@
-// frontend/src/App.tsx
-
 import type { JSX } from "react"
 import { useEffect } from "react"
 import { useLocation, useRoutes } from "react-router"

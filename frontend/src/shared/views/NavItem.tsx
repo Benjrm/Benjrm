@@ -1,5 +1,3 @@
-// frontend/src/components/NavItem.tsx
-
 import type { JSX } from "react"
 import { NavLink } from "react-router"
 

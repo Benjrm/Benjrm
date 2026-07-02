@@ -1,11 +1,10 @@
-// frontend/src/components/GameHeroSection.tsx
 import type { JSX } from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router"
 import { PlusSquare } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { Input } from "@/shadcn/components/ui/input"
-import { Button } from "@/shadcn/components/ui/button"
+import { Input } from "@shadcn/components/ui/input.tsx"
+import { Button } from "@shadcn/components/ui/button.tsx"
 
 interface GameHeroSectionProps {
     onAddQuizClick: () => void

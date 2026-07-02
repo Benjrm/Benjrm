@@ -1,5 +1,3 @@
-// frontend/src/components/QuestionSidebar.tsx
-
 import { ChevronDown, Plus } from "lucide-react"
 import type { JSX } from "react"
 import { useState } from "react"

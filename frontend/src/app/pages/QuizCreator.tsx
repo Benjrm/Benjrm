@@ -1,5 +1,3 @@
-// frontend/src/pages/QuizCreator.tsx
-
 import type { JSX } from "react"
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router"

@@ -1,5 +1,3 @@
-// frontend/src/components/CreateQuizModal.tsx
-
 import type { FC } from "react"
 import { useTranslation } from "react-i18next"
 import QuizForm from "./QuizForm"

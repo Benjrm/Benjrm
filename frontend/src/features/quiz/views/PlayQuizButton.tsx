@@ -1,5 +1,3 @@
-// frontend/src/components/PlayQuizButton.tsx
-
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import useCreateSession from "@/features/session/hooks/useCreateSession"

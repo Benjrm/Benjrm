@@ -37,10 +37,3 @@ export interface StatisticOption {
     votes: number
     isCorrect: boolean
 }
-
-export interface OptionStat {
-    id: string
-    text: string
-    votes: number
-    isCorrect: boolean
-}

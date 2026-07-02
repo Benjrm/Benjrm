@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import ProgressBar from "@/shadcn/components/ui/progress"
-import type { OptionStat } from "@/features/question/types/statistics.ts"
+import type { StatisticOption } from "@/features/question/types/statistics.ts"
 
 interface ChoiceQuestionStatisticViewProps {
-    options: OptionStat[]
+    options: StatisticOption[]
     totalAnswers: number
 }
 

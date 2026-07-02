@@ -6,11 +6,11 @@ import MarkdownComponent from "@/shared/views/markdown/MarkdownComponent"
 import type { QuestionType } from "@/features/question/types/questions.ts"
 
 import { Badge } from "@/shadcn/components/ui/badge"
-import type { OptionStat, QuestionStatistics } from "@/features/question/types/statistics.ts"
+import type { QuestionStatistics, StatisticOption } from "@/features/question/types/statistics.ts"
 
 interface HostGameQuestionStatisticProps {
     questionText: string
-    options: OptionStat[]
+    options: StatisticOption[]
     totalAnswers: number
     expectedAnswers: number
     currentQuestionIndex: number

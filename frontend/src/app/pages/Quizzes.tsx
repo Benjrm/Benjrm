@@ -1,12 +1,10 @@
-// frontend/src/pages/Quizzes.tsx
-
 import type { JSX } from "react"
 import { useEffect } from "react"
 import { toast, Toaster } from "sonner"
 import { useTranslation } from "react-i18next"
 import QuizCard from "@/features/quiz/views/QuizCard"
-import { useQuizzes } from "@/features/quiz/hooks/quizzes.queries.ts"
 import type { Quiz } from "@/features/quiz/types/quizzes.ts"
+import useQuizzes from "@/features/quiz/hooks/useQuizzes.ts"
 
 function renderQuizzesContent(
     sortedQuizzes: Quiz[],

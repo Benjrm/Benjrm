@@ -1,5 +1,3 @@
-// frontend/src/api/session/keys.ts
-
 /**
  * Key object for React Query.
  * Used for caching API responses.

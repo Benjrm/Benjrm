@@ -2,7 +2,7 @@ import type { JSX } from "react"
 import { Toaster } from "sonner"
 import { useTranslation } from "react-i18next"
 import Lobby from "./Lobby"
-import ProfilePicker from "@/features/user/views/ProfilePicker"
+import ProfilePicker from "@/features/session/views/ProfilePicker.tsx"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
 
 import AVAILABLE_EMOJIS from "@/features/session/constants/availableEmojis.ts"

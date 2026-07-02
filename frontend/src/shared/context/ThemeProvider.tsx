@@ -1,5 +1,3 @@
-// frontend/src/context/ThemeProvider.tsx
-
 import type { JSX } from "react"
 import { useEffect, useState, useMemo } from "react"
 import ThemeProviderContext from "./ThemeContext"

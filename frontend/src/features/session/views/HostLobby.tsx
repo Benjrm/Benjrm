@@ -7,12 +7,12 @@ import QRCode from "@/features/session/views/QRCode"
 import StartQuizButton from "@/features/quiz/views/StartQuizButton"
 import { Button } from "@/shadcn/components/ui/button"
 
-import type { Player } from "@/features/session/types/session.ts"
+import type { SessionPlayer } from "@/features/session/types/session.ts"
 
 interface HostLobbyProps {
     codeWithDash?: string
     quiz: { title: string } | undefined
-    players: Player[]
+    players: SessionPlayer[]
     onKickPlayer: (id: string) => void
     onStartGame: () => void
     startPending: boolean

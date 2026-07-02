@@ -1,5 +1,3 @@
-// frontend/src/api/session/hooks/useCreateSession.ts
-
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { UseMutationResult } from "@tanstack/react-query"
 import { useNavigate } from "react-router"

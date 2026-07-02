@@ -1,6 +1,4 @@
-// frontend/src/components/OrderQuestionContent.tsx
 /* eslint-disable react/jsx-no-bind */
-
 import type { JSX } from "react"
 import { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"

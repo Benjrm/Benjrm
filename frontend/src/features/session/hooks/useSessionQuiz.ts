@@ -1,5 +1,3 @@
-// frontend/src/api/session/hooks/useSessionQuiz.ts
-
 import { useQuery } from "@tanstack/react-query"
 import type { UseQueryResult } from "@tanstack/react-query"
 

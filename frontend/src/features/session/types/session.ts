@@ -16,11 +16,6 @@ export interface SessionPlayer {
     name: string
     emoji: string | null
 }
-export interface Player {
-    id: string
-    name: string
-    emoji: string | null
-}
 
 export interface GameQuestion {
     id: string

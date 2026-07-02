@@ -1,5 +1,3 @@
-// frontend/src/api/client.ts
-
 import ApiError from "../types/apiError.ts"
 import i18n from "@/app/i18n"
 

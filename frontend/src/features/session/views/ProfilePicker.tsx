@@ -1,9 +1,7 @@
-// frontend/src/components/ProfilePicker.tsx
-
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
-import { Button } from "@/shadcn/components/ui/button"
-import { Input } from "@/shadcn/components/ui/input"
+import { Button } from "@shadcn/components/ui/button.tsx"
+import { Input } from "@shadcn/components/ui/input.tsx"
 
 interface ProfilePickerProps {
     name: string

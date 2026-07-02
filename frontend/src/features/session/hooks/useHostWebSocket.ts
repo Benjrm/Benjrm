@@ -1,5 +1,3 @@
-// frontend/src/api/websocket/hooks/useHostWebSocket.ts
-
 import useWebSocket from "@/shared/hooks/useWebSocket.ts"
 
 /**

@@ -1,5 +1,3 @@
-// frontend/src/components/GamePinForm.tsx
-
 import type { JSX } from "react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"

@@ -2,9 +2,9 @@ import { Loader2, Download } from "lucide-react"
 import type { JSX } from "react"
 import { Navigate } from "react-router"
 import { useTranslation } from "react-i18next"
-import MarkdownPageComponent from "@/shared/views/markdown/MarkdownPageComponent"
-import useMarkdown from "@/shared/hooks/useMarkdown"
-import { Button } from "@/shadcn/components/ui/button"
+import MarkdownPageComponent from "@/shared/views/markdown/MarkdownPageComponent.tsx"
+import useMarkdown from "@/shared/hooks/useMarkdown.ts"
+import { Button } from "@shadcn/components/ui/button.tsx"
 
 interface Props {
     filename: string

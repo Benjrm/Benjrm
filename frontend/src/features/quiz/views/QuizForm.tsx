@@ -1,5 +1,3 @@
-// frontend/src/components/QuizForm.tsx
-
 import { useState } from "react"
 import type { FC, SubmitEvent } from "react"
 import { useNavigate } from "react-router"
@@ -9,7 +7,8 @@ import type { TFunction } from "i18next"
 import { DialogFooter } from "@/shadcn/components/ui/dialog"
 import { Button } from "@/shadcn/components/ui/button"
 import { Label } from "@/shadcn/components/ui/label"
-import { useCreateQuiz, useUpdateQuiz } from "@/features/quiz/hooks/quizzes.queries.ts"
+import useUpdateQuiz from "@/features/quiz/hooks/useUpdateQuiz.ts"
+import useCreateQuiz from "@/features/quiz/hooks/useCreateQuiz.ts"
 
 function getReadableQuizMutationError(t: TFunction): string {
     return t("quiz.form.saveError")

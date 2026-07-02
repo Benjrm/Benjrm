@@ -1,4 +1,4 @@
-import { quizKeys } from "@/features/quiz/hooks/quizzes.queries.ts"
+import quizKeys from "@/features/quiz/utils/quizKeys.ts"
 
 const questionKeys = {
     key: "questions" as const,

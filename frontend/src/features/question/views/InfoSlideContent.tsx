@@ -1,5 +1,3 @@
-// frontend/src/components/InfoSlideContent.tsx
-
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import MarkdownPageComponent from "@/shared/views/markdown/MarkdownPageComponent"

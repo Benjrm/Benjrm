@@ -1,5 +1,3 @@
-// frontend/src/components/QuestionEditor.tsx
-
 import type { JSX } from "react"
 import { useState, useEffect } from "react"
 import MDEditor from "@uiw/react-md-editor"
@@ -17,7 +15,7 @@ import { Button } from "@/shadcn/components/ui/button"
 import type { QuestionType, Question } from "@/features/question/types/questions.ts"
 import updateQuestionWithPatch from "@/features/question/utils/updateQuestionWithPatch.ts"
 import questionTypes from "@/features/question/constants/questionTypes.ts"
-import type { QuestionError } from "@/features/quiz/types/questionError.ts"
+import type { QuestionError } from "@/features/question/types/questionError.ts"
 import useTheme from "@/shared/hooks/useTheme.ts"
 
 interface QuestionEditorProps {

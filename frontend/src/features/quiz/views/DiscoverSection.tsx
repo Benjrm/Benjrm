@@ -1,5 +1,3 @@
-// frontend/src/components/DiscoverSection.tsx
-
 import type { JSX } from "react"
 import { PlusSquare } from "lucide-react"
 import { useTranslation } from "react-i18next"

@@ -7,7 +7,7 @@ import getRankingDisplay from "@/features/session/leaderboard/utils/getRankingDi
 
 export interface LeaderboardItemProps {
     ranking: number
-    avatar?: string | undefined
+    avatar?: string
     name: string
     points: number
 }
