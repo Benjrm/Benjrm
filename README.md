@@ -82,3 +82,6 @@ Each letter represents one of the creators. Together, it forms a name that is pr
 
 ## API
 Please refer to the [API-related documentation](docs/api/README.md).
+
+## CI/CD Pipeline documentation
+Please refer to the [CI/CD Pipeline Documentation](docs/ci-cd/README.md).
