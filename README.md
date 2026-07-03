@@ -126,6 +126,6 @@ erDiagram
     user ||--o{ quiz : "owns"
     quiz ||--o{ question : "contains"
     question ||--o{ answer_choice : "has"
-    question o|--o| question : "prev/next"
-    answer_choice o|--o| answer_choice : "prev/next"
+    question |o--o| question : "prev/next"
+    answer_choice |o--o| answer_choice : "prev/next"
 ```
