@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { Edit2, Settings, Trash2 } from "lucide-react"
+import { Edit2, Trash2 } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -79,13 +79,6 @@ export default function QuizCreatorHeader({
 
             <div className="flex flex-wrap items-center gap-3">
                 <PlayQuizButton quizId={quizId} />
-                <Button
-                    className="border-border bg-muted/40 hover:bg-muted/70 gap-2 border backdrop-blur-sm"
-                    variant="ghost"
-                >
-                    <Settings className="h-4 w-4" />
-                    {t("quizEditor.header.settings")}
-                </Button>
 
                 {hasUnsavedChanges ? (
                     <Button disabled={isSavingQuestions} onClick={discardChanges} variant="outline">
