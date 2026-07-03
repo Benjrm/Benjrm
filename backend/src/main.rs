@@ -21,9 +21,17 @@ mod update_value;
 
 pub use app_data::AppData;
 
+/// Starts the HTTP server and runs the backend-application.
+///
+/// ## Security Notes
+/// - Debug builds use a fixed session key (not secure, but stable for tests)
+/// - Release builds generate a secure random key at startup
+///
+/// ## Configuration
+/// - `PORT`: HTTP server port (defaults to `80`)
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let _ = dotenvy::dotenv(); // ignore missing `.env` file
+    let _ = dotenvy::dotenv(); // Ignore missing `.env` file
     if cfg!(debug_assertions) {
         // Safety: because this is the start of our program, there are no other threads reading from the environment
         unsafe {
@@ -39,7 +47,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     let secret_key = if cfg!(debug_assertions) {
-        // constant key for debug builds
+        // Constant key for debug builds
         const KEY: [u8; 64] = [
             214, 235, 254, 208, 2, 104, 84, 123, 188, 216, 236, 30, 146, 156, 213, 15, 147, 35,
             130, 11, 141, 202, 130, 20, 211, 63, 205, 136, 81, 195, 0, 80, 80, 42, 206, 22, 171,
@@ -68,7 +76,7 @@ async fn main() -> std::io::Result<()> {
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_http_only(true)
                     .cookie_same_site(SameSite::Strict)
-                    // only require https in release builds
+                    // Only require https in release builds
                     .cookie_secure(cfg!(not(debug_assertions)))
                     .build(),
             )
@@ -101,11 +109,18 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
+/// Health check endpoint.
+///
+/// Returns a simple `200 OK` response.
 fn healthcheck_resource() -> Resource {
     web::resource("/health")
         .route(web::get().to(async || HttpResponse::Ok().content_type(mime::TEXT_PLAIN).body("OK")))
 }
 
+/// Default handler for unknown routes.
+///
+/// Returns `404 Not Found` for any unmatched request.
+/// Used as a fallback inside API scopes.
 fn not_found_route() -> Route {
     Route::new().to(async || HttpResponse::NotFound().finish())
 }

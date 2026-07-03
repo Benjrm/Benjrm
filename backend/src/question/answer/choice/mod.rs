@@ -5,6 +5,7 @@ pub mod entity;
 #[cfg(test)]
 mod test;
 
+/// A struct representing a new answer for a choice question.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct NewAnswerChoice {
@@ -13,6 +14,7 @@ pub struct NewAnswerChoice {
     pub correct: bool,
 }
 
+/// A struct representing an update to an existing answer for a choice question.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UpdateAnswerChoice {
@@ -23,6 +25,7 @@ pub struct UpdateAnswerChoice {
     pub correct: UpdateValue<bool>,
 }
 
+/// A variant of either [`NewAnswerChoice`] or [`UpdateAnswerChoice`] to handle an update to a question that can have new or existing answers.
 #[derive(Debug, Clone)]
 pub enum UpdateAnswerChoiceEnum {
     New(NewAnswerChoice),
@@ -36,6 +39,7 @@ impl From<NewAnswerChoice> for UpdateAnswerChoiceEnum {
 }
 
 impl<'de> Deserialize<'de> for UpdateAnswerChoiceEnum {
+    /// Custom deserializer to differentiate between [`NewAnswerChoice`] and [`UpdateAnswerChoice`] based on the presence of the `id` field.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,

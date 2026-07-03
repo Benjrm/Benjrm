@@ -15,6 +15,7 @@ use {
     uuid::Uuid,
 };
 
+/// A variant representing a position (like an index) of a question relative to its neighbors in the question doubly linked list.
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub enum Position {
@@ -23,6 +24,7 @@ pub enum Position {
 }
 
 impl Position {
+    /// A custom deserializer for an optional [`Position`] that expects exactly one of `prev` or `next` to be present in the input.
     pub fn deserialize_optional<'de, D>(deserializer: D) -> Result<Option<Self>, D::Error>
     where
         D: Deserializer<'de>,
@@ -46,20 +48,28 @@ impl Position {
     }
 }
 
+/// A struct representing the neighboring [`QuestionModels`](QuestionModel) of a [`QuestionModel`] in the question linked list.
 pub struct Neighbors {
     prev: Option<QuestionModel>,
     next: Option<QuestionModel>,
 }
 
 impl Neighbors {
+    /// Returns the [`Uuid`](QuestionModel::id) of the previous question.
+    ///
+    /// This may be [`None`] if the current question is the first question in the quiz.
     pub fn prev_id(&self) -> Option<Uuid> {
         self.prev.as_ref().map(|x| x.id)
     }
 
+    /// Returns the [`Uuid`](QuestionModel::id) of the next question.
+    ///
+    /// This may be [`None`] if the current question is the last question in the quiz
     pub fn next_id(&self) -> Option<Uuid> {
         self.next.as_ref().map(|x| x.id)
     }
 
+    /// Returns a new [`Neighbors`] instance with no linked questions.
     pub fn empty() -> Self {
         Self {
             prev: None,
@@ -67,6 +77,7 @@ impl Neighbors {
         }
     }
 
+    /// Retrieves the neighboring questions of a given [`Position`] in a quiz.
     pub async fn get(
         quiz: &QuizModel,
         pos: Position,
@@ -98,6 +109,7 @@ impl Neighbors {
         }
     }
 
+    /// Retrieves the neighboring questions if a position is specified, or the last question in the quiz if no position is specified.
     pub async fn get_opt(
         quiz: &QuizModel,
         pos: Option<Position>,
@@ -119,6 +131,7 @@ impl Neighbors {
         }
     }
 
+    /// Moves a new question by its id between the current neighbors, updating the [`prev`](QuestionModel::prev) and [`next`](QuestionModel::prev) fields of the neighboring questions in the database.
     pub async fn move_between(
         self,
         txn: &DatabaseTransaction,
@@ -137,6 +150,8 @@ impl Neighbors {
         Ok(())
     }
 
+    /// Removes the current question from the linked list.
+    /// Remaining questions will be linked together.
     pub async fn remove_links(
         question: &QuestionModel,
         txn: &DatabaseTransaction,

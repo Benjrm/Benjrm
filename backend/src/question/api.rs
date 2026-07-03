@@ -10,6 +10,7 @@ use {
     uuid::Uuid,
 };
 
+/// Creates a new question for a quiz.
 async fn create_one(
     question: web::Json<NewQuestion>,
     app_data: web::Data<AppData>,
@@ -24,6 +25,7 @@ async fn create_one(
     Ok(HttpResponse::Created().json(question))
 }
 
+/// Retrieves a specific question from a quiz, along with its answers.
 async fn get_one(
     id: web::Path<(Uuid, Uuid)>,
     app_data: web::Data<AppData>,
@@ -38,6 +40,7 @@ async fn get_one(
     Ok(HttpResponse::Ok().json(question))
 }
 
+/// Retrieves all questions without their answers for a quiz, optionally filtered by the provided query parameters.
 async fn get_many(
     id: web::Path<Uuid>,
     app_data: web::Data<AppData>,
@@ -51,6 +54,7 @@ async fn get_many(
     Ok(HttpResponse::Ok().json(questions))
 }
 
+/// Updates a specific question in a quiz.
 async fn patch(
     id: web::Path<(Uuid, Uuid)>,
     update_question: web::Json<UpdateQuestion>,
@@ -69,6 +73,9 @@ async fn patch(
     Ok(HttpResponse::Ok().json(question))
 }
 
+/// Updates a specific question in a quiz by replacing it with a new question. The new question will inherit the position and id of the old question.
+///
+/// **Hint:** Internally this function updates a question. The old question is not deleted, but the values are replaced with new ones.
 async fn put(
     id: web::Path<(Uuid, Uuid)>,
     new_question: web::Json<NewQuestion>,
@@ -87,6 +94,7 @@ async fn put(
     Ok(HttpResponse::Ok().json(question))
 }
 
+/// Deletes a specific question from a quiz.
 async fn delete(
     id: web::Path<(Uuid, Uuid)>,
     app_data: web::Data<AppData>,
@@ -101,6 +109,7 @@ async fn delete(
     Ok(HttpResponse::NoContent().finish())
 }
 
+/// Initializes the REST routes for the question API.
 pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
     cfg.service(
         web::resource("/quizzes/{quiz}/questions")

@@ -14,6 +14,7 @@ mod core;
 #[cfg(test)]
 mod test;
 
+/// A struct representing a new answer option for an order question.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct NewAnswerOrder {
@@ -29,6 +30,7 @@ impl From<NewAnswerOrder> for NewAnswerChoice {
     }
 }
 
+/// A struct representing an update to an existing answer option for an order question.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UpdateAnswerOrder {
@@ -47,12 +49,17 @@ impl From<UpdateAnswerOrder> for UpdateAnswerChoice {
     }
 }
 
+/// A struct wrapping an [`AnswerChoiceModel`] to represent an answer option for an order question.
+///
+/// This is necessary because order questions are stored in the same tables as choice questions, and are mostly handled by the same code.
+/// This struct allows for different implementations around the [`AnswerChoiceModel`] that are specific to order questions.
 #[derive(Debug, Clone)]
 pub struct AnswerOrderModel {
     pub choice: AnswerChoiceModel,
 }
 
 impl Serialize for AnswerOrderModel {
+    /// Serialize the [`AnswerOrderModel`] (i.e. the [`AnswerChoiceModel`]) as a struct with two fields: `id` and `answer`.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -90,6 +97,7 @@ impl From<AnswerOrderModel> for AnswerChoiceModel {
     }
 }
 
+/// A variant of either [`NewAnswerOrder`] or [`UpdateAnswerOrder`] to handle an update to a question that can have new or existing answers.
 #[derive(Debug, Clone)]
 pub enum UpdateAnswerOrderEnum {
     New(NewAnswerOrder),
@@ -103,6 +111,7 @@ impl From<NewAnswerOrder> for UpdateAnswerOrderEnum {
 }
 
 impl<'de> Deserialize<'de> for UpdateAnswerOrderEnum {
+    /// Custom deserializer to differentiate between [`NewAnswerOrder`] and [`UpdateAnswerOrder`] based on the presence of the `id` field.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,

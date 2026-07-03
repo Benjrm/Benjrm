@@ -7,6 +7,14 @@ use {
     std::{fmt, marker::PhantomData},
 };
 
+/// [`UpdateValue`] distinguishes between a field that was omitted from the request ([`Unset`](UpdateValue::Unset)) and one that was provided ([`Set`](UpdateValue::Set)).
+///
+/// This is useful for PATCH-style APIs where fields that are not set should leave the existing database value unchanged.
+///
+/// Unlike [`Option`], this type does **not** support explicit `null` values.
+/// For nullable fields, use [`UpdateOption`].
+///
+/// **Note:** [`UpdateValue`] can be converted directly into SeaORM's [`ActiveValue`].
 #[derive(Debug, Clone, Copy, Default)]
 pub enum UpdateValue<T> {
     Set(T),
@@ -53,6 +61,23 @@ impl<T> From<UpdateValue<T>> for Option<T> {
     }
 }
 
+/// Unlike [`Option<T>`] or [`UpdateValue`], this type distinguishes between:
+///
+/// - a field that was omitted ([`Unset`](UpdateOption::Unset))
+/// - a field explicitly set to `null` ([`Set(None)`](UpdateOption::Set<Option<T>>(None)))
+/// - a field set to a value ([`Set(T)`](UpdateOption::Set<Option<T>>(T)))
+///
+/// This is useful for PATCH-style APIs with nullable database columns.
+///
+/// # JSON mapping
+///
+/// | JSON        | Variant            | Meaning                    |
+/// |-------------|--------------------|----------------------------|
+/// | _(missing)_ | `Unset`            | Leave the value unchanged  |
+/// | `null`      | `Set(None)`        | Set the value to `NULL`    |
+/// | `value`     | `Set(Some(value))` | Update the value           |
+///
+/// **Note:** [`UpdateOption`] can be converted directly into SeaORM's [`ActiveValue`].
 #[derive(Debug, Clone, Copy, Default)]
 pub enum UpdateOption<T> {
     Set(Option<T>),
@@ -69,6 +94,7 @@ impl<T: Into<Value> + Nullable> From<UpdateOption<T>> for ActiveValue<Option<T>>
     }
 }
 
+/// A struct that holds a type parameter.
 struct UpdateOptionVisitor<T> {
     marker: PhantomData<T>,
 }

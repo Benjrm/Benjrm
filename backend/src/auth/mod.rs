@@ -12,18 +12,19 @@ use {
 
 pub mod entity;
 pub mod oidc;
-
 impl_err! {
+    /// Error type for authentication errors
     enum AuthError {
         #[error("Unauthenticated")]
         Unauthenticated = UNAUTHORIZED,
-        #[error("Error extracting sesion")]
+        #[error("Error extracting session")]
         SessionExtract(#[from] actix_web::Error) = INTERNAL_SERVER_ERROR,
         #[error("Error reading authentication from session")]
         SessionGet(#[from] actix_session::SessionGetError) = INTERNAL_SERVER_ERROR,
     }
 }
 
+/// Struct to hold the user information extracted from the session
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct SessionUser {
@@ -31,6 +32,7 @@ struct SessionUser {
     id_token: Option<String>,
 }
 
+/// Struct to hold the user information used in the application
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct User {
@@ -49,10 +51,13 @@ impl FromRequest for User {
     type Error = actix_web::Error;
     type Future = Ready<Result<Self, Self::Error>>;
 
+    /// This function retrieves the user information from the session and returns it as a [`User`] struct.
+    /// If the user is not authenticated or if there is an error extracting the session, it returns an appropriate error.
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         fn get_user(req: &HttpRequest) -> Result<User, AuthError> {
             let session = Session::extract(req).into_inner()?;
             let user: Option<SessionUser> = session.get("user")?;
+            AuthError::Unauthenticated.status();
             match user {
                 Some(user) => Ok(User { id: user.id }),
                 None => Err(AuthError::Unauthenticated),
@@ -62,6 +67,13 @@ impl FromRequest for User {
     }
 }
 
+/// An optional authenticated user extracted from the current session.
+///
+/// This extractor attempts to read the authenticated user from the request's session.
+/// If a user is present, it returns `OptionalUser(Some(User))`.
+/// If no user is stored in the session, it returns `OptionalUser(None)`.
+///
+/// **Note:** [`OptionalUser`] implements [`Into<Option<User>>`].
 pub struct OptionalUser(Option<User>);
 
 impl FromRequest for OptionalUser {
@@ -87,6 +99,7 @@ impl From<OptionalUser> for Option<User> {
     }
 }
 
+/// Initialize the authentication routes
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/auth")

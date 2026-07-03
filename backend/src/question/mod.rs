@@ -26,6 +26,7 @@ pub mod entity;
 pub mod test;
 
 impl_err! {
+    /// Error type for question errors
     enum QuestionError {
         #[error("Question not found")]
         NotFound = NOT_FOUND,
@@ -48,6 +49,7 @@ impl_err! {
     }
 }
 
+/// A question together with its answer options.
 #[derive(Debug, Clone, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Question {
@@ -57,6 +59,7 @@ pub struct Question {
     pub options: QuestionOptions,
 }
 
+/// The answer options for a question.
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", content = "options", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum QuestionOptions {
@@ -67,6 +70,9 @@ pub enum QuestionOptions {
 }
 
 impl QuestionOptions {
+    /// Returns the options as [`AnswerChoiceModel`] answers.
+    ///
+    /// Order answers are converted to choice answers.
     pub fn get_answer_choice_options(self) -> Vec<AnswerChoiceModel> {
         match self {
             Self::Slide => Vec::new(),
@@ -75,6 +81,9 @@ impl QuestionOptions {
         }
     }
 
+    /// Returns the options as [`AnswerOrderModel`] answers.
+    ///
+    /// Choice answers are converted to order answers.
     pub fn get_answer_order_options(self) -> Vec<AnswerOrderModel> {
         match self {
             Self::Slide => Vec::new(),
@@ -86,6 +95,7 @@ impl QuestionOptions {
     }
 }
 
+/// A struct representing the payload for creating a new question.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct NewQuestion {
@@ -98,6 +108,7 @@ pub struct NewQuestion {
     pub options: NewQuestionOptions,
 }
 
+/// Answer options for a newly created question, this also defines the type of question.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(
     tag = "type",
@@ -113,6 +124,7 @@ pub enum NewQuestionOptions {
 }
 
 impl NewQuestionOptions {
+    /// Gets the type of question.
     pub fn r#type(&self) -> QuestionType {
         match self {
             Self::Slide => QuestionType::Slide,
@@ -123,6 +135,7 @@ impl NewQuestionOptions {
     }
 }
 
+/// A struct representing an update to an existing question.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UpdateQuestion {
@@ -150,6 +163,7 @@ impl From<NewQuestion> for UpdateQuestion {
     }
 }
 
+/// Answer options to update an existing question, this also defines if the type of question may get changed.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(
     tag = "type",
@@ -165,6 +179,7 @@ pub enum UpdateQuestionOptions {
 }
 
 impl UpdateQuestionOptions {
+    /// Gets the type of question
     pub fn r#type(&self) -> QuestionType {
         match self {
             Self::Slide => QuestionType::Slide,
@@ -174,6 +189,7 @@ impl UpdateQuestionOptions {
         }
     }
 
+    /// Deserializes the options only if the type or option fields is present (or both).
     pub fn deserialize_optional<'de, D>(deserializer: D) -> Result<Option<Self>, D::Error>
     where
         D: Deserializer<'de>,
@@ -220,6 +236,11 @@ impl From<NewQuestionOptions> for UpdateQuestionOptions {
 }
 
 impl QuestionType {
+    /// Returns the answer table associated with this question type.
+    /// Some question types store their answers in the same database table.
+    ///
+    /// For example, [`SingleChoice`](QuestionType::SingleChoice), [`MultipleChoice`](QuestionType::MultipleChoice), and [`Order`](QuestionType::Order) all share the same table.
+    /// Their data models are nearly identical, with the primary difference being how the application interprets the stored data.
     pub fn get_answer_table(&self) -> Self {
         match self {
             Self::Slide => Self::Slide,
@@ -227,6 +248,9 @@ impl QuestionType {
         }
     }
 
+    /// Returns the default answer duration in seconds.
+    ///
+    /// **Hint:** During tests, all `Some` durations are replaced with `1` second. To speed up testing in some cases.
     pub fn default_answer_duration(&self) -> Option<u32> {
         let duration = match self {
             Self::Slide => None,
@@ -243,11 +267,28 @@ impl QuestionType {
 }
 
 pub trait LinkedItem {
+    /// Returns the [`Uuid`] of the current element.
     fn id(&self) -> Uuid;
+    /// Returns the [`Uuid`] of the previous element.
+    ///
+    /// This may return [`None`] if the current element is the first element.
     fn prev(&self) -> Option<Uuid>;
+    /// Returns the [`Uuid`] of the previous question.
+    ///
+    /// This may return [`None`] if the current element is the last element
     fn next(&self) -> Option<Uuid>;
 }
 
+/// Sorts a collection of linked items into their correct order inplace.
+///
+/// The function sorts elements out of a doubly linked list via their return of [`prev`](LinkedItem::prev) and [`next`](LinkedItem::next) functions.
+///
+/// Returns `Some(Vec<T>)` if a valid continuous chain can be formed, otherwise `None` is returned.
+///
+/// The validation rules are:
+/// - Exactly one item must return [`None`] from [`prev`](LinkedItem::prev) (used as first element).
+/// - Each item must correctly reference the neighboring elements using [`prev`](LinkedItem::prev) and [`next`](LinkedItem::next).
+/// - After sorting, the last element must return [`None`] from [`next`](LinkedItem::next) (used as last element).
 pub fn sort_linked_items<T: LinkedItem>(mut items: Vec<T>) -> Option<Vec<T>> {
     if items.is_empty() {
         return Some(items);
@@ -269,6 +310,7 @@ pub fn sort_linked_items<T: LinkedItem>(mut items: Vec<T>) -> Option<Vec<T>> {
     Some(items)
 }
 
+/// This struct holds information to filter a questions search
 #[derive(Deserialize, Debug, Clone, Default)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct QuestionFilter {
