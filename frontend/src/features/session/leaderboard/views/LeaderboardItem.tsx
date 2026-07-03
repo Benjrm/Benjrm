@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback } from "@shadcn/components/ui/avatar"
 import getRankingClassName from "@/features/session/leaderboard/utils/getRankingClassName"
 import getRankingDisplay from "@/features/session/leaderboard/utils/getRankingDisplay"
 
-interface LeaderboardItemProps {
+export interface LeaderboardItemProps {
     ranking: number
     avatar?: string
     name: string
