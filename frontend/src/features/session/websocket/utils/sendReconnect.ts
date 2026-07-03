@@ -1,4 +1,4 @@
-import type WebSocketService from "@/shared/utils/webSocketService.ts"
+import type WebSocketService from "@/features/session/websocket/utils/webSocketService.ts"
 
 /**
  * Reads stored reconnect credentials from sessionStorage and, if present, sends a `reconnect`

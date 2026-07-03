@@ -1,6 +1,6 @@
 import { useContext } from "react"
-import WebSocketContext from "@/shared/context/WebSocketContext.ts"
-import type WebSocketService from "@/shared/utils/webSocketService.ts"
+import WebSocketContext from "@/features/session/websocket/context/WebSocketContext.ts"
+import type WebSocketService from "@/features/session/websocket/utils/webSocketService.ts"
 
 /**
  * Custom hook to access the WebSocketContext, which provides the WebsocketService instance for managing WebSocket connections

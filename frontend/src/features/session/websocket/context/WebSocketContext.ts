@@ -1,5 +1,5 @@
 import { createContext } from "react"
-import type WebSocketService from "@/shared/utils/webSocketService.ts"
+import type WebSocketService from "@/features/session/websocket/utils/webSocketService.ts"
 
 /**
  * Context providing the WebSocketService instance to components that need to interact with the WebSocket connection.

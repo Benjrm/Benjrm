@@ -1,4 +1,4 @@
-import type { ClientEvents } from "@/shared/types/clientEvents.ts"
+import type { ClientEvents } from "@/features/session/websocket/types/clientEvents.ts"
 
 /**
  * Represents a client message that can be sent to the server.

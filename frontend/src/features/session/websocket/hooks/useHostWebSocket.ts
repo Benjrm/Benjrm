@@ -1,4 +1,4 @@
-import useWebSocket from "@/shared/hooks/useWebSocket.ts"
+import useWebSocket from "@/features/session/websocket/hooks/useWebSocket.ts"
 
 /**
  * Custom hook that connects to ws(s)://{host}/api/v1/sessions/{code}/ws/host and handles connection lifecycle management.

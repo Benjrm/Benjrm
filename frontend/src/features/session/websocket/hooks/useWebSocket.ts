@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import useWebSocketContext from "@/shared/hooks/useWebSocketContext.ts"
+import useWebSocketContext from "@/features/session/websocket/hooks/useWebSocketContext.ts"
 
 /**
  * Custom hook that connects to ws(s)://{host}/api/v1/sessions/{code}/{path} and handles connection lifecycle management.

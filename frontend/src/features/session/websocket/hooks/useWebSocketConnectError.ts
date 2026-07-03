@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import type WebSocketService from "@/shared/utils/webSocketService"
+import type WebSocketService from "@/features/session/websocket/utils/webSocketService.ts"
 import ApiError from "@/shared/types/apiError.ts"
 import getSession from "@/features/session/api/getSession.ts"
 

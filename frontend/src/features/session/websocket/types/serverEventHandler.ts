@@ -1,4 +1,4 @@
-import type { ServerEvents } from "@/shared/types/serverEvents.ts"
+import type { ServerEvents } from "@/features/session/websocket/types/serverEvents.ts"
 
 /**
  * A type for a function that handles server events. It takes a payload of the event and a timing string as arguments.

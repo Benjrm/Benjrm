@@ -1,5 +1,5 @@
-import type { ServerEvents } from "@/shared/types/serverEvents.ts"
-import type { ServerEventHandler } from "@/shared/types/serverEventHandler.ts"
+import type { ServerEvents } from "@/features/session/websocket/types/serverEvents.ts"
+import type { ServerEventHandler } from "@/features/session/websocket/types/serverEventHandler.ts"
 
 /**
  * Utility type that represents a handler function for any server event.

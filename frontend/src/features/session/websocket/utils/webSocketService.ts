@@ -1,8 +1,8 @@
-import type { ClientMessage } from "@/shared/types/clientMessage.ts"
-import type { ServerEvents } from "@/shared/types/serverEvents.ts"
-import type { AnyServerEventHandler } from "@/shared/types/anyServerEventHandler.ts"
-import type { ServerEventHandler } from "@/shared/types/serverEventHandler.ts"
-import type { ServerMessage } from "@/shared/types/serverMessage.ts"
+import type { ClientMessage } from "@/features/session/websocket/types/clientMessage.ts"
+import type { ServerEvents } from "@/features/session/websocket/types/serverEvents.ts"
+import type { AnyServerEventHandler } from "@/features/session/websocket/types/anyServerEventHandler.ts"
+import type { ServerEventHandler } from "@/features/session/websocket/types/serverEventHandler.ts"
+import type { ServerMessage } from "@/features/session/websocket/types/serverMessage.ts"
 
 /**
  * Service for managing WebSocket connection lifecycle, sending messages, and handling incoming messages with a publish-subscribe pattern.
@@ -299,20 +299,6 @@ export default class WebSocketService {
         return () => {
             this.everyCloseCallbacks.delete(callback)
         }
-    }
-
-    /**
-     * Dev-only: dispatches a fake server event directly to all registered listeners,
-     * bypassing the real WebSocket connection. Used by mock hooks in development.
-     */
-    public simulateReceive<K extends keyof ServerEvents>(
-        command: K,
-        payload: ServerEvents[K]
-    ): void {
-        const handlers = this.listeners.get(command)
-        handlers?.forEach((handler) =>
-            (handler as ServerEventHandler<K>)(payload, undefined, undefined)
-        )
     }
 
     /**

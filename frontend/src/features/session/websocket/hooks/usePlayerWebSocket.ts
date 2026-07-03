@@ -1,7 +1,7 @@
 import { useEffect } from "react"
-import useWebSocket from "@/shared/hooks/useWebSocket.ts"
-import useWebSocketContext from "@/shared/hooks/useWebSocketContext.ts"
-import sendReconnect from "@/shared/utils/sendReconnect.ts"
+import useWebSocket from "@/features/session/websocket/hooks/useWebSocket.ts"
+import useWebSocketContext from "@/features/session/websocket/hooks/useWebSocketContext.ts"
+import sendReconnect from "@/features/session/websocket/utils/sendReconnect.ts"
 
 /**
  * Custom hook that connects to ws(s)://{host}/api/v1/sessions/{code}/ws/player and handles connection lifecycle management.

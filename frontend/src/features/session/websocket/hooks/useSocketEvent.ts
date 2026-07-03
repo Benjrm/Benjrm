@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
-import type { ServerEvents } from "@/shared/types/serverEvents.ts"
-import type { ServerEventHandler } from "@/shared/types/serverEventHandler.ts"
-import useWebSocketContext from "@/shared/hooks/useWebSocketContext.ts"
+import type { ServerEvents } from "@/features/session/websocket/types/serverEvents.ts"
+import type { ServerEventHandler } from "@/features/session/websocket/types/serverEventHandler.ts"
+import useWebSocketContext from "@/features/session/websocket/hooks/useWebSocketContext.ts"
 
 /**
  * Custom hook to subscribe to a WebSocket event. It takes a command and a handler function as arguments.

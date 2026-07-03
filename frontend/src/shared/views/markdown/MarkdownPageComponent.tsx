@@ -4,8 +4,8 @@ import ReactMarkdown from "react-markdown"
 import rehypeRaw from "rehype-raw"
 import rehypeSanitize from "rehype-sanitize"
 import remarkGfm from "remark-gfm"
+import sanitizeSchema from "../../utils/sanitizeSchema.ts"
 import markdownComponents from "./markdownComponents"
-import sanitizeSchema from "./sanitizeSchema"
 
 interface MarkdownPageComponentProps {
     content: string
