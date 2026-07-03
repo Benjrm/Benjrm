@@ -3,15 +3,17 @@ import { useNavigate } from "react-router"
 import type { JSX } from "react"
 import GamePinForm from "./GamePinForm"
 
+interface InvalidCodeProps {
+    codeWithDash?: string
+    alreadyStarted?: boolean
+    unableToConnect?: boolean
+}
+
 export default function InvalidCode({
     codeWithDash,
     alreadyStarted,
     unableToConnect,
-}: {
-    codeWithDash?: string
-    alreadyStarted?: boolean
-    unableToConnect?: boolean
-}): JSX.Element {
+}: Readonly<InvalidCodeProps>): JSX.Element {
     const { t } = useTranslation()
     const navigate = useNavigate()
 

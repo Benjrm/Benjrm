@@ -37,7 +37,7 @@ export default function AnswerCard({
     index,
     error,
     isMdEditor = false,
-}: AnswerCardProps): JSX.Element {
+}: Readonly<AnswerCardProps>): JSX.Element {
     const { t } = useTranslation()
     // If any visual prop is provided, use provided (with defaults). Otherwise, derive from index when available.
     const hasProvidedVisuals = icon != null || accent != null || glow != null

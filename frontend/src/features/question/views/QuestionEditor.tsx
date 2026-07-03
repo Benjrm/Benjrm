@@ -44,7 +44,7 @@ export default function QuestionEditor({
     onDeleteOption,
     onToggleCorrect,
     onReorderOptions,
-}: QuestionEditorProps): JSX.Element {
+}: Readonly<QuestionEditorProps>): JSX.Element {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [isMdEditor, setIsMdEditor] = useState(() => {

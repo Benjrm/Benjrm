@@ -1,7 +1,7 @@
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
-import LeaderboardItem from "@/features/session/leaderboard/components/LeaderboardItem"
+import LeaderboardItem from "@/features/session/leaderboard/views/LeaderboardItem"
 import getLeaderboardItemPropsList from "@/features/session/leaderboard/utils/getLeaderboardItemPropsList"
 import type { LeaderboardItem as LeaderboardItemType } from "@/features/session/leaderboard/types/leaderboardItem.ts"
 
@@ -21,7 +21,7 @@ export default function HostDashboardSidebar({
     isLastQuestion = false,
     onEnd,
     onShowPodium,
-}: HostDashboardSidebarProps): JSX.Element {
+}: Readonly<HostDashboardSidebarProps>): JSX.Element {
     const { t } = useTranslation()
     const leaderboardItems = getLeaderboardItemPropsList(entries)
 

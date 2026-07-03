@@ -25,7 +25,7 @@ export default function QuestionSidebar({
     onSelect,
     questionIds,
     questions,
-}: QuestionSidebarProps): JSX.Element {
+}: Readonly<QuestionSidebarProps>): JSX.Element {
     const { t } = useTranslation()
     const [isMobileOpen, setIsMobileOpen] = useState(false)
 

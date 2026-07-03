@@ -5,14 +5,16 @@ import { Avatar, AvatarFallback } from "@shadcn/components/ui/avatar"
 import getRankingClassName from "@/features/session/leaderboard/utils/getRankingClassName"
 import getRankingDisplay from "@/features/session/leaderboard/utils/getRankingDisplay"
 
-export interface LeaderboardItemProps {
+interface LeaderboardItemProps {
     ranking: number
     avatar?: string
     name: string
     points: number
 }
 
-export default function LeaderboardItem(leaderboardItemProps: LeaderboardItemProps): ReactNode {
+export default function LeaderboardItem(
+    leaderboardItemProps: Readonly<LeaderboardItemProps>
+): ReactNode {
     const { t } = useTranslation()
     const { ranking, avatar, name, points } = leaderboardItemProps
     const rankingClassName = getRankingClassName(ranking)

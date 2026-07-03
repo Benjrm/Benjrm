@@ -10,7 +10,9 @@ interface MarkdownComponentProps {
     content: string
 }
 
-export default function MarkdownComponent({ content }: MarkdownComponentProps): JSX.Element {
+export default function MarkdownComponent({
+    content,
+}: Readonly<MarkdownComponentProps>): JSX.Element {
     return (
         <div>
             <ReactMarkdown

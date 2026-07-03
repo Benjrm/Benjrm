@@ -1,27 +1,23 @@
 /* eslint-disable react/jsx-no-bind */
 import type { JSX } from "react"
-import { useState, useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import type { DragEndEvent } from "@dnd-kit/core"
 import {
-    DndContext,
     closestCenter,
+    DndContext,
     KeyboardSensor,
     PointerSensor,
     TouchSensor,
     useSensor,
     useSensors,
 } from "@dnd-kit/core"
-import type { DragEndEvent } from "@dnd-kit/core"
 import {
     arrayMove,
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
-    useSortable,
 } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 import { Button } from "@/shadcn/components/ui/button"
 import TimerBar from "@/features/question/views/TimerBar"
 import QuestionHeader from "@/features/question/views/QuestionHeader"
@@ -29,6 +25,7 @@ import QuestionContainer from "@/features/question/views/QuestionContainer"
 import useQuestionTimer from "@/features/question/hooks/useQuestionTimer"
 import restrictToParentElement from "@/features/quiz/utils/restrictToParentElement.ts"
 import restrictToVerticalAxis from "@/features/quiz/utils/restrictToVerticalAxis.ts"
+import SortableItem from "@/features/question/views/SortableItem.tsx"
 
 interface Option {
     id: string
@@ -52,43 +49,6 @@ interface OrderQuestionContentProps {
     onSendAnswer?: (answerIds: string[]) => void
 }
 
-function SortableItem({ id, text }: { id: string; text: string }): JSX.Element {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id,
-    })
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        zIndex: isDragging ? 10 : 1,
-    }
-
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className={`text-foreground flex touch-none items-center justify-between rounded-xl border p-4 font-semibold shadow-sm transition-colors ${
-                isDragging
-                    ? "border-[#00D4E8] bg-[#00D4E8]/20"
-                    : "border-border bg-muted/30 hover:bg-muted/60"
-            }`}
-        >
-            <div className="[&_p]:m-0">
-                <ReactMarkdown
-                    unwrapDisallowed
-                    allowedElements={["p", "strong", "em", "code", "del", "s"]}
-                    remarkPlugins={[remarkGfm]}
-                >
-                    {text}
-                </ReactMarkdown>
-            </div>
-            <span className="text-muted-foreground text-xl">≡</span>
-        </div>
-    )
-}
-
 export default function OrderQuestionContent({
     currentQuestionIndex = 0,
     initialItemOrder,
@@ -104,7 +64,7 @@ export default function OrderQuestionContent({
     questionExpiresAt = null,
     totalQuestions = 0,
     onSendAnswer,
-}: OrderQuestionContentProps): JSX.Element {
+}: Readonly<OrderQuestionContentProps>): JSX.Element {
     const { t } = useTranslation()
     const [items, setItems] = useState<Option[]>(() => {
         if (initialItemOrder && initialItemOrder.length > 0) {

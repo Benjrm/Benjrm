@@ -10,7 +10,7 @@ interface StartQuizButtonProps {
 export default function StartQuizButton({
     onStartQuiz,
     disabled,
-}: StartQuizButtonProps): ReactNode {
+}: Readonly<StartQuizButtonProps>): ReactNode {
     const { t } = useTranslation()
     return (
         <Button

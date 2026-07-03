@@ -25,7 +25,7 @@ export default function HostLobby({
     onKickPlayer,
     onStartGame,
     startPending,
-}: HostLobbyProps): JSX.Element {
+}: Readonly<HostLobbyProps>): JSX.Element {
     const { t } = useTranslation()
     return (
         <>

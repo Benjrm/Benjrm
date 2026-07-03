@@ -32,7 +32,11 @@ function mergeStorage(key: string, patch: object): void {
     }
 }
 
-function GamePageComponent({ code }: { code?: number }): JSX.Element {
+interface GamePageComponentProps {
+    code?: number
+}
+
+function GamePageComponent({ code }: Readonly<GamePageComponentProps>): JSX.Element {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const storageKey = code !== undefined ? `waitingRoom:${code}` : null

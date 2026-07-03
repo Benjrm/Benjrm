@@ -36,7 +36,7 @@ export default function OrderOptions({
     onReorderOptions,
     onAddOption,
     isMdEditor,
-}: OrderOptionsProps): JSX.Element {
+}: Readonly<OrderOptionsProps>): JSX.Element {
     const { t } = useTranslation()
     const sensors = useSensors(
         useSensor(TouchSensor, {

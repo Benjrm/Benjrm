@@ -6,12 +6,15 @@ import MarkdownPageComponent from "@/shared/views/markdown/MarkdownPageComponent
 import useMarkdown from "@/shared/hooks/useMarkdown.ts"
 import { Button } from "@shadcn/components/ui/button.tsx"
 
-interface Props {
+interface DownloadableMarkdownProps {
     filename: string
     displayName: string
 }
 
-export default function DownloadableMarkdown({ filename, displayName }: Props): JSX.Element | null {
+export default function DownloadableMarkdown({
+    filename,
+    displayName,
+}: Readonly<DownloadableMarkdownProps>): JSX.Element | null {
     const { t } = useTranslation()
     const { data: content, isLoading, error } = useMarkdown(filename, displayName)
 

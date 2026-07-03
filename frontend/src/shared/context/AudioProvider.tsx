@@ -2,7 +2,11 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import type { JSX, ReactNode } from "react"
 import { AudioContext } from "@/shared/context/AudioContext"
 
-export default function AudioProvider({ children }: { children: ReactNode }): JSX.Element {
+interface AudioProviderProps {
+    children: ReactNode
+}
+
+export default function AudioProvider({ children }: Readonly<AudioProviderProps>): JSX.Element {
     const audioRef = useRef<HTMLAudioElement | null>(null)
     const isMutedRef = useRef(false)
     const [isAudioActive, setIsAudioActive] = useState(false)

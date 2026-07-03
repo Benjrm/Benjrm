@@ -10,7 +10,11 @@ interface GamePinFormProps {
     error?: string | null
 }
 
-export default function GamePinForm({ onJoin, isPending, error }: GamePinFormProps): JSX.Element {
+export default function GamePinForm({
+    onJoin,
+    isPending,
+    error,
+}: Readonly<GamePinFormProps>): JSX.Element {
     const { t } = useTranslation()
     const [digits, setDigits] = useState("")
 

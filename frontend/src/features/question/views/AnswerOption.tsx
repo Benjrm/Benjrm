@@ -20,7 +20,7 @@ export default function AnswerOption({
     color,
     icon,
     onSelect,
-}: AnswerOptionProps): JSX.Element {
+}: Readonly<AnswerOptionProps>): JSX.Element {
     const { t } = useTranslation()
     let visuals = { accent: color, icon }
     if (icon == null && color == null) {

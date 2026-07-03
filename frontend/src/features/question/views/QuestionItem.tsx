@@ -7,7 +7,7 @@ import { Button } from "@shadcn/components/ui/button.tsx"
 import type { Question } from "@/features/question/types/questions.ts"
 import getQuestionPreviewText from "@/features/quiz/utils/getQuestionPreviewText.ts"
 
-interface QuestionProps {
+interface QuestionItemProps {
     question: Pick<Question, "id" | "question" | "type">
     onSelect: (index: number) => void
     index: number
@@ -21,7 +21,7 @@ export default function QuestionItem({
     onDelete,
     index,
     activeIndex,
-}: QuestionProps): ReactNode {
+}: Readonly<QuestionItemProps>): ReactNode {
     const { t } = useTranslation()
     const active = index === activeIndex
 

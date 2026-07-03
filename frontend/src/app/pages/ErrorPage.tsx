@@ -5,7 +5,7 @@ interface ErrorPageProps {
     title: string
 }
 
-export default function ErrorPage({ title }: ErrorPageProps): JSX.Element {
+export default function ErrorPage({ title }: Readonly<ErrorPageProps>): JSX.Element {
     const { t } = useTranslation()
     return (
         <div className="bg-background text-foreground flex min-h-screen items-center justify-center px-4">

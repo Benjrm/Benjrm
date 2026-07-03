@@ -20,7 +20,7 @@ export default function TimerBar({
     totalSeconds,
     fastAnimation,
     className,
-}: TimerBarProps): JSX.Element | null {
+}: Readonly<TimerBarProps>): JSX.Element | null {
     const [progress, setProgress] = useState(calculateProgress(timeLeft, totalSeconds))
 
     const indicatorClassName = (() => {

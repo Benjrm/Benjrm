@@ -28,7 +28,7 @@ export default function HostGameQuestionStatistic({
     totalQuestions,
     questionType,
     questionStatistics,
-}: HostGameQuestionStatisticProps): JSX.Element {
+}: Readonly<HostGameQuestionStatisticProps>): JSX.Element {
     const { t } = useTranslation()
     return (
         <div className="flex h-full flex-col justify-between">

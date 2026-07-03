@@ -21,7 +21,7 @@ export default function ProfilePicker({
     onNameChange,
     onOpenEmoji,
     onSaveName,
-}: ProfilePickerProps): JSX.Element {
+}: Readonly<ProfilePickerProps>): JSX.Element {
     const { t } = useTranslation()
 
     return (

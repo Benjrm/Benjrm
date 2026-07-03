@@ -10,7 +10,9 @@ interface GameHeroSectionProps {
     onAddQuizClick: () => void
 }
 
-export default function GameHeroSection({ onAddQuizClick }: GameHeroSectionProps): JSX.Element {
+export default function GameHeroSection({
+    onAddQuizClick,
+}: Readonly<GameHeroSectionProps>): JSX.Element {
     const { t } = useTranslation()
 
     const [digits, setDigits] = useState("")

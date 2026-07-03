@@ -1,5 +1,5 @@
 import type { JSX } from "react"
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router"
 import { Toaster } from "sonner"
 import { useTranslation } from "react-i18next"
@@ -9,33 +9,14 @@ import HostGameQuestionStatistic from "@/features/question/views/HostGameQuestio
 import { Button } from "@/shadcn/components/ui/button"
 import HostDashboardSidebar from "@/features/session/views/HostDashboardSidebar"
 import GamePinBadge from "@/features/session/views/GamePinBadge"
-import Leaderboard from "@/features/session/leaderboard/components/Leaderboard"
+import Leaderboard from "@/features/session/leaderboard/views/Leaderboard"
 import MarkdownPageComponent from "@/shared/views/markdown/MarkdownPageComponent"
 import MarkdownComponent from "@/shared/views/markdown/MarkdownComponent"
 import useQuestionStatistics from "@/features/question/hooks/useQuestionStatistics"
 import type { QuestionStatistics } from "@/features/question/types/statistics.ts"
-import { GameStateEnum } from "@/features/session/types/session.ts"
 import type { GameQuestion, GameState, LeaderboardEntry } from "@/features/session/types/session.ts"
-
-function QuestionTimer({ expiresAt }: { expiresAt: number | null }): JSX.Element | null {
-    const { t } = useTranslation()
-    const [now, setNow] = useState(() => Date.now())
-
-    useEffect(() => {
-        if (!expiresAt) return undefined
-        const id = setInterval(() => setNow(Date.now()), 1000)
-        return () => clearInterval(id)
-    }, [expiresAt])
-
-    if (!expiresAt) return null
-    const secs = Math.max(0, Math.ceil((expiresAt - now) / 1000))
-
-    return (
-        <span className={`text-sm font-black ${secs <= 5 ? "text-red-400" : "text-[#FF8A00]"}`}>
-            {secs > 0 ? t("game.host.timeLeft", { secs }) : t("game.host.timesUp")}
-        </span>
-    )
-}
+import { GameStateEnum } from "@/features/session/types/session.ts"
+import QuestionTimer from "@/features/session/views/QuestionTimer.tsx"
 
 interface HostGameScreenProps {
     gameState: GameState
@@ -71,7 +52,7 @@ export default function HostGameScreen({
     onEndGame,
     onShowPodium,
     questionStatistics,
-}: HostGameScreenProps): JSX.Element {
+}: Readonly<HostGameScreenProps>): JSX.Element {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const [playersPreviewing, setPlayersPreviewing] = useState(false)

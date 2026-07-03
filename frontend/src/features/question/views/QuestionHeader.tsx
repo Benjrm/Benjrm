@@ -15,7 +15,7 @@ export default function QuestionHeader({
     currentQuestion,
     totalQuestions,
     remainingTime,
-}: QuestionHeaderProps): JSX.Element {
+}: Readonly<QuestionHeaderProps>): JSX.Element {
     const { t } = useTranslation()
     const formattedTime =
         remainingTime !== null

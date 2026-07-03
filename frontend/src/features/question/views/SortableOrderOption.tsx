@@ -33,7 +33,7 @@ export default function SortableOrderOption({
     editable = false,
     error,
     isMdEditor = false,
-}: SortableOrderOptionProps): JSX.Element {
+}: Readonly<SortableOrderOptionProps>): JSX.Element {
     const { t } = useTranslation()
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id,

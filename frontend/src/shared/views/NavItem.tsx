@@ -1,9 +1,9 @@
-import type { JSX } from "react"
+import type { JSX, ReactNode } from "react"
 import { NavLink } from "react-router"
 
 interface NavItemProps {
     to: string
-    children: React.ReactNode
+    children: ReactNode
     onClick?: () => void
     isMobile?: boolean
 }
@@ -13,7 +13,7 @@ export default function NavItem({
     children,
     onClick,
     isMobile = false,
-}: NavItemProps): JSX.Element {
+}: Readonly<NavItemProps>): JSX.Element {
     const textSize = isMobile ? "text-base" : "text-sm"
 
     return (

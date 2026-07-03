@@ -7,7 +7,9 @@ interface GamePinBadgeProps {
     codeWithDash: string | undefined
 }
 
-export default function GamePinBadge({ codeWithDash }: GamePinBadgeProps): JSX.Element | null {
+export default function GamePinBadge({
+    codeWithDash,
+}: Readonly<GamePinBadgeProps>): JSX.Element | null {
     const { t } = useTranslation()
     if (!codeWithDash) return null
 

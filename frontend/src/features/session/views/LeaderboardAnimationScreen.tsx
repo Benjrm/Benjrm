@@ -5,7 +5,6 @@ import { Button } from "@/shadcn/components/ui/button"
 import { Avatar, AvatarFallback } from "@shadcn/components/ui/avatar"
 import getRankingDisplay from "@/features/session/leaderboard/utils/getRankingDisplay"
 import getRankingClassName from "@/features/session/leaderboard/utils/getRankingClassName"
-
 import type { LeaderboardEntry } from "@/features/session/types/session.ts"
 
 interface LeaderboardAnimationScreenProps {
@@ -18,7 +17,7 @@ export default function LeaderboardAnimationScreen({
     leaderboard,
     isFinal,
     onLeave,
-}: LeaderboardAnimationScreenProps): JSX.Element {
+}: Readonly<LeaderboardAnimationScreenProps>): JSX.Element {
     const { t } = useTranslation()
 
     return (

@@ -25,7 +25,7 @@ export default function QuestionAnswerOptions({
     type,
     errorMissingAnswers,
     isMdEditor,
-}: QuestionAnswerOptionsProps): JSX.Element {
+}: Readonly<QuestionAnswerOptionsProps>): JSX.Element {
     if (type === "ORDER") {
         return (
             <OrderOptions

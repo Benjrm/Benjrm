@@ -35,7 +35,7 @@ export default function PlayerLobby({
     onPickEmoji,
     onOpenEmoji,
     onCloseEmoji,
-}: PlayerLobbyProps): JSX.Element {
+}: Readonly<PlayerLobbyProps>): JSX.Element {
     const { t } = useTranslation()
     return (
         <>

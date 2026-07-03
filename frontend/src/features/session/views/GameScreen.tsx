@@ -1,48 +1,21 @@
 import type { JSX } from "react"
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router"
 import { Toaster } from "sonner"
 import { useTranslation } from "react-i18next"
-import TimerBar from "@/features/question/views/TimerBar"
 import QuestionCardContent from "@/features/question/views/QuestionCardContent"
 import InfoSlideContent from "@/features/question/views/InfoSlideContent"
 import OrderQuestionContent from "@/features/question/views/OrderQuestionContent"
-import MarkdownComponent from "@/shared/views/markdown/MarkdownComponent"
 import LeaderboardAnimationScreen from "@/features/session/views/LeaderboardAnimationScreen"
 import useQuestionTimer from "@/features/question/hooks/useQuestionTimer"
-import { GameStateEnum } from "@/features/session/types/session.ts"
 import type {
     GameQuestion,
     GameState,
     LeaderboardEntry,
     QuestionResult,
 } from "@/features/session/types/session.ts"
-
-function QuestionPreview({
-    question,
-    remainingTime,
-}: {
-    question: { text: string }
-    remainingTime: number
-}): JSX.Element {
-    const { t } = useTranslation()
-
-    return (
-        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-8 px-6 text-center">
-            <p className="text-muted-foreground text-sm font-semibold tracking-widest uppercase">
-                {t("game.getReady")}
-            </p>
-            <div className="bg-card text-card-foreground w-full max-w-xl rounded-2xl border px-8 py-10 shadow-lg">
-                <div className="text-3xl font-extrabold sm:text-4xl [&_p]:m-0 [&_p]:text-3xl [&_p]:font-extrabold sm:[&_p]:text-4xl">
-                    <MarkdownComponent content={question.text} />
-                </div>
-            </div>
-            <div className="w-full max-w-xl overflow-hidden">
-                <TimerBar fastAnimation timeLeft={remainingTime} totalSeconds={3} />
-            </div>
-        </div>
-    )
-}
+import { GameStateEnum } from "@/features/session/types/session.ts"
+import QuestionPreview from "@/features/session/views/QuestionPreview.tsx"
 
 interface GameScreenProps {
     gameState: GameState
@@ -82,7 +55,7 @@ export default function GameScreen({
     onNextQuestion,
     onSendAnswer,
     onItemOrderChange,
-}: GameScreenProps): JSX.Element {
+}: Readonly<GameScreenProps>): JSX.Element {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const [startsAt, setStartsAt] = useState<number | null>(null)

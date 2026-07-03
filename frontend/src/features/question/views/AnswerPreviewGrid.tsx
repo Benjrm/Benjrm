@@ -4,14 +4,17 @@ import getAnswerVisuals from "@/features/question/utils/getAnswerVisuals.ts"
 import MarkdownComponent from "@/shared/views/markdown/MarkdownComponent"
 import type { QuestionOption, QuestionType } from "@/features/question/types/questions.ts"
 
-interface Props {
+interface AnswerPreviewGridProps {
     options: QuestionOption[]
     type: QuestionType
 }
 
 const DRAG_HANDLE = "⋮⋮"
 
-export default function AnswerPreviewGrid({ options, type }: Props): JSX.Element {
+export default function AnswerPreviewGrid({
+    options,
+    type,
+}: Readonly<AnswerPreviewGridProps>): JSX.Element {
     const { t } = useTranslation()
 
     if (type === "ORDER") {

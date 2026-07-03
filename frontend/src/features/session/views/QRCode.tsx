@@ -9,7 +9,7 @@ interface QRCodeProps {
     codeWithDash: string | undefined
 }
 
-export default function QRCode({ codeWithDash }: QRCodeProps): JSX.Element {
+export default function QRCode({ codeWithDash }: Readonly<QRCodeProps>): JSX.Element {
     const { t } = useTranslation()
     const [isFullscreen, setIsFullscreen] = useState(false)
     const qrFullscreenRef = useRef<HTMLDivElement>(null)

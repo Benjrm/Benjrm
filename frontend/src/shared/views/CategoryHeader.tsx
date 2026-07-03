@@ -3,13 +3,17 @@ import { Link } from "react-router"
 import type { JSX } from "react"
 import { useTranslation } from "react-i18next"
 
-interface Props {
+interface CategoryHeaderProps {
     title: string
     description: string
     to: string
 }
 
-export default function CategoryHeader({ title, description, to }: Props): JSX.Element {
+export default function CategoryHeader({
+    title,
+    description,
+    to,
+}: Readonly<CategoryHeaderProps>): JSX.Element {
     const { t } = useTranslation()
 
     return (

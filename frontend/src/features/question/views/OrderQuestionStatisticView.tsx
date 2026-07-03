@@ -23,7 +23,7 @@ export default function OrderQuestionStatisticView({
     options,
     questionStatistics,
     totalAnswers,
-}: OrderQuestionStatisticViewProps): JSX.Element {
+}: Readonly<OrderQuestionStatisticViewProps>): JSX.Element {
     const { t } = useTranslation()
     // total pairs = number of options - 1
     const totalPairs = options.length > 1 ? options.length - 1 : 0

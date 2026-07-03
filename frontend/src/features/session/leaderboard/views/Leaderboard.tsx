@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { AnimatePresence } from "framer-motion"
 import getLeaderboardItemPropsList from "@/features/session/leaderboard/utils/getLeaderboardItemPropsList.ts"
-import LeaderboardItem from "@/features/session/leaderboard/components/LeaderboardItem.tsx"
+import LeaderboardItem from "@/features/session/leaderboard/views/LeaderboardItem.tsx"
 import type { LeaderboardItem as LeaderboardItemType } from "@/features/session/leaderboard/types/leaderboardItem.ts"
 
 interface LeaderboardProps {
@@ -9,7 +9,10 @@ interface LeaderboardProps {
     title?: string
 }
 
-export default function Leaderboard({ items, title = "Leaderboard" }: LeaderboardProps): ReactNode {
+export default function Leaderboard({
+    items,
+    title = "Leaderboard",
+}: Readonly<LeaderboardProps>): ReactNode {
     const leaderboardItemPropsList = getLeaderboardItemPropsList(items)
     if (leaderboardItemPropsList.length === 0) return null
     return (

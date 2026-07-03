@@ -6,7 +6,7 @@ interface AuthGuardProps {
     children: ReactNode
 }
 
-export default function AuthGuard({ children }: AuthGuardProps): ReactNode {
+export default function AuthGuard({ children }: Readonly<AuthGuardProps>): ReactNode {
     const { isLoading, isError } = useAuthUser()
 
     useEffect(() => {

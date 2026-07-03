@@ -47,7 +47,7 @@ const OPTION_COLORS = [
 export default function ChoiceQuestionStatisticView({
     options,
     totalAnswers,
-}: ChoiceQuestionStatisticViewProps): JSX.Element {
+}: Readonly<ChoiceQuestionStatisticViewProps>): JSX.Element {
     const { t } = useTranslation()
     return (
         <div className="flex flex-col gap-6">

@@ -1,11 +1,11 @@
-import type { JSX } from "react"
+import type { JSX, ReactNode } from "react"
 import { useEffect, useState, useMemo } from "react"
 import ThemeProviderContext from "./ThemeContext"
 
 import type { Theme } from "@/shared/types/theme.ts"
 
 interface ThemeProviderProps {
-    children: React.ReactNode
+    children: ReactNode
     defaultTheme?: Theme
     storageKey?: string
 }
@@ -15,7 +15,7 @@ export default function ThemeProvider({
     defaultTheme = "auto",
     storageKey = "theme",
     ...props
-}: ThemeProviderProps): JSX.Element {
+}: Readonly<ThemeProviderProps>): JSX.Element {
     const [theme, setTheme] = useState<Theme>(() => {
         const saved = localStorage.getItem(storageKey) as Theme
         return ["light", "dark", "auto"].includes(saved) ? saved : defaultTheme

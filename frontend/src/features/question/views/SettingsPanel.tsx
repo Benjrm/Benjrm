@@ -9,7 +9,7 @@ interface SettingsPanelProps {
     question: Question
 }
 
-export default function SettingsPanel({ question }: SettingsPanelProps): JSX.Element {
+export default function SettingsPanel({ question }: Readonly<SettingsPanelProps>): JSX.Element {
     const { t } = useTranslation()
 
     return (

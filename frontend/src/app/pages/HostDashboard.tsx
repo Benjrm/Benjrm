@@ -23,7 +23,11 @@ import type { QuestionStatistics } from "@/features/question/types/statistics.ts
 import parseDisplayQuestion from "@/features/question/utils/parseDisplayQuestion.ts"
 import useAudio from "@/shared/hooks/useAudio.ts"
 
-function HostDashboardComponent({ code }: { code?: number }): JSX.Element {
+interface HostDashboardComponentProps {
+    code?: number
+}
+
+function HostDashboardComponent({ code }: Readonly<HostDashboardComponentProps>): JSX.Element {
     const { t } = useTranslation()
     const location = useLocation()
     useHostWebSocket(code)

@@ -1,14 +1,13 @@
-import type { JSX } from "react"
+import type { ReactNode, JSX } from "react"
 import { useTranslation } from "react-i18next"
 import GamePinBadge from "@/features/session/views/GamePinBadge"
 
-export default function Lobby({
-    children,
-    codeWithDash,
-}: {
-    children: React.ReactNode
+interface LobbyProps {
+    children: ReactNode
     codeWithDash?: string
-}): JSX.Element {
+}
+
+export default function Lobby({ children, codeWithDash }: Readonly<LobbyProps>): JSX.Element {
     const { t } = useTranslation()
 
     return (

@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next"
 import GameHeroSection from "@/features/quiz/views/GameHeroSection.tsx"
 import DiscoverSection from "@/features/quiz/views/DiscoverSection"
 import CreateQuizModal from "@/features/quiz/views/CreateQuizModal"
-
 import useQuizzes from "@/features/quiz/hooks/useQuizzes.ts"
 
 export default function Dashboard(): JSX.Element {

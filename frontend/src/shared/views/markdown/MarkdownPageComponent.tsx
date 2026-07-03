@@ -13,7 +13,7 @@ interface MarkdownPageComponentProps {
 
 export default function MarkdownPageComponent({
     content,
-}: MarkdownPageComponentProps): JSX.Element {
+}: Readonly<MarkdownPageComponentProps>): JSX.Element {
     // Scroll to the element specified in the URL hash when the content changes
     useEffect(() => {
         const { hash } = window.location

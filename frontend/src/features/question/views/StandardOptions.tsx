@@ -23,7 +23,7 @@ export default function StandardOptions({
     onToggleCorrect,
     onAddOption,
     isMdEditor,
-}: StandardOptionsProps): JSX.Element {
+}: Readonly<StandardOptionsProps>): JSX.Element {
     const { t } = useTranslation()
 
     return (

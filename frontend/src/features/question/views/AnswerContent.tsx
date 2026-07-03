@@ -7,7 +7,6 @@ import { Button } from "@/shadcn/components/ui/button"
 import { Input } from "@/shadcn/components/ui/input"
 import { Textarea } from "@/shadcn/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
-
 import useTheme from "@/shared/hooks/useTheme.ts"
 
 interface AnswerContentProps {
@@ -26,7 +25,7 @@ export default function AnswerContent({
     error,
     isMdEditor,
     singleLine = false,
-}: AnswerContentProps): JSX.Element {
+}: Readonly<AnswerContentProps>): JSX.Element {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const [isExpanded, setIsExpanded] = useState(false)

@@ -16,7 +16,7 @@ export default function DiscoverSection({
     quizzes,
     loading,
     onCreateQuizClick,
-}: DiscoverSectionProps): JSX.Element {
+}: Readonly<DiscoverSectionProps>): JSX.Element {
     const { t } = useTranslation()
     const recentQuizzes = [...quizzes]
         .sort(

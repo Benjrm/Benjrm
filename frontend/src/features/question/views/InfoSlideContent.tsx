@@ -22,7 +22,7 @@ export default function InfoSlideContent({
     totalSlides = 1,
     isHost = false,
     onNextQuestion,
-}: InfoSlideContentProps): JSX.Element {
+}: Readonly<InfoSlideContentProps>): JSX.Element {
     const { t } = useTranslation()
     return (
         <div className="bg-background text-foreground min-h-full px-4 py-8">

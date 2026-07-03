@@ -42,7 +42,7 @@ export default function QuizCreatorHeader({
     setIsConfirmOpen,
     isConfirmOpen,
     handleDelete,
-}: QuizCreatorHeaderProps): ReactNode {
+}: Readonly<QuizCreatorHeaderProps>): ReactNode {
     const { t } = useTranslation()
     const handleConfirmClose = () => setIsConfirmOpen(false)
 

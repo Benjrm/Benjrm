@@ -46,7 +46,7 @@ export default function QuestionCardContent({
     onSendAnswer,
     onNextQuestion,
     type,
-}: QuestionCardContentProps): JSX.Element {
+}: Readonly<QuestionCardContentProps>): JSX.Element {
     const { t } = useTranslation()
     const [selectedAnswers, setSelectedAnswers] = useState<string[]>(initialSelectedAnswers)
     const [hasSubmitted, setHasSubmitted] = useState(initialHasSubmitted)

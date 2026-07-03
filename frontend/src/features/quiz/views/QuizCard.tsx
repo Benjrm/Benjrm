@@ -8,7 +8,7 @@ interface QuizCardProps {
     quiz: Quiz
 }
 
-export default function QuizCard({ quiz }: QuizCardProps): JSX.Element {
+export default function QuizCard({ quiz }: Readonly<QuizCardProps>): JSX.Element {
     const { t } = useTranslation()
 
     return (
