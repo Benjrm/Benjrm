@@ -6,6 +6,8 @@ use {
             entity::{ActiveUser, UserColumn, UserEntity, UserModel},
             oidc::error::Error,
         },
+        error::Error as AppError,
+        quiz::{QuizError, QuizFilter, entity::QuizModel},
     },
     actix_session::Session,
     actix_web::{HttpResponse, web},
@@ -14,12 +16,13 @@ use {
     openidconnect::Nonce,
     sea_orm::{
         ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter,
-        SqlErr,
+        SqlErr, TransactionTrait,
     },
     serde::{Deserialize, Serialize},
     uuid::Uuid,
 };
 
+/// Struct to hold the state information for OIDC authentication
 #[derive(Serialize, Deserialize)]
 struct State {
     csrf_token: CsrfToken,
@@ -29,12 +32,16 @@ struct State {
     redirect_path: Option<String>,
 }
 
+/// Query parameters accepted by the login endpoint.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct Path {
     path: Option<String>,
 }
 
+/// Handle the login request for OIDC authentication
+///
+/// **Note:** This function stores the before login path to redirect the user back to it after a successful login.
 async fn login(data: web::Data<AppData>, session: Session, path: web::Query<Path>) -> HttpResponse {
     let (auth_url, csrf_token, pkce_verifier, nonce) = data.oidc.client.authorization_url();
 
@@ -60,6 +67,7 @@ async fn login(data: web::Data<AppData>, session: Session, path: web::Query<Path
         .finish()
 }
 
+/// Struct to hold the OIDC response information after the user has authenticated successfully.
 #[derive(Debug, Clone, Deserialize)]
 struct OauthResponse {
     state: String,
@@ -68,6 +76,11 @@ struct OauthResponse {
     code: String,
 }
 
+/// Handle the callback request for OIDC authentication
+///
+/// If the [`redirect_path`](State::redirect_path) was previously set, the user is redirected to that path after a successful login.
+/// Only relative paths beginning with `/` are accepted.
+/// The default redirect is `/dashboard`, this could be due to an error or unset path.
 async fn callback(
     data: web::Data<AppData>,
     session: Session,
@@ -117,6 +130,10 @@ async fn callback(
         .finish())
 }
 
+/// Logs the current user out.
+///
+/// The local session is always destroyed.
+/// If an ID token is available, the user is also redirected to the identity provider's logout endpoint to terminate the remote session before being returned to the application.
 async fn logout(data: web::Data<AppData>, session: Session) -> HttpResponse {
     let user = session.get::<SessionUser>("user").ok().flatten();
     session.purge();
@@ -138,10 +155,91 @@ async fn logout(data: web::Data<AppData>, session: Session) -> HttpResponse {
         .finish()
 }
 
-async fn get_user(user: User) -> HttpResponse {
-    HttpResponse::Ok().json(user)
+/// Response returned by the user information endpoint
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UserResponse {
+    id: Uuid,
+    account_url: Option<String>,
 }
 
+/// Returns information about the currently authenticated user.
+async fn get_user(user: User, data: web::Data<AppData>) -> HttpResponse {
+    HttpResponse::Ok().json(UserResponse {
+        id: user.id,
+        account_url: data.oidc.account_url(),
+    })
+}
+
+/// Request body required to confirm account deletion.
+///
+/// The request must contain `"DELETE"` as the confirmation string.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct DeleteConfirmation {
+    confirmation: String,
+}
+
+/// Permanently deletes the authenticated user's account.
+///
+/// All quizzes owned by the user are deleted before the user record itself.
+/// The operation is performed inside a database transaction so that either all resources are removed or none are.
+async fn delete_user(
+    data: web::Data<AppData>,
+    session: Session,
+    user: User,
+    body: web::Json<DeleteConfirmation>,
+) -> Result<HttpResponse, actix_web::Error> {
+    if body.confirmation != "DELETE" {
+        return Ok(HttpResponse::UnprocessableEntity().finish());
+    }
+
+    let txn = data
+        .db
+        .begin()
+        .await
+        .map_err(|e| AppError::from(QuizError::from(e)))?;
+
+    let quizzes = QuizModel::get_many(&txn, user.id, &QuizFilter { hidden: None })
+        .await
+        .map_err(AppError::from)?;
+
+    for quiz in quizzes {
+        quiz.delete(&txn).await?;
+    }
+
+    UserEntity::delete_by_id(user.id)
+        .exec(&txn)
+        .await
+        .map_err(|e| AppError::from(QuizError::from(e)))?;
+
+    txn.commit()
+        .await
+        .map_err(|e| AppError::from(QuizError::from(e)))?;
+
+    session.purge();
+
+    Ok(HttpResponse::NoContent().finish())
+}
+
+/// Authenticates as a deterministic dummy user.
+///
+/// This endpoint is only available in debug builds and is intended for local development and testing.
+/// The path parameter ([`usize`]) identifies the dummy user, creating it if necessary, and stores it in the current session.
+///
+/// # Example
+///
+/// Log in as `dummy_user_1` using curl. Or just type the url in your browser address bar.
+/// Unlike the normal login, the user is not redirected upon success.
+/// The dummy login returns the [`SessionUser`].
+///
+/// ```bash
+/// # Authenticate as dummy user 1
+/// curl -c cookies.txt http://localhost/auth/login/dummy/1
+///
+/// # Make an authenticated request using the saved session
+/// curl -b cookies.txt http://localhost/auth/user
+/// ```
 #[cfg(debug_assertions)]
 async fn dummy_login(
     data: web::Data<AppData>,
@@ -164,6 +262,10 @@ async fn dummy_login(
     Ok(HttpResponse::Ok().json(user))
 }
 
+/// Fetch or insert a user into the database based on the provided subject (sub) and return the corresponding [`UserModel`].
+///
+/// If no user exists for the subject, a new user is created.
+/// To handle errors between concurrent login requests, a [UniqueConstraintViolation](SqlErr::UniqueConstraintViolation) during insertion causes the function to fetch the newly created user instead of returning an error.
 async fn fetch_insert_db_user(conn: &impl ConnectionTrait, sub: &str) -> Result<UserModel, Error> {
     let fetch_db_user = || {
         UserEntity::find()
@@ -198,11 +300,19 @@ async fn fetch_insert_db_user(conn: &impl ConnectionTrait, sub: &str) -> Result<
     Ok(db_user)
 }
 
+/// Registers the authentication-related HTTP routes.
+///
+/// In debug builds, the dummy login gets also registered:
+/// - `GET /auth/login/dummy/{id}`
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/login").route(web::get().to(login)));
     cfg.service(web::resource("/oidc/callback").route(web::get().to(callback)));
     cfg.service(web::resource("/logout").route(web::post().to(logout)));
-    cfg.service(web::resource("/user").route(web::get().to(get_user)));
+    cfg.service(
+        web::resource("/user")
+            .route(web::get().to(get_user))
+            .route(web::delete().to(delete_user)),
+    );
 
     #[cfg(debug_assertions)]
     cfg.service(web::resource("/login/dummy/{id}").route(web::get().to(dummy_login)));

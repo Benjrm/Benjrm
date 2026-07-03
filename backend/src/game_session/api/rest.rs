@@ -1,17 +1,16 @@
 use {
     crate::{
         AppData,
-        auth::User,
+        auth::{OptionalUser, User},
         error::Result,
-        game_session::{GameSessionError, GameSessionPlayer, SessionCode, api::NewSession},
+        game_session::{GameSessionError, GameSessionPlayer, Player, SessionCode, api::NewSession},
     },
     actix_web::{HttpResponse, web},
-    emojis::Emoji,
-    serde::Serialize,
     std::sync::Arc,
     uuid::Uuid,
 };
 
+/// Creates a new game session with the provided quiz from the message body and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn create_one(
     app_data: web::Data<AppData>,
     user: User,
@@ -19,12 +18,13 @@ async fn create_one(
 ) -> Result<HttpResponse> {
     let (code, session) = app_data
         .game_sessions
-        .create_session(&app_data.db, user, create.quiz)
+        .create_session(&app_data.db, user.clone(), create.quiz)
         .await?;
     let session = session.lock().await;
-    Ok(HttpResponse::Created().json(session.to_dto(code)))
+    Ok(HttpResponse::Created().json(session.to_dto(code, Some(user))))
 }
 
+/// Creates a new game session with the provided quiz from the path parameter and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn create_one_with_quiz(
     app_data: web::Data<AppData>,
     user: User,
@@ -32,46 +32,49 @@ async fn create_one_with_quiz(
 ) -> Result<HttpResponse> {
     let (code, session) = app_data
         .game_sessions
-        .create_session(&app_data.db, user, Some(quiz.into_inner()))
+        .create_session(&app_data.db, user.clone(), Some(quiz.into_inner()))
         .await?;
     let session = session.lock().await;
-    Ok(HttpResponse::Created().json(session.to_dto(code)))
+    Ok(HttpResponse::Created().json(session.to_dto(code, Some(user))))
 }
 
+/// Retrieves a game session by its code and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn get_one(
     app_data: web::Data<AppData>,
-    user: User,
+    user: OptionalUser,
     code: web::Path<SessionCode>,
 ) -> Result<HttpResponse> {
     let code = code.into_inner();
     let session = app_data.game_sessions.get_session(code).await?;
 
     let session = session.lock().await;
-    if session.host.user != user {
-        return Err(GameSessionError::Forbidden.into());
+    if session.is_closed() {
+        return Err(GameSessionError::InvalidCode.into());
     }
-    Ok(HttpResponse::Ok().json(session.to_dto(code)))
+    Ok(HttpResponse::Ok().json(session.to_dto(code, user.into())))
 }
 
+/// Retrieves a game session by its code and quiz id and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn get_one_with_quiz(
     app_data: web::Data<AppData>,
-    user: User,
+    user: OptionalUser,
     path: web::Path<(Uuid, SessionCode)>,
 ) -> Result<HttpResponse> {
     let (quiz_id, code) = path.into_inner();
     let session = app_data.game_sessions.get_session(code).await?;
 
     let session = session.lock().await;
+    if session.is_closed() {
+        return Err(GameSessionError::InvalidCode.into());
+    }
     match &session.quiz {
         Some(quiz) if quiz.model.id == quiz_id => (),
         _ => return Err(GameSessionError::InvalidCode.into()),
     }
-    if session.host.user != user {
-        return Err(GameSessionError::Forbidden.into());
-    }
-    Ok(HttpResponse::Ok().json(session.to_dto(code)))
+    Ok(HttpResponse::Ok().json(session.to_dto(code, user.into())))
 }
 
+/// Deletes a game session by its code and returns a 204 No Content response.
 async fn delete(
     app_data: web::Data<AppData>,
     user: User,
@@ -85,6 +88,7 @@ async fn delete(
     Ok(HttpResponse::NoContent().finish())
 }
 
+/// Deletes a game session by its code and quiz id and returns a 204 No Content response.
 async fn delete_with_quiz(
     app_data: web::Data<AppData>,
     user: User,
@@ -107,6 +111,7 @@ async fn delete_with_quiz(
     Ok(HttpResponse::NoContent().finish())
 }
 
+/// Gets the quiz associated with a game session by its code.
 async fn get_quiz(
     app_data: web::Data<AppData>,
     user: User,
@@ -128,6 +133,7 @@ async fn get_quiz(
     }
 }
 
+/// Gets the quiz associated with a game session by its code and quiz id.
 async fn get_quiz_with_quiz_id(
     app_data: web::Data<AppData>,
     user: User,
@@ -151,6 +157,7 @@ async fn get_quiz_with_quiz_id(
     }
 }
 
+/// Transforms the list of players in a game session.
 fn player_list_response(
     user: &User,
     host: &User,
@@ -160,25 +167,11 @@ fn player_list_response(
         return Err(GameSessionError::Forbidden.into());
     }
 
-    #[derive(Serialize)]
-    struct Player {
-        id: Uuid,
-        name: String,
-        emoji: Option<&'static Emoji>,
-    }
-    let mut res_players = Vec::new();
-    for player in players {
-        if let Some(name) = &player.name {
-            res_players.push(Player {
-                id: player.id,
-                name: name.clone(),
-                emoji: player.emoji,
-            })
-        }
-    }
-    Ok(HttpResponse::Ok().json(res_players))
+    let players: Vec<_> = players.iter().map(Player::from).collect();
+    Ok(HttpResponse::Ok().json(players))
 }
 
+/// Returns a response containing the list of players in a game session.
 async fn get_players(
     app_data: web::Data<AppData>,
     user: User,
@@ -193,6 +186,7 @@ async fn get_players(
     player_list_response(&user, &session.host.user, &session.players)
 }
 
+/// Returns a response containing the list of players in a game session with a specific quiz id.
 async fn get_players_with_quiz(
     app_data: web::Data<AppData>,
     user: User,
@@ -209,6 +203,7 @@ async fn get_players_with_quiz(
     player_list_response(&user, &session.host.user, &session.players)
 }
 
+/// Initializes the REST routes for the game session API.
 pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
     cfg.service(web::resource("/sessions").route(web::post().to(create_one)));
     cfg.service(

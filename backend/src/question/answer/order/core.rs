@@ -49,6 +49,14 @@ impl OptionModel for AnswerOrderModel {
 impl NewOption<AnswerOrderModel> for NewAnswerOrder {
     type Active = ActiveAnswerChoice;
 
+    /// Returns always `true` because order questions don't define correctness of an answer option.
+    ///
+    /// This is a workaround to satisfy the [`NewOption`] trait, which requires a `correct` method.
+    /// In the context of order questions, the correctness is determined by the order of the answers rather than their individual content.
+    /// This is due to the fact that order questions and choice questions are stored in the same tables below and are mostly handled by the same code.
+    ///
+    /// **Hint**: Const can't be used here because the trait requires a method, not an associated constant.
+    #[inline]
     fn correct(&self) -> bool {
         true
     }

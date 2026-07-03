@@ -3,12 +3,14 @@
 import { useState } from "react"
 import type { JSX } from "react"
 import { useNavigate } from "react-router"
+import { useTranslation } from "react-i18next"
 import GamePinForm from "@/components/GamePinForm"
 import { getSession } from "@/api/session"
 import { ApiError } from "@/api/utils"
 
 export default function LandingPage(): JSX.Element {
     const navigate = useNavigate()
+    const { t } = useTranslation()
     const [isPending, setIsPending] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -22,18 +24,19 @@ export default function LandingPage(): JSX.Element {
                             {/* Orange pill */}
                             <div className="inline-flex w-max items-center gap-2 rounded-full border border-[#FF8A00]/20 bg-[#FF8A00]/10 px-3 py-1.5 text-xs font-bold tracking-widest text-[#FF8A00] uppercase">
                                 <span className="h-2 w-2 animate-pulse rounded-full bg-[#FF8A00]" />
-                                New Features Live
+                                {t("landing.newFeaturesLive")}
                             </div>
 
                             {/* Smaller heading on mobile */}
                             <h1 className="flex flex-col gap-2 text-4xl font-extrabold tracking-tighter sm:gap-2 sm:text-5xl md:text-7xl">
-                                <span>Engage and learn</span>
+                                <span>{t("landing.engageAndLearn")}</span>
                                 <span>
-                                    with <span className="text-[#00F2FF]">Benjrm</span>
+                                    {t("landing.with")}{" "}
+                                    <span className="text-[#00F2FF]">{t("common.brandName")}</span>
                                 </span>
                             </h1>
                             <p className="text-muted-foreground text-base font-medium tracking-wide sm:text-xl">
-                                HOST AND PLAY FUN AND INTERACTIVE QUIZZES
+                                {t("landing.subtitle")}
                             </p>
                         </div>
 
@@ -48,17 +51,13 @@ export default function LandingPage(): JSX.Element {
                                     navigate(`/play/${encodeURIComponent(digits)}`)
                                 } catch (err) {
                                     if (!(err instanceof ApiError)) {
-                                        setError("Something went wrong. Please try again.")
+                                        setError(t("landing.errors.generic"))
                                         return
                                     }
                                     if (err.status === 404) {
-                                        setError(
-                                            "No lobby found with this code. Please check and try again."
-                                        )
+                                        setError(t("landing.errors.lobbyNotFound"))
                                     } else {
-                                        // 401 (unauthenticated) or 403 (not the host) — the session
-                                        // exists or we can't verify; let WaitingRoom handle it.
-                                        navigate(`/play/${encodeURIComponent(digits)}`)
+                                        setError(t("landing.errors.generic"))
                                     }
                                 } finally {
                                     setIsPending(false)
@@ -74,13 +73,13 @@ export default function LandingPage(): JSX.Element {
                         <div className="relative rounded-3xl border border-white/10 shadow-2xl">
                             <div className="relative aspect-4/3 overflow-hidden rounded-3xl">
                                 <img
-                                    alt="Students participating in a quiz"
+                                    alt={t("landing.imageAlt")}
                                     className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
                                     src="/pictures/happy_people.jpg"
                                 />
                                 <div className="from-background/95 via-background/10 absolute inset-0 flex items-end bg-linear-to-t to-transparent p-8 lg:p-12">
                                     <p className="max-w-[85%] text-3xl leading-tight font-extrabold tracking-tighter text-white lg:text-5xl">
-                                        Quiz together, learn forever.
+                                        {t("landing.imageText")}
                                     </p>
                                 </div>
                             </div>

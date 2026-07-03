@@ -14,6 +14,7 @@ const MOCK_QUESTIONS = [
         question: "What is the capital of France?",
         seconds: 30,
         type: "SINGLE_CHOICE" as const,
+        index: 1,
         totalQuestions: 3,
         options: [
             { id: "a1", answer: "London" },
@@ -27,6 +28,7 @@ const MOCK_QUESTIONS = [
         question: "How many planets are in our solar system?",
         seconds: 30,
         type: "SINGLE_CHOICE" as const,
+        index: 2,
         totalQuestions: 3,
         options: [
             { id: "b1", answer: "7" },
@@ -40,6 +42,7 @@ const MOCK_QUESTIONS = [
         question: "Which language runs in a web browser?",
         seconds: 30,
         type: "SINGLE_CHOICE" as const,
+        index: 3,
         totalQuestions: 3,
         options: [
             { id: "c1", answer: "Java" },

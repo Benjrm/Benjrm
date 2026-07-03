@@ -1,6 +1,7 @@
 // frontend/src/api/client.ts
 
 import { ApiError } from "./utils"
+import i18n from "@/i18n"
 
 export interface FetchOptions {
     method?: string
@@ -10,7 +11,7 @@ export interface FetchOptions {
 }
 
 function createFriendlyApiError(status = 500): ApiError {
-    const message = `The backend is currently unavailable. Please try again later.`
+    const message = i18n.t("common.errors.backendUnavailable")
     return new ApiError(status, message)
 }
 

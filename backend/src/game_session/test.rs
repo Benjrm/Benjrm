@@ -4,9 +4,9 @@ use {
         auth::User,
         error::Error,
         game_session::{
-            Channel, ChannelError, Command, DisplayQuestionMessage, DisplayQuestionOptions,
-            GameSession, GameSessionError, HostCommand, HostMessage, Message, PlayerCommand,
-            PlayerMessage, api::ws::WsChannelError,
+            AnswerStatistics, Channel, ChannelError, Command, DisplayQuestionMessage,
+            DisplayQuestionOptions, GameSession, GameSessionError, HostCommand, HostMessage,
+            Message, Player, PlayerCommand, PlayerMessage, api::ws::WsChannelError,
         },
         question::{
             NewQuestion, NewQuestionOptions, Question,
@@ -133,37 +133,37 @@ async fn dummy_session(
 
 async fn dummy_player(
     session: &mut GameSession,
-    session_arc: Arc<Mutex<GameSession>>,
     host_rx: &mut mpsc::Receiver<HostMessage>,
     name: &str,
 ) -> (Uuid, mpsc::Receiver<PlayerMessage>) {
     let player = Uuid::new_v4();
     let (player_channel, _, mut player_rx) = DummyChanel::new();
+    session.check_add_player(name).unwrap();
     session
-        .set_player_channel(player, player_channel)
-        .await
-        .unwrap();
-
-    session
-        .handle_player_cmd(
-            Command {
-                id: Some(1),
-                command: PlayerCommand::SetName {
-                    name: name.into(),
-                    emoji: None,
-                },
-            },
-            session_arc,
-            player,
-        )
+        .add_player(None, player, player_channel, name.into(), None)
         .await;
-    assert!(matches!(player_rx.recv().await.unwrap(), PlayerMessage::Ok));
+
+    match player_rx.recv().await.unwrap() {
+        PlayerMessage::ConnectResponse {
+            id,
+            secret,
+            name: response_name,
+            emoji,
+        } => {
+            assert_eq!(id, player);
+            assert_eq!(response_name, name);
+            assert_eq!(emoji, None);
+            assert_ne!(id, secret);
+        }
+        x => panic!("invalid message: {x:?}"),
+    }
+
     match host_rx.recv().await.unwrap() {
-        HostMessage::AddPlayer {
+        HostMessage::AddPlayer(Player {
             id,
             name: player_name,
             emoji,
-        } => {
+        }) => {
             assert_eq!(id, player);
             assert_eq!(player_name, name);
             assert_eq!(emoji, None);
@@ -296,27 +296,29 @@ async fn join() {
 
     {
         session.set_host_channel(host_channel).await;
+        match host_rx.recv().await.unwrap() {
+            HostMessage::SetPlayers { players } => {
+                assert_eq!(players.len(), 0);
+            }
+            x => panic!("invalid message: {x:?}"),
+        }
+        session.check_add_player("cool name").unwrap();
         session
-            .set_player_channel(player, player_channel)
-            .await
-            .unwrap();
-
-        session
-            .handle_player_cmd(
-                Command {
-                    id: Some(1),
-                    command: PlayerCommand::SetName {
-                        name: "cool name".into(),
-                        emoji: Some("😀".into()),
-                    },
-                },
-                session_arc.clone(),
+            .add_player(
+                None,
                 player,
+                player_channel,
+                "cool name".into(),
+                Some(emojis::get("😀").unwrap()),
             )
             .await;
-        assert!(matches!(player_rx.recv().await.unwrap(), PlayerMessage::Ok));
+        assert!(matches!(
+            player_rx.recv().await.unwrap(),
+            PlayerMessage::ConnectResponse { .. }
+        ));
+
         match host_rx.recv().await.unwrap() {
-            HostMessage::AddPlayer { id, name, emoji } => {
+            HostMessage::AddPlayer(Player { id, name, emoji }) => {
                 assert_eq!(id, player);
                 assert_eq!(name, "cool name");
                 assert_eq!(emoji, Some(emojis::get("😀").unwrap()));
@@ -325,32 +327,10 @@ async fn join() {
         }
     }
 
-    {
-        let player2 = Uuid::new_v4();
-        let (player2_channel, _, mut player2_rx) = DummyChanel::new();
-        session
-            .set_player_channel(player2, player2_channel)
-            .await
-            .unwrap();
-
-        session
-            .handle_player_cmd(
-                Command {
-                    id: Some(1),
-                    command: PlayerCommand::SetName {
-                        name: "cool name".into(),
-                        emoji: Some("😀".into()),
-                    },
-                },
-                session_arc.clone(),
-                player2,
-            )
-            .await;
-        match player2_rx.recv().await.unwrap() {
-            PlayerMessage::Error(err) => assert_eq!(err.error, "name_already_taken"),
-            x => panic!("invalid message: {x:?}"),
-        }
-    }
+    assert!(matches!(
+        session.check_add_player("cool name"),
+        Err(GameSessionError::NameAlreadyTaken)
+    ));
 
     {
         session
@@ -360,15 +340,15 @@ async fn join() {
                     command: HostCommand::KickPlayer { id: player },
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
-            .await;
+            .await
+            .unwrap();
 
         match host_rx.recv().await.unwrap() {
             HostMessage::RemovePlayer { id } => assert_eq!(id, player),
             x => panic!("invalid message: {x:?}"),
         }
-        assert!(matches!(host_rx.recv().await.unwrap(), HostMessage::Ok));
         assert!(matches!(
             player_rx.recv().await.unwrap(),
             PlayerMessage::Kick
@@ -387,9 +367,14 @@ async fn rename_player() {
 
     let (host_channel, _, mut host_rx) = DummyChanel::new();
     session.set_host_channel(host_channel).await;
+    match host_rx.recv().await.unwrap() {
+        HostMessage::SetPlayers { players } => {
+            assert_eq!(players.len(), 0);
+        }
+        x => panic!("invalid message: {x:?}"),
+    }
 
-    let (player, mut player_rx) =
-        dummy_player(&mut session, session_arc.clone(), &mut host_rx, "name").await;
+    let (player, _) = dummy_player(&mut session, &mut host_rx, "name").await;
     session
         .handle_player_cmd(
             Command {
@@ -400,12 +385,13 @@ async fn rename_player() {
                 },
             },
             session_arc.clone(),
-            player,
+            &player,
         )
-        .await;
-    assert!(matches!(player_rx.recv().await.unwrap(), PlayerMessage::Ok));
+        .await
+        .unwrap();
+
     match host_rx.recv().await.unwrap() {
-        HostMessage::RenamePlayer { id, name, emoji } => {
+        HostMessage::RenamePlayer(Player { id, name, emoji }) => {
             assert_eq!(id, player);
             assert_eq!(name, "name2");
             assert_eq!(emoji, Some(emojis::get("😀").unwrap()));
@@ -423,23 +409,26 @@ async fn start() {
         let (code, session_arc) = dummy_session(&data, &user, false).await;
         let mut session = session_arc.lock().await;
 
-        let (channel, _, mut rx) = DummyChanel::new();
+        let (channel, _, mut host_rx) = DummyChanel::new();
         session.set_host_channel(channel).await;
+        match host_rx.recv().await.unwrap() {
+            HostMessage::SetPlayers { players } => {
+                assert_eq!(players.len(), 0);
+            }
+            x => panic!("invalid message: {x:?}"),
+        }
 
-        session
+        let res = session
             .handle_host_cmd(
                 Command {
                     id: Some(1),
                     command: HostCommand::Start,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await;
-        match rx.recv().await.unwrap() {
-            HostMessage::Error(err) => assert_eq!(err.error, "quiz_missing"),
-            x => panic!("invalid message: {x:?}"),
-        }
+        assert!(matches!(res, Err(GameSessionError::QuizMissing)));
     }
 
     {
@@ -448,59 +437,38 @@ async fn start() {
 
         let (channel, _, mut rx) = DummyChanel::new();
         session.set_host_channel(channel).await;
+        match rx.recv().await.unwrap() {
+            HostMessage::SetPlayers { players } => {
+                assert_eq!(players.len(), 0);
+            }
+            x => panic!("invalid message: {x:?}"),
+        }
 
-        session
+        let res = session
             .handle_host_cmd(
                 Command {
                     id: Some(1),
                     command: HostCommand::Start,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await;
-        match rx.recv().await.unwrap() {
-            HostMessage::Error(err) => assert_eq!(err.error, "no_players"),
-            x => panic!("invalid message: {x:?}"),
-        }
+        assert!(matches!(res, Err(GameSessionError::NoPlayers)));
 
         let player = Uuid::new_v4();
         let (player_channel, _, mut player_rx) = DummyChanel::new();
+        session.check_add_player("test").unwrap();
         session
-            .set_player_channel(player, player_channel)
-            .await
-            .unwrap();
-
-        session
-            .handle_host_cmd(
-                Command {
-                    id: Some(2),
-                    command: HostCommand::Start,
-                },
-                session_arc.clone(),
-                code,
-            )
+            .add_player(None, player, player_channel, "test".into(), None)
             .await;
-        match rx.recv().await.unwrap() {
-            HostMessage::Error(err) => assert_eq!(err.error, "no_players"),
-            x => panic!("invalid message: {x:?}"),
-        }
+        assert!(matches!(
+            player_rx.recv().await.unwrap(),
+            PlayerMessage::ConnectResponse { .. }
+        ));
 
-        session
-            .handle_player_cmd(
-                Command {
-                    id: None,
-                    command: PlayerCommand::SetName {
-                        name: "test".into(),
-                        emoji: None,
-                    },
-                },
-                session_arc.clone(),
-                player,
-            )
-            .await;
         match rx.recv().await.unwrap() {
-            HostMessage::AddPlayer { id, name, emoji } => {
+            HostMessage::AddPlayer(Player { id, name, emoji }) => {
                 assert_eq!(id, player);
                 assert_eq!(name, "test");
                 assert_eq!(emoji, None);
@@ -515,36 +483,31 @@ async fn start() {
                     command: HostCommand::Start,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
-            .await;
-        assert!(matches!(rx.recv().await.unwrap(), HostMessage::Ok));
+            .await
+            .unwrap();
         assert!(matches!(
             player_rx.recv().await.unwrap(),
             PlayerMessage::Start
         ));
 
-        let player2 = Uuid::new_v4();
-        let (player2_channel, _, _) = DummyChanel::new();
         assert!(matches!(
-            session.set_player_channel(player2, player2_channel).await,
+            session.check_add_player("some name"),
             Err(GameSessionError::AlreadyStarted)
         ));
 
-        session
+        let res = session
             .handle_host_cmd(
                 Command {
                     id: Some(2),
                     command: HostCommand::Start,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await;
-        match rx.recv().await.unwrap() {
-            HostMessage::Error(err) => assert_eq!(err.error, "already_started"),
-            x => panic!("invalid message: {x:?}"),
-        }
+        assert!(matches!(res, Err(GameSessionError::AlreadyStarted)));
     }
 }
 
@@ -558,15 +521,14 @@ async fn kick_on_start() {
 
     let (host_channel, _, mut host_rx) = DummyChanel::new();
     session.set_host_channel(host_channel).await;
+    match host_rx.recv().await.unwrap() {
+        HostMessage::SetPlayers { players } => {
+            assert_eq!(players.len(), 0);
+        }
+        x => panic!("invalid message: {x:?}"),
+    }
 
-    let (_, mut player1_rx) =
-        dummy_player(&mut session, session_arc.clone(), &mut host_rx, "test").await;
-    let player2 = Uuid::new_v4();
-    let (player2_channel, player2_closed, mut player2_rx) = DummyChanel::new();
-    session
-        .set_player_channel(player2, player2_channel)
-        .await
-        .unwrap();
+    let (_, mut player1_rx) = dummy_player(&mut session, &mut host_rx, "test").await;
 
     session
         .handle_host_cmd(
@@ -575,24 +537,17 @@ async fn kick_on_start() {
                 command: HostCommand::Start,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
-        .await;
-    assert!(matches!(host_rx.recv().await.unwrap(), HostMessage::Ok));
+        .await
+        .unwrap();
     assert!(matches!(
         player1_rx.recv().await.unwrap(),
         PlayerMessage::Start
     ));
-    assert!(matches!(
-        player2_rx.recv().await.unwrap(),
-        PlayerMessage::Kick
-    ));
-    assert!(player2_closed.load(Ordering::Relaxed));
 
-    let player3 = Uuid::new_v4();
-    let (player3_channel, _, _) = DummyChanel::new();
     assert!(matches!(
-        session.set_player_channel(player3, player3_channel).await,
+        session.check_add_player("test2"),
         Err(GameSessionError::AlreadyStarted)
     ));
 }
@@ -607,9 +562,14 @@ async fn show_question() {
 
     let (channel, _, mut rx) = DummyChanel::new();
     session.set_host_channel(channel).await;
+    match rx.recv().await.unwrap() {
+        HostMessage::SetPlayers { players } => {
+            assert_eq!(players.len(), 0);
+        }
+        x => panic!("invalid message: {x:?}"),
+    }
 
-    let (_, mut player_rx) =
-        dummy_player(&mut session, session_arc.clone(), &mut rx, "player name").await;
+    let (_, mut player_rx) = dummy_player(&mut session, &mut rx, "player name").await;
     session
         .handle_host_cmd(
             Command {
@@ -617,10 +577,10 @@ async fn show_question() {
                 command: HostCommand::Start,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
-        .await;
-    assert!(matches!(rx.recv().await.unwrap(), HostMessage::Ok));
+        .await
+        .unwrap();
     assert!(matches!(
         player_rx.recv().await.unwrap(),
         PlayerMessage::Start
@@ -646,17 +606,17 @@ async fn show_question() {
                     command,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
-            .await;
+            .await
+            .unwrap();
 
-        let mut host_ok_received = false;
         let mut host_question = None;
-        while !(host_ok_received && host_question.is_some()) {
+        while host_question.is_none() {
             match rx.recv().await.unwrap() {
-                HostMessage::Ok => host_ok_received = true,
                 HostMessage::DisplayQuestion(question) => host_question = Some(question),
                 HostMessage::DisplayLeaderboard { .. } => (),
+                HostMessage::ShowStatistics { .. } => (),
                 x => panic!("invalid message: {x:?}"),
             }
         }
@@ -701,13 +661,19 @@ async fn play_dummy_quiz() {
 
     let (host_channel, _, mut host_rx) = DummyChanel::new();
     session.set_host_channel(host_channel).await;
+    match host_rx.recv().await.unwrap() {
+        HostMessage::SetPlayers { players } => {
+            assert_eq!(players.len(), 0);
+        }
+        x => panic!("invalid message: {x:?}"),
+    }
 
     let (player_1_uuid, mut player_1_rx) =
-        dummy_player(&mut session, session_arc.clone(), &mut host_rx, "player 1").await;
+        dummy_player(&mut session, &mut host_rx, "player 1").await;
     let (player_2_uuid, mut player_2_rx) =
-        dummy_player(&mut session, session_arc.clone(), &mut host_rx, "player 2").await;
+        dummy_player(&mut session, &mut host_rx, "player 2").await;
     let (player_3_uuid, mut player_3_rx) =
-        dummy_player(&mut session, session_arc.clone(), &mut host_rx, "player 3").await;
+        dummy_player(&mut session, &mut host_rx, "player 3").await;
 
     session.status = super::GameSessionStatus::Started;
 
@@ -718,15 +684,15 @@ async fn play_dummy_quiz() {
                 command: HostCommand::NextQuestion,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
-        .await;
+        .await
+        .unwrap();
 
     assert!(matches!(
         host_rx.recv().await.unwrap(),
         HostMessage::DisplayQuestion(_)
     ));
-    assert!(matches!(host_rx.recv().await.unwrap(), HostMessage::Ok));
 
     match player_1_rx.recv().await.unwrap() {
         PlayerMessage::DisplayQuestion(question_message)
@@ -743,43 +709,17 @@ async fn play_dummy_quiz() {
         PlayerMessage::DisplayQuestion(_)
     ));
 
-    session
+    let res = session
         .handle_player_cmd(
             Command {
                 id: Some(1),
                 command: PlayerCommand::AnswerQuestion { answer: Vec::new() },
             },
             session_arc.clone(),
-            player_1_uuid,
+            &player_1_uuid,
         )
         .await;
-
-    match player_1_rx.recv().await.unwrap() {
-        PlayerMessage::Error(err) => assert_eq!(err.error, "cannot_answer"),
-        x => panic!("invalid message: {x:?}"),
-    }
-
-    session
-        .handle_player_cmd(
-            Command {
-                id: None,
-                command: PlayerCommand::AnswerQuestion { answer: Vec::new() },
-            },
-            session_arc.clone(),
-            player_2_uuid,
-        )
-        .await;
-
-    session
-        .handle_player_cmd(
-            Command {
-                id: None,
-                command: PlayerCommand::AnswerQuestion { answer: Vec::new() },
-            },
-            session_arc.clone(),
-            player_3_uuid,
-        )
-        .await;
+    assert!(matches!(res, Err(GameSessionError::CannotAnswer)));
 
     session
         .handle_host_cmd(
@@ -788,9 +728,10 @@ async fn play_dummy_quiz() {
                 command: HostCommand::NextQuestion,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
-        .await;
+        .await
+        .unwrap();
 
     assert!(matches!(
         player_1_rx.recv().await.unwrap(),
@@ -848,16 +789,12 @@ async fn play_dummy_quiz() {
                 },
             },
             session_arc.clone(),
-            player_1_uuid,
+            &player_1_uuid,
         )
-        .await;
+        .await
+        .unwrap();
 
-    assert!(matches!(
-        player_1_rx.recv().await.unwrap(),
-        PlayerMessage::Ok
-    ));
-
-    session
+    let res = session
         .handle_player_cmd(
             Command {
                 id: Some(1),
@@ -866,16 +803,12 @@ async fn play_dummy_quiz() {
                 },
             },
             session_arc.clone(),
-            player_2_uuid,
+            &player_2_uuid,
         )
         .await;
+    assert!(matches!(res, Err(GameSessionError::InvalidAnswerCount)));
 
-    match player_2_rx.recv().await.unwrap() {
-        PlayerMessage::Error(err) => assert_eq!(err.error, "invalid_answer_count"),
-        x => panic!("invalid message: {x:?}"),
-    }
-
-    session
+    let res = session
         .handle_player_cmd(
             Command {
                 id: Some(1),
@@ -884,16 +817,26 @@ async fn play_dummy_quiz() {
                 },
             },
             session_arc.clone(),
-            player_3_uuid,
+            &player_3_uuid,
         )
         .await;
-
-    match player_3_rx.recv().await.unwrap() {
-        PlayerMessage::Error(err) => assert_eq!(err.error, "invalid_answer"),
-        x => panic!("invalid message: {x:?}"),
-    }
+    assert!(matches!(res, Err(GameSessionError::InvalidAnswer)));
 
     drop(session);
+
+    match host_rx.recv().await.unwrap() {
+        HostMessage::ShowStatistics(stats) => match &*stats {
+            AnswerStatistics::SingleChoice(stats) => {
+                assert_eq!(stats.answers, 1);
+                assert_eq!(stats.answer_statistic.len(), answers.len());
+                for (statistic, answer) in stats.answer_statistic.iter().zip(answers) {
+                    assert_eq!(statistic.option, answer)
+                }
+            }
+            x => panic!("invalid stats: {x:?}"),
+        },
+        x => panic!("invalid message: {x:?}"),
+    }
 
     match host_rx.recv().await.unwrap() {
         HostMessage::DisplayLeaderboard {
@@ -945,17 +888,69 @@ async fn play_dummy_quiz() {
 
     let mut session = session_arc.lock().await;
 
-    loop {
-        session
+    let mut first = true;
+    'outer: loop {
+        let res = session
             .handle_host_cmd(
                 Command {
                     id: None,
                     command: HostCommand::NextQuestion,
                 },
                 session_arc.clone(),
-                code,
+                &(data.game_sessions.clone(), code),
             )
             .await;
+
+        if !first {
+            for _ in 0..2 {
+                match host_rx.recv().await.unwrap() {
+                    HostMessage::DisplayLeaderboard { is_final, .. } => {
+                        assert!(matches!(
+                            player_1_rx.recv().await.unwrap(),
+                            PlayerMessage::QuestionResult { .. }
+                        ));
+                        assert!(matches!(
+                            player_2_rx.recv().await.unwrap(),
+                            PlayerMessage::QuestionResult { .. }
+                        ));
+                        assert!(matches!(
+                            player_3_rx.recv().await.unwrap(),
+                            PlayerMessage::QuestionResult { .. }
+                        ));
+
+                        if is_final {
+                            assert!(matches!(res, Err(GameSessionError::NoQuestionLeft)));
+                            session
+                                .handle_host_cmd(
+                                    Command {
+                                        id: None,
+                                        command: HostCommand::ShowPodium,
+                                    },
+                                    session_arc.clone(),
+                                    &(data.game_sessions.clone(), code),
+                                )
+                                .await
+                                .unwrap();
+                            assert!(matches!(
+                                player_1_rx.recv().await.unwrap(),
+                                PlayerMessage::DisplayLeaderboard { .. }
+                            ));
+                            assert!(matches!(
+                                player_2_rx.recv().await.unwrap(),
+                                PlayerMessage::DisplayLeaderboard { .. }
+                            ));
+                            assert!(matches!(
+                                player_3_rx.recv().await.unwrap(),
+                                PlayerMessage::DisplayLeaderboard { .. }
+                            ));
+                            break 'outer;
+                        }
+                    }
+                    HostMessage::ShowStatistics(_) => (),
+                    x => panic!("invalid message: {x:?}"),
+                }
+            }
+        }
 
         match host_rx.recv().await.unwrap() {
             HostMessage::DisplayQuestion(_) => {
@@ -972,52 +967,12 @@ async fn play_dummy_quiz() {
                     PlayerMessage::DisplayQuestion(_)
                 ));
             }
-            HostMessage::DisplayLeaderboard { is_final, .. } => {
-                if is_final {
-                    break;
-                }
-
-                assert!(matches!(
-                    player_1_rx.recv().await.unwrap(),
-                    PlayerMessage::QuestionResult { .. }
-                ));
-                assert!(matches!(
-                    player_2_rx.recv().await.unwrap(),
-                    PlayerMessage::QuestionResult { .. }
-                ));
-                assert!(matches!(
-                    player_3_rx.recv().await.unwrap(),
-                    PlayerMessage::QuestionResult { .. }
-                ));
-            }
             x => panic!("invalid message: {x:?}"),
         }
-    }
 
-    assert!(matches!(
-        player_1_rx.recv().await.unwrap(),
-        PlayerMessage::QuestionResult { .. }
-    ));
-    assert!(matches!(
-        player_2_rx.recv().await.unwrap(),
-        PlayerMessage::QuestionResult { .. }
-    ));
-    assert!(matches!(
-        player_3_rx.recv().await.unwrap(),
-        PlayerMessage::QuestionResult { .. }
-    ));
-    assert!(matches!(
-        player_1_rx.recv().await.unwrap(),
-        PlayerMessage::DisplayLeaderboard { .. }
-    ));
-    assert!(matches!(
-        player_2_rx.recv().await.unwrap(),
-        PlayerMessage::DisplayLeaderboard { .. }
-    ));
-    assert!(matches!(
-        player_3_rx.recv().await.unwrap(),
-        PlayerMessage::DisplayLeaderboard { .. }
-    ));
+        res.unwrap();
+        first = false;
+    }
 
     session
         .handle_host_cmd(
@@ -1026,9 +981,10 @@ async fn play_dummy_quiz() {
                 command: HostCommand::EndGame,
             },
             session_arc.clone(),
-            code,
+            &(data.game_sessions.clone(), code),
         )
-        .await;
+        .await
+        .unwrap();
 
     assert!(matches!(
         player_1_rx.recv().await.unwrap(),

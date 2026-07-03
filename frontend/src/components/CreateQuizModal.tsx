@@ -1,6 +1,7 @@
 // frontend/src/components/CreateQuizModal.tsx
 
 import type { FC } from "react"
+import { useTranslation } from "react-i18next"
 import QuizForm from "./QuizForm"
 import {
     Dialog,
@@ -29,11 +30,10 @@ const CreateQuizModal: FC<CreateQuizModalProps> = ({
     initialDescription = "",
     quizId,
 }) => {
-    const dialogTitle = mode === "edit" ? "Edit quiz" : "Create a new Quiz"
+    const { t } = useTranslation()
+    const dialogTitle = mode === "edit" ? t("quiz.modal.editTitle") : t("quiz.modal.createTitle")
     const dialogDescription =
-        mode === "edit"
-            ? "Update title and description."
-            : "Enter a title and optional description."
+        mode === "edit" ? t("quiz.modal.editDescription") : t("quiz.modal.createDescription")
 
     const formKey = [mode, quizId ?? "new", initialTitle, initialDescription].join("|")
 

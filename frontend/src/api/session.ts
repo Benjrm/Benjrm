@@ -10,6 +10,8 @@ export interface CreateSessionInput {
 
 export interface Session {
     code: number
+    isHost: boolean
+    started: boolean
     quiz?: string
 }
 

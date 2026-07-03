@@ -5,6 +5,7 @@ import js from "@eslint/js"
 import { defineConfig, globalIgnores } from "eslint/config"
 import { configs, plugins, rules } from "eslint-config-airbnb-extended"
 import { rules as prettierConfigRules } from "eslint-config-prettier"
+import i18next from "eslint-plugin-i18next"
 import prettierPlugin from "eslint-plugin-prettier"
 import reactRefresh from "eslint-plugin-react-refresh"
 import globals from "globals"
@@ -81,6 +82,32 @@ export default defineConfig([
     ...typescriptConfig,
     // Prettier config
     ...prettierConfig,
+    // i18next: flag hardcoded strings in JSX/TSX
+    {
+        ...i18next.configs["flat/recommended"],
+        files: ["src/**/*.tsx"],
+        ignores: ["src/shadcn/**"],
+        rules: {
+            ...i18next.configs["flat/recommended"].rules,
+            "i18next/no-literal-string": [
+                "error",
+                {
+                    mode: "jsx-only",
+                    "jsx-attributes": {
+                        include: ["title", "placeholder", "alt", "aria-label"],
+                    },
+                    ignore: [
+                        // Brand name — never translated
+                        /Benjrm/,
+                        // URL paths
+                        /^\//,
+                        // Short technical strings (IDs, units, symbols)
+                        /^[a-z0-9._/-]+$/,
+                    ],
+                },
+            ],
+        },
+    },
     // Project-specific overrides
     {
         files: ["**/*.{ts,tsx}"],

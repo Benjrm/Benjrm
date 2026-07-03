@@ -16,7 +16,23 @@ export default class WebSocketService {
 
     private closeWithoutOpenCallbacks = new Set<() => void>()
 
+    private readonly everyOpenCallbacks = new Set<() => void>()
+
+    private readonly everyCloseCallbacks = new Set<() => void>()
+
+    private reconnectFailedCallbacks = new Set<() => void>()
+
     private pendingDisconnect: ReturnType<typeof setTimeout> | null = null
+
+    private reconnectUrl: string | null = null
+
+    private reconnectAttempts = 0
+
+    private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+
+    private intentionalClose = false
+
+    private isOffline = false
 
     private static async decodeMessageData(data: MessageEvent["data"]): Promise<string | null> {
         if (typeof data === "string") {
@@ -49,6 +65,7 @@ export default class WebSocketService {
      * @param url The URL of the target WebSocket server to connect to.
      */
     public connect(url: string): void {
+        this.intentionalClose = false
         // Cancel any deferred disconnect so StrictMode's immediate re-mount doesn't drop the socket.
         if (this.pendingDisconnect !== null) {
             clearTimeout(this.pendingDisconnect)
@@ -70,6 +87,8 @@ export default class WebSocketService {
             this.socket.close()
         }
 
+        this.reconnectUrl = url
+
         const ws = new WebSocket(url)
         this.socket = ws
 
@@ -77,9 +96,12 @@ export default class WebSocketService {
 
         ws.onopen = () => {
             hasOpened = true
+            this.isOffline = false
+            this.reconnectAttempts = 0
             console.log("Connected")
             this.openCallbacks.forEach((cb) => cb())
             this.openCallbacks.clear()
+            this.everyOpenCallbacks.forEach((cb) => cb())
         }
 
         ws.onmessage = async (event) => {
@@ -113,13 +135,25 @@ export default class WebSocketService {
             }
         }
 
-        ws.onclose = () => {
-            if (!hasOpened) {
+        ws.onclose = (e) => {
+            if (hasOpened) {
+                this.everyCloseCallbacks.forEach((cb) => cb())
+            } else {
                 this.closeWithoutOpenCallbacks.forEach((cb) => cb())
                 this.closeWithoutOpenCallbacks.clear()
             }
             this.cleanup(ws)
+            if (!this.intentionalClose) {
+                if (e.wasClean) {
+                    console.error("Server terminated websocket connection")
+                } else {
+                    this.scheduleReconnect()
+                }
+            }
         }
+
+        globalThis.addEventListener("offline", this.offline)
+        globalThis.addEventListener("online", this.online)
 
         ws.onerror = (error) => {
             console.error("WebSocket error:", error)
@@ -129,18 +163,58 @@ export default class WebSocketService {
     /**
      * Schedules a disconnect on the next event-loop tick.
      * The pending close is cancelled if `connect` is called first (React 18 StrictMode pattern).
-     * If the socket does not exist or is already closed, it does nothing.
+     * Cancels any pending auto-reconnect so the connection stays closed.
      */
     public disconnect(): void {
+        if (this.reconnectTimer !== null) {
+            clearTimeout(this.reconnectTimer)
+            this.reconnectTimer = null
+        }
         if (!this.socket) return
         if (this.pendingDisconnect !== null) {
             clearTimeout(this.pendingDisconnect)
         }
         this.pendingDisconnect = setTimeout(() => {
+            globalThis.removeEventListener("offline", this.offline)
+            globalThis.removeEventListener("online", this.online)
+            this.reconnectUrl = null
+            this.intentionalClose = true
             this.pendingDisconnect = null
             if (!this.socket) return
             this.socket.close()
         }, 0)
+    }
+
+    private scheduleReconnect(): void {
+        if (!this.reconnectUrl || this.reconnectAttempts >= 5) {
+            this.reconnectFailedCallbacks.forEach((cb) => cb())
+            this.reconnectFailedCallbacks.clear()
+            return
+        }
+        let delay = Math.min(1000 * 2 ** this.reconnectAttempts, 16000)
+        if (this.reconnectAttempts === 0) delay = 10
+        this.reconnectAttempts += 1
+        console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/5)`)
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null
+            if (this.reconnectUrl) this.connect(this.reconnectUrl)
+        }, delay)
+    }
+
+    private readonly offline = () => {
+        if (!this.isOffline) {
+            this.isOffline = true
+            // chrome uses a significant amount of cpu if a websocket is connected while being offline
+            if (this.socket) this.socket.close()
+            this.everyCloseCallbacks.forEach((cb) => cb())
+        }
+    }
+
+    private readonly online = () => {
+        if (this.isOffline) {
+            this.isOffline = false
+            this.scheduleReconnect()
+        }
     }
 
     /**
@@ -185,6 +259,45 @@ export default class WebSocketService {
         this.closeWithoutOpenCallbacks.add(callback)
         return () => {
             this.closeWithoutOpenCallbacks.delete(callback)
+        }
+    }
+
+    /**
+     * Registers a callback to fire once if the connection or reconnection finally fails
+     * (i.e., the connection is constantly refused or the session code was not found).
+     * @returns An unsubscribe function.
+     */
+    public onReconnectFail(callback: () => void): () => void {
+        this.reconnectFailedCallbacks.add(callback)
+        return () => {
+            this.reconnectFailedCallbacks.delete(callback)
+        }
+    }
+
+    /**
+     * Registers a persistent callback that fires every time the socket opens (including the first time).
+     * Fires immediately if the socket is already open.
+     * @returns An unsubscribe function.
+     */
+    public onEveryConnect(callback: () => void): () => void {
+        if (this.socket?.readyState === WebSocket.OPEN) {
+            callback()
+        }
+        this.everyOpenCallbacks.add(callback)
+        return () => {
+            this.everyOpenCallbacks.delete(callback)
+        }
+    }
+
+    /**
+     * Registers a persistent callback that fires every time an established connection drops unexpectedly.
+     * Does not fire on intentional disconnects (via `disconnect()`).
+     * @returns An unsubscribe function.
+     */
+    public onEveryDisconnect(callback: () => void): () => void {
+        this.everyCloseCallbacks.add(callback)
+        return () => {
+            this.everyCloseCallbacks.delete(callback)
         }
     }
 

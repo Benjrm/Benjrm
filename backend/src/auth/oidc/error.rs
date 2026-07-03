@@ -6,6 +6,7 @@ use {
     std::fmt,
 };
 
+/// Error type for OIDC authentication errors
 #[derive(Debug)]
 pub(super) enum Error {
     MissingState,
@@ -39,6 +40,7 @@ impl fmt::Display for Error {
 }
 
 impl ResponseError for Error {
+    /// Generate an [`HttpResponse`] for the error
     fn error_response(&self) -> HttpResponse {
         match self {
             Error::MissingState

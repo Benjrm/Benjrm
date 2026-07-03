@@ -1,13 +1,15 @@
-import { StrictMode } from "react"
+import { StrictMode, Suspense } from "react"
 import { createRoot } from "react-dom/client"
 import { BrowserRouter } from "react-router"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import ThemeProvider from "./context/ThemeProvider"
+import AudioProvider from "./context/AudioProvider"
 import "./index.css"
 import App from "./App.tsx"
 import { WebSocketContext, websocketService } from "@/api/websocket"
 import { ApiError } from "@/api/utils"
+import "./i18n"
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -38,7 +40,11 @@ root.render(
             <WebSocketContext value={websocketService}>
                 <BrowserRouter>
                     <ThemeProvider defaultTheme="auto" storageKey="theme">
-                        <App />
+                        <AudioProvider>
+                            <Suspense fallback={<div>Loading...</div>}>
+                                <App />
+                            </Suspense>
+                        </AudioProvider>
                     </ThemeProvider>
                 </BrowserRouter>
             </WebSocketContext>

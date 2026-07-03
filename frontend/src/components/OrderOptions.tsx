@@ -13,6 +13,7 @@ import {
 import type { DragEndEvent } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
+import { useTranslation } from "react-i18next"
 import SortableOrderOption from "@/components/SortableOrderOption"
 import { Button } from "@/shadcn/components/ui/button"
 import { restrictToVerticalAxis, restrictToParentElement } from "@/pages/quiz/quizUtils"
@@ -25,6 +26,7 @@ interface OrderOptionsProps {
     onDeleteOption: (index: number) => void
     onReorderOptions: (activeId: string, overId: string) => void
     onAddOption: () => void
+    isMdEditor: boolean
 }
 
 export default function OrderOptions({
@@ -34,7 +36,9 @@ export default function OrderOptions({
     onDeleteOption,
     onReorderOptions,
     onAddOption,
+    isMdEditor,
 }: OrderOptionsProps): JSX.Element {
+    const { t } = useTranslation()
     const sensors = useSensors(
         useSensor(TouchSensor, {
             activationConstraint: {
@@ -79,8 +83,9 @@ export default function OrderOptions({
                                 error={errorMissingAnswers.includes(index)}
                                 id={option.id}
                                 index={index}
+                                isMdEditor={isMdEditor}
                                 onChange={(value) => onChange(index, value)}
-                                placeholder={`Item ${index + 1}`}
+                                placeholder={`${t("quizEditor.options.item")} ${index + 1}`}
                                 value={(option as { answer?: string }).answer ?? ""}
                                 onDelete={
                                     options.length > 2 ? () => onDeleteOption(index) : undefined
@@ -98,7 +103,7 @@ export default function OrderOptions({
                 variant="ghost"
             >
                 <Plus className="h-4 w-4" />
-                Add Item
+                {t("quizEditor.options.addItem")}
             </Button>
         </div>
     )

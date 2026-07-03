@@ -19,6 +19,7 @@ use {
 };
 
 impl QuizModel {
+    /// Creates a new quiz
     pub async fn create(
         conn: &impl ConnectionTrait,
         user: Uuid,
@@ -39,6 +40,7 @@ impl QuizModel {
         Ok(quiz)
     }
 
+    /// Gets a specific quiz by [`Uuid`].
     pub async fn get(conn: &impl ConnectionTrait, user: Uuid, id: Uuid) -> Result<Self, QuizError> {
         let quiz = QuizEntity::find_by_id(id).one(conn).await?;
 
@@ -50,6 +52,7 @@ impl QuizModel {
         Ok(quiz)
     }
 
+    /// Gets all quizzes for a given user
     pub async fn get_many(
         conn: &impl ConnectionTrait,
         user: Uuid,
@@ -65,6 +68,7 @@ impl QuizModel {
         Ok(quizzes)
     }
 
+    /// Updates a quiz while also updating the [`modified`](QuizModel::modified) field.
     pub async fn update(
         self,
         conn: &impl ConnectionTrait,
@@ -81,6 +85,7 @@ impl QuizModel {
         Ok(model)
     }
 
+    /// Deletes a quiz with all its questions in one database-transaction.
     pub async fn delete(self, conn: &impl TransactionTrait) -> Result<(), Error> {
         let txn = conn.begin().await.map_err(QuizError::Database)?;
 
@@ -112,6 +117,7 @@ impl QuizModel {
         Ok(())
     }
 
+    /// Updates the modified date of a quiz.
     pub async fn update_modified(
         self,
         date: DateTime<Utc>,
@@ -124,6 +130,7 @@ impl QuizModel {
 }
 
 impl Quiz<Question> {
+    /// Gets a quiz with all its questions.
     pub async fn get(
         conn: &impl ConnectionTrait,
         user: Uuid,

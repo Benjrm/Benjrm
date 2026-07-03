@@ -11,6 +11,10 @@ export interface ClientEvents {
         name: string
         emoji: string | null
     }
+    reconnect: {
+        id: string
+        secret: string
+    }
     answerQuestion: {
         answer: string[]
     }
@@ -19,9 +23,7 @@ export interface ClientEvents {
     showQuestion: {
         id: string
     }
-    setQuiz: {
-        quiz: string
-    }
+    showPodium: object
     kickPlayer: {
         id: string
     }

@@ -3,11 +3,13 @@
 
 import type { JSX } from "react"
 import { useState, useEffect, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import {
     DndContext,
     closestCenter,
     KeyboardSensor,
     PointerSensor,
+    TouchSensor,
     useSensor,
     useSensors,
 } from "@dnd-kit/core"
@@ -20,9 +22,13 @@ import {
     useSortable,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { Button } from "@/shadcn/components/ui/button"
 import TimerBar from "@/components/TimerBar"
 import QuestionHeader from "@/components/QuestionHeader"
+import QuestionContainer from "@/components/QuestionContainer"
+import useQuestionTimer from "@/hooks/useQuestionTimer"
 import { restrictToVerticalAxis, restrictToParentElement } from "@/pages/quiz/quizUtils"
 
 interface Option {
@@ -32,8 +38,11 @@ interface Option {
 
 export interface OrderQuestionContentProps {
     currentQuestionIndex?: number
+    initialItemOrder?: string[]
+    initialHasAnswered?: boolean
     isHost?: boolean
     onNextQuestion?: () => void
+    onItemOrderChange?: (ids: string[]) => void
     options?: Option[]
     playerName?: string
     playerEmoji?: string
@@ -67,7 +76,15 @@ function SortableItem({ id, text }: { id: string; text: string }): JSX.Element {
                     : "border-border bg-muted/30 hover:bg-muted/60"
             }`}
         >
-            <span>{text}</span>
+            <div className="[&_p]:m-0">
+                <ReactMarkdown
+                    unwrapDisallowed
+                    allowedElements={["p", "strong", "em", "code", "del", "s"]}
+                    remarkPlugins={[remarkGfm]}
+                >
+                    {text}
+                </ReactMarkdown>
+            </div>
             <span className="text-muted-foreground text-xl">≡</span>
         </div>
     )
@@ -75,36 +92,32 @@ function SortableItem({ id, text }: { id: string; text: string }): JSX.Element {
 
 export default function OrderQuestionContent({
     currentQuestionIndex = 0,
+    initialItemOrder,
+    initialHasAnswered = false,
     isHost = false,
     onNextQuestion,
+    onItemOrderChange,
     options = [],
     playerName,
     playerEmoji,
-    questionText = "Ordne die Elemente in die richtige Reihenfolge",
+    questionText,
     secondsToAnswer = null,
     questionExpiresAt = null,
     totalQuestions = 0,
     onSendAnswer,
 }: OrderQuestionContentProps): JSX.Element {
-    const [items, setItems] = useState<Option[]>(options)
-    const [timeLeft, setTimeLeft] = useState<number | null>(() => {
-        if (questionExpiresAt)
-            return Math.max(0, Math.ceil((questionExpiresAt - Date.now()) / 1000))
-        return secondsToAnswer
+    const { t } = useTranslation()
+    const [items, setItems] = useState<Option[]>(() => {
+        if (initialItemOrder && initialItemOrder.length > 0) {
+            const ordered = initialItemOrder
+                .map((id) => options.find((o) => o.id === id))
+                .filter((o): o is Option => o !== undefined)
+            return ordered.length === options.length ? ordered : options
+        }
+        return options
     })
-    const [hasAnswered, setHasAnswered] = useState(false)
-
-    useEffect(() => {
-        const expiresAt =
-            questionExpiresAt ?? (secondsToAnswer ? Date.now() + secondsToAnswer * 1000 : null)
-        if (expiresAt === null) return undefined
-        const timer = setInterval(() => {
-            const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
-            setTimeLeft(remaining)
-            if (remaining <= 0) clearInterval(timer)
-        }, 500)
-        return () => clearInterval(timer)
-    }, [questionExpiresAt, secondsToAnswer])
+    const [hasAnswered, setHasAnswered] = useState(initialHasAnswered)
+    const timeLeft = useQuestionTimer(questionExpiresAt ?? null, secondsToAnswer ?? null)
 
     // Automatisches Senden, wenn die Zeit abläuft
     useEffect(() => {
@@ -119,9 +132,15 @@ export default function OrderQuestionContent({
 
     // Drag-and-Drop Sensoren
     const sensors = useSensors(
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
+        }),
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 5, // Erlaubt Klicks (Maus/Touch) ohne direkt zu draggen
+                distance: 5,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -138,7 +157,9 @@ export default function OrderQuestionContent({
             setItems((prevItems) => {
                 const oldIndex = prevItems.findIndex((item) => item.id === active.id)
                 const newIndex = prevItems.findIndex((item) => item.id === over.id)
-                return arrayMove(prevItems, oldIndex, newIndex)
+                const next = arrayMove(prevItems, oldIndex, newIndex)
+                onItemOrderChange?.(next.map((i) => i.id))
+                return next
             })
         }
     }
@@ -159,30 +180,33 @@ export default function OrderQuestionContent({
                 <QuestionHeader
                     currentQuestion={currentQuestionIndex + 1}
                     playerEmoji={playerEmoji}
-                    playerName={playerName ?? (isHost ? "Host" : "Player")}
                     remainingTime={timeLeft}
                     totalQuestions={totalQuestions}
+                    playerName={
+                        playerName ?? (isHost ? t("game.player.host") : t("game.player.player"))
+                    }
                 />
 
                 <TimerBar
                     className="mb-6"
+                    fastAnimation={false}
                     timeLeft={timeLeft}
                     totalSeconds={secondsToAnswer ?? null}
                 />
 
-                <h2 className="mb-8 text-center text-2xl font-bold sm:text-3xl">{questionText}</h2>
+                <QuestionContainer question={questionText} />
 
                 {/* Ansicht für den Host */}
                 {isHost ? (
                     <div className="flex flex-col items-center gap-6 py-12">
                         <p className="text-muted-foreground text-center text-lg">
-                            Players are ordering the items...
+                            {t("game.question.playersReading")}
                         </p>
                         <Button
                             className="bg-[#00D4E8] px-8 py-6 text-lg font-bold text-black hover:bg-[#00BDD0]"
                             onClick={onNextQuestion}
                         >
-                            Next / Show Results
+                            {t("game.question.skipNext")}
                         </Button>
                     </div>
                 ) : (
@@ -214,7 +238,7 @@ export default function OrderQuestionContent({
                             disabled={hasAnswered}
                             onClick={handleSend}
                         >
-                            {hasAnswered ? "Answer sent!" : "Submit Order"}
+                            {hasAnswered ? t("game.answer.sent") : t("game.answer.submitOrder")}
                         </Button>
                     </div>
                 )}

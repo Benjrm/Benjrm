@@ -2,6 +2,7 @@
 
 import type { JSX } from "react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Input } from "@/shadcn/components/ui/input"
 import { Button } from "@/shadcn/components/ui/button"
 
@@ -12,6 +13,7 @@ interface GamePinFormProps {
 }
 
 export default function GamePinForm({ onJoin, isPending, error }: GamePinFormProps): JSX.Element {
+    const { t } = useTranslation()
     const [digits, setDigits] = useState("")
 
     const displayCode = digits.length > 4 ? `${digits.slice(0, 4)}-${digits.slice(4)}` : digits
@@ -25,13 +27,13 @@ export default function GamePinForm({ onJoin, isPending, error }: GamePinFormPro
         <div className="flex flex-col gap-3">
             <div className="bg-muted/50 border-border flex flex-col items-center gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-sm sm:flex-row sm:p-8">
                 <Input
-                    aria-label="Enter Game PIN"
+                    aria-label={t("landing.gamePinAriaLabel")}
                     className="bg-background border-border placeholder:text-muted-foreground/70 h-12 w-full text-center text-lg font-bold tracking-widest transition-all focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#00F2FF] sm:h-14 sm:text-xl"
                     disabled={isPending}
                     inputMode="numeric"
                     onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 8))}
                     onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-                    placeholder="ENTER GAME PIN"
+                    placeholder={t("landing.gamePinPlaceholder")}
                     type="text"
                     value={displayCode}
                 />
@@ -41,7 +43,7 @@ export default function GamePinForm({ onJoin, isPending, error }: GamePinFormPro
                     onClick={() => handleJoin()}
                     size="lg"
                 >
-                    {isPending ? "Checking…" : "PLAY"}
+                    {isPending ? t("landing.checking") : t("landing.playButton")}
                 </Button>
             </div>
             {error ? <p className="text-center text-sm text-red-500">{error}</p> : null}

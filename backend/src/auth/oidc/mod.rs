@@ -11,15 +11,23 @@ mod handler;
 
 pub use handler::init;
 
+/// Struct to hold the OIDC client and related URLs
 pub struct Oidc {
     client: OAuth2Client,
     public_url: Url,
     public_idp_url: Option<Url>,
     issuer_url: Url,
     logout_url: Url,
+    account_url: Option<String>,
 }
 
 impl Oidc {
+    /// Create a new instance of the Oidc struct from environment variables.
+    ///
+    /// This function reads the necessary configuration from environment variables.
+    /// It fetches the OIDC well-known configuration from the issuer URL and constructs the OIDC client accordingly.
+    /// If available, missing environment variables will be filled in using the well-known configuration.
+    /// If any required environment variable is missing or can't be discovered through the well-known configuration, it will panic with an appropriate error message.
     pub async fn from_env() -> Self {
         let issuer_url = Url::parse(&env_var("OIDC_ISSUER_URL")).expect("Parse OIDC_ISSUER_URL");
 
@@ -52,6 +60,8 @@ impl Oidc {
         let logout_url = Url::parse(&logout_url).expect("LOGOUT_URL");
         let logout_url = Self::to_public_idp_url_inner(logout_url, &public_idp_url);
 
+        let account_url = env::var("OIDC_ACCOUNT_URL").ok();
+
         let config = OAuth2Config::new(
             env_var("OIDC_CLIENT_ID"),
             env_var("OIDC_CLIENT_SECRET"),
@@ -76,9 +86,11 @@ impl Oidc {
             public_idp_url,
             issuer_url: public_issuer_url,
             logout_url,
+            account_url,
         }
     }
 
+    /// Convert a given URL to its public equivalent based on the provided public IDP URL.
     fn to_public_idp_url_inner(mut url: Url, idp_url: &Option<Url>) -> Url {
         if let Some(public) = idp_url {
             let _ = url.set_scheme(public.scheme());
@@ -88,11 +100,19 @@ impl Oidc {
         url
     }
 
+    /// Convert a given URL to its public equivalent based on the OIDC instance's public IDP URL.
     fn to_public_idp_url(&self, url: Url) -> Url {
         Self::to_public_idp_url_inner(url, &self.public_idp_url)
     }
+
+    /// Gets the url where a user can login to their identity provider to manage their account.
+    /// This is typically needed to allow users to change their password or other account settings.
+    pub fn account_url(&self) -> Option<String> {
+        self.account_url.clone()
+    }
 }
 
+/// Struct to hold the OIDC well-known configuration
 #[derive(Debug, Clone, Deserialize)]
 struct WellKnown {
     authorization_endpoint: Url,
@@ -102,6 +122,7 @@ struct WellKnown {
 }
 
 impl WellKnown {
+    /// Fetch the OIDC well-known configuration from the given issuer URL.
     async fn get(issuer_url: Url) -> Option<Self> {
         let mut well_known_url = issuer_url;
 

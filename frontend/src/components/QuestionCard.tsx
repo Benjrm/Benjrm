@@ -3,7 +3,7 @@ import { CSS } from "@dnd-kit/utilities"
 import { Building2, Check, Edit2, GripVertical, Target, Trash2, Users, X, Zap } from "lucide-react"
 import type { JSX } from "react"
 import { useState } from "react"
-
+import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 
 interface QuestionCardProps {
@@ -32,6 +32,7 @@ export default function QuestionCard({
     onEdit,
     question,
 }: QuestionCardProps): JSX.Element {
+    const { t } = useTranslation()
     const [editData, setEditData] = useState({
         description: question.description,
         title: question.title,
@@ -75,7 +76,7 @@ export default function QuestionCard({
                     <div
                         {...attributes}
                         {...listeners}
-                        aria-label="Drag Handle"
+                        aria-label={t("quizEditor.sidebar.dragHandle")}
                         className="text-muted-foreground/40 hover:text-foreground flex cursor-grab items-center self-stretch pr-1 transition-colors active:cursor-grabbing"
                     >
                         <GripVertical className="h-5 w-5" />
@@ -99,7 +100,7 @@ export default function QuestionCard({
                         <div className="animate-in fade-in slide-in-from-top-1 mt-2 space-y-3">
                             <input
                                 className="border-input text-foreground placeholder:text-muted-foreground w-full rounded-md border bg-transparent px-3 py-1.5 font-bold focus:ring-1 focus:ring-[#00F2FF] focus:outline-none"
-                                placeholder="Question Title"
+                                placeholder={t("quizEditor.sidebar.questionTitle")}
                                 type="text"
                                 value={editData.title}
                                 onChange={(e) =>
@@ -108,7 +109,7 @@ export default function QuestionCard({
                             />
                             <textarea
                                 className="border-input text-foreground placeholder:text-muted-foreground w-full rounded-md border bg-transparent px-3 py-1.5 text-sm focus:ring-1 focus:ring-[#00F2FF] focus:outline-none"
-                                placeholder="Question Description"
+                                placeholder={t("quizEditor.sidebar.questionDescription")}
                                 rows={2}
                                 value={editData.description}
                                 onChange={(e) =>
@@ -118,7 +119,7 @@ export default function QuestionCard({
 
                             <div className="border-border/50 mt-3 border-t pt-3">
                                 <p className="text-muted-foreground mb-2 text-[10px] font-bold uppercase">
-                                    Answer Options
+                                    {t("quizEditor.sidebar.answerOptions")}
                                 </p>
                                 <div className="grid grid-cols-1 gap-2">
                                     {[1, 2].map((i) => (
@@ -127,8 +128,11 @@ export default function QuestionCard({
                                             <input
                                                 disabled
                                                 className="text-muted-foreground w-full bg-transparent text-sm italic outline-none"
-                                                placeholder={`Option ${i} placeholder...`}
                                                 type="text"
+                                                placeholder={t(
+                                                    "quizEditor.sidebar.optionPlaceholder",
+                                                    { i }
+                                                )}
                                             />
                                         </div>
                                     ))}
@@ -158,7 +162,7 @@ export default function QuestionCard({
                                 className="text-[#00F2FF] hover:bg-[#00F2FF]/10 hover:text-[#00F2FF]"
                                 onClick={handleToggleEdit}
                                 size="icon-sm"
-                                title="Save changes"
+                                title={t("quiz.form.saveChangesButton")}
                                 type="button"
                                 variant="ghost"
                             >
@@ -168,7 +172,7 @@ export default function QuestionCard({
                                 className="text-muted-foreground hover:text-foreground"
                                 onClick={handleToggleEdit}
                                 size="icon-sm"
-                                title="Cancel"
+                                title={t("common.buttons.cancel")}
                                 type="button"
                                 variant="ghost"
                             >
@@ -181,7 +185,7 @@ export default function QuestionCard({
                                 className="text-muted-foreground hover:text-foreground"
                                 onClick={handleToggleEdit}
                                 size="icon-sm"
-                                title="Edit question"
+                                title={t("quizEditor.sidebar.editQuestion")}
                                 type="button"
                                 variant="ghost"
                             >
@@ -191,7 +195,7 @@ export default function QuestionCard({
                                 className="text-muted-foreground hover:bg-[#ff4949]/10 hover:text-[#ff4949]"
                                 onClick={() => onDelete(question.id)}
                                 size="icon-sm"
-                                title="Delete question"
+                                title={t("quizEditor.sidebar.deleteQuestion")}
                                 type="button"
                                 variant="ghost"
                             >

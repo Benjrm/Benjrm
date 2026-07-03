@@ -43,6 +43,8 @@ channels:
         $ref: "#/components/messages/renamePlayer"
       removePlayer:
         $ref: "#/components/messages/removePlayer"
+      setPlayers:
+        $ref: "#/components/messages/setPlayers"
       kickPlayer:
         $ref: "#/components/messages/kickPlayer"
       start:
@@ -55,6 +57,12 @@ channels:
         $ref: "#/components/messages/displayQuestion"
       displayLeaderboard:
         $ref: "#/components/messages/displayLeaderboard"
+      showStatistics:
+        $ref: "#/components/messages/showStatistics"
+      showPodium:
+        $ref: "#/components/messages/showPodium"
+      displayPodium:
+        $ref: "#/components/messages/displayPodium"
       endGame:
         $ref: "#/components/messages/endGame"
     tags:
@@ -88,6 +96,10 @@ channels:
         $ref: "#/components/messages/questionResult"
       displayLeaderboard:
         $ref: "#/components/messages/displayLeaderboard"
+      connectResponse:
+        $ref: "#/components/messages/connectResponse"
+      reconnect:
+        $ref: "#/components/messages/reconnect"
     tags:
       - name: Sessions
 
@@ -191,6 +203,16 @@ operations:
       $ref: "#/channels/sessionHost"
     messages:
       - $ref: "#/channels/sessionHost/messages/removePlayer"
+    tags:
+      - name: Sessions
+
+  sendSetPlayers:
+    description: "Send setPlayers command"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/setPlayers"
     tags:
       - name: Sessions
   
@@ -324,6 +346,36 @@ operations:
     tags:
       - name: Leaderboard
   
+  sendShowStatistics:
+    description: "Send showStatistics command to Host"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/showStatistics"
+    tags:
+      - name: Questions
+  
+  receiveShowPodium:
+    description: "Receive showPodium command from host"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/showPodium"
+    tags:
+      - name: Sessions
+  
+  sendDisplayPodium:
+    description: "Send displayPodium command to host"
+    action: send
+    channel:
+      $ref: "#/channels/sessionHost"
+    messages:
+      - $ref: "#/channels/sessionHost/messages/displayPodium"
+    tags:
+      - name: Sessions
+  
   receiveEndGame:
     description: "Receive endGame command from host"
     action: receive
@@ -331,6 +383,27 @@ operations:
       $ref: "#/channels/sessionHost"
     messages:
       - $ref: "#/channels/sessionHost/messages/endGame"
+    tags:
+      - name: Sessions
+
+  sendConnectResponse:
+    description: "Send user details to Player"
+    action: send
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/connectResponse"
+    tags:
+      - name: Sessions
+      - name: WebSocket
+  
+  receiveReconnect:
+    description: "Receive reconnect command from Player"
+    action: receive
+    channel:
+      $ref: "#/channels/sessionPlayer"
+    messages:
+      - $ref: "#/channels/sessionPlayer/messages/reconnect"
     tags:
       - name: Sessions
 
@@ -406,16 +479,7 @@ components:
             type: string
             const: "addPlayer"
           payload:
-            type: object
-            properties:
-              id:
-                type: string
-                format: uuid
-              name:
-                type: string
-              emoji:
-                type: string
-                example: "😀"
+            $ref: "#/components/schemas/Player"
     
     renamePlayer:
       payload:
@@ -425,16 +489,7 @@ components:
             type: string
             const: "renamePlayer"
           payload:
-            type: object
-            properties:
-              id:
-                type: string
-                format: uuid
-              name:
-                type: string
-              emoji:
-                type: string
-                example: "😀"
+            $ref: "#/components/schemas/Player"
     
     removePlayer:
       payload:
@@ -449,6 +504,21 @@ components:
               id:
                 type: string
                 format: uuid
+
+    setPlayers:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "setPlayers"
+          payload:
+            type: object
+            properties:
+              players:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Player"
     
     kickPlayer:
       payload:
@@ -546,6 +616,10 @@ components:
                     type: integer
                     format: uint32
                     nullable: true
+                  index:
+                    type: integer
+                  totalQuestions:
+                    type: integer
               - $ref: "#/components/schemas/DisplayQuestionOptions"
     
     answerQuestion:
@@ -608,6 +682,35 @@ components:
                 type: boolean
                 description: "Whether this leaderboard is the final quiz result"
     
+    showStatistics:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "showStatistics"
+          payload:
+            oneOf:
+              - $ref: "#/components/schemas/SingleChoiceStatistics"
+              - $ref: "#/components/schemas/MultipleChoiceStatistics"
+              - $ref: "#/components/schemas/OrderStatistics"
+    
+    showPodium:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "showPodium"
+    
+    displayPodium:
+      payload:
+        type: object
+        properties:
+          command:
+            type: string
+            const: "displayPodium"
+    
     endGame:
       payload:
         type: object
@@ -615,8 +718,62 @@ components:
           command:
             type: string
             const: "endGame"
+
+    connectResponse:
+      payload:
+        type: object
+        properties:
+          id:
+            type: number
+          command:
+            type: string
+            const: "connectResponse"
+          payload:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              secret:
+                type: string
+              name:
+                type: string
+              emoji:
+                type: string
+                nullable: true
+                example: "😀"
+    
+    reconnect:
+      payload:
+        type: object
+        properties:
+          id:
+            type: number
+          command:
+            type: string
+            const: "reconnect"
+          payload:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              secret:
+                type: string
   
   schemas:
+    Player:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        emoji:
+          type: string
+          example: "😀"
+    
     DisplayQuestionOptions:
       oneOf:
         - $ref: "#/components/schemas/DisplaySlideOptions"
@@ -710,3 +867,64 @@ components:
           type: integer
           format: uint32
           description: "Points received for the current question"
+
+    SingleChoiceStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          const: "SINGLE_CHOICE"
+        answers:
+          type: integer
+        answerStatistic:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnswerStatistic"
+          nullable: true
+
+    MultipleChoiceStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          const: "MULTIPLE_CHOICE"
+        answers:
+          type: integer
+        answerStatistic:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnswerStatistic"
+          nullable: true
+
+    OrderStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          const: "ORDER"
+        answers:
+          type: integer
+        correct:
+          type: array
+          items:
+            type: string
+            format: uuid
+        answerStatistic:
+          description: >
+            Array that maps the index to the count of players.
+            The index represents the count of correct option relationships (two options in the correct order)
+          type: array
+          items:
+            type: integer
+          nullable: true
+    
+    AnswerStatistic:
+      type: object
+      properties:
+        option:
+          type: string
+          format: uuid
+        votes:
+          type: integer
+        correct:
+          type: boolean
