@@ -42,6 +42,7 @@ impl LinkedItem for QuestionModel {
 }
 
 impl QuizModel {
+    /// Creates a new question for the quiz, inserting it into the database and returning the created question.
     pub async fn create_question(
         self,
         conn: &impl TransactionTrait,
@@ -92,6 +93,7 @@ impl QuizModel {
         })
     }
 
+    /// Retrieves a question by its id, ensuring that it belongs to the current quiz.
     pub async fn get_question(
         &self,
         conn: &impl ConnectionTrait,
@@ -110,6 +112,9 @@ impl QuizModel {
         }
     }
 
+    /// Retrieves all questions for the quiz, optionally filtering by hidden status.
+    ///
+    /// Questions are returned in linked order (prev/next pointers).
     pub async fn get_questions(
         &self,
         conn: &impl ConnectionTrait,
@@ -128,6 +133,11 @@ impl QuizModel {
 }
 
 impl QuestionModel {
+    /// Inserts answer options for a newly created question.
+    ///
+    /// This function validates:
+    /// - minimum number of answers
+    /// - at least one correct answer (if required)
     async fn insert_options<Model: OptionModel, New: NewOption<Model>>(
         &self,
         new_options: Vec<New>,
@@ -166,6 +176,9 @@ impl QuestionModel {
         Ok(option_models)
     }
 
+    /// Retrieves the answer options for the question in correct order.
+    ///
+    /// **Error:** Returns [`CorruptedAnswerList`](QuestionError::CorruptedAnswerList) if the answer options are not linked correctly in the database.
     pub async fn get_answers(self, conn: &impl ConnectionTrait) -> Result<Question, QuestionError> {
         let options = match self.r#type {
             QuestionType::Slide => QuestionOptions::Slide,
@@ -193,6 +206,7 @@ impl QuestionModel {
         })
     }
 
+    /// Deletes all answer options for the question, unlinking them first to avoid leaving dangling references in the database.
     pub async fn delete_answers(&self, txn: &DatabaseTransaction) -> Result<(), QuestionError> {
         match self.r#type {
             QuestionType::Slide => (),
@@ -214,6 +228,7 @@ impl QuestionModel {
         Ok(())
     }
 
+    /// Deletes the question and all its answer options, unlinking them first to avoid leaving dangling references in the database.
     pub async fn delete(
         self,
         quiz: QuizModel,
@@ -230,6 +245,7 @@ impl QuestionModel {
 }
 
 impl Question {
+    /// Updates the question and its answer options, ensuring that the question remains linked correctly in the database and that the answer options are valid.
     pub async fn update(
         mut self,
         quiz: QuizModel,

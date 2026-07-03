@@ -15,6 +15,12 @@ use {
     uuid::Uuid,
 };
 
+/// Upgrades the host connection to a WebSocket.
+///
+/// After the connection is established, the host is registered with the game.
+///
+/// If the host disconnects, the session remains active for up to 15 minutes to allow the host to reconnect.
+/// If no reconnection occurs within that period, the session is closed automatically.
 async fn get_host_ws(
     req: HttpRequest,
     body: web::Payload,
@@ -46,7 +52,9 @@ async fn get_host_ws(
     Ok(res)
 }
 
-/// Closes the session if the host doesn't reconnect within 15 minutes.
+/// Waits 15 minutes before checking whether the disconnected host channel has been replaced.
+///
+/// If the host has not reconnected, the game session is removed from the session manager and all remaining connections are closed.
 async fn remove_host_ws(
     app_data: Arc<AppData>,
     session: Arc<Mutex<GameSession>>,
@@ -67,6 +75,14 @@ async fn remove_host_ws(
     }
 }
 
+/// Upgrades a player connection to a WebSocket.
+///
+/// Player connections are only accepted while the session is in waiting state.
+/// The connection enters a temporary "joining" state where it waits for a valid [`SetName`](crate::game_session::PlayerCommand::SetName).
+/// While in "joining" state, the [`Reconnect`](crate::game_session::PlayerCommand::Reconnect) command is also allowed.
+/// Once the player successfully joins, the connection is promoted to a normal player channel.
+///
+/// Returns an error if the game has already started.
 async fn get_player_ws(
     req: HttpRequest,
     body: web::Payload,
@@ -102,7 +118,9 @@ async fn get_player_ws(
     Ok(res)
 }
 
-/// Immediately removes the player from the session.
+/// Waits 15 minutes before checking whether the disconnected player channel has been replaced.
+///
+/// If the player has not reconnected, the player gets removed from the session while notifying the host.
 pub(super) async fn remove_player_ws(
     _app_data: Arc<AppData>,
     session: Arc<Mutex<GameSession>>,
@@ -123,6 +141,7 @@ pub(super) async fn remove_player_ws(
     }
 }
 
+/// Initializes the WebSocket routes for the game session API.
 pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
     cfg.service(web::resource("/sessions/{code}/ws/host").route(web::get().to(get_host_ws)));
     cfg.service(web::resource("/sessions/{code}/ws/player").route(web::get().to(get_player_ws)));

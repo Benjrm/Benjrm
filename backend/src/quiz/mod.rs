@@ -17,6 +17,7 @@ pub mod entity;
 pub mod test;
 
 impl_err! {
+    /// Error type for quiz errors
     enum QuizError {
         #[error("Quiz not found")]
         NotFound = NOT_FOUND,
@@ -27,6 +28,7 @@ impl_err! {
     }
 }
 
+/// A struct representing the payload for creating a new quiz.
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct NewQuiz {
@@ -36,6 +38,7 @@ pub struct NewQuiz {
     hidden: bool,
 }
 
+/// A struct representing an update to an existing quiz.
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UpdateQuiz {
@@ -57,15 +60,17 @@ impl From<NewQuiz> for UpdateQuiz {
     }
 }
 
+/// This struct holds information to filter a quiz search
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct QuizFilter {
     pub hidden: Option<bool>,
 }
 
+/// A struct to hold a quiz with all its questions
 #[derive(Debug, Serialize)]
-pub struct Quiz<T> {
+pub struct Quiz<Question> {
     #[serde(flatten)]
     pub model: QuizModel,
-    pub questions: Vec<T>,
+    pub questions: Vec<Question>,
 }
