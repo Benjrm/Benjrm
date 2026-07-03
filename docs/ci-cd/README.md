@@ -7,7 +7,7 @@ The [`ci.yaml`](../../.github/workflows/ci.yaml) file serves as the central entr
 This central control of the other workflows is necessary to reduce code duplication and ensure clear execution.
 The pipeline ensures that every code change goes through a standardized set of quality and security checks, which is why it runs as soon as something is pushed to the `main` branch or the `release/**` branch. Creating a version tag (e.g., v1.0.0) as well as opening and modifying a pull request also trigger the pipeline. For better testing, there is also the option to manually trigger it using `workflow_dispatch`.
 
-To save time and resources, all workflows that are currently running for the same branch or tag are terminated. 
+To save time and resources, all workflows that are currently running for the same branch or tag are terminated.
 
 ### Pipeline Structure
 ![An example Image of our CI/CD Pipeline that shows the structure.](image.png)
@@ -79,7 +79,8 @@ To ensure that our API specifications are syntactically correct and that our bac
 Both workflows are only executed when changes are made to the API specifications to save time and resources.
 
 ## Documentation Deployment ([`githubpages.yaml`](../../.github/workflows/githubpages.yaml))
-This workflow deploys our API documentation to GitHub Pages. It runs separately to the main pipeline and is triggered any time changes are pushed to the `main` branch that affect the documentation files in the `docs/` directory.
+This workflow deploys our API documentation to GitHub Pages. It runs separately to the main pipeline.
+Please refer to the API related documentation for more details [here](../../docs/api/README.md) for more details.
 
 The deployment process consists of:
 1. **OpenAPI (REST):** Publish the Swagger UI files and the OpenAPI specification. For more details, see the [OpenAPI Deployment Documentation](../api/README.md#api-documentation-with-swagger-ui-deployed-to-github-pages).
@@ -100,4 +101,4 @@ To run the CI/CD pipeline successfully, several secrets and variables need to be
 * `SONAR_PROJECT_KEY`: The unique project key for our project in SonarQube.
 
 ### Environments
-* **Local `.env` for API Testing:** When the Schemathesis API tests are running, the pipeline automatically copies the `.env.example` file to the `.env` file. This allows that the Docker Compose stack can start up without any real secrets having to be exposed in the pipeline environment.
+* **Local `.env` for API Testing:** When the Schemathesis API tests are running, the pipeline automatically copies the `.env.example` file to the `.env` file. This allows the Docker Compose stack to start up without exposing any real secrets in the pipeline environment.

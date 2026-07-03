@@ -15,7 +15,7 @@
 - Refers to the tooling ecosystem (like Swagger UI, Swagger Editor, and Swagger Codegen)
   that helps you design, visualize, and interact with APIs based on that spec.
 
-#### API documentation with *Swagger UI* deployed to GitHUb Pages
+#### API documentation with *Swagger UI* deployed to GitHub Pages
 
 1. Every API endpoint is documented within the [OpenAPI Specification (OAS)](../openapispec/RestInterface.yaml)
 
@@ -25,13 +25,13 @@
 
 3. Swagger UI displays the OpenAPI Specification (OAS) in an interactive format
    and gets automatically deployed to GitHub Pages when the `main` branch is updated and one or more of the following files are modified:
-- [/docs/openapispec/index.html](../openapispec/index.html)
-- [/docs/openapispec/RestInterface.yaml](../openapispec/RestInterface.yaml)
-- [/docs/openapispec/dist/**](../openapispec/dist)
-- [/docs/asyncapi/WebSockets.yaml](../asyncapi/WebSockets.yaml)
-- [.github/workflows/githubpages.yaml](../../.github/workflows/githubpages.yaml)
-- [docs/githubpages/index.html](../githubpages/index.html)
-- [docs/githubpages/styles.css](../githubpages/styles.css)
+   - [/docs/openapispec/index.html](../openapispec/index.html)
+   - [/docs/openapispec/RestInterface.yaml](../openapispec/RestInterface.yaml)
+   - [/docs/openapispec/dist/**](../openapispec/dist)
+   - [/docs/asyncapi/WebSockets.yaml](../asyncapi/WebSockets.yaml)
+   - [.github/workflows/githubpages.yaml](../../.github/workflows/githubpages.yaml)
+   - [docs/githubpages/index.html](../githubpages/index.html)
+   - [docs/githubpages/styles.css](../githubpages/styles.css)
 
 You can find the currently deployed version of the OpenAPI Specification (OAS) in an interactive format using Swagger UI [here](https://benjrm.github.io/Benjrm/openapispec/index.html)
 
@@ -53,18 +53,18 @@ asyncapi generate fromTemplate WebSockets.yaml @asyncapi/html-template@3.5.6 -o 
 1. The WebSockets used for live sessions are documented in [WebSockets.yaml](../asyncapi/WebSockets.yaml) using AsyncAPI.
 2. AsyncAPI can be previewed in IDEs either by using a plugin to visualize the AsyncAPI in an interactive format directly or by previewing the generated HTML file generated with the command above in the `docs/asyncapi/` directory.
 3. The WebSockets API documentation gets automatically deployed to GitHub Pages when the `main` branch is updated and one or more of the following files are modified:
-- [/docs/openapispec/index.html](../openapispec/index.html)
-- [/docs/openapispec/RestInterface.yaml](../openapispec/RestInterface.yaml)
-- [/docs/openapispec/dist/**](../openapispec/dist)
-- [/docs/asyncapi/WebSockets.yaml](../asyncapi/WebSockets.yaml)
-- [.github/workflows/githubpages.yaml](../../.github/workflows/githubpages.yaml)
-- [docs/githubpages/index.html](../githubpages/index.html)
-- [docs/githubpages/styles.css](../githubpages/styles.css)
+   - [/docs/openapispec/index.html](../openapispec/index.html)
+   - [/docs/openapispec/RestInterface.yaml](../openapispec/RestInterface.yaml)
+   - [/docs/openapispec/dist/**](../openapispec/dist)
+   - [/docs/asyncapi/WebSockets.yaml](../asyncapi/WebSockets.yaml)
+   - [.github/workflows/githubpages.yaml](../../.github/workflows/githubpages.yaml)
+   - [docs/githubpages/index.html](../githubpages/index.html)
+   - [docs/githubpages/styles.css](../githubpages/styles.css)
 
 
 You can find the currently deployed version of the WebSocket documentation in an interactive format using AsyncAPI [here](https://benjrm.github.io/Benjrm/asyncapi/index.html)
 
-> For further details on how the Websocket documentation is deployed to GitHub Pages in an interactive format using
+> For further details on how the WebSocket documentation is deployed to GitHub Pages in an interactive format using
 > AsyncAPI, please refer to the [GitHub Actions workflow file](../../.github/workflows/githubpages.yaml).
 
 ## Spectral
