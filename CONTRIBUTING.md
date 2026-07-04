@@ -16,8 +16,8 @@ Thank you for your interest in contributing to Benjrm! This page describes the w
  
 Detailed setup instructions are available in the respective folders: 
 - [frontend/README.md](frontend/README.md) - Frontend setup and development 
-- [frontend/README.md](frontend/README.md) - Backend setup and development 
-- [database-migrator/README.md](frontend/README.md) - Details on how database migrations work 
+- [backend/README.md](backend/README.md) - Backend setup and development 
+- [database-migrator/README.md](database-migrator/README.md) - Details on how database migrations work 
   - In normal circumstances, you do not need to run the migrator manually. When the backend starts, it automatically applies all pending migrations. 
   - You only need to interact with the migrator directly if you are working on migration-related features. 
  
