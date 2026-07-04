@@ -25,4 +25,3 @@ In the end, we concluded that SonarQube is best suited for our project because i
 ### Pipeline Details
 
 First, we configured the CI/CD pipeline to use a SonarQube server hosted by THM. However, since the THM server began causing constant timeouts after a while, we integrated SonarQube Cloud (SonarCloud), which supports Rust and is free for open-source projects, and now scans both the frontend and the backend.
-

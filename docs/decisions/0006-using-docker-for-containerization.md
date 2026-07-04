@@ -30,4 +30,4 @@ within the team, which would increase the initial complexity and development fri
 
 Although Podman has clear technical advantages in terms of security and architectural simplicity, 
 these benefits are outweighed in this project by Docker’s stronger ecosystem, better tool integration, and lower onboarding cost. 
-Given the focus on fast development, stability, and smooth CI/CD integration for MovieFlix, Docker is therefore the most suitable choice.
+Given the focus on fast development, stability, and smooth CI/CD integration, Docker is therefore the most suitable choice.

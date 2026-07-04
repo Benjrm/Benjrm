@@ -26,4 +26,3 @@ The `i18next-http-backend` plugin enables lazy loading of translation files (JSO
 Compared to react-intl (FormatJS), react-i18next has a lower learning curve and a simpler API while covering all required use cases including pluralization and interpolation.
 
 Compared to LinguiJS, react-i18next does not require a compile step for extracting and compiling message catalogs, which simplifies the development workflow.
-

@@ -31,4 +31,3 @@ Selected option: Schemathesis, because it uses property-based testing to automat
 In comparison, Dredd is a well-established API testing tool. However, it necessitates exact assertions with precise values and provides only partial support for the latest OpenAPI 3.x specifications. Schemathesis, on the other hand, offers full support for OpenAPI 3.x and can generate random inputs based on field types and constraints. This allows it to explore code paths and edge cases.
 
 Compared to Postman / Newman: With Postman/Newman, collections of requests and assertion scripts must be created, updated, and maintained manually. This results in high maintenance overhead and often leads to tests falling out of sync with actual code changes. Schemathesis reads the OpenAPI specification directly to test the API, eliminating the need for any manual test case creation.
-

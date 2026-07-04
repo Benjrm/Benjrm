@@ -2,7 +2,7 @@
 
 ## Context and Problem Statement
 
-The Benjrm's frontend is looking for reusable UI components to speed up development and maintain a consistent design system across the application.
+Benjrm's frontend is looking for reusable UI components to speed up development and maintain a consistent design system across the application.
 The challenge is to choose a suitable UI component library that meets our needs.
 
 ## Considered Options

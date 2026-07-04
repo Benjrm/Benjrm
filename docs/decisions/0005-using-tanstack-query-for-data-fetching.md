@@ -2,7 +2,7 @@
 
 ## Context and Problem Statement
 
-Most of the data in the benjrm's frontend comes from the backend api.
+Most of the data in benjrm's frontend comes from the backend api.
 Fetching this data manually leads to a lot of repetitive code for handling loading spinners, error messages, and caching. 
 The challenge is to find a suitable library to handle this kind of tasks.
 
@@ -13,4 +13,4 @@ The challenge is to find a suitable library to handle this kind of tasks.
 
 ## Decision Outcome
 
-Chosen option: "TanStack Query", because TanStack Query, because it drastically reduces the amount of code we need to write for data fetching and solves complex problems like caching and loading states automatically.
+Chosen option: "TanStack Query", because it drastically reduces the amount of code we need to write for data fetching and solves complex problems like caching and loading states automatically.
