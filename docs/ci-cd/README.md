@@ -26,7 +26,7 @@ Delegating this task saves us a lot of time and resources, as we would only need
 To ensure stable and secure builds, we use `npm ci`, which installs exactly the versions specified in [`package-lock.json`](../../frontend/package-lock.json). We then build the frontend using `npm run build`, and finally, this workflow uploads the generated `dist` folder as an artifact to GitHub. We use this artifact to access the finished frontend in other workflows (`linting`, `backend tests`).
 
 ## Code Quality and Security Workflows ([`lint.yaml`](../../.github/workflows/lint.yaml), [`security.yaml`](../../.github/workflows/security.yaml))
-In this step, the code is checked. It is checked for typing errors. It is also checked for proper formatting. This is done to ensure that the code is consistent and easy to read.
+In this step, the code is checked. It is checked for static code quality. It is also checked for proper formatting. This is done to ensure that the code is consistent and easy to read.
 
 Before the pipeline begins linting the frontend and backend, it checks whether and where (backend or frontend) changes have actually been made. This reduces runtime, since the frontend only needs to be checked if changes have been made to the frontend as well. The same applies to the backend.
 
@@ -34,7 +34,7 @@ For linting, we use [`eslint`](../../frontend/eslint.config.js) for the frontend
 
 When it comes to the frontend job, we first run a type check using the command `npm run type:check`. This checks our TypeScript code for type errors. We then run the linting and formatting checks using `npm run lint`.
 
-For the backend, we first need to load our frontend build artifact from the [`build_frontend.yaml`](../../.github/workflows/build_frontend.yaml) workflow, since our backend serves the frontend directly and requires it for the next steps. We then run the linter for the Rust code and tests using `cargo clippy`. We also check the code formatting with `cargo fmt --all --check`, which ensures that the Rust code is consistent.
+For the backend, we first need to load our frontend build artifact from the [`build_frontend.yaml`](../../.github/workflows/build_frontend.yaml) workflow, since our backend serves the frontend directly and requires it for the next steps. We then use `cargo clippy` to lint the Rust code and test files. We also check the code formatting with `cargo fmt --all --check`, which ensures that the Rust code is consistent.
 
 ## Security Scan ([`security.yaml`](../../.github/workflows/security.yaml))
 This workflow automatically performs security scans, including static analysis (SAST) and vulnerability scans. This pipeline step is essential for ensuring continuous security in our application, as it detects vulnerabilities in our code and libraries, as well as misconfigurations, at an early stage and notifies us of them.
@@ -47,7 +47,7 @@ The purpose of this step is to thoroughly scan our source code for security issu
 
 To search for vulnerabilities in our code, we use Trivy, which scans our project for incorrect configurations and outdated dependencies. Trivy is configured in [`trivy.yaml`](../../trivy.yaml) and is set up to scan for secrets in addition to misconfigurations and security vulnerabilities. We also use Trivy to scan our Docker configuration.
 
-We ensure the security of the backend using `Cargo Audit` (which checks [`Cargo.toml`](../../backend/Cargo.toml) for known vulnerabilities).
+We ensure the security of the backend using `cargo audit` (which checks [`Cargo.lock`](../../backend/Cargo.lock) for known vulnerabilities).
 
 ## Unit Tests ([`tests.yaml`](../../.github/workflows/tests.yaml))
 Our automated tests are currently limited to backend unit tests. We currently rely on manual reviews for frontend testing.
@@ -76,11 +76,11 @@ To ensure that our API specifications are syntactically correct and that our bac
 1. **API Validation (Spectral):** We use Spectral to enforce style guides and lint our OpenAPI and AsyncAPI specifications. For more detailed information on how Spectral is integrated and how to view its results, please check out the [API documentation](../api/README.md#integrated-into-ci-pipeline).
 2. **API Testing (Schemathesis):** We use Schemathesis to test the features of our API. This workflow uses Docker Compose to create a temporary test environment and generates test requests based on our OpenAPI specification to verify the backend's behavior. If you want more details about how Schemathesis is integrated, check out the [API documentation](../api/README.md#integrated-into-ci-pipeline-1).
 
-Both workflows are only executed when changes are made to the API specifications to save time and resources.
+Both workflows are executed when changes are made to the API specifications to save time and resources. The Schemathesis workflow is also executed if changes are made to the backend.
 
 ## Documentation Deployment ([`githubpages.yaml`](../../.github/workflows/githubpages.yaml))
 This workflow deploys our API documentation to GitHub Pages. It runs separately to the main pipeline.
-Please refer to the API related documentation for more details [here](../../docs/api/README.md) for more details.
+Please refer to the API related documentation [here](../../docs/api/README.md) for more details.
 
 The deployment process consists of:
 1. **OpenAPI (REST):** Publish the Swagger UI files and the OpenAPI specification. For more details, see the [OpenAPI Deployment Documentation](../api/README.md#api-documentation-with-swagger-ui-deployed-to-github-pages).
