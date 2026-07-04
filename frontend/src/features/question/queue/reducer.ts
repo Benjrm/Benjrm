@@ -6,6 +6,7 @@ import {
     upsertUpdate,
 } from "@/features/question/queue/builder.ts"
 
+/** Reducer backing `useQuestionChangeQueue`'s pending-edits queue. */
 export default function reducer(state: QueueItem[], action: Action): QueueItem[] {
     switch (action.type) {
         case "clear":

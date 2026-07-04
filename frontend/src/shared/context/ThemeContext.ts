@@ -6,5 +6,6 @@ const initialState: ThemeProviderState = {
     setTheme: () => null,
 }
 
+/** React context holding the current `Theme` and its setter. Populated by `ThemeProvider`. */
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 export default ThemeProviderContext

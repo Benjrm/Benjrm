@@ -1,5 +1,12 @@
 import { defaultSchema } from "rehype-sanitize"
 
+/**
+ * `rehype-sanitize` schema used to sanitize rendered markdown (see `MarkdownComponent`).
+ *
+ * Extends the default schema with the extra tags/attributes needed for GFM
+ * markdown (tables, footnotes, media embeds, form-like elements) while still
+ * stripping anything not explicitly allow-listed.
+ */
 const sanitizeSchema = {
     ...defaultSchema,
     clobberPrefix: "", // Prevents rehype-sanitize from prefixing attributes like "id" with "user-content-" required to support footnote functionality

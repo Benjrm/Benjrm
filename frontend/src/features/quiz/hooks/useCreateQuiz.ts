@@ -5,6 +5,10 @@ import createQuiz from "@/features/quiz/api/createQuiz.ts"
 
 import quizKeys from "@/features/quiz/utils/quizKeys.ts"
 
+/**
+ * Mutation to create a new quiz. On success, seeds the query cache with the
+ * created quiz and invalidates the quiz list so it appears immediately.
+ */
 export default function useCreateQuiz(): UseMutationResult<Quiz, Error, NewQuiz> {
     const queryClient = useQueryClient()
     return useMutation({

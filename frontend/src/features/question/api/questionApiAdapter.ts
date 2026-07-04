@@ -8,6 +8,7 @@ import type {
 } from "@/features/question/types/questions.ts"
 import toQuestion from "@/features/question/mapper/toQuestion.ts"
 
+/** {@link QuestionAdapter} implementation backed by the real REST API (`/api/v1`). */
 export default class QuestionApiAdapter implements QuestionAdapter {
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
     // eslint-disable-next-line class-methods-use-this
@@ -50,6 +51,13 @@ export default class QuestionApiAdapter implements QuestionAdapter {
         return toQuestion(dto)
     }
 
+    /**
+     * Reorders questions by patching each one's `prev` link sequentially.
+     *
+     * Requests are sent one at a time (not in parallel) to guarantee the
+     * backend applies them in order — parallel patches could race and leave
+     * the doubly linked list in a corrupted state.
+     */
     // because the QuestionAdapterImpl calls this method on instance, we cannot make it static, even though it does not use any instance properties
     // eslint-disable-next-line class-methods-use-this
     async reorderQuestions(quizId: string, order: string[]): Promise<void> {

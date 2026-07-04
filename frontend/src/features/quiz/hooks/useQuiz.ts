@@ -5,6 +5,10 @@ import getQuiz from "@/features/quiz/api/getQuiz.ts"
 
 import quizKeys from "@/features/quiz/utils/quizKeys.ts"
 
+/**
+ * Loads a single quiz by id. The query is disabled while `quizId` is `undefined`
+ * (e.g. a not-yet-created quiz in the editor).
+ */
 export default function useQuiz(quizId: string | undefined): UseQueryResult<Quiz> {
     return useQuery({
         queryKey: quizId ? quizKeys.detail(quizId) : [],

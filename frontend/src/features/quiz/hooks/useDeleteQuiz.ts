@@ -5,6 +5,11 @@ import deleteQuiz from "@/features/quiz/api/deleteQuiz.ts"
 
 import quizKeys from "@/features/quiz/utils/quizKeys.ts"
 
+/**
+ * Mutation to delete a quiz. On success, invalidates the quiz list and
+ * removes any locally queued/persisted question changes for that quiz
+ * (see {@link useQuestionQueueStorage}), since they'd otherwise be orphaned.
+ */
 export default function useDeleteQuiz(): UseMutationResult<void, Error, string> {
     const queryClient = useQueryClient()
     const queueStorage = useQuestionQueueStorage()
