@@ -89,8 +89,6 @@ Please refer to the [API-related documentation](docs/api/README.md).
 ## Technology Stack
 To get more insights into the Benjrm's technology stack, please refer to the [Technology Stack documentation](docs/decisions/README.md).
 
-To get more insights into Benjrm's technology stack, please refer to the [Technology Stack documentation](docs/decisions/README.md).
-
 ## Database Scheme
 
 ```mermaid
