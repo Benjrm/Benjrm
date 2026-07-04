@@ -14,9 +14,7 @@ At the same time, the solution should align with the team’s existing skills to
 
 ## Decision Outcome
 
-Chosen option: "React.js", because Decision
-
-We chose React.js as the frontend library for the project.
+Chosen option: "React.js", because of high flexibility and existing experience.
 
 The use of TypeScript as the programming language is considered self-explanatory, as it is an industry standard for modern frontend development and helps prevent runtime errors through static type checking.
 

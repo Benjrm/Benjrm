@@ -15,9 +15,7 @@ The challenge is to select a suitable version control and code hosting platform 
 
 ## Decision Outcome
 
-Chosen option: "GitHub", because Decision
-
-We chose GitHub as the version control system and code hosting platform for the project.
+Chosen option: "GitHub", because of long-term maintainablility and existing experience.
 
 GitHub was selected over the university-hosted GitLab solution due to previous reliability and usability issues experienced with the university GitLab instance and limited availability of shared runners. In many cases, setting up and maintaining self-hosted runners introduced additional complexity and overhead.
 
