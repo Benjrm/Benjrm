@@ -91,14 +91,12 @@ function buildDeleteQueueItem(
 /**
  * Adds (or replaces) a "delete" entry for `questionId` in the queue.
  *
- * Note: unlike creates/updates, this does not remove other pending entries
- * for the same question (e.g. a queued "update") — `sortQueue` ensures
- * deletes are processed first regardless.
+ * This function also deletes any other operations for the deleted question.
  */
 export function upsertDelete(
     state: QueueItem[],
     questionId: DeleteQuestionQueueItem["questionId"]
 ): QueueItem[] {
-    const filtered = state.filter((i) => !(i.op === "delete" && i.questionId === questionId))
+    const filtered = state.filter((i) => !(i.op !== "reorder" && i.questionId === questionId))
     return [...filtered, buildDeleteQueueItem(questionId)]
 }
