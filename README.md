@@ -59,6 +59,8 @@ Keycloak admin user: admin, password: admin
 
 After starting this the first time, you should log into the Keycloak admin interface, create a new admin user and remove the existing one.
 
+> If you are using traefik and haven't modified the host rules in `compose.yaml`, the Keycloak URL is "idp.<YOUR_DOMAIN>".
+
 1. Log into the Keycloak admin interface using username: admin and password: admin (or your customized bootstrap credentials)
 2. Go to "Users" -> "Add user"
 3. Enter a username and click on "Create"

@@ -4,7 +4,7 @@ networks:
 
 services:
   benjrm:
-    build: .
+    image: ghcr.io/benjrm/benjrm:dev
     depends_on:
       database:
         condition: service_healthy
