@@ -5,26 +5,32 @@ import { XIcon } from "lucide-react"
 import { cn } from "@/shadcn/lib/utils"
 import { Button } from "@/shadcn/components/ui/button"
 
-function Dialog({ ...props }: ComponentProps<typeof DialogPrimitive.Root>): JSX.Element {
+function Dialog({ ...props }: Readonly<ComponentProps<typeof DialogPrimitive.Root>>): JSX.Element {
     return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
-function DialogTrigger({ ...props }: ComponentProps<typeof DialogPrimitive.Trigger>): JSX.Element {
+function DialogTrigger({
+    ...props
+}: Readonly<ComponentProps<typeof DialogPrimitive.Trigger>>): JSX.Element {
     return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
-function DialogPortal({ ...props }: ComponentProps<typeof DialogPrimitive.Portal>): JSX.Element {
+function DialogPortal({
+    ...props
+}: Readonly<ComponentProps<typeof DialogPrimitive.Portal>>): JSX.Element {
     return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
-function DialogClose({ ...props }: ComponentProps<typeof DialogPrimitive.Close>): JSX.Element {
+function DialogClose({
+    ...props
+}: Readonly<ComponentProps<typeof DialogPrimitive.Close>>): JSX.Element {
     return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
 function DialogOverlay({
     className,
     ...props
-}: ComponentProps<typeof DialogPrimitive.Overlay>): JSX.Element {
+}: Readonly<ComponentProps<typeof DialogPrimitive.Overlay>>): JSX.Element {
     return (
         <DialogPrimitive.Overlay
             data-slot="dialog-overlay"
@@ -42,7 +48,7 @@ function DialogContent({
     children,
     showCloseButton = true,
     ...props
-}: ComponentProps<typeof DialogPrimitive.Content> & {
+}: Readonly<ComponentProps<typeof DialogPrimitive.Content>> & {
     showCloseButton?: boolean
 }): JSX.Element {
     return (
@@ -70,7 +76,7 @@ function DialogContent({
     )
 }
 
-function DialogHeader({ className, ...props }: ComponentProps<"div">): JSX.Element {
+function DialogHeader({ className, ...props }: Readonly<ComponentProps<"div">>): JSX.Element {
     return (
         <div
             className={cn("flex flex-col gap-2", className)}
@@ -85,7 +91,7 @@ function DialogFooter({
     showCloseButton = false,
     children,
     ...props
-}: ComponentProps<"div"> & {
+}: Readonly<ComponentProps<"div">> & {
     showCloseButton?: boolean
 }): JSX.Element {
     return (
@@ -107,7 +113,7 @@ function DialogFooter({
 function DialogTitle({
     className,
     ...props
-}: ComponentProps<typeof DialogPrimitive.Title>): JSX.Element {
+}: Readonly<ComponentProps<typeof DialogPrimitive.Title>>): JSX.Element {
     return (
         <DialogPrimitive.Title
             className={cn("font-heading leading-none font-medium", className)}
@@ -120,7 +126,7 @@ function DialogTitle({
 function DialogDescription({
     className,
     ...props
-}: ComponentProps<typeof DialogPrimitive.Description>): JSX.Element {
+}: Readonly<ComponentProps<typeof DialogPrimitive.Description>>): JSX.Element {
     return (
         <DialogPrimitive.Description
             data-slot="dialog-description"

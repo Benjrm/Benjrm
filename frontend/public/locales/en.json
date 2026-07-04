@@ -16,8 +16,7 @@
         "footer": {
             "allRightsReserved": "All Rights Reserved.",
             "imprint": "Impressum",
-            "privacyPolicy": "Privacy Policy",
-            "termsAndConditions": "Terms and Conditions"
+            "privacyPolicy": "Privacy Policy"
         },
         "brandName": "Benjrm",
         "header": {
@@ -116,7 +115,6 @@
         "header": {
             "editTitle": "Edit title",
             "editDescription": "Edit description",
-            "settings": "Settings",
             "discardChanges": "Discard Changes",
             "saving": "Saving...",
             "saveQuiz": "Save Quiz",

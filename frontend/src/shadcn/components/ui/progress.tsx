@@ -12,7 +12,7 @@ function ProgressBar({
     value,
     indicatorClassName,
     ...props
-}: ProgressBarProps): JSX.Element {
+}: Readonly<ProgressBarProps>): JSX.Element {
     return (
         <Progress.Root
             value={value}
