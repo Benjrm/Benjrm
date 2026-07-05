@@ -20,7 +20,7 @@ use {
     emojis::Emoji,
     futures::{StreamExt, stream::FuturesUnordered},
     sea_orm::ConnectionTrait,
-    std::{collections::HashMap, sync::Arc, time::Duration},
+    std::{collections::HashMap, future::ready, pin::Pin, sync::Arc, time::Duration},
     tokio::sync::{Mutex, RwLock},
     uuid::Uuid,
 };
@@ -166,7 +166,7 @@ impl GameSession {
             host_channel.close().await;
         }
 
-        let futures = self.players.drain(..).map(|player| player.channel.close());
+        let futures = self.players.drain(..).map(|mut player| player.close());
 
         if let GameSessionStatus::Waiting(joining) = status {
             let joining_futures = joining.into_iter().map(|joining| joining.cancel());
@@ -195,6 +195,7 @@ impl GameSession {
         if let Some(old_channel) = self.host.channel.take() {
             old_channel.close().await;
         }
+        self.host.channel_id = channel.id();
         self.host.channel = Some(channel);
         self.update_host().await;
     }
@@ -296,7 +297,7 @@ impl GameSession {
                     .ok_or(GameSessionError::PlayerNotFound)?;
                 let mut player = self.players.swap_remove(pos);
                 player.msg(Message::from(&PlayerMessage::Kick)).await;
-                player.channel.close().await;
+                player.close().await;
                 self.host
                     .msg(Message::from(&HostMessage::RemovePlayer { id: player.id }))
                     .await;
@@ -492,7 +493,8 @@ impl GameSession {
             secret,
             name,
             emoji,
-            channel: Box::new(channel),
+            channel_id: channel.id(),
+            channel: Some(Box::new(channel)),
             points: 0,
             last_question: None,
         };
@@ -821,8 +823,11 @@ impl GameSessionPlayer {
         cmd_id: Option<u64>,
         channel: T,
     ) {
-        let old_channel = std::mem::replace(&mut self.channel, Box::new(channel));
-        old_channel.close().await;
+        self.channel_id = channel.id();
+        let old_channel = self.channel.replace(Box::new(channel));
+        if let Some(old_channel) = old_channel {
+            old_channel.close().await;
+        }
         self.msg(Message {
             id: cmd_id,
             msg: &PlayerMessage::ConnectResponse {
@@ -838,9 +843,19 @@ impl GameSessionPlayer {
 
     /// Sends a message to the player.
     pub async fn msg(&mut self, msg: Message<'_, PlayerMessage>) {
-        if let Err(err) = self.channel.send(msg).await {
+        if let Some(channel) = &mut self.channel
+            && let Err(err) = channel.send(msg).await
+        {
             log::error!("failed to send message to player {}: {err:?}", self.id)
         }
+    }
+
+    /// Closes the channel used by the player
+    fn close(&mut self) -> Pin<Box<dyn Future<Output = ()> + Send>> {
+        if let Some(channel) = self.channel.take() {
+            return channel.close();
+        }
+        Box::pin(ready(()))
     }
 
     /// Adds points for the player for a specific question.

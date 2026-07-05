@@ -149,6 +149,7 @@ pub enum GameSessionStatus {
 /// The host owns the session and controls game flow (start, next question, kick players, etc.).
 pub struct GameSessionHost {
     user: User,
+    channel_id: u64,
     channel: Option<Box<dyn Channel<HostMessage>>>,
 }
 
@@ -156,6 +157,7 @@ impl From<User> for GameSessionHost {
     fn from(value: User) -> Self {
         Self {
             user: value,
+            channel_id: 0,
             channel: None,
         }
     }
@@ -169,7 +171,8 @@ pub struct GameSessionPlayer {
     secret: Uuid,
     name: String,
     emoji: Option<&'static Emoji>,
-    channel: Box<dyn Channel<PlayerMessage>>,
+    channel: Option<Box<dyn Channel<PlayerMessage>>>,
+    channel_id: u64,
     points: u32,
     last_question: Option<(u32, Uuid)>,
 }
