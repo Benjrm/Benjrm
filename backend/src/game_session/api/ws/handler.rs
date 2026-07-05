@@ -61,14 +61,20 @@ async fn remove_host_ws(
     id: u64,
     (_, code): (GameSessions, SessionCode),
 ) {
+    {
+        let mut session = session.lock().await;
+        if session.host.channel_id == id
+            && let Some(channel) = session.host.channel.take()
+        {
+            channel.close().await;
+        }
+    }
+
     sleep(Duration::from_mins(15)).await;
     let mut session = session.lock().await;
 
-    if let Some(channel) = &session.host.channel
-        && channel.id() == id
-    {
+    if session.host.channel_id == id {
         log::info!("Deleting session {code} due to inactivity");
-        session.host.channel = None;
         session.close().await;
         drop(session);
         app_data.game_sessions.drop_session(code).await;
@@ -127,11 +133,21 @@ pub(super) async fn remove_player_ws(
     channel_id: u64,
     player_id: Uuid,
 ) {
+    {
+        let mut session = session.lock().await;
+        if let Some(player) = session.players.iter_mut().find(|x| x.id == player_id)
+            && player.channel_id == channel_id
+            && let Some(channel) = player.channel.take()
+        {
+            channel.close().await;
+        }
+    }
+
     sleep(Duration::from_mins(15)).await;
     let mut session = session.lock().await;
 
     if let Some(player_pos) = session.players.iter().position(|x| x.id == player_id)
-        && session.players[player_pos].channel.id() == channel_id
+        && session.players[player_pos].channel_id == channel_id
     {
         session.players.swap_remove(player_pos);
         session
