@@ -28,5 +28,5 @@ However, its ecosystem is smaller, it is less commonly used in typical CI/CD pip
 within the team, which would increase the initial complexity and development friction.
 
 Although Podman has clear technical advantages in terms of security and architectural simplicity, 
-these benefits are outweighed in this project by Docker’s stronger ecosystem, better tool integration, and lower onboarding cost. 
+these benefits are outweighed in this project by Docker's stronger ecosystem, better tool integration, and lower onboarding cost. 
 Given the focus on fast development, stability, and smooth CI/CD integration, Docker is therefore the most suitable choice.

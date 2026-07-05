@@ -2,7 +2,7 @@
 
 ## Context and Problem Statement
 
-To ensure a standardized, well-organized, and thoroughly documented API for Benjrm’s REST and WebSocket interfaces, we must comply with OpenAPI and AsyncAPI specifications. In addition, we need to be able to test our API implementation automatically.
+To ensure a standardized, well-organized, and thoroughly documented API for Benjrm's REST and WebSocket interfaces, we must comply with OpenAPI and AsyncAPI specifications. In addition, we need to be able to test our API implementation automatically.
 
 ## Considered Options
 

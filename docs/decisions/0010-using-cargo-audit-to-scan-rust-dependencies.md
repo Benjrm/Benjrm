@@ -2,7 +2,7 @@
 
 ## Context and Problem Statement
 
-To ensure that the Benjrm application’s backend codebase remains secure at all times, we must continuously check our Rust dependencies for known security vulnerabilities.
+To ensure that the Benjrm application's backend codebase remains secure at all times, we must continuously check our Rust dependencies for known security vulnerabilities.
 
 ## Considered Options
 

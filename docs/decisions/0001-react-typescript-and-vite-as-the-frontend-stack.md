@@ -4,7 +4,7 @@
 
 The project requires a modern frontend for a REST and WebSocket-based system. 
 The challenge is to select a frontend technology stack that supports maintainability, real-time communication, and efficient development. 
-At the same time, the solution should align with the team’s existing skills to minimize onboarding effort and development risk.
+At the same time, the solution should align with the team's existing skills to minimize onboarding effort and development risk.
 
 ## Considered Options
 
@@ -18,7 +18,7 @@ Chosen option: "React.js", because of high flexibility and existing experience.
 
 The use of TypeScript as the programming language is considered self-explanatory, as it is an industry standard for modern frontend development and helps prevent runtime errors through static type checking.
 
-React was selected over alternatives such as Angular due to its lower learning curve and the team’s stronger existing knowledge of React and related JavaScript/TypeScript technologies. This allows for faster onboarding and more efficient development.
+React was selected over alternatives such as Angular due to its lower learning curve and the team's stronger existing knowledge of React and related JavaScript/TypeScript technologies. This allows for faster onboarding and more efficient development.
 
 Compared to Angular, React provides greater flexibility and control over the application architecture. This enables the team to choose and combine libraries as needed, rather than being constrained by a highly opinionated framework.
 

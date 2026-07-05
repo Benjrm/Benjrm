@@ -13,7 +13,7 @@ The challenge is to choose a suitable UI component library that meets our needs.
 
 ## Decision Outcome
 
-Chosen option: "shadcn/ui" is selected because it best fits the project’s goals of a lightweight, custom-designed UI built on top of Tailwind CSS.
+Chosen option: "shadcn/ui" is selected because it best fits the project's goals of a lightweight, custom-designed UI built on top of Tailwind CSS.
 
 Compared to Material UI, which provides a full-featured but opinionated component system with a larger bundle size 
 and predefined Material Design styling, shadcn/ui offers a much more flexible and less restrictive approach. 
