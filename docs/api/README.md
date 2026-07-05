@@ -1,17 +1,21 @@
 # API-related documentation
 
+> Our **RESTful** and **WebSocket** *APIs* are documented using the *OpenAPI Specification (OAS)* and *AsyncAPI* specification. 
+> The documentation is automatically generated and deployed to GitHub Pages when the `main` branch is updated and associated files are modified (see below for details). 
+> You can find the currently deployed version of our API documentation [here](https://benjrm.github.io/Benjrm/).
+
 ## OpenAPI Specification (OAS)
 - Industry-standard format (a YAML or JSON file) for describing RESTFUL APIs.
 - Defines our API's endpoints, parameters, request/response formats, and more.
 - Acts as a machine-readable contract between our API and its consumers.
 - Because it is machine-readable, it can be used to automatically generate
-  documentation (like *Swagger UI*), client and server code (like *Swagger Codegen*) and even test cases (like *Dredd*).
+  documentation (like *Swagger UI*), client and server code (like *Swagger Codegen*) and even test cases (like *Schemathesis*).
 
 ### Swagger
 - Refers to the tooling ecosystem (like Swagger UI, Swagger Editor, and Swagger Codegen)
   that helps you design, visualize, and interact with APIs based on that spec.
 
-#### API documentation with *Swagger UI*
+#### API documentation with *Swagger UI* deployed to GitHub Pages
 
 1. Every API endpoint is documented within the [OpenAPI Specification (OAS)](../openapispec/RestInterface.yaml)
 
@@ -20,17 +24,21 @@
    which is generated using Swagger UI and references the OAS file.
 
 3. Swagger UI displays the OpenAPI Specification (OAS) in an interactive format
-   and gets automatically deployed to GitHub Pages when the `main` branch is updated *and* files *either*
-   in the `docs/openapispec/**` directory *or* the workflow file `.github/workflows/openapispec.yaml` are changed.
+   and gets automatically deployed to GitHub Pages when the `main` branch is updated and one or more of the following files are modified:
+   - [/docs/openapispec/index.html](../openapispec/index.html)
+   - [/docs/openapispec/RestInterface.yaml](../openapispec/RestInterface.yaml)
+   - [/docs/openapispec/dist/**](../openapispec/dist)
+   - [/docs/asyncapi/WebSockets.yaml](../asyncapi/WebSockets.yaml)
+   - [.github/workflows/githubpages.yaml](../../.github/workflows/githubpages.yaml)
+   - [docs/githubpages/index.html](../githubpages/index.html)
+   - [docs/githubpages/styles.css](../githubpages/styles.css)
 
-You can find the currently deployed version of the OpenAPI Specification (OAS) in an interactive format using Swagger UI [here](https://benjrm.github.io/Benjrm)
+You can find the currently deployed version of the OpenAPI Specification (OAS) in an interactive format using Swagger UI [here](https://benjrm.github.io/Benjrm/openapispec/index.html)
 
 > For further details on how the OpenAPI Specification (OAS) is deployed to GitHub Pages in an interactive format using
 > Swagger UI, please refer to the [GitHub Actions workflow file](../../.github/workflows/githubpages.yaml).
 
 ## AsyncAPI
-
-The WebSockets used for live sessions are documented in [WebSockets.yaml](../asyncapi/WebSockets.yaml) using AsyncAPI.
 
 ### Generate HTML
 
@@ -40,6 +48,24 @@ run in `docs/asyncapi`:
 npm install -g @asyncapi/cli
 asyncapi generate fromTemplate WebSockets.yaml @asyncapi/html-template@3.5.6 -o <OUTPUT_PATH>
 ```
+
+### WebSocket documentation with AsyncAPI deployed to GitHub Pages
+1. The WebSockets used for live sessions are documented in [WebSockets.yaml](../asyncapi/WebSockets.yaml) using AsyncAPI.
+2. AsyncAPI can be previewed in IDEs either by using a plugin to visualize the AsyncAPI in an interactive format directly or by previewing the generated HTML file generated with the command above in the `docs/asyncapi/` directory.
+3. The WebSockets API documentation gets automatically deployed to GitHub Pages when the `main` branch is updated and one or more of the following files are modified:
+   - [/docs/openapispec/index.html](../openapispec/index.html)
+   - [/docs/openapispec/RestInterface.yaml](../openapispec/RestInterface.yaml)
+   - [/docs/openapispec/dist/**](../openapispec/dist)
+   - [/docs/asyncapi/WebSockets.yaml](../asyncapi/WebSockets.yaml)
+   - [.github/workflows/githubpages.yaml](../../.github/workflows/githubpages.yaml)
+   - [docs/githubpages/index.html](../githubpages/index.html)
+   - [docs/githubpages/styles.css](../githubpages/styles.css)
+
+
+You can find the currently deployed version of the WebSocket documentation in an interactive format using AsyncAPI [here](https://benjrm.github.io/Benjrm/asyncapi/index.html)
+
+> For further details on how the WebSocket documentation is deployed to GitHub Pages in an interactive format using
+> AsyncAPI, please refer to the [GitHub Actions workflow file](../../.github/workflows/githubpages.yaml).
 
 ## Spectral
 - A JSON/YAML linter with out of the box support for OpenAPI 3.x & 2.0 specifications
@@ -99,18 +125,15 @@ For detailed documentation please refer to [Schemathesis' official documentation
 
 ### Integrated into CI-Pipeline
 1. GitHub Actions tests the API with *Schemathesis* when you create
-   a *pull request* modifying *either* the [OpenAPI Specification](../openapispec), the
+   a *pull request* modifying *either* the [OpenAPI Specification](../openapispec/RestInterface.yaml), the
    [API implementation itself](../../backend) or the corresponding [workflow file](../../.github/workflows/schemathesis.yaml).
 
 > For further details on how the *Schemathesis* GitHub Action works,
 > please refer to the [GitHub Actions workflow file](../../.github/workflows/schemathesis.yaml).
 
-2. Each run generates multiple coverage reports including a **PR comment** and an **HTML report** uploaded as a workflow artifact.
-   Moreover, a summary in the Actions step log is also provided.
-
 ### Local testing
-1. Installing [Pipenv](https://pipenv.pypa.io/en/latest/installation.html).
-2. Running `pipenv update` in the `api_tests` directory to lock and install the dependencies.
+1. Install [Pipenv](https://pipenv.pypa.io/en/latest/installation.html).
+2. Run `pipenv update` in the `api_tests` directory to lock and install the dependencies.
 3. Run `pipenv shell` to spawn a shell within the virtual environment.
 4. Run `schemathesis run ../docs/openapispec/RestInterface.yaml --exclude-tag SchemathesisSkip`
 
