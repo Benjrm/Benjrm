@@ -27,7 +27,7 @@ export default function useWebSocketConnectError(ws: WebSocketService, code?: nu
     // onEveryConnect fires immediately if the socket is already open (normal navigation),
     // so there is no visible flash on non-refresh transitions.
     const [isReconnecting, setIsReconnecting] = useState(true)
-    const [isInvalidCode, setIsInvalidCode] = useState(false)
+    const [isInvalidCode, setIsInvalidCode] = useState(code === undefined)
     const [unableToConnect, setUnableToConnect] = useState(false)
 
     useEffect(() => {
