@@ -64,3 +64,4 @@ make to ensure that we and future developers understand the reasoning behind our
 19. Using [**Figma**](https://www.figma.com/) for wireframes, mockups, and interactive prototypes. [Read more](0018-using-figma-for-ux-design.md).
 20. Using [**OpenAPI**](https://www.openapis.org/) and [**AsyncAPI**](https://www.asyncapi.com/) for API documentation. [Read more](0019-using-openapi-and-asyncapi-for-api-documentation.md).
 21. Using [**Actix Web**](https://actix.rs) as the backend webserver. [Read more](0020-backend-webserver-actix-web.md).
+22. Using [**SeaORM**](https://www.sea-ql.org/SeaORM) as the ORM. [Read more](0021-sea-orm.md).
