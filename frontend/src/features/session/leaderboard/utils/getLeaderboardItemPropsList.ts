@@ -1,6 +1,10 @@
 import type { LeaderboardItem } from "@/features/session/leaderboard/types/leaderboardItem.ts"
 import type { LeaderboardItemProps } from "@/features/session/leaderboard/views/LeaderboardItem.tsx"
 
+/**
+ * Sorts leaderboard items by points (descending) and assigns each a rank,
+ * with tied point totals sharing the same rank (dense ranking, no gaps).
+ */
 export default function getLeaderboardItemPropsList(
     items: LeaderboardItem[]
 ): LeaderboardItemProps[] {

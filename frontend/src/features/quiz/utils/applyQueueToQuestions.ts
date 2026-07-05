@@ -7,6 +7,15 @@ import type { QueueItem } from "@/features/question/queue/types.ts"
 import tempId from "@/shared/utils/tempId.ts"
 import assertNever from "@/shared/utils/assertNever.ts"
 
+/**
+ * Reconstructs the effective, locally-edited list of questions by replaying
+ * a pending {@link QueueItem} queue (see `useQuestionChangeQueue`) on
+ * top of the last known server state (`baseQuestions`).
+ *
+ * Used so the editor can show unsaved changes (including questions that only
+ * exist locally under a temporary id) after a reload, before those changes
+ * have been flushed to the backend.
+ */
 export default function applyQueueToQuestions(
     baseQuestions: Question[],
     queue: QueueItem[]
@@ -15,6 +24,7 @@ export default function applyQueueToQuestions(
 
     let draftQuestions = [...baseQuestions]
 
+    /** Applies a create/update request's fields onto a question draft, preserving option ids where possible. */
     const applyRequest = (
         question: Question,
         request: QuestionRequest | UpdateQuestionRequest

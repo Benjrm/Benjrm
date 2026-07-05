@@ -3,6 +3,7 @@ import useSession from "./useSession"
 import ApiError from "@/shared/types/apiError.ts"
 import type { Session } from "@/features/session/types/session.ts"
 
+/** Return value of {@link useSessionStatus}. */
 interface SessionStatus {
     isLoading: boolean
     isHost: boolean

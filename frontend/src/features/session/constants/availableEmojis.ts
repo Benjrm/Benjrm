@@ -1,3 +1,4 @@
+/** Emoji a player may pick as their avatar when joining a game session. */
 const AVAILABLE_EMOJIS = [
     "😀",
     "😃",

@@ -23,6 +23,7 @@ import applyQueueToQuestions from "@/features/quiz/utils/applyQueueToQuestions.t
 import useQuiz from "@/features/quiz/hooks/useQuiz.ts"
 import useDeleteQuiz from "@/features/quiz/hooks/useDeleteQuiz.ts"
 
+/** Return value of {@link useQuizEditor}. */
 interface UseQuizEditorResult {
     quiz: unknown
     quizTitle: string
@@ -65,6 +66,15 @@ interface UseQuizEditorResult {
     hasInitializedQuestions: boolean
 }
 
+/**
+ * Owns all state and behavior for the quiz creator/editor page: the current
+ * in-memory list of {@link Question}s (backed by {@link useQuestionChangeQueue}
+ * for offline-first persistence), drag-and-drop reordering of questions and
+ * options, per-question/per-option validation, and saving.
+ *
+ * `quizId` is `undefined` while editing a not-yet-created quiz — edits are
+ * still queued locally and can be flushed once the quiz exists.
+ */
 export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     const { t } = useTranslation()
     const queryClient = useQueryClient()
@@ -127,7 +137,9 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     }, [cleanup])
 
     /**
-     * @returns [isQuestionAffected, affectedAnswer | null, errorMessage, quizErrorMessage] | null
+     * Validates a single question (text present, options filled in, at least
+     * one correct answer for choice-type questions).
+     * @returns A {@link QuestionError} describing the problems found, or `null` if the question is valid.
      */
     const validateQuestion = (question: Question): QuestionError | null => {
         const validationError: QuestionError = {
@@ -162,6 +174,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         return null
     }
 
+    /**
+     * Validates every question in the quiz (plus that the quiz itself has
+     * been created and has at least one question).
+     * @returns A translated error message for the first invalid question found, or `null` if all questions are valid.
+     */
     const validateQuestions = (): string | null => {
         if (!quizId) return t("quizEditor.validation.createQuizFirst")
         if (!questions.length) return t("quizEditor.validation.addAtLeastOne")
@@ -192,6 +209,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         return null
     }
 
+    /** Surfaces a validation failure both inline (per-field) and as a headline error banner. */
     const showBigQuestionError = useCallback(
         (showError: QuestionError) => {
             let errorMessage = null
@@ -296,6 +314,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         setBigQuestionError(null)
     }
 
+    /**
+     * Reorders questions after a drag-and-drop move, applying the new order
+     * to local state immediately and debouncing the queued `reorder` change
+     * (300ms) so rapid successive drags don't each enqueue their own operation.
+     */
     const reorderQuestions = (activeId: string, overId: string) => {
         markUnsavedChanges()
 
@@ -333,6 +356,7 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
     const handleDragStart = (event: DragStartEvent) => setActiveQuestionId(String(event.active.id))
     const handleDragCancel = () => setActiveQuestionId(null)
 
+    /** Maps a save failure to a user-facing message, recognizing the API client's generic backend-unavailable error. */
     const toFriendlySaveError = (err: unknown): string => {
         const message = err instanceof Error ? err.message : String(err)
 
@@ -343,6 +367,13 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         return "The changes could not be saved. Please try again."
     }
 
+    /**
+     * Validates and flushes the pending question-change queue to the
+     * backend, then reconciles local state with server-assigned ids (for
+     * questions/options that were created with temporary client-side ids)
+     * and invalidates the questions query. Reports the first failed queue
+     * item's question index in the returned error, if any.
+     */
     const handleSaveQuestions = async () => {
         const validationError = validateQuestions()
         if (validationError) {
@@ -418,6 +449,11 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         }
     }
 
+    /**
+     * Applies an updated question to local state and enqueues the matching
+     * change: a "create" if the question still has a temporary client-side
+     * id (not yet persisted), otherwise an "update".
+     */
     const updateQuestion = (question: Question) => {
         markUnsavedChanges()
         if (question.id.startsWith("temp-")) {
@@ -491,6 +527,12 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         updateQuestion({ ...currentQuestion, options: newOptions })
     }
 
+    /**
+     * Removes the question at `indexToDelete` from local state and enqueues
+     * its deletion (plus a reorder of the remaining questions, since removing
+     * one shifts the sequence). If it was the only question, resets to a
+     * single empty question instead of leaving the editor blank.
+     */
     const deleteQuestion = (indexToDelete: number) => {
         markUnsavedChanges()
         if (reorderTimeoutRef.current) {
@@ -533,6 +575,10 @@ export default function useQuizEditor(quizId?: string): UseQuizEditorResult {
         upsertDelete(deletingId)
     }
 
+    /**
+     * Appends a new empty question, selecting it, but only if the currently
+     * selected question is itself valid (prevents stacking up invalid drafts).
+     */
     const handleAddQuestion = () => {
         const validationRes = validateQuestion(currentQuestion)
         if (validationRes) {

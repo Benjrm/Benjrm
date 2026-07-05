@@ -34,6 +34,7 @@ export default class WebSocketService {
 
     private isOffline = false
 
+    /** Normalizes the various payload shapes a `MessageEvent` can carry into a UTF-8 string. */
     private static async decodeMessageData(data: MessageEvent["data"]): Promise<string | null> {
         if (typeof data === "string") {
             return data
@@ -50,6 +51,7 @@ export default class WebSocketService {
         return null
     }
 
+    /** Clears the tracked socket reference once it closes, if it's still the active one. */
     private cleanup(ws: WebSocket): void {
         console.log("Disconnected")
         if (this.socket === ws) {
@@ -185,6 +187,11 @@ export default class WebSocketService {
         }, 0)
     }
 
+    /**
+     * Schedules a reconnect attempt with exponential backoff (capped at 16s,
+     * near-instant on the first attempt). Gives up and notifies
+     * {@link onReconnectFail} subscribers after 5 attempts.
+     */
     private scheduleReconnect(): void {
         if (!this.reconnectUrl || this.reconnectAttempts >= 5) {
             this.reconnectFailedCallbacks.forEach((cb) => cb())
@@ -201,6 +208,7 @@ export default class WebSocketService {
         }, delay)
     }
 
+    /** Proactively closes the socket when the browser goes offline, to avoid Chrome's high CPU usage retrying a dead connection. */
     private readonly offline = () => {
         if (!this.isOffline) {
             this.isOffline = true
@@ -210,6 +218,7 @@ export default class WebSocketService {
         }
     }
 
+    /** Resumes reconnection attempts once the browser reports it's back online. */
     private readonly online = () => {
         if (this.isOffline) {
             this.isOffline = false

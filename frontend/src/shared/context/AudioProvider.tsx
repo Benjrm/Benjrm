@@ -6,6 +6,11 @@ interface AudioProviderProps {
     children: ReactNode
 }
 
+/**
+ * Provides a single, app-wide audio-playback control surface (mute state and
+ * a play trigger) over whichever `<audio>` element is currently registered
+ * via `AudioContextState.setAudioElement`.
+ */
 export default function AudioProvider({ children }: Readonly<AudioProviderProps>): JSX.Element {
     const audioRef = useRef<HTMLAudioElement | null>(null)
     const isMutedRef = useRef(false)
