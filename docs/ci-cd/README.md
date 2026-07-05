@@ -79,7 +79,7 @@ To ensure that our API specifications are syntactically correct and that our bac
 Both workflows are executed when changes are made to the API specifications to save time and resources. The Schemathesis workflow is also executed if changes are made to the backend.
 
 ## Documentation Deployment ([`githubpages.yaml`](../../.github/workflows/githubpages.yaml))
-This workflow deploys our API documentation to GitHub Pages. It runs separately to the main pipeline.
+This workflow deploys our API documentation to GitHub Pages. It runs separately from the main pipeline.
 Please refer to the API related documentation [here](../../docs/api/README.md) for more details.
 
 The deployment process consists of:

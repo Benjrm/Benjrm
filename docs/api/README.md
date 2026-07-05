@@ -132,8 +132,8 @@ For detailed documentation please refer to [Schemathesis' official documentation
 > please refer to the [GitHub Actions workflow file](../../.github/workflows/schemathesis.yaml).
 
 ### Local testing
-1. Installing [Pipenv](https://pipenv.pypa.io/en/latest/installation.html).
-2. Running `pipenv update` in the `api_tests` directory to lock and install the dependencies.
+1. Install [Pipenv](https://pipenv.pypa.io/en/latest/installation.html).
+2. Run `pipenv update` in the `api_tests` directory to lock and install the dependencies.
 3. Run `pipenv shell` to spawn a shell within the virtual environment.
 4. Run `schemathesis run ../docs/openapispec/RestInterface.yaml --exclude-tag SchemathesisSkip`
 
