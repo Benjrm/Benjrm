@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react"
 
+/**
+ * Computes the remaining seconds until `expiresAt` (clamped to `>= 0`).
+ * @param expiresAt - Target timestamp in epoch milliseconds, or `null` if there is no deadline.
+ * @param shouldCeil - Whether to round the remaining time up to the nearest whole second.
+ */
 function calculateRemaining(expiresAt: number | null, shouldCeil: boolean) {
     if (!expiresAt) return null
     let time = (expiresAt - Date.now()) / 1000
@@ -7,6 +12,16 @@ function calculateRemaining(expiresAt: number | null, shouldCeil: boolean) {
     return Math.max(0, time)
 }
 
+/**
+ * Ticks down the seconds remaining to answer the current question, updating
+ * every 250ms until it reaches zero.
+ *
+ * @param questionExpiresAt - Absolute expiry timestamp (epoch ms) if known
+ * (e.g. reconnecting mid-question), otherwise `null` to derive it from `secondsToAnswer`.
+ * @param secondsToAnswer - Question's total answer duration in seconds, used
+ * to compute an expiry when `questionExpiresAt` is `null`.
+ * @param ceil - Whether to round the displayed time up to the nearest whole second.
+ */
 export default function useQuestionTimer(
     questionExpiresAt: number | null,
     secondsToAnswer: number | null,

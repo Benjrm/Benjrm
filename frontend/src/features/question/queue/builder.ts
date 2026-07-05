@@ -18,6 +18,11 @@ function buildCreateQuestionQueueItem(
     }
 }
 
+/**
+ * Adds (or replaces) a "create" entry for `questionId` in the queue.
+ * Any pre-existing create entry for the same question is dropped first, so
+ * repeated edits before a flush collapse into a single create operation.
+ */
 export function upsertCreate(
     state: QueueItem[],
     questionId: string,
@@ -39,6 +44,11 @@ function buildUpdateQuestionQueueItem(
     }
 }
 
+/**
+ * Adds (or replaces) an "update" entry for `questionId` in the queue.
+ * Any pre-existing update entry for the same question is dropped first, so
+ * repeated edits before a flush collapse into a single update operation.
+ */
 export function upsertUpdate(
     state: QueueItem[],
     questionId: string,
@@ -56,6 +66,10 @@ function buildReorderQueueItem(payload: ReorderQueueItem["payload"]): ReorderQue
     }
 }
 
+/**
+ * Adds (or replaces) the single "reorder" entry in the queue. There can only
+ * ever be one pending reorder, since a new order fully supersedes the last.
+ */
 export function upsertReorder(
     state: QueueItem[],
     payload: ReorderQueueItem["payload"]
@@ -74,10 +88,15 @@ function buildDeleteQueueItem(
     }
 }
 
+/**
+ * Adds (or replaces) a "delete" entry for `questionId` in the queue.
+ *
+ * This function also deletes any other operations for the deleted question.
+ */
 export function upsertDelete(
     state: QueueItem[],
     questionId: DeleteQuestionQueueItem["questionId"]
 ): QueueItem[] {
-    const filtered = state.filter((i) => !(i.op === "delete" && i.questionId === questionId))
+    const filtered = state.filter((i) => !(i.op !== "reorder" && i.questionId === questionId))
     return [...filtered, buildDeleteQueueItem(questionId)]
 }

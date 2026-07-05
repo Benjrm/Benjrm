@@ -10,6 +10,12 @@ interface ThemeProviderProps {
     storageKey?: string
 }
 
+/**
+ * Provides the current {@link Theme} to descendants and applies it to the
+ * document root as a `light`/`dark` class, resolving `"auto"` against the
+ * OS/browser `prefers-color-scheme` media query. The chosen theme is
+ * persisted to `localStorage` under `storageKey`.
+ */
 export default function ThemeProvider({
     children,
     defaultTheme = "auto",

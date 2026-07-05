@@ -5,6 +5,7 @@ import reducer from "@/features/question/queue/reducer.ts"
 import type { QuestionRequest, UpdateQuestionRequest } from "@/features/question/types/questions.ts"
 import processQueue, { sortQueue } from "@/features/question/queue/operations.ts"
 
+/** Return value of {@link useQuestionChangeQueue}. */
 interface UseQuestionChangeQueueReturn {
     clear: () => void
     cleanup: (isUsed: (id: string) => Promise<boolean>) => void
@@ -23,6 +24,19 @@ interface UseQuestionChangeQueueReturn {
     queue: QueueItem[]
 }
 
+/**
+ * Manages an offline-first queue of pending question edits (create, update,
+ * delete, reorder) for the quiz editor.
+ *
+ * Edits are applied optimistically to a local queue (persisted to storage via
+ * {@link useQuestionQueueStorage} and keyed by `quizId`, or `"new"` for a
+ * not-yet-created quiz) instead of being sent to the backend immediately.
+ * Call the returned `flush` to submit the queued operations in dependency
+ * order (see {@link processQueue}).
+ *
+ * @param quizId - Id of the quiz being edited, or `undefined` while the quiz
+ * itself has not been created yet.
+ */
 export default function useQuestionChangeQueue(quizId?: string): UseQuestionChangeQueueReturn {
     const queueStorage = useQuestionQueueStorage()
     const storageQuizId = quizId ?? "new"

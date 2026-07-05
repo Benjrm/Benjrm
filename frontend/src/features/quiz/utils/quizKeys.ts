@@ -1,3 +1,4 @@
+/** TanStack Query key factory for quiz-related queries. */
 const quizKeys = {
     all: ["quizzes"] as const,
     lists: () => [...quizKeys.all, "list"] as const,

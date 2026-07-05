@@ -9,6 +9,7 @@ import type {
 } from "@/features/question/queue/types.ts"
 import assertNever from "@/shared/utils/assertNever.ts"
 
+/** Submits a queued question creation to the backend. */
 async function processCreateOp<QI extends Extract<QueueItem, CreateQuestionQueueItem>>(
     item: QI,
     quizId: string
@@ -23,6 +24,13 @@ async function processCreateOp<QI extends Extract<QueueItem, CreateQuestionQueue
     return { status: "success", createdId: created.id, optionIds }
 }
 
+/**
+ * Submits a queued question update to the backend.
+ *
+ * Skipped (rather than failed) if the item still targets a client-side
+ * temporary id — this means the matching "create" hasn't been processed yet
+ * in this flush, so the update can't be resolved to a real question id.
+ */
 async function processUpdateOp<QI extends Extract<QueueItem, UpdateQuestionQueueItem>>(
     item: QI,
     quizId: string
@@ -42,6 +50,12 @@ async function processUpdateOp<QI extends Extract<QueueItem, UpdateQuestionQueue
     return { status: "success", optionIds }
 }
 
+/**
+ * Submits a queued question deletion to the backend.
+ *
+ * A delete targeting an unresolved temporary id is treated as an immediate
+ * success: the question never existed on the server, so there's nothing to delete.
+ */
 async function processDeleteOp<QI extends Extract<QueueItem, DeleteQuestionQueueItem>>(
     item: QI,
     quizId: string
@@ -58,6 +72,12 @@ async function processDeleteOp<QI extends Extract<QueueItem, DeleteQuestionQueue
     return { status: "success" }
 }
 
+/**
+ * Submits a queued question reorder to the backend, resolving any temporary
+ * ids in the order list via `idMap` (populated by prior "create" operations
+ * processed earlier in the same {@link processQueue} run). Skipped if any id
+ * still can't be resolved.
+ */
 async function processReorderOp<QI extends Extract<QueueItem, ReorderQueueItem>>(
     item: QI,
     idMap: Record<string, string>,
@@ -80,6 +100,7 @@ async function processReorderOp<QI extends Extract<QueueItem, ReorderQueueItem>>
     return { status: "success" }
 }
 
+/** Dispatches a single queue item to its matching `process*Op` handler. */
 async function processQueueItem(
     item: QueueItem,
     idMap: Record<string, string>,
@@ -99,6 +120,19 @@ async function processQueueItem(
     }
 }
 
+/**
+ * Sequentially processes a (pre-{@link sortQueue}'d) list of queued question
+ * edits against the backend, one item at a time so that later items can rely
+ * on ids/state produced by earlier ones (e.g. a reorder referencing a
+ * question created earlier in the same run).
+ *
+ * @param items - Queue items to process, expected to already be in
+ * dependency order (delete, then create, then update, then reorder).
+ * @param quizId - Id of the quiz the questions belong to.
+ * @returns The mapping from temporary to real question ids created during
+ * this run, the resulting answer-option ids per question, which item ids
+ * succeeded, and details of any failures.
+ */
 export default async function processQueue(
     items: QueueItem[],
     quizId: string
@@ -149,6 +183,11 @@ export default async function processQueue(
     return { idMap, optionIdsByQuestion, succeededIds, failed }
 }
 
+/**
+ * Orders queue items so that {@link processQueue} applies them safely:
+ * deletes first, then creates, then updates, then the (at most one) reorder
+ * last, since reordering depends on all creates having resolved ids.
+ */
 export function sortQueue(queue: QueueItem[]): QueueItem[] {
     return [...queue].sort((a, b) => {
         const order: Record<QueueItem["op"], number> = {
