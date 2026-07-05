@@ -4,8 +4,37 @@
 
 As a first step, we are collecting the technologies, libraries and frameworks 
 the benjrm's team is familiar with based on
-previous courses at university or other side-projects.
-You can see the analysis' result [here](https://cdn.discordapp.com/attachments/1495812865775501525/1495833115329822720/Skills.pdf?ex=6a3e08e5&is=6a3cb765&hm=d09e5dfbb4e3cca13abe2c051c6a2bca3cb6893d3470553e6f8caa7146fda915&)
+previous courses at university or other side-projects:
+
+## Modul
+
+| Modul               | Bela | Julian | Noel | Erik | Mike | Robin |
+|---------------------|:----:|:------:|:----:|:----:|:----:|:-----:|
+| DBS                 |  x   |   x    |  x   |      |  x   |   x   |
+| Off-Sec             |      |        |  x   |  x   |  x   |       |
+| Interaktive Systeme |  x   |   x    |      |  x   |  x   |       |
+| Dev-Ops             |      |        |  x   |      |      |   x   |
+| Webtech             |  x   |   x    |  x   |      |  x   |       |
+
+## Sprachen
+
+| Sprache       | Bela | Julian | Noel | Erik | Mike | Robin |
+|---------------|:----:|:------:|:----:|:----:|:----:|:-----:|
+| Java / Kotlin |  x   |   x    |  x   |  x   |  x   |   x   |
+| JS / TS       |  x   |   x    |  x   |  x   |  x   |   x   |
+| Rust          |  x   |   x    |      |      |      |       |
+| Python        |  x   |   x    |  x   |  x   |  x   |   x   |
+| Dart          |      |        |      |      |      |   x   |
+
+## Frameworks
+
+| Framework                 | Bela | Julian | Noel | Erik | Mike | Robin |
+|---------------------------|:----:|:------:|:----:|:----:|:----:|:-----:|
+| React (+ Router) / NextJS |  /   |   /    |  x   |  /   |  /   |   /   |
+| Vue.js                    |      |        |      |      |      |   x   |
+| Tailwind CSS              |      |        |  x   |  x   |  x   |   x   |
+| Tanstack Query            |      |        |  x   |      |      |   x   |
+| Actix                     |  x   |   x    |      |      |      |       |
 
 ## Picking the technologies for the project based on the above analysis and the project's requirements
 
