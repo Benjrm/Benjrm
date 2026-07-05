@@ -9,9 +9,9 @@ The challenge is to select a suitable database solution that supports a relation
 
 ## Considered Options
 
-* PostgresQL
+* PostgreSQL
 * MariaDB / MySQL
-* SQLLite
+* SQLite
 
 ## Decision Outcome
 

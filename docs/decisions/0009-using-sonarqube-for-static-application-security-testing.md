@@ -12,7 +12,7 @@ To ensure the security, reliability, and maintainability of the Benjrm applicati
 
 ## Decision Outcome
 
-Selected option: SonarQube / SonarCloud, as it offers detailed code smell analysis, multi-language coverage of both the frontend and backend, and a user-friendly dashboard for visualizing metrics on code quality and maintainability.
+Chosen option: "SonarQube / SonarCloud", as it offers detailed code smell analysis, multi-language coverage of both the frontend and backend, and a user-friendly dashboard for visualizing metrics on code quality and maintainability.
 
 Compared to CodeQL: CodeQL integrates directly into GitHub with pull request annotations and also scans dependencies and security vulnerabilities. It is free for open-source repositories, and the quality of the scans is high. However, setting up and writing CodeQL queries is difficult and complex. Additionally, the scan speed is slower than that of Semgrep.
 

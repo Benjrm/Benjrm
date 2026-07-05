@@ -1,4 +1,4 @@
-# Using React and TypeScript with Vite as Build Tool as a Frontend Library
+# React, TypeScript and Vite as the Frontend Stack
 
 ## Context and Problem Statement
 

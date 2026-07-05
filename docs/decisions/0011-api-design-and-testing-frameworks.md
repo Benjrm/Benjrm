@@ -20,13 +20,13 @@ To ensure a standardized, well-organized, and thoroughly documented API for Benj
 
 ### API Design Linting: Spectral
 
-Selected option: Spectral, as it is an open-source, highly flexible, and customizable API linter that fits our architecture with multiple specifications.
+Chosen option: "Spectral", as it is an open-source, highly flexible, and customizable API linter that fits our architecture with multiple specifications.
 
 Compared to Redocly CLI: Redocly CLI is a great tool for creating and validating OpenAPI documents, but Spectral offers first-class, native support for both OpenAPI and AsyncAPI (which we use for our WebSockets interface). Spectral allows us to write customizable rules and easily check multiple interface configurations in our CI/CD workflows.
 
 ### API Testing: Schemathesis
 
-Selected option: Schemathesis, because it uses property-based testing to automatically generate a wide range of test cases from our OpenAPI schemas, automatically detecting edge cases and schema deviations.
+Chosen option: "Schemathesis", because it uses property-based testing to automatically generate a wide range of test cases from our OpenAPI schemas, automatically detecting edge cases and schema deviations.
 
 In comparison, Dredd is a well-established API testing tool. However, it necessitates exact assertions with precise values and provides only partial support for the latest OpenAPI 3.x specifications. Schemathesis, on the other hand, offers full support for OpenAPI 3.x and can generate random inputs based on field types and constraints. This allows it to explore code paths and edge cases.
 

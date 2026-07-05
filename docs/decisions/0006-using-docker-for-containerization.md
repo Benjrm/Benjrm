@@ -12,8 +12,7 @@ The challenge is to choose a suitable containerization tool that meets our needs
 
 ## Decision Outcome
 
-Chosen option: 
-Docker is selected as the containerization tool for the Benjrm project because it provides the 
+Chosen option: Docker is selected as the containerization tool for the Benjrm project because it provides the 
 most practical balance between usability, ecosystem support, and team productivity.
 
 While both Docker and Podman are OCI-compliant and capable of running containerized applications reliably across environments, 
