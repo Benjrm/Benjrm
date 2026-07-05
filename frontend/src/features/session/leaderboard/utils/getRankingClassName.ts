@@ -2,7 +2,7 @@ const rankingClassNameCache = new Map<number, string>()
 
 /**
  * Returns the Tailwind class string for a leaderboard row's rank badge,
- * highlighting the top 3 ranks distinctly. Results are memoized since the
+ * highlighting the top 3 ranks distinctly. Results are cached since the
  * set of possible rankings is small and reused across re-renders.
  */
 export default function getRankingClassName(ranking: number): string {

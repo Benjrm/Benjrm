@@ -2,9 +2,11 @@ import { useMutation } from "@tanstack/react-query"
 import type { UseMutationResult } from "@tanstack/react-query"
 
 /**
- * Permanently deletes the current user's account (`DELETE /auth/user`),
- * requiring an explicit `"DELETE"` confirmation in the body as a safeguard
- * against accidental calls.
+ * Permanently deletes the current user's account (`DELETE /auth/user`).
+ *
+ * The request body requires a hardcoded `"DELETE"` confirmation value. This
+ * is not a real safeguard against accidental calls from code, just a
+ * workaround to make the intent explicit in the request.
  */
 async function deleteAccount(): Promise<void> {
     const res = await fetch("/auth/user", {
