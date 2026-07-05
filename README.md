@@ -85,6 +85,10 @@ Each letter represents one of the creators. Together, it forms a name that is pr
 ## API
 Please refer to the [API-related documentation](docs/api/README.md).
 
+## Technology Stack
+
+To get more insights into Benjrm's technology stack, please refer to the [Technology Stack Documentation](docs/decisions/README.md).
+
 ## CI/CD Pipeline documentation
 Please refer to the [CI/CD Pipeline Documentation](docs/ci-cd/README.md).
 
