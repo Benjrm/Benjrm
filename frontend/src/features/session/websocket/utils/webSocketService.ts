@@ -137,7 +137,7 @@ export default class WebSocketService {
             }
         }
 
-        ws.onclose = (e) => {
+        ws.onclose = () => {
             if (hasOpened) {
                 this.everyCloseCallbacks.forEach((cb) => cb())
             } else {
@@ -146,11 +146,7 @@ export default class WebSocketService {
             }
             this.cleanup(ws)
             if (!this.intentionalClose) {
-                if (e.wasClean) {
-                    console.error("Server terminated websocket connection")
-                } else {
-                    this.scheduleReconnect()
-                }
+                this.scheduleReconnect()
             }
         }
 
