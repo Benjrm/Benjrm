@@ -4,7 +4,7 @@ import type { ListStorage } from "@/shared/utils/listStorage"
 import type { QueueItem } from "@/features/question/queue/types.ts"
 
 /**
- * Provides a stable, memoized {@link ListStorage} for the question change
+ * Provides a stable {@link ListStorage} instance for the question change
  * queue, namespaced under `"quiz:queue"` (see `useQuestionChangeQueue`).
  */
 export default function useQuestionQueueStorage(): ListStorage<QueueItem> {

@@ -2,7 +2,7 @@ import type { QuestionType } from "@/features/question/types/questions.ts"
 
 /** Request payload to create a game session, optionally bound to a quiz. */
 export interface CreateSessionInput {
-    quiz: string
+    quiz?: string
 }
 
 /** A game session as returned by the REST API (`GET /sessions/{code}`). */
