@@ -10,7 +10,7 @@ actix-session = { version = "0.11.0", features = ["cookie-session"] }
 actix-web = "4.13.0"
 actix-ws = "0.4.0"
 async-trait = "0.1.89"
-awc = "3.8.2"
+awc = { version = "3.8.2", features = ["rustls"] }
 bytes = "1.11.1"
 chrono = { version = "0.4.44", default-features = false, features = ["std", "clock", "serde"] }
 dotenvy = "0.15.7"
