@@ -25,6 +25,7 @@ mod serve_frontend {
     include!(concat!(env!("OUT_DIR"), "/generated.rs"));
     lazy_static::lazy_static! {
         static ref DATA: std::collections::HashMap<&'static str, static_files::Resource> = generate();
+        static ref INDEX: &'static static_files::Resource = DATA.get("index.html").expect("index.html not found");
     }
 
     /// Serves a static file from embedded frontend assets.
@@ -36,14 +37,19 @@ mod serve_frontend {
         }
         let path = req.path().trim_matches('/');
 
-        match DATA.get(path).or_else(|| DATA.get("index.html")) {
-            Some(file) => {
-                let mut resp = HttpResponse::build(StatusCode::OK);
-                resp.content_type(file.mime_type);
-                resp.body(file.data)
-            }
-            None => HttpResponse::NotFound().finish(),
+        let file = DATA.get(path).unwrap_or(*INDEX);
+        let mut resp = HttpResponse::build(StatusCode::OK);
+        resp.content_type(file.mime_type);
+
+        if std::ptr::eq(file, *INDEX) {
+            // Do not cache index.html
+            resp.append_header(("Cache-Control", "no-cache"));
+        } else {
+            // Do cache everything else
+            resp.append_header(("Cache-Control", "public, max-age=3600"));
         }
+
+        resp.body(file.data)
     }
 }
 
