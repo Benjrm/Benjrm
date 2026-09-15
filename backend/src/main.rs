@@ -7,6 +7,8 @@ use {
         mime,
         web::{self, JsonConfig, PathConfig, QueryConfig},
     },
+    awc::cookie::KeyError,
+    std::env::VarError,
 };
 
 mod app_data;
@@ -47,6 +49,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     let secret_key = if cfg!(debug_assertions) {
+        log::info!("Using static cookie key in development build");
         // Constant key for debug builds
         const KEY: [u8; 64] = [
             214, 235, 254, 208, 2, 104, 84, 123, 188, 216, 236, 30, 146, 156, 213, 15, 147, 35,
@@ -56,7 +59,29 @@ async fn main() -> std::io::Result<()> {
         ];
         cookie::Key::from(&KEY)
     } else {
-        cookie::Key::generate()
+        match std::env::var("COOKIE_KEY") {
+            Ok(key) => {
+                log::info!("Using defined cookie key");
+                match cookie::Key::try_from(key.as_bytes()) {
+                    Ok(key) => key,
+                    Err(err) => match err {
+                        KeyError::TooShort(_) => {
+                            panic!(
+                                r#"The given environment variable "COOKIE_KEY" is to short. A minimum of 64 (random) characters is required"#
+                            );
+                        }
+                        _ => todo!(r#"Unknown error"#),
+                    },
+                }
+            }
+            Err(VarError::NotPresent) => {
+                log::info!("Cookie key not defined, using random key");
+                cookie::Key::generate()
+            }
+            Err(e) => {
+                panic!("{e:?}")
+            }
+        }
     };
 
     let data = web::Data::new(AppData::from_env().await);
