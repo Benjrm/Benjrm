@@ -1,5 +1,5 @@
 use {
-    crate::AppData,
+    crate::{AppData, app_data::AppDataTrait},
     actix_web::{HttpResponse, get, web},
     std::path::Path,
 };
@@ -110,13 +110,13 @@ current directory: {}"#,
 /// Serve the imprint
 #[get("/imprint.md")]
 async fn serve_imprint(app_data: web::Data<AppData>) -> HttpResponse {
-    app_data.imprint.get_response().await
+    app_data.imprint().get_response().await
 }
 
 /// Serve the privacy statement
 #[get("/privacy.md")]
 async fn serve_privacy(app_data: web::Data<AppData>) -> HttpResponse {
-    app_data.privacy.get_response().await
+    app_data.privacy().get_response().await
 }
 
 /// Initialize the routes to static files.

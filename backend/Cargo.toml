@@ -13,10 +13,12 @@ async-trait = "0.1.89"
 awc = { version = "3.8.2", features = ["rustls"] }
 bytes = "1.11.1"
 chrono = { version = "0.4.44", default-features = false, features = ["std", "clock", "serde"] }
+deadpool-redis = { version = "0.23.1", features = ["rt_tokio_1", "cluster"] }
 dotenvy = "0.15.7"
 emojis = { version = "0.8.2", features = ["serde"]}
 env_logger = "0.11.10"
 futures = "0.3.32"
+gethostname = "1.1.0"
 lazy_static = "1.5.0"
 log = "0.4.29"
 migration = { path = "../database-migrator" }

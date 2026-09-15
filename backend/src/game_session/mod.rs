@@ -10,6 +10,7 @@ use {
         quiz::Quiz,
     },
     chrono::{DateTime, Utc},
+    deadpool_redis::{cluster::PoolError, redis::RedisError},
     emojis::Emoji,
     rand::seq::SliceRandom,
     serde::{Deserialize, Serialize},
@@ -67,8 +68,6 @@ impl_err! {
         QuestionNotFound = NOT_FOUND,
         #[error("No players")]
         NoPlayers = BAD_REQUEST,
-        #[error("Quiz already started")]
-        SessionAlreadyStarted = BAD_REQUEST,
         #[error("Question already answered")]
         AlreadyAnswered = BAD_GATEWAY,
         #[error("Invalid answer count")]
@@ -87,6 +86,12 @@ impl_err! {
         NoQuestions = BAD_REQUEST,
         #[error("No leaderboard to show")]
         NoLeaderboard = BAD_REQUEST,
+        #[error("Redis error")]
+        Redis(RedisError) = INTERNAL_SERVER_ERROR,
+        #[error("Redis pool error")]
+        RedisPool(PoolError) = INTERNAL_SERVER_ERROR,
+        #[error("Game session exists on other node `{0}`")]
+        DifferentNode(String) = INTERNAL_SERVER_ERROR,
     }
 }
 

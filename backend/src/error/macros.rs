@@ -106,6 +106,8 @@ macro_rules! impl_err {
             }
 
             $($crate::error::impl_err!{DbErrImpl; $error; $name; $($($field),*)?})*
+            $($crate::error::impl_err!{RedisErrImpl; $error; $name; $($($field),*)?})*
+            $($crate::error::impl_err!{RedisPoolErrImpl; $error; $name; $($($field),*)?})*
         }
     };
     ($($ty:ty),*) => {..};
@@ -124,6 +126,22 @@ macro_rules! impl_err {
         }
     };
     (DbErrImpl; $error:ident; $name:ident; $($field:ty),*) => {};
+    (RedisErrImpl; $error:ident; $name:ident; RedisError) => {
+        impl From<deadpool_redis::redis::RedisError> for $error {
+            fn from(e: deadpool_redis::redis::RedisError) -> Self {
+                Self::$name(e)
+            }
+        }
+    };
+    (RedisErrImpl; $error:ident; $name:ident; $($field:ty),*) => {};
+    (RedisPoolErrImpl; $error:ident; $name:ident; RedisPoolError) => {
+        impl From<deadpool_redis::redis::PoolError> for $error {
+            fn from(e: deadpool_redis::redis::PoolError) -> Self {
+                Self::$name(e)
+            }
+        }
+    };
+    (RedisPoolErrImpl; $error:ident; $name:ident; $($field:ty),*) => {};
 }
 
 pub(crate) use impl_err;

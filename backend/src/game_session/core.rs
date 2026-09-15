@@ -1,5 +1,6 @@
 use {
     crate::{
+        app_data::AppDataTrait,
         auth::User,
         error::Error,
         game_session::{
@@ -17,6 +18,7 @@ use {
     },
     actix_web::rt,
     chrono::{TimeDelta, Utc},
+    deadpool_redis::redis::AsyncTypedCommands,
     emojis::Emoji,
     futures::{StreamExt, stream::FuturesUnordered},
     sea_orm::ConnectionTrait,
@@ -47,6 +49,8 @@ impl GameSessions {
     pub async fn create_session(
         &self,
         conn: &impl ConnectionTrait,
+        redis: &Option<deadpool_redis::cluster::Pool>,
+        hostname: &str,
         host: User,
         quiz: Option<Uuid>,
     ) -> Result<(SessionCode, Arc<Mutex<GameSession>>), Error> {
@@ -67,12 +71,25 @@ impl GameSessions {
         };
 
         let mut sessions = self.sessions.write().await;
+
+        let mut redis = match redis {
+            Some(redis) => Some(redis.get().await.map_err(GameSessionError::RedisPool)?),
+            None => None,
+        };
+
         let code = {
             #[cfg(debug_assertions)]
             {
-                use std::sync::atomic::{AtomicU32, Ordering};
-                static SESSION_CNT: AtomicU32 = AtomicU32::new(1);
-                SESSION_CNT.fetch_add(1, Ordering::Relaxed)
+                if let Some(redis) = &mut redis {
+                    redis
+                        .incr("session_code_counter", 1)
+                        .await
+                        .map_err(GameSessionError::Redis)? as SessionCode
+                } else {
+                    use std::sync::atomic::{AtomicU32, Ordering};
+                    static SESSION_CNT: AtomicU32 = AtomicU32::new(1);
+                    SESSION_CNT.fetch_add(1, Ordering::Relaxed)
+                }
             }
 
             #[cfg(not(debug_assertions))]
@@ -80,16 +97,40 @@ impl GameSessions {
                 use rand::RngExt;
                 let mut code = None;
                 let mut rng = rand::rng();
-                for _ in 0..10 {
-                    let new_code: SessionCode = rng.random_range(100_0000..=9999_9999);
-                    if !sessions.contains_key(&new_code) {
-                        code = Some(new_code);
-                        break;
+
+                if let Some(redis) = &mut redis {
+                    for _ in 0..10 {
+                        let new_code: SessionCode = rng.random_range(100_0000..=9999_9999);
+                        if redis
+                            .get_int(new_code)
+                            .await
+                            .map_err(GameSessionError::Redis)?
+                            .is_none()
+                        {
+                            code = Some(new_code);
+                            break;
+                        }
+                    }
+                } else {
+                    for _ in 0..10 {
+                        let new_code: SessionCode = rng.random_range(100_0000..=9999_9999);
+                        if !sessions.contains_key(&new_code) {
+                            code = Some(new_code);
+                            break;
+                        }
                     }
                 }
+
                 code.ok_or(GameSessionError::CannotGenerateCode)?
             }
         };
+
+        if let Some(redis) = &mut redis {
+            redis
+                .set_ex(code, hostname, 60 * 24 * 7)
+                .await
+                .map_err(GameSessionError::Redis)?;
+        }
 
         let game = GameSession {
             status: GameSessionStatus::Waiting(Vec::new()),
@@ -107,12 +148,22 @@ impl GameSessions {
     /// Retrieves a game session by its code.
     pub async fn get_session(
         &self,
+        redis: &Option<deadpool_redis::cluster::Pool>,
+        hostname: &str,
         code: SessionCode,
     ) -> Result<Arc<Mutex<GameSession>>, GameSessionError> {
         let map = self.sessions.read().await;
         if let Some(game) = map.get(&code) {
             Ok(Arc::clone(game))
         } else {
+            if let Some(redis) = redis {
+                let mut redis = redis.get().await.expect("Unable to get redis connection");
+                if let Some(node) = redis.get(code).await.map_err(GameSessionError::Redis)?
+                    && node != hostname
+                {
+                    Err(GameSessionError::DifferentNode(node))?
+                }
+            }
             Err(GameSessionError::InvalidCode)
         }
     }
@@ -120,18 +171,37 @@ impl GameSessions {
     /// Removes a session without closing it and without permission check.
     ///
     /// Intended for internal cleanup operations.
-    pub async fn drop_session(&self, code: SessionCode) {
+    pub async fn drop_session(
+        &self,
+        redis: &Option<deadpool_redis::cluster::Pool>,
+        hostname: &str,
+        code: SessionCode,
+    ) -> Result<(), GameSessionError> {
+        if let Some(redis) = redis {
+            let mut redis = redis.get().await.expect("Unable to get redis connection");
+            let session = redis.get(code).await.map_err(GameSessionError::Redis)?;
+            if let Some(session) = session
+                && session == hostname
+            {
+                redis.del(code).await.map_err(GameSessionError::Redis)?;
+            }
+        }
+
         let mut sessions = self.sessions.write().await;
         sessions.remove(&code);
+
+        Ok(())
     }
 
     /// Remove and closes a session.
     pub async fn delete_session(
         &self,
         user: &User,
+        redis: &Option<deadpool_redis::cluster::Pool>,
+        hostname: &str,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
-        let session = self.get_session(code).await?;
+        let session = self.get_session(redis, hostname, code).await?;
 
         {
             let mut session = session.lock().await;
@@ -141,7 +211,7 @@ impl GameSessions {
             session.close().await;
         }
 
-        self.drop_session(code).await;
+        self.drop_session(redis, hostname, code).await?;
 
         Ok(())
     }
@@ -281,11 +351,12 @@ impl GameSession {
     /// Handles a command sent by the host of the session.
     ///
     /// This is where the session state is updated based on the host's commands, such as starting the game or moving to the next question.
-    pub async fn handle_host_cmd(
+    pub async fn handle_host_cmd<AppData: AppDataTrait>(
         &mut self,
         cmd: Command<HostCommand>,
         arc: Arc<Mutex<Self>>,
         (sessions, code): &(GameSessions, SessionCode),
+        app_data: Arc<AppData>,
     ) -> Result<(), GameSessionError> {
         match cmd.command {
             HostCommand::Pong { .. } => (),
@@ -350,7 +421,9 @@ impl GameSession {
                 execute_futures(player_iterator).await;
             }
             HostCommand::EndGame => {
-                sessions.drop_session(*code).await;
+                sessions
+                    .drop_session(app_data.redis(), app_data.hostname(), *code)
+                    .await?;
                 self.end_question(Some(true)).await;
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
                     .await;
@@ -566,11 +639,12 @@ impl GameSession {
     }
 
     /// Handles a command sent by the players of the session.
-    pub async fn handle_player_cmd(
+    pub async fn handle_player_cmd<AppData: AppDataTrait>(
         &mut self,
         cmd: Command<PlayerCommand>,
         _arc: Arc<Mutex<Self>>,
         id: &Uuid,
+        _app_data: Arc<AppData>,
     ) -> Result<(), GameSessionError> {
         match cmd.command {
             PlayerCommand::Pong { .. } => (),

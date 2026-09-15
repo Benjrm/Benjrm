@@ -1,6 +1,7 @@
 use {
     crate::{
         AppData,
+        app_data::AppDataTrait,
         auth::{
             SessionUser, User,
             entity::{ActiveUser, UserColumn, UserEntity, UserModel},
@@ -43,7 +44,7 @@ struct Path {
 ///
 /// **Note:** This function stores the before login path to redirect the user back to it after a successful login.
 async fn login(data: web::Data<AppData>, session: Session, path: web::Query<Path>) -> HttpResponse {
-    let (auth_url, csrf_token, pkce_verifier, nonce) = data.oidc.client.authorization_url();
+    let (auth_url, csrf_token, pkce_verifier, nonce) = data.oidc().client.authorization_url();
 
     let redirect_path =
         path.into_inner()
@@ -63,7 +64,7 @@ async fn login(data: web::Data<AppData>, session: Session, path: web::Query<Path
     session.insert("oidc_state", state).unwrap();
 
     HttpResponse::Found()
-        .append_header(("Location", data.oidc.to_public_idp_url(auth_url).as_str()))
+        .append_header(("Location", data.oidc().to_public_idp_url(auth_url).as_str()))
         .finish()
 }
 
@@ -96,7 +97,7 @@ async fn callback(
     if response.state != *state.csrf_token.secret() {
         return Err(Error::InvalidCsrfToken);
     }
-    if response.issuer != data.oidc.issuer_url.as_str() {
+    if response.issuer != data.oidc().issuer_url.as_str() {
         return Err(Error::InvalidIssuer);
     }
     if Utc::now() - state.time > TimeDelta::minutes(30) {
@@ -104,14 +105,13 @@ async fn callback(
     }
 
     let (oauth_user, oidc_user) = data
-        .oidc
+        .oidc()
         .client
         .exchange_code(&response.code, state.pkce_verifier, state.nonce.as_ref())
         .await?;
 
     let user = oidc_user.ok_or(Error::MissingOidcUser(Box::new(oauth_user)))?;
-
-    let db_user = fetch_insert_db_user(&data.db, &user.oauth2_user.sub).await?;
+    let db_user = fetch_insert_db_user(data.db(), &user.oauth2_user.sub).await?;
 
     let user = SessionUser {
         id: db_user.id,
@@ -141,10 +141,10 @@ async fn logout(data: web::Data<AppData>, session: Session) -> HttpResponse {
     if let Some(user) = user
         && let Some(id_token) = user.id_token
     {
-        let mut url = data.oidc.logout_url.clone();
+        let mut url = data.oidc().logout_url.clone();
         url.query_pairs_mut()
             .append_pair("id_token_hint", &id_token)
-            .append_pair("post_logout_redirect_uri", data.oidc.public_url.as_str());
+            .append_pair("post_logout_redirect_uri", data.oidc().public_url.as_str());
 
         return HttpResponse::Found()
             .append_header(("Location", url.as_str()))
@@ -167,7 +167,7 @@ struct UserResponse {
 async fn get_user(user: User, data: web::Data<AppData>) -> HttpResponse {
     HttpResponse::Ok().json(UserResponse {
         id: user.id,
-        account_url: data.oidc.account_url(),
+        account_url: data.oidc().account_url(),
     })
 }
 
@@ -195,7 +195,7 @@ async fn delete_user(
     }
 
     let txn = data
-        .db
+        .db()
         .begin()
         .await
         .map_err(|e| AppError::from(QuizError::from(e)))?;
@@ -248,7 +248,7 @@ async fn dummy_login(
 ) -> Result<HttpResponse, Error> {
     let sub = format!("dummy_user_{}", path.into_inner());
 
-    let db_user = fetch_insert_db_user(&data.db, &sub).await?;
+    let db_user = fetch_insert_db_user(data.db(), &sub).await?;
 
     let user = SessionUser {
         id: db_user.id,

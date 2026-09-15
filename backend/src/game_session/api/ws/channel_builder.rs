@@ -1,6 +1,6 @@
 use {
     crate::{
-        AppData,
+        app_data::AppDataTrait,
         error::Error,
         game_session::{
             Channel, Command, CommandTrait, GameSession, GameSessionError, GameSessionStatus,
@@ -23,14 +23,14 @@ use {
 /// Builder for creating a new [`WsChannel`]. This struct is used to configure the channel before it is built.
 ///
 /// A [`WsChannelBuilder`] owns the underlying WebSocket connection until it is converted into a [`WsChannel`] with [`Self::build`].
-pub struct WsChannelBuilder {
+pub struct WsChannelBuilder<AppData: AppDataTrait> {
     pub(super) id: u64,
     pub(super) inner: InnerChannel,
     pub(super) app_data: Arc<AppData>,
     pub(super) session: Arc<Mutex<GameSession>>,
 }
 
-impl WsChannelBuilder {
+impl<AppData: AppDataTrait + 'static> WsChannelBuilder<AppData> {
     /// Creates a new [`WsChannelBuilder`] for a [`WsChannel`] connection.
     ///
     /// **Hint:** The returned builder does not start processing incoming messages.
@@ -61,6 +61,7 @@ impl WsChannelBuilder {
                 Cmd,
                 Arc<Mutex<GameSession>>,
                 &Payload,
+                Arc<AppData>,
             ) -> Result<(), GameSessionError>
             + Send
             + 'static,
@@ -83,6 +84,7 @@ impl WsChannelBuilder {
                         cmd,
                         Arc::clone(&self.session),
                         &payload,
+                        Arc::clone(&self.app_data),
                     )
                     .await;
 

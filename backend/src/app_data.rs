@@ -1,7 +1,19 @@
 use {
     crate::{auth::oidc::Oidc, game_session::GameSessions, static_file::StaticFile},
-    std::path::PathBuf,
+    deadpool_redis::cluster::{Config, Pool, Runtime},
+    gethostname::gethostname,
+    std::{env::VarError, path::PathBuf},
 };
+
+pub trait AppDataTrait {
+    fn db(&self) -> &sea_orm::DbConn;
+    fn redis(&self) -> &Option<Pool>;
+    fn hostname(&self) -> &str;
+    fn imprint(&self) -> &StaticFile;
+    fn privacy(&self) -> &StaticFile;
+    fn oidc(&self) -> &Oidc;
+    fn game_sessions(&self) -> &GameSessions;
+}
 
 /// Application-wide shared state.
 ///
@@ -12,11 +24,13 @@ use {
 /// - static content
 /// - in-memory game session storage
 pub struct AppData {
-    pub db: sea_orm::DbConn,
-    pub imprint: StaticFile,
-    pub privacy: StaticFile,
-    pub oidc: Oidc,
-    pub game_sessions: GameSessions,
+    db: sea_orm::DbConn,
+    redis: Option<Pool>,
+    hostname: String,
+    imprint: StaticFile,
+    privacy: StaticFile,
+    oidc: Oidc,
+    game_sessions: GameSessions,
 }
 
 impl AppData {
@@ -45,6 +59,34 @@ impl AppData {
             db
         };
 
+        let redis = {
+            match std::env::var("REDIS_URL") {
+                Ok(redis_urls) => {
+                    let cfg = Config::from_urls(vec![redis_urls]);
+
+                    let pool = cfg
+                        .create_pool(Some(Runtime::Tokio1))
+                        .expect("failed to create Redis cluster pool");
+
+                    pool.get().await.expect("Unable to get redis connection");
+
+                    Some(pool)
+                }
+                Err(VarError::NotPresent) => {
+                    log::info!("Redis disabled");
+                    None
+                }
+                Err(err) => {
+                    panic!("{err:?}")
+                }
+            }
+        };
+
+        let hostname = {
+            let hostname = gethostname();
+            hostname.into_string().expect("hostname is not valid UTF-8")
+        };
+
         let imprint = StaticFile::new(&config_dir, "imprint.md", "text/markdown").await;
         let privacy = StaticFile::new(&config_dir, "privacy.md", "text/markdown").await;
 
@@ -54,11 +96,43 @@ impl AppData {
 
         Self {
             db,
+            redis,
+            hostname,
             imprint,
             privacy,
             oidc,
             game_sessions,
         }
+    }
+}
+
+impl AppDataTrait for AppData {
+    fn db(&self) -> &sea_orm::DbConn {
+        &self.db
+    }
+
+    fn redis(&self) -> &Option<Pool> {
+        &self.redis
+    }
+
+    fn hostname(&self) -> &str {
+        &self.hostname
+    }
+
+    fn imprint(&self) -> &StaticFile {
+        &self.imprint
+    }
+
+    fn privacy(&self) -> &StaticFile {
+        &self.privacy
+    }
+
+    fn oidc(&self) -> &Oidc {
+        &self.oidc
+    }
+
+    fn game_sessions(&self) -> &GameSessions {
+        &self.game_sessions
     }
 }
 
@@ -124,6 +198,37 @@ impl TestAppData {
     pub async fn dummy_user(&self) -> crate::auth::User {
         let id = self.dummy_user_id().await;
         crate::auth::User { id }
+    }
+}
+
+#[cfg(test)]
+impl AppDataTrait for TestAppData {
+    fn db(&self) -> &sea_orm::DbConn {
+        &self.db
+    }
+
+    fn redis(&self) -> &Option<Pool> {
+        &None
+    }
+
+    fn hostname(&self) -> &str {
+        "test.local"
+    }
+
+    fn imprint(&self) -> &StaticFile {
+        unimplemented!()
+    }
+
+    fn privacy(&self) -> &StaticFile {
+        unimplemented!()
+    }
+
+    fn oidc(&self) -> &Oidc {
+        unimplemented!()
+    }
+
+    fn game_sessions(&self) -> &GameSessions {
+        &self.game_sessions
     }
 }
 

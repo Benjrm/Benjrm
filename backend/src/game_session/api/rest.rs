@@ -1,6 +1,7 @@
 use {
     crate::{
         AppData,
+        app_data::AppDataTrait,
         auth::{OptionalUser, User},
         error::Result,
         game_session::{GameSessionError, GameSessionPlayer, Player, SessionCode, api::NewSession},
@@ -17,8 +18,14 @@ async fn create_one(
     create: web::Json<NewSession>,
 ) -> Result<HttpResponse> {
     let (code, session) = app_data
-        .game_sessions
-        .create_session(&app_data.db, user.clone(), create.quiz)
+        .game_sessions()
+        .create_session(
+            app_data.db(),
+            app_data.redis(),
+            app_data.hostname(),
+            user.clone(),
+            create.quiz,
+        )
         .await?;
     let session = session.lock().await;
     Ok(HttpResponse::Created().json(session.to_dto(code, Some(user))))
@@ -31,8 +38,14 @@ async fn create_one_with_quiz(
     quiz: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let (code, session) = app_data
-        .game_sessions
-        .create_session(&app_data.db, user.clone(), Some(quiz.into_inner()))
+        .game_sessions()
+        .create_session(
+            app_data.db(),
+            app_data.redis(),
+            app_data.hostname(),
+            user.clone(),
+            Some(quiz.into_inner()),
+        )
         .await?;
     let session = session.lock().await;
     Ok(HttpResponse::Created().json(session.to_dto(code, Some(user))))
@@ -45,7 +58,10 @@ async fn get_one(
     code: web::Path<SessionCode>,
 ) -> Result<HttpResponse> {
     let code = code.into_inner();
-    let session = app_data.game_sessions.get_session(code).await?;
+    let session = app_data
+        .game_sessions()
+        .get_session(app_data.redis(), app_data.hostname(), code)
+        .await?;
 
     let session = session.lock().await;
     if session.is_closed() {
@@ -61,7 +77,10 @@ async fn get_one_with_quiz(
     path: web::Path<(Uuid, SessionCode)>,
 ) -> Result<HttpResponse> {
     let (quiz_id, code) = path.into_inner();
-    let session = app_data.game_sessions.get_session(code).await?;
+    let session = app_data
+        .game_sessions()
+        .get_session(app_data.redis(), app_data.hostname(), code)
+        .await?;
 
     let session = session.lock().await;
     if session.is_closed() {
@@ -81,8 +100,13 @@ async fn delete(
     code: web::Path<SessionCode>,
 ) -> Result<HttpResponse> {
     app_data
-        .game_sessions
-        .delete_session(&user, code.into_inner())
+        .game_sessions()
+        .delete_session(
+            &user,
+            app_data.redis(),
+            app_data.hostname(),
+            code.into_inner(),
+        )
         .await?;
 
     Ok(HttpResponse::NoContent().finish())
@@ -95,7 +119,10 @@ async fn delete_with_quiz(
     path: web::Path<(Uuid, SessionCode)>,
 ) -> Result<HttpResponse> {
     let (quiz_id, code) = path.into_inner();
-    let session = app_data.game_sessions.get_session(code).await?;
+    let session = app_data
+        .game_sessions()
+        .get_session(app_data.redis(), app_data.hostname(), code)
+        .await?;
 
     let mut session = session.lock().await;
     match &session.quiz {
@@ -105,7 +132,10 @@ async fn delete_with_quiz(
     if session.host.user != user {
         return Err(GameSessionError::Forbidden.into());
     }
-    app_data.game_sessions.drop_session(code).await;
+    app_data
+        .game_sessions()
+        .drop_session(app_data.redis(), app_data.hostname(), code)
+        .await?;
     session.close().await;
 
     Ok(HttpResponse::NoContent().finish())
@@ -118,8 +148,8 @@ async fn get_quiz(
     code: web::Path<SessionCode>,
 ) -> Result<HttpResponse> {
     let session = app_data
-        .game_sessions
-        .get_session(code.into_inner())
+        .game_sessions()
+        .get_session(app_data.redis(), app_data.hostname(), code.into_inner())
         .await?;
 
     let session = session.lock().await;
@@ -140,7 +170,10 @@ async fn get_quiz_with_quiz_id(
     path: web::Path<(Uuid, SessionCode)>,
 ) -> Result<HttpResponse> {
     let (quiz_id, code) = path.into_inner();
-    let session = app_data.game_sessions.get_session(code).await?;
+    let session = app_data
+        .game_sessions()
+        .get_session(app_data.redis(), app_data.hostname(), code)
+        .await?;
 
     let session = session.lock().await;
     match &session.quiz {
@@ -178,8 +211,8 @@ async fn get_players(
     code: web::Path<SessionCode>,
 ) -> Result<HttpResponse> {
     let session = app_data
-        .game_sessions
-        .get_session(code.into_inner())
+        .game_sessions()
+        .get_session(app_data.redis(), app_data.hostname(), code.into_inner())
         .await?;
 
     let session = session.lock().await;
@@ -193,7 +226,10 @@ async fn get_players_with_quiz(
     path: web::Path<(Uuid, SessionCode)>,
 ) -> Result<HttpResponse> {
     let (quiz_id, code) = path.into_inner();
-    let session = app_data.game_sessions.get_session(code).await?;
+    let session = app_data
+        .game_sessions()
+        .get_session(app_data.redis(), app_data.hostname(), code)
+        .await?;
 
     let session = session.lock().await;
     match &session.quiz {

@@ -1,6 +1,6 @@
 use {
     crate::{
-        app_data::TestAppData,
+        app_data::{AppDataTrait, TestAppData},
         auth::User,
         error::Error,
         game_session::{
@@ -126,7 +126,7 @@ async fn dummy_session(
         false => None,
     };
     data.game_sessions
-        .create_session(&data.db, user.clone(), quiz)
+        .create_session(&data.db, data.redis(), data.hostname(), user.clone(), quiz)
         .await
         .unwrap()
 }
@@ -176,12 +176,16 @@ async fn dummy_player(
 
 #[actix_web::test]
 async fn create_get_session() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
 
     {
         let (code, _) = dummy_session(&data, &user, false).await;
-        let session = data.game_sessions.get_session(code).await.unwrap();
+        let session = data
+            .game_sessions
+            .get_session(data.redis(), data.hostname(), code)
+            .await
+            .unwrap();
         let session = session.lock().await;
         assert_eq!(session.host.user.id, user.id);
         assert!(session.quiz.is_none());
@@ -193,10 +197,20 @@ async fn create_get_session() {
             .unwrap();
         let (code, _) = data
             .game_sessions
-            .create_session(&data.db, user.clone(), Some(quiz.id))
+            .create_session(
+                data.db(),
+                data.redis(),
+                data.hostname(),
+                user.clone(),
+                Some(quiz.id),
+            )
             .await
             .unwrap();
-        let session = data.game_sessions.get_session(code).await.unwrap();
+        let session = data
+            .game_sessions
+            .get_session(data.redis(), data.hostname(), code)
+            .await
+            .unwrap();
         let session = session.lock().await;
 
         assert_eq!(session.host.user.id, user.id);
@@ -205,7 +219,9 @@ async fn create_get_session() {
     }
 
     assert!(matches!(
-        data.game_sessions.get_session(u32::MAX).await,
+        data.game_sessions
+            .get_session(data.redis(), data.hostname(), u32::MAX)
+            .await,
         Err(GameSessionError::InvalidCode)
     ))
 }
@@ -238,13 +254,19 @@ async fn check_set_host_channel() {
 
 #[actix_web::test]
 async fn create_session_invalid_quiz() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
     let user2 = data.dummy_user().await;
 
     let res = data
         .game_sessions
-        .create_session(&data.db, user.clone(), Some(Uuid::new_v4()))
+        .create_session(
+            data.db(),
+            data.redis(),
+            data.hostname(),
+            user.clone(),
+            Some(Uuid::new_v4()),
+        )
         .await;
     assert!(matches!(res, Err(Error::Quiz(QuizError::NotFound))));
 
@@ -253,38 +275,53 @@ async fn create_session_invalid_quiz() {
         .unwrap();
     let res = data
         .game_sessions
-        .create_session(&data.db, user2, Some(quiz.id))
+        .create_session(
+            data.db(),
+            data.redis(),
+            data.hostname(),
+            user2,
+            Some(quiz.id),
+        )
         .await;
     assert!(matches!(res, Err(Error::Quiz(QuizError::Forbidden))));
 }
 
 #[actix_web::test]
 async fn delete_session() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
     let wrong_user = data.dummy_user().await;
 
     let (code, _) = dummy_session(&data, &user, false).await;
 
     assert!(matches!(
-        data.game_sessions.delete_session(&wrong_user, code).await,
+        data.game_sessions
+            .delete_session(&wrong_user, data.redis(), data.hostname(), code)
+            .await,
         Err(GameSessionError::Forbidden)
     ));
-    assert!(data.game_sessions.get_session(code).await.is_ok());
+    assert!(
+        data.game_sessions
+            .get_session(data.redis(), data.hostname(), code)
+            .await
+            .is_ok()
+    );
 
     data.game_sessions
-        .delete_session(&user, code)
+        .delete_session(&user, data.redis(), data.hostname(), code)
         .await
         .unwrap();
     assert!(matches!(
-        data.game_sessions.get_session(code).await,
+        data.game_sessions
+            .get_session(data.redis(), data.hostname(), code)
+            .await,
         Err(GameSessionError::InvalidCode)
     ));
 }
 
 #[actix_web::test]
 async fn join() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
 
     let (code, session_arc) = dummy_session(&data, &user, false).await;
@@ -341,6 +378,7 @@ async fn join() {
                 },
                 session_arc.clone(),
                 &(data.game_sessions.clone(), code),
+                Arc::clone(&data),
             )
             .await
             .unwrap();
@@ -359,7 +397,7 @@ async fn join() {
 
 #[actix_web::test]
 async fn rename_player() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
 
     let (_, session_arc) = dummy_session(&data, &user, false).await;
@@ -386,6 +424,7 @@ async fn rename_player() {
             },
             session_arc.clone(),
             &player,
+            Arc::clone(&data),
         )
         .await
         .unwrap();
@@ -402,7 +441,7 @@ async fn rename_player() {
 
 #[actix_web::test]
 async fn start() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
 
     {
@@ -426,6 +465,7 @@ async fn start() {
                 },
                 session_arc.clone(),
                 &(data.game_sessions.clone(), code),
+                Arc::clone(&data),
             )
             .await;
         assert!(matches!(res, Err(GameSessionError::QuizMissing)));
@@ -452,6 +492,7 @@ async fn start() {
                 },
                 session_arc.clone(),
                 &(data.game_sessions.clone(), code),
+                Arc::clone(&data),
             )
             .await;
         assert!(matches!(res, Err(GameSessionError::NoPlayers)));
@@ -484,6 +525,7 @@ async fn start() {
                 },
                 session_arc.clone(),
                 &(data.game_sessions.clone(), code),
+                Arc::clone(&data),
             )
             .await
             .unwrap();
@@ -505,6 +547,7 @@ async fn start() {
                 },
                 session_arc.clone(),
                 &(data.game_sessions.clone(), code),
+                Arc::clone(&data),
             )
             .await;
         assert!(matches!(res, Err(GameSessionError::AlreadyStarted)));
@@ -513,7 +556,7 @@ async fn start() {
 
 #[actix_web::test]
 async fn kick_on_start() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
 
     let (code, session_arc) = dummy_session(&data, &user, true).await;
@@ -538,6 +581,7 @@ async fn kick_on_start() {
             },
             session_arc.clone(),
             &(data.game_sessions.clone(), code),
+            Arc::clone(&data),
         )
         .await
         .unwrap();
@@ -554,7 +598,7 @@ async fn kick_on_start() {
 
 #[actix_web::test]
 async fn show_question() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
 
     let (code, session_arc) = dummy_session(&data, &user, true).await;
@@ -578,6 +622,7 @@ async fn show_question() {
             },
             session_arc.clone(),
             &(data.game_sessions.clone(), code),
+            Arc::clone(&data),
         )
         .await
         .unwrap();
@@ -607,6 +652,7 @@ async fn show_question() {
                 },
                 session_arc.clone(),
                 &(data.game_sessions.clone(), code),
+                Arc::clone(&data),
             )
             .await
             .unwrap();
@@ -653,7 +699,7 @@ async fn show_question() {
 
 #[actix_web::test]
 async fn play_dummy_quiz() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
 
     let (code, session_arc) = dummy_session(&data, &user, true).await;
@@ -685,6 +731,7 @@ async fn play_dummy_quiz() {
             },
             session_arc.clone(),
             &(data.game_sessions.clone(), code),
+            Arc::clone(&data),
         )
         .await
         .unwrap();
@@ -717,6 +764,7 @@ async fn play_dummy_quiz() {
             },
             session_arc.clone(),
             &player_1_uuid,
+            Arc::clone(&data),
         )
         .await;
     assert!(matches!(res, Err(GameSessionError::CannotAnswer)));
@@ -729,6 +777,7 @@ async fn play_dummy_quiz() {
             },
             session_arc.clone(),
             &(data.game_sessions.clone(), code),
+            Arc::clone(&data),
         )
         .await
         .unwrap();
@@ -790,6 +839,7 @@ async fn play_dummy_quiz() {
             },
             session_arc.clone(),
             &player_1_uuid,
+            Arc::clone(&data),
         )
         .await
         .unwrap();
@@ -804,6 +854,7 @@ async fn play_dummy_quiz() {
             },
             session_arc.clone(),
             &player_2_uuid,
+            Arc::clone(&data),
         )
         .await;
     assert!(matches!(res, Err(GameSessionError::InvalidAnswerCount)));
@@ -818,6 +869,7 @@ async fn play_dummy_quiz() {
             },
             session_arc.clone(),
             &player_3_uuid,
+            Arc::clone(&data),
         )
         .await;
     assert!(matches!(res, Err(GameSessionError::InvalidAnswer)));
@@ -898,6 +950,7 @@ async fn play_dummy_quiz() {
                 },
                 session_arc.clone(),
                 &(data.game_sessions.clone(), code),
+                Arc::clone(&data),
             )
             .await;
 
@@ -928,6 +981,7 @@ async fn play_dummy_quiz() {
                                     },
                                     session_arc.clone(),
                                     &(data.game_sessions.clone(), code),
+                                    Arc::clone(&data),
                                 )
                                 .await
                                 .unwrap();
@@ -982,6 +1036,7 @@ async fn play_dummy_quiz() {
             },
             session_arc.clone(),
             &(data.game_sessions.clone(), code),
+            Arc::clone(&data),
         )
         .await
         .unwrap();

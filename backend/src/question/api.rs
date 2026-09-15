@@ -1,6 +1,7 @@
 use {
     crate::{
         AppData,
+        app_data::AppDataTrait,
         auth::User,
         error::Result,
         question::{NewQuestion, QuestionFilter, UpdateQuestion},
@@ -17,9 +18,9 @@ async fn create_one(
     user: User,
     id: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
-    let quiz = QuizModel::get(&app_data.db, user.id, id.into_inner()).await?;
+    let quiz = QuizModel::get(app_data.db(), user.id, id.into_inner()).await?;
     let question = quiz
-        .create_question(&app_data.db, question.into_inner())
+        .create_question(app_data.db(), question.into_inner())
         .await?;
 
     Ok(HttpResponse::Created().json(question))
@@ -33,9 +34,9 @@ async fn get_one(
 ) -> Result<HttpResponse> {
     let (quiz_id, question_id) = id.into_inner();
 
-    let quiz = QuizModel::get(&app_data.db, user.id, quiz_id).await?;
-    let question = quiz.get_question(&app_data.db, question_id).await?;
-    let question = question.get_answers(&app_data.db).await?;
+    let quiz = QuizModel::get(app_data.db(), user.id, quiz_id).await?;
+    let question = quiz.get_question(app_data.db(), question_id).await?;
+    let question = question.get_answers(app_data.db()).await?;
 
     Ok(HttpResponse::Ok().json(question))
 }
@@ -47,9 +48,9 @@ async fn get_many(
     user: User,
     filter: web::Query<QuestionFilter>,
 ) -> Result<HttpResponse> {
-    let quiz = QuizModel::get(&app_data.db, user.id, id.into_inner()).await?;
+    let quiz = QuizModel::get(app_data.db(), user.id, id.into_inner()).await?;
     let questions = quiz
-        .get_questions(&app_data.db, &filter.into_inner())
+        .get_questions(app_data.db(), &filter.into_inner())
         .await?;
     Ok(HttpResponse::Ok().json(questions))
 }
@@ -63,11 +64,11 @@ async fn patch(
 ) -> Result<HttpResponse> {
     let (quiz_id, question_id) = id.into_inner();
 
-    let quiz = QuizModel::get(&app_data.db, user.id, quiz_id).await?;
-    let question = quiz.get_question(&app_data.db, question_id).await?;
-    let question = question.get_answers(&app_data.db).await?;
+    let quiz = QuizModel::get(app_data.db(), user.id, quiz_id).await?;
+    let question = quiz.get_question(app_data.db(), question_id).await?;
+    let question = question.get_answers(app_data.db()).await?;
     let question = question
-        .update(quiz, &app_data.db, update_question.into_inner())
+        .update(quiz, app_data.db(), update_question.into_inner())
         .await?;
 
     Ok(HttpResponse::Ok().json(question))
@@ -84,11 +85,11 @@ async fn put(
 ) -> Result<HttpResponse> {
     let (quiz_id, question_id) = id.into_inner();
 
-    let quiz = QuizModel::get(&app_data.db, user.id, quiz_id).await?;
-    let question = quiz.get_question(&app_data.db, question_id).await?;
-    let question = question.get_answers(&app_data.db).await?;
+    let quiz = QuizModel::get(app_data.db(), user.id, quiz_id).await?;
+    let question = quiz.get_question(app_data.db(), question_id).await?;
+    let question = question.get_answers(app_data.db()).await?;
     let question = question
-        .update(quiz, &app_data.db, new_question.into_inner().into())
+        .update(quiz, app_data.db(), new_question.into_inner().into())
         .await?;
 
     Ok(HttpResponse::Ok().json(question))
@@ -102,9 +103,9 @@ async fn delete(
 ) -> Result<HttpResponse> {
     let (quiz_id, question_id) = id.into_inner();
 
-    let quiz = QuizModel::get(&app_data.db, user.id, quiz_id).await?;
-    let question = quiz.get_question(&app_data.db, question_id).await?;
-    question.delete(quiz, &app_data.db).await?;
+    let quiz = QuizModel::get(app_data.db(), user.id, quiz_id).await?;
+    let question = quiz.get_question(app_data.db(), question_id).await?;
+    question.delete(quiz, app_data.db()).await?;
 
     Ok(HttpResponse::NoContent().finish())
 }

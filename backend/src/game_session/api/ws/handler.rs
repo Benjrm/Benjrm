@@ -1,6 +1,7 @@
 use {
     crate::{
         AppData,
+        app_data::AppDataTrait,
         auth::User,
         error::Error,
         game_session::{
@@ -30,8 +31,8 @@ async fn get_host_ws(
 ) -> Result<HttpResponse, actix_web::Error> {
     let code = code.into_inner();
     let session = app_data
-        .game_sessions
-        .get_session(code)
+        .game_sessions()
+        .get_session(app_data.redis(), app_data.hostname(), code)
         .await
         .map_err(Error::from)?;
     let (res, tx, rx) = actix_ws::handle(&req, body)?;
@@ -42,7 +43,7 @@ async fn get_host_ws(
     session.check_set_host_channel(&user).map_err(Error::from)?;
     let channel_builder = WsChannelBuilder::new(tx, rx, app_data.clone(), session_arc);
     let channel = channel_builder.build(
-        (app_data.game_sessions.clone(), code),
+        (app_data.game_sessions().clone(), code),
         GameSession::handle_host_cmd,
         remove_host_ws,
     );
@@ -77,7 +78,14 @@ async fn remove_host_ws(
         log::info!("Deleting session {code} due to inactivity");
         session.close().await;
         drop(session);
-        app_data.game_sessions.drop_session(code).await;
+        if let Err(err) = app_data
+            .game_sessions()
+            .drop_session(app_data.redis(), app_data.hostname(), code)
+            .await
+        {
+            // Only log the error since there is nobody to catch it anyways
+            log::error!("{err:?}");
+        }
     }
 }
 
@@ -97,8 +105,8 @@ async fn get_player_ws(
 ) -> Result<HttpResponse, actix_web::Error> {
     let code = code.into_inner();
     let session = app_data
-        .game_sessions
-        .get_session(code)
+        .game_sessions()
+        .get_session(app_data.redis(), app_data.hostname(), code)
         .await
         .map_err(Error::from)?;
 
@@ -127,7 +135,7 @@ async fn get_player_ws(
 /// Waits 15 minutes before checking whether the disconnected player channel has been replaced.
 ///
 /// If the player has not reconnected, the player gets removed from the session while notifying the host.
-pub(super) async fn remove_player_ws(
+pub(super) async fn remove_player_ws<AppData: AppDataTrait>(
     _app_data: Arc<AppData>,
     session: Arc<Mutex<GameSession>>,
     channel_id: u64,
