@@ -125,14 +125,13 @@ services:
     ports:
       - "5173:5173"
 
-  services:
-    redis:
-      image: redis:8.10-alpine
-      container_name: redis
-      restart: unless-stopped
-      volumes:
-        - redis:/data
-      command: redis-server --appendonly yes
+  redis:
+    image: redis:8.10-alpine
+    container_name: redis
+    restart: unless-stopped
+    volumes:
+      - redis:/data
+    command: redis-server --appendonly yes
 
 volumes:
   database:
