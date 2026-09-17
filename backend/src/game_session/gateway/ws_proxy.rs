@@ -99,8 +99,8 @@ where
         let msg = match frame {
             ws::Frame::Text(t) => match t.try_into() {
                 Ok(t) => ws::Message::Text(t),
-                Err(e) => {
-                    self.error(e, ctx);
+                Err(err) => {
+                    self.error(err, ctx);
                     return;
                 }
             },

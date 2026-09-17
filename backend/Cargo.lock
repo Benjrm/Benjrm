@@ -438,6 +438,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
+name = "alphanumeric"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "497c98358c446f25a9818840e5ce86908d3ef2a0d6099ccc410a8f0eda4cd055"
+dependencies = [
+ "to_segments",
+]
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -682,6 +691,7 @@ dependencies = [
  "emojis",
  "env_logger",
  "futures",
+ "is-truthy",
  "lazy_static",
  "local-ip-address",
  "log",
@@ -2336,6 +2346,15 @@ name = "ipnet"
 version = "2.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d98f6fed1fde3f8c21bc40a1abb88dd75e67924f9cffc3ef95607bad8017f8e2"
+
+[[package]]
+name = "is-truthy"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c201dc134cbdbb0c53814b2508185ea1396099765d8c52f104c91e10d6c6fc63"
+dependencies = [
+ "simple-string-patterns",
+]
 
 [[package]]
 name = "is_terminal_polyfill"
@@ -4168,6 +4187,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
 
 [[package]]
+name = "simple-string-patterns"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f527fa1337913ce8abe0cfff89ae2aa1bb100e5d53892cf54256c6d779108a0"
+dependencies = [
+ "alphanumeric",
+]
+
+[[package]]
 name = "siphasher"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4684,6 +4712,12 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "to_segments"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a31b9217f3bf6330cc57fc844a853bfd0dd37c30572bccdfe236d193209ff91"
 
 [[package]]
 name = "tokio"

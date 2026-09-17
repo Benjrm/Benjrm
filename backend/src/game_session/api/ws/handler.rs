@@ -32,7 +32,14 @@ async fn get_host_ws(
     let code = code.into_inner();
     let session = app_data
         .game_sessions()
-        .get_session(app_data.redis(), app_data.node(), code)
+        .get_session(
+            &mut app_data
+                .redis()
+                .await
+                .map_err(|e| Error::Session(GameSessionError::from(e)))?,
+            app_data.node(),
+            code,
+        )
         .await
         .map_err(Error::from)?;
     let (res, tx, rx) = actix_ws::handle(&req, body)?;
@@ -78,9 +85,21 @@ async fn remove_host_ws(
         log::info!("Deleting session {code} due to inactivity");
         session.close().await;
         drop(session);
+
+        let mut redis = match app_data.redis().await {
+            Ok(opt) => opt,
+            Err(err) => {
+                log::error!(
+                    "Error while deleting session: {:?}",
+                    Error::Session(err.into())
+                );
+                None
+            }
+        };
+
         if let Err(err) = app_data
             .game_sessions()
-            .drop_session(app_data.redis(), app_data.node(), code)
+            .drop_session(&mut redis, app_data.node(), code)
             .await
         {
             // Only log the error since there is nobody to catch it anyways
@@ -106,7 +125,14 @@ async fn get_player_ws(
     let code = code.into_inner();
     let session = app_data
         .game_sessions()
-        .get_session(app_data.redis(), app_data.node(), code)
+        .get_session(
+            &mut app_data
+                .redis()
+                .await
+                .map_err(|e| Error::Session(GameSessionError::from(e)))?,
+            app_data.node(),
+            code,
+        )
         .await
         .map_err(Error::from)?;
 

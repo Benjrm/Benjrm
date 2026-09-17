@@ -1,7 +1,7 @@
 use {
     crate::{
         AppData,
-        app_data::AppDataTrait,
+        app_data::{AppDataTrait, RedisConnection},
         game_session::{GameSessionError, SessionCode},
     },
     actix_proxy::IntoHttpResponse,
@@ -95,11 +95,11 @@ where
             .skip(2)
             .find_map(|part| part.parse::<SessionCode>().ok());
 
-        async fn move_session(code: SessionCode, app_data: Arc<AppData>) -> Option<String> {
-            let Some(redis) = app_data.redis() else {
-                unreachable!()
-            };
-
+        async fn move_session(
+            code: SessionCode,
+            mut redis: RedisConnection,
+            app_data: Arc<AppData>,
+        ) -> Result<Option<String>, GameSessionError> {
             if !app_data
                 .game_sessions()
                 .sessions
@@ -107,16 +107,15 @@ where
                 .await
                 .contains_key(&code)
             {
-                let mut con = redis.get().await.unwrap();
-                let node = con.get::<_, Option<String>>(code).await.unwrap();
+                let node = redis.get::<_, Option<String>>(code).await?;
 
                 if let Some(node) = node
                     && node != app_data.node()
                 {
-                    return Some(node);
+                    return Ok(Some(node));
                 }
             }
-            None
+            Ok(None)
         }
 
         async fn proxy(
@@ -164,8 +163,8 @@ where
                             log::error!("Proxy timeout");
                             Err(GameSessionError::ProxyTimeout())
                         }
-                        Err(e) => {
-                            log::error!("{e:?}");
+                        Err(err) => {
+                            log::error!("Proxy error: {err:?}");
                             Err(GameSessionError::ProxyError())
                         }
                     };
@@ -179,9 +178,14 @@ where
         let port = self.port;
 
         Box::pin(async move {
-            let res = if app_data.redis().is_some()
+            let res = if let Some(redis) = app_data
+                .redis()
+                .await
+                .map_err(|e| crate::Error::from(GameSessionError::from(e)))?
                 && let Some(code) = code
-                && let Some(node) = move_session(code, Arc::clone(&app_data)).await
+                && let Some(node) = move_session(code, redis, Arc::clone(&app_data))
+                    .await
+                    .map_err(crate::Error::from)?
             {
                 proxy(req, node, port).await?
             } else {

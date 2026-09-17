@@ -21,7 +21,7 @@ async fn create_one(
         .game_sessions()
         .create_session(
             app_data.db(),
-            app_data.redis(),
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
             app_data.node(),
             user.clone(),
             create.quiz,
@@ -41,7 +41,7 @@ async fn create_one_with_quiz(
         .game_sessions()
         .create_session(
             app_data.db(),
-            app_data.redis(),
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
             app_data.node(),
             user.clone(),
             Some(quiz.into_inner()),
@@ -60,7 +60,11 @@ async fn get_one(
     let code = code.into_inner();
     let session = app_data
         .game_sessions()
-        .get_session(app_data.redis(), app_data.node(), code)
+        .get_session(
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            app_data.node(),
+            code,
+        )
         .await?;
 
     let session = session.lock().await;
@@ -79,7 +83,11 @@ async fn get_one_with_quiz(
     let (quiz_id, code) = path.into_inner();
     let session = app_data
         .game_sessions()
-        .get_session(app_data.redis(), app_data.node(), code)
+        .get_session(
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            app_data.node(),
+            code,
+        )
         .await?;
 
     let session = session.lock().await;
@@ -101,7 +109,12 @@ async fn delete(
 ) -> Result<HttpResponse> {
     app_data
         .game_sessions()
-        .delete_session(&user, app_data.redis(), app_data.node(), code.into_inner())
+        .delete_session(
+            &user,
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            app_data.node(),
+            code.into_inner(),
+        )
         .await?;
 
     Ok(HttpResponse::NoContent().finish())
@@ -116,7 +129,11 @@ async fn delete_with_quiz(
     let (quiz_id, code) = path.into_inner();
     let session = app_data
         .game_sessions()
-        .get_session(app_data.redis(), app_data.node(), code)
+        .get_session(
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            app_data.node(),
+            code,
+        )
         .await?;
 
     let mut session = session.lock().await;
@@ -129,7 +146,11 @@ async fn delete_with_quiz(
     }
     app_data
         .game_sessions()
-        .drop_session(app_data.redis(), app_data.node(), code)
+        .drop_session(
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            app_data.node(),
+            code,
+        )
         .await?;
     session.close().await;
 
@@ -144,7 +165,11 @@ async fn get_quiz(
 ) -> Result<HttpResponse> {
     let session = app_data
         .game_sessions()
-        .get_session(app_data.redis(), app_data.node(), code.into_inner())
+        .get_session(
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            app_data.node(),
+            code.into_inner(),
+        )
         .await?;
 
     let session = session.lock().await;
@@ -167,7 +192,11 @@ async fn get_quiz_with_quiz_id(
     let (quiz_id, code) = path.into_inner();
     let session = app_data
         .game_sessions()
-        .get_session(app_data.redis(), app_data.node(), code)
+        .get_session(
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            app_data.node(),
+            code,
+        )
         .await?;
 
     let session = session.lock().await;
@@ -207,7 +236,11 @@ async fn get_players(
 ) -> Result<HttpResponse> {
     let session = app_data
         .game_sessions()
-        .get_session(app_data.redis(), app_data.node(), code.into_inner())
+        .get_session(
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            app_data.node(),
+            code.into_inner(),
+        )
         .await?;
 
     let session = session.lock().await;
@@ -223,7 +256,11 @@ async fn get_players_with_quiz(
     let (quiz_id, code) = path.into_inner();
     let session = app_data
         .game_sessions()
-        .get_session(app_data.redis(), app_data.node(), code)
+        .get_session(
+            &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            app_data.node(),
+            code,
+        )
         .await?;
 
     let session = session.lock().await;

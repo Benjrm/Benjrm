@@ -134,9 +134,9 @@ macro_rules! impl_err {
         }
     };
     (RedisErrImpl; $error:ident; $name:ident; $($field:ty),*) => {};
-    (RedisPoolErrImpl; $error:ident; $name:ident; RedisPoolError) => {
-        impl From<deadpool_redis::redis::PoolError> for $error {
-            fn from(e: deadpool_redis::redis::PoolError) -> Self {
+    (RedisPoolErrImpl; $error:ident; $name:ident; PoolError) => {
+        impl From<deadpool_redis::PoolError> for $error {
+            fn from(e: deadpool_redis::PoolError) -> Self {
                 Self::$name(e)
             }
         }

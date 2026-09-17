@@ -1,6 +1,6 @@
 use {
     crate::{
-        app_data::AppDataTrait,
+        app_data::{AppDataTrait, RedisConnection},
         auth::User,
         error::Error,
         game_session::{
@@ -49,7 +49,7 @@ impl GameSessions {
     pub async fn create_session(
         &self,
         conn: &impl ConnectionTrait,
-        redis: &Option<deadpool_redis::cluster::Pool>,
+        redis: &mut Option<RedisConnection>,
         node: &str,
         host: User,
         quiz: Option<Uuid>,
@@ -72,15 +72,10 @@ impl GameSessions {
 
         let mut sessions = self.sessions.write().await;
 
-        let mut redis = match redis {
-            Some(redis) => Some(redis.get().await.map_err(GameSessionError::RedisPool)?),
-            None => None,
-        };
-
         let code = {
             #[cfg(debug_assertions)]
             {
-                if let Some(redis) = &mut redis {
+                if let Some(redis) = redis {
                     redis
                         .incr("session_code_counter", 1)
                         .await
@@ -98,7 +93,7 @@ impl GameSessions {
                 let mut code = None;
                 let mut rng = rand::rng();
 
-                if let Some(redis) = &mut redis {
+                if let Some(redis) = redis {
                     for _ in 0..10 {
                         let new_code: SessionCode = rng.random_range(100_0000..=9999_9999);
                         if redis
@@ -125,7 +120,7 @@ impl GameSessions {
             }
         };
 
-        if let Some(redis) = &mut redis {
+        if let Some(redis) = redis {
             redis
                 .set_ex(code, node, 60 * 24 * 7)
                 .await
@@ -148,7 +143,7 @@ impl GameSessions {
     /// Retrieves a game session by its code.
     pub async fn get_session(
         &self,
-        redis: &Option<deadpool_redis::cluster::Pool>,
+        redis: &mut Option<RedisConnection>,
         node: &str,
         code: SessionCode,
     ) -> Result<Arc<Mutex<GameSession>>, GameSessionError> {
@@ -156,14 +151,13 @@ impl GameSessions {
         if let Some(game) = map.get(&code) {
             Ok(Arc::clone(game))
         } else {
-            if let Some(redis) = redis {
-                let mut redis = redis.get().await.map_err(GameSessionError::RedisPool)?;
-                if let Some(redis_node) = redis.get(code).await.map_err(GameSessionError::Redis)?
-                    && node != redis_node
-                {
-                    Err(GameSessionError::DifferentNode(redis_node))?
-                }
+            if let Some(redis) = redis
+                && let Some(redis_node) = redis.get(code).await?
+                && node != redis_node
+            {
+                Err(GameSessionError::DifferentNode(redis_node))?
             }
+
             Err(GameSessionError::InvalidCode)
         }
     }
@@ -173,13 +167,12 @@ impl GameSessions {
     /// Intended for internal cleanup operations.
     pub async fn drop_session(
         &self,
-        redis: &Option<deadpool_redis::cluster::Pool>,
+        redis: &mut Option<RedisConnection>,
         node: &str,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
         if let Some(redis) = redis {
-            let mut redis = redis.get().await.map_err(GameSessionError::RedisPool)?;
-            let session = redis.get(code).await.map_err(GameSessionError::Redis)?;
+            let session = redis.get(code).await?;
             if let Some(session) = session
                 && session == node
             {
@@ -197,7 +190,7 @@ impl GameSessions {
     pub async fn delete_session(
         &self,
         user: &User,
-        redis: &Option<deadpool_redis::cluster::Pool>,
+        redis: &mut Option<RedisConnection>,
         node: &str,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
@@ -422,7 +415,7 @@ impl GameSession {
             }
             HostCommand::EndGame => {
                 sessions
-                    .drop_session(app_data.redis(), app_data.node(), *code)
+                    .drop_session(&mut app_data.redis().await?, app_data.node(), *code)
                     .await?;
                 self.end_question(Some(true)).await;
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))

@@ -67,10 +67,10 @@ async fn main() -> std::io::Result<()> {
                     Err(err) => match err {
                         KeyError::TooShort(_) => {
                             panic!(
-                                r#"The given environment variable "COOKIE_KEY" is to short. A minimum of 64 (random) characters is required"#
+                                r#"The given environment variable "COOKIE_KEY" is to short. A minimum of 64 (random) characters is required: {err}"#
                             );
                         }
-                        _ => todo!(r#"Unknown error"#),
+                        err => todo!(r#"Unknown error: {err:?}"#),
                     },
                 }
             }
@@ -78,9 +78,7 @@ async fn main() -> std::io::Result<()> {
                 log::info!("Cookie key not defined, using random key");
                 cookie::Key::generate()
             }
-            Err(e) => {
-                panic!("{e:?}")
-            }
+            Err(err) => panic!(r#"Can't parse "COOKIE_KEY"": {err:?}"#),
         }
     };
 
