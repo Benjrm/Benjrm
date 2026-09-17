@@ -1,5 +1,5 @@
 use {
-    crate::error::Error,
+    crate::{error::Error, game_session::gateway::GameSessionGatewayMiddleware},
     actix_session::{SessionMiddleware, storage::CookieSessionStore},
     actix_web::{
         App, HttpResponse, HttpServer, Resource, Route,
@@ -92,7 +92,7 @@ async fn main() -> std::io::Result<()> {
         .unwrap_or_else(|_| 80);
 
     HttpServer::new(move || {
-        let app = App::new()
+        App::new()
             .wrap(actix_web::middleware::Logger::default())
             .app_data(JsonConfig::default().error_handler(Error::json_handler))
             .app_data(PathConfig::default().error_handler(Error::path_handler))
@@ -106,6 +106,7 @@ async fn main() -> std::io::Result<()> {
                     .build(),
             )
             .app_data(data.clone())
+            .app_data(awc::Client::new())
             .configure(auth::init)
             .configure(static_file::init)
             .service(
@@ -116,18 +117,20 @@ async fn main() -> std::io::Result<()> {
                             .service(healthcheck_resource())
                             .configure(quiz::init)
                             .configure(question::init)
-                            .configure(game_session::init)
+                            .service(
+                                web::scope("")
+                                    .wrap(GameSessionGatewayMiddleware::new(
+                                        data.clone().into_inner(),
+                                        port,
+                                    ))
+                                    .configure(game_session::init)
+                                    .default_service(not_found_route()),
+                            )
                             .default_service(not_found_route()),
                     )
                     .default_service(not_found_route()),
             )
-            .configure(frontend::init);
-
-        if cfg!(debug_assertions) {
-            app.app_data(awc::Client::new())
-        } else {
-            app
-        }
+            .configure(frontend::init)
     })
     .bind(("0.0.0.0", port))?
     .run()

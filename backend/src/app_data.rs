@@ -85,7 +85,7 @@ impl AppData {
         let node = local_ip_address::local_ip()
             .expect("Can't get local IP")
             .to_string();
-        
+
         let imprint = StaticFile::new(&config_dir, "imprint.md", "text/markdown").await;
         let privacy = StaticFile::new(&config_dir, "privacy.md", "text/markdown").await;
 

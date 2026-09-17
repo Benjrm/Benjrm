@@ -9,6 +9,7 @@ use {
         },
         quiz::Quiz,
     },
+    awc::error::{WsClientError, WsHandshakeError},
     chrono::{DateTime, Utc},
     deadpool_redis::{cluster::PoolError, redis::RedisError},
     emojis::Emoji,
@@ -31,6 +32,7 @@ use {
 
 mod api;
 mod core;
+pub mod gateway;
 #[cfg(test)]
 mod test;
 
@@ -92,6 +94,28 @@ impl_err! {
         RedisPool(PoolError) = INTERNAL_SERVER_ERROR,
         #[error("Game session exists on other node `{0}`")]
         DifferentNode(String) = INTERNAL_SERVER_ERROR,
+        #[error("awc client not available")]
+        AwcUnavailable() = INTERNAL_SERVER_ERROR,
+        #[error("Timed out while connecting to the game session server. The session may no longer exist.")]
+        ProxyTimeout() = BAD_GATEWAY,
+        #[error("Failed to proxy the request to the game session server.")]
+        ProxyError() = BAD_GATEWAY,
+        #[error("WebSocket handshake failed: `{0}`")]
+        ProxyWsHandshake(WsHandshakeError) = BAD_GATEWAY,
+        #[error("WebSocket connection failed: `{0}`")]
+        ProxyWsClient(WsClientError) = BAD_GATEWAY,
+    }
+}
+
+impl From<WsHandshakeError> for GameSessionError {
+    fn from(value: WsHandshakeError) -> Self {
+        GameSessionError::ProxyWsHandshake(value)
+    }
+}
+
+impl From<WsClientError> for GameSessionError {
+    fn from(value: WsClientError) -> Self {
+        GameSessionError::ProxyWsClient(value)
     }
 }
 
