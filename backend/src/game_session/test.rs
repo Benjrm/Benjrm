@@ -126,7 +126,7 @@ async fn dummy_session(
         false => None,
     };
     data.game_sessions
-        .create_session(&data.db, data.redis(), data.hostname(), user.clone(), quiz)
+        .create_session(&data.db, data.redis(), data.node(), user.clone(), quiz)
         .await
         .unwrap()
 }
@@ -183,7 +183,7 @@ async fn create_get_session() {
         let (code, _) = dummy_session(&data, &user, false).await;
         let session = data
             .game_sessions
-            .get_session(data.redis(), data.hostname(), code)
+            .get_session(data.redis(), data.node(), code)
             .await
             .unwrap();
         let session = session.lock().await;
@@ -200,7 +200,7 @@ async fn create_get_session() {
             .create_session(
                 data.db(),
                 data.redis(),
-                data.hostname(),
+                data.node(),
                 user.clone(),
                 Some(quiz.id),
             )
@@ -208,7 +208,7 @@ async fn create_get_session() {
             .unwrap();
         let session = data
             .game_sessions
-            .get_session(data.redis(), data.hostname(), code)
+            .get_session(data.redis(), data.node(), code)
             .await
             .unwrap();
         let session = session.lock().await;
@@ -220,7 +220,7 @@ async fn create_get_session() {
 
     assert!(matches!(
         data.game_sessions
-            .get_session(data.redis(), data.hostname(), u32::MAX)
+            .get_session(data.redis(), data.node(), u32::MAX)
             .await,
         Err(GameSessionError::InvalidCode)
     ))
@@ -263,7 +263,7 @@ async fn create_session_invalid_quiz() {
         .create_session(
             data.db(),
             data.redis(),
-            data.hostname(),
+            data.node(),
             user.clone(),
             Some(Uuid::new_v4()),
         )
@@ -275,13 +275,7 @@ async fn create_session_invalid_quiz() {
         .unwrap();
     let res = data
         .game_sessions
-        .create_session(
-            data.db(),
-            data.redis(),
-            data.hostname(),
-            user2,
-            Some(quiz.id),
-        )
+        .create_session(data.db(), data.redis(), data.node(), user2, Some(quiz.id))
         .await;
     assert!(matches!(res, Err(Error::Quiz(QuizError::Forbidden))));
 }
@@ -296,24 +290,24 @@ async fn delete_session() {
 
     assert!(matches!(
         data.game_sessions
-            .delete_session(&wrong_user, data.redis(), data.hostname(), code)
+            .delete_session(&wrong_user, data.redis(), data.node(), code)
             .await,
         Err(GameSessionError::Forbidden)
     ));
     assert!(
         data.game_sessions
-            .get_session(data.redis(), data.hostname(), code)
+            .get_session(data.redis(), data.node(), code)
             .await
             .is_ok()
     );
 
     data.game_sessions
-        .delete_session(&user, data.redis(), data.hostname(), code)
+        .delete_session(&user, data.redis(), data.node(), code)
         .await
         .unwrap();
     assert!(matches!(
         data.game_sessions
-            .get_session(data.redis(), data.hostname(), code)
+            .get_session(data.redis(), data.node(), code)
             .await,
         Err(GameSessionError::InvalidCode)
     ));

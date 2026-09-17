@@ -1,14 +1,13 @@
 use {
     crate::{auth::oidc::Oidc, game_session::GameSessions, static_file::StaticFile},
     deadpool_redis::cluster::{Config, Pool, Runtime},
-    gethostname::gethostname,
     std::{env::VarError, path::PathBuf},
 };
 
 pub trait AppDataTrait {
     fn db(&self) -> &sea_orm::DbConn;
     fn redis(&self) -> &Option<Pool>;
-    fn hostname(&self) -> &str;
+    fn node(&self) -> &str;
     fn imprint(&self) -> &StaticFile;
     fn privacy(&self) -> &StaticFile;
     fn oidc(&self) -> &Oidc;
@@ -26,7 +25,7 @@ pub trait AppDataTrait {
 pub struct AppData {
     db: sea_orm::DbConn,
     redis: Option<Pool>,
-    hostname: String,
+    node: String,
     imprint: StaticFile,
     privacy: StaticFile,
     oidc: Oidc,
@@ -82,11 +81,11 @@ impl AppData {
             }
         };
 
-        let hostname = {
-            let hostname = gethostname();
-            hostname.into_string().expect("hostname is not valid UTF-8")
-        };
-
+        // Redis stores and returns the IP as a string, so keep it as a String here.
+        let node = local_ip_address::local_ip()
+            .expect("Can't get local IP")
+            .to_string();
+        
         let imprint = StaticFile::new(&config_dir, "imprint.md", "text/markdown").await;
         let privacy = StaticFile::new(&config_dir, "privacy.md", "text/markdown").await;
 
@@ -97,7 +96,7 @@ impl AppData {
         Self {
             db,
             redis,
-            hostname,
+            node,
             imprint,
             privacy,
             oidc,
@@ -115,8 +114,8 @@ impl AppDataTrait for AppData {
         &self.redis
     }
 
-    fn hostname(&self) -> &str {
-        &self.hostname
+    fn node(&self) -> &str {
+        &self.node
     }
 
     fn imprint(&self) -> &StaticFile {
@@ -211,7 +210,7 @@ impl AppDataTrait for TestAppData {
         &None
     }
 
-    fn hostname(&self) -> &str {
+    fn node(&self) -> &str {
         "test.local"
     }
 

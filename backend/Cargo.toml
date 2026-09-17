@@ -18,8 +18,8 @@ dotenvy = "0.15.7"
 emojis = { version = "0.8.2", features = ["serde"]}
 env_logger = "0.11.10"
 futures = "0.3.32"
-gethostname = "1.1.0"
 lazy_static = "1.5.0"
+local-ip-address = "0.6.13"
 log = "0.4.29"
 migration = { path = "../database-migrator" }
 oauth2 = "4.4.2"

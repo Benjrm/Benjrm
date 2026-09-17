@@ -50,7 +50,7 @@ impl GameSessions {
         &self,
         conn: &impl ConnectionTrait,
         redis: &Option<deadpool_redis::cluster::Pool>,
-        hostname: &str,
+        node: &str,
         host: User,
         quiz: Option<Uuid>,
     ) -> Result<(SessionCode, Arc<Mutex<GameSession>>), Error> {
@@ -127,7 +127,7 @@ impl GameSessions {
 
         if let Some(redis) = &mut redis {
             redis
-                .set_ex(code, hostname, 60 * 24 * 7)
+                .set_ex(code, node, 60 * 24 * 7)
                 .await
                 .map_err(GameSessionError::Redis)?;
         }
@@ -149,7 +149,7 @@ impl GameSessions {
     pub async fn get_session(
         &self,
         redis: &Option<deadpool_redis::cluster::Pool>,
-        hostname: &str,
+        node: &str,
         code: SessionCode,
     ) -> Result<Arc<Mutex<GameSession>>, GameSessionError> {
         let map = self.sessions.read().await;
@@ -157,11 +157,11 @@ impl GameSessions {
             Ok(Arc::clone(game))
         } else {
             if let Some(redis) = redis {
-                let mut redis = redis.get().await.expect("Unable to get redis connection");
-                if let Some(node) = redis.get(code).await.map_err(GameSessionError::Redis)?
-                    && node != hostname
+                let mut redis = redis.get().await.map_err(GameSessionError::RedisPool)?;
+                if let Some(redis_node) = redis.get(code).await.map_err(GameSessionError::Redis)?
+                    && node != redis_node
                 {
-                    Err(GameSessionError::DifferentNode(node))?
+                    Err(GameSessionError::DifferentNode(redis_node))?
                 }
             }
             Err(GameSessionError::InvalidCode)
@@ -174,14 +174,14 @@ impl GameSessions {
     pub async fn drop_session(
         &self,
         redis: &Option<deadpool_redis::cluster::Pool>,
-        hostname: &str,
+        node: &str,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
         if let Some(redis) = redis {
-            let mut redis = redis.get().await.expect("Unable to get redis connection");
+            let mut redis = redis.get().await.map_err(GameSessionError::RedisPool)?;
             let session = redis.get(code).await.map_err(GameSessionError::Redis)?;
             if let Some(session) = session
-                && session == hostname
+                && session == node
             {
                 redis.del(code).await.map_err(GameSessionError::Redis)?;
             }
@@ -198,10 +198,10 @@ impl GameSessions {
         &self,
         user: &User,
         redis: &Option<deadpool_redis::cluster::Pool>,
-        hostname: &str,
+        node: &str,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
-        let session = self.get_session(redis, hostname, code).await?;
+        let session = self.get_session(redis, node, code).await?;
 
         {
             let mut session = session.lock().await;
@@ -211,7 +211,7 @@ impl GameSessions {
             session.close().await;
         }
 
-        self.drop_session(redis, hostname, code).await?;
+        self.drop_session(redis, node, code).await?;
 
         Ok(())
     }
@@ -422,7 +422,7 @@ impl GameSession {
             }
             HostCommand::EndGame => {
                 sessions
-                    .drop_session(app_data.redis(), app_data.hostname(), *code)
+                    .drop_session(app_data.redis(), app_data.node(), *code)
                     .await?;
                 self.end_question(Some(true)).await;
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
