@@ -17,31 +17,18 @@ docker compose -f compose.dev.yaml up --build
 > UID=$(id -u) GID=$(id -g) docker compose -f compose.dev.yaml up --build
 > ```
 
-### Test users
-
-Admin user: admin, password: admin
-
-> This credentials can be configured using the `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` environment variables.
-
-| Username   | Password |
-| ---------- | -------- |
-| demo-admin | password |
-| user       | password |
-| simon      | password |
-
-> These users are configured in [services/identity-provider/mounts/init.sh](services/identity-provider/mounts/init.sh).
-
 ## Setup
 
 ### Configuration
 
 Create an `.env` file based on `.env.example`. You should at least change:
-- `DATABASE_PASSWORD`
+- `DATABASE_PASSWORD` (if using postgreSQL)
 - `DOMAIN`
 - `PUBLIC_URL`
 - `OIDC_CLIENT_SECRET`
+- `OIDC_ISSUER_URL`
 - `OIDC_PUBLIC_IDP_URL`
-- `KC_DB_PASSWORD`
+- `IDP_STORAGE_KEY`
 
 ### Reverse proxy
 
@@ -53,24 +40,9 @@ By default, this project uses traefik as reverse proxy. You can set up traefik u
 docker compose up --build
 ```
 
-Keycloak admin user: admin, password: admin
-
-> This credentials can be configured using the `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` environment variables.
-
-After starting this the first time, you should log into the Keycloak admin interface, create a new admin user and remove the existing one.
-
-> If you are using traefik and haven't modified the host rules in `compose.yaml`, the Keycloak URL is "idp.<YOUR_DOMAIN>".
-
-1. Log into the Keycloak admin interface using username: admin and password: admin (or your customized bootstrap credentials)
-2. Go to "Users" -> "Add user"
-3. Enter a username and click on "Create"
-4. Go to "Role mapping" -> "Assign role" -> "Realm roles"
-5. Select "admin" and click on "Assign"
-6. Go to "Credentials" and click on "Set password"
-7. Enter a secure password, uncheck "Temporary" and click on "Save"
-8. Sign out and sign in using the new admin user
-9. Go to "Users", select the initial admin user and click on "Delete user"
-10. Edit `.env` and remove or comment out `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD`
+> After starting the project, VoidAuth (the identity provider) will log a URL that can be used to reset the admin user's password. The URL is valid for 24 hours.
+>
+> If you don't care about the VoidAuth admin account and only want to use Benjrm, you can simply ignore it. Everything is already configured, and users can register without admin approval unless this has been configured differently in the compose or `.env` file.
 
 ### Use other identity provider than the one shipped in `compose.yaml`
 

@@ -29,14 +29,14 @@ $ PORT=8080 cargo run # optional: --release
 
 If you want to run the backend directly using `cargo run` but still want to use the identity-provider, database and frontend from the file `../compose.dev.yaml`, you have to do the following:
 
-- change `PUBLIC_URL` in `../.env` to some other port
-- delete the directory `../database`
 - run `docker compose -f compose.dev.yaml up --build` in the project root
+- stop the benjrm container `docker stop benjrm-benjrm-1` or remove Benjrms port binging in `compose.dev.yaml`
 - use `cargo run` with modified environment variables. They can be set in `.cargo/config.toml` if you don't want to include them in the command.
   ```
-  PORT="<your port>"
+  # When using SQLite, either stop the container or specify a different database file
+  DATABASE_URL="sqlite:../config/benjrm_2.db?mode=rwc
+  # When using PostgreSQL, change the host from db to localhost
   DATABASE_URL="postgres://benjrm:<password>@localhost:5432/benjrm"
-  OIDC_ISSUER_URL="http://localhost:8088/realms/benjrm"
   ```
 
 ### Code linting

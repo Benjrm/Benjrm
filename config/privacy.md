@@ -81,7 +81,7 @@ Diese Daten werden zur Gewährleistung des sicheren und stabilen Betriebs der We
 
 Unsere Webanwendung setzt technisch notwendige Cookies ein. Diese Cookies sind für den Betrieb der Anwendung zwingend erforderlich und können nicht deaktiviert werden, ohne die Funktionsfähigkeit der Seite wesentlich zu beeinträchtigen. Sie enthalten keine personenbezogenen Inhalte über Ihr Nutzungsverhalten und werden weder zu Tracking- noch zu Werbezwecken verwendet.
 
-Technisch notwendige Cookies werden insbesondere im Rahmen der Nutzer-Authentifizierung über unseren selbst gehosteten Identity-Provider Keycloak eingesetzt, um Anmeldesitzungen aufrechtzuerhalten.
+Technisch notwendige Cookies werden insbesondere im Rahmen der Nutzer-Authentifizierung über unseren selbst gehosteten Identity-Provider [VoidAuth](https://voidauth.app) eingesetzt, um Anmeldesitzungen aufrechtzuerhalten.
 
 **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b und lit. f DSGVO i. V. m. § 25 Abs. 2 TDDDG (Telekommunikation-Digitale-Dienste-Datenschutz-Gesetz). Für technisch notwendige Cookies und den Local Storage ist keine Einwilligung erforderlich.
 
@@ -100,7 +100,7 @@ Diese Speicherungen dienen ausschließlich technischen Zwecken und werden nicht 
 
 ### 6.1 Registrierungsvorgang
 
-Für die Nutzung bestimmter Funktionen der Webanwendung ist eine Registrierung erforderlich. Registrierung und Verwaltung von Nutzerkonten erfolgen ausschließlich über unseren selbst gehosteten Identity-Provider **Keycloak**, der auf eigenen Servern in Deutschland betrieben wird. Im Rahmen der Authentifizierung verarbeitet Keycloak insbesondere folgende Daten:
+Für die Nutzung bestimmter Funktionen der Webanwendung ist eine Registrierung erforderlich. Registrierung und Verwaltung von Nutzerkonten erfolgen ausschließlich über unseren selbst gehosteten Identity-Provider **VoidAuth**, der auf eigenen Servern in Deutschland betrieben wird. Im Rahmen der Authentifizierung verarbeitet VoidAuth insbesondere folgende Daten:
 
 * E-Mail-Adresse
 * Benutzername
@@ -115,11 +115,11 @@ Es werden keine Authentifizierungsdaten an externe Anbieter oder Drittunternehme
 
 ### 6.2 Passwörter
 
-Passwörter werden ausschließlich in verschlüsselter (gehashter) Form gespeichert und sind für uns nicht im Klartext einsehbar. Keycloak verwendet standardkonforme Hashing-Verfahren (z. B. bcrypt oder Argon2) gemäß aktuellem Stand der Technik (Art. 32 DSGVO).
+Passwörter werden ausschließlich in verschlüsselter (gehashter) Form gespeichert und sind für uns nicht im Klartext einsehbar. VoidAuth verwendet standardkonforme Hashing-Verfahren (z. B. bcrypt oder Argon2) gemäß aktuellem Stand der Technik (Art. 32 DSGVO).
 
 ### 6.3 Sitzungs-Tokens
 
-Nach der Anmeldung stellt Keycloak kryptografisch gesicherte Sitzungs-Tokens aus (JSON Web Tokens). Diese werden im Browser gespeichert, um die Sitzung aufrechtzuerhalten, ohne das Passwort erneut eingeben zu müssen. Die Tokens werden nach dem Abmelden oder nach Ablauf der konfigurierten Gültigkeitsdauer automatisch ungültig gemacht und gelöscht.
+Nach der Anmeldung stellt VoidAuth kryptografisch gesicherte Sitzungs-Tokens aus (JSON Web Tokens). Diese werden im Browser gespeichert, um die Sitzung aufrechtzuerhalten, ohne das Passwort erneut eingeben zu müssen. Die Tokens werden nach dem Abmelden oder nach Ablauf der konfigurierten Gültigkeitsdauer automatisch ungültig gemacht und gelöscht.
 
 **Speicherdauer Nutzerkonten:** Die Daten werden für die Dauer des aktiven Nutzerkontos gespeichert. Nach der Löschung des Kontos durch den Nutzer werden die Daten innerhalb von 30 Tagen vollständig aus den aktiven Systemen gelöscht.
 
@@ -273,7 +273,7 @@ Eine Übermittlung personenbezogener Daten an Dritte findet grundsätzlich nicht
 * **Rechtliche Verpflichtung (Art. 6 Abs. 1 lit. c DSGVO):** Eine Weitergabe ist gesetzlich vorgeschrieben (z. B. Auskünfte an Strafverfolgungsbehörden).
 * **Rechtsverteidigung (Art. 6 Abs. 1 lit. f DSGVO):** Die Weitergabe ist zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen erforderlich.
 
-**Keine Drittanbieter-Dienste:** Wir setzen keine externen Analyse-, Tracking-, Werbe- oder Cloud-Dienste ein. Alle Systemkomponenten (Webserver, Datenbank, Keycloak) werden auf eigenen Servern in Deutschland betrieben. Es findet keine Übermittlung in Drittländer außerhalb des EWR statt.
+**Keine Drittanbieter-Dienste:** Wir setzen keine externen Analyse-, Tracking-, Werbe- oder Cloud-Dienste ein. Alle Systemkomponenten (Webserver, Datenbank, VoidAuth) werden auf eigenen Servern in Deutschland betrieben. Es findet keine Übermittlung in Drittländer außerhalb des EWR statt.
 
 ---
 

@@ -48,8 +48,8 @@ make to ensure that we and future developers understand the reasoning behind our
 4. Using [**shadcn/ui**](https://ui.shadcn.com/) as a component library on top of [**TailwindCSS**](https://tailwindcss.com/). [Read more](0007-using-shadcn-ui-library.md).
 5. [**Git**](https://git-scm.com/) and [**GitHub**](https://github.com/) as version control system and code hosting platform, using [**GitHub Actions**](https://docs.github.com/en/actions) for CI/CD. [Read more](0002-git-and-github-as-version-control-system-and-code-hosting-platform.md).
 6. Using [**PostgreSQL**](https://www.postgresql.org/) as a relational database management system. [Read more](0003-postgresql-as-a-relational-database.md).
-7. Using [**Keycloak**](https://www.keycloak.org/) as and self-hosted, example OIDC provider for authentication and authorization. [Read more](0004-using-keycloak-as-an-self-hosted,-example-oidc-identity-provider.md).
-    > Note: Our backend is designed to be provider-agnostic and can work with any OIDC-compliant Identity Provider. For local development and reference purposes, a self-hosted Identity Provider such as Keycloak is provided.
+7. Using [**VoidAuth**](https://voidauth.app) as a self-hosted, example OIDC provider for authentication. [Read more](0004-self-hosted-identity-provider.md)
+    > Note: Our backend is designed to be provider-agnostic and can work with any OIDC-compliant Identity Provider. For local development and reference purposes, a self-hosted Identity Provider such as VoidAuth is provided.
 8. Using [**Docker**](https://www.docker.com/) for containerization. [Read more](0006-using-docker-for-containerization.md).
 9. Using [**Trivy**](https://trivy.dev/) for vulnerability and misconfiguration scanning. [Read more](0008-using-trivy-for-vulnerability-and-misconfiguration-scanning.md).
 10. Using [**SonarQube / SonarCloud**](https://www.sonarqube.org/) for static application security testing. [Read more](0009-using-sonarqube-for-static-application-security-testing.md).

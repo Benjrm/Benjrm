@@ -1,5 +1,5 @@
 # https://schemathesis.readthedocs.io/en/stable/reference/configuration/#base-url
-base-url = "http://localhost:8080"
+base-url = "http://localhost"
 
 # https://schemathesis.readthedocs.io/en/stable/reference/configuration/#hooks
 hooks = "src.hooks"

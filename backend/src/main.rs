@@ -75,7 +75,10 @@ async fn main() -> std::io::Result<()> {
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_http_only(true)
-                    .cookie_same_site(SameSite::Strict)
+                    .cookie_same_site(match cfg!(debug_assertions) {
+                        true => SameSite::Lax,
+                        false => SameSite::Strict
+                    })
                     // Only require https in release builds
                     .cookie_secure(cfg!(not(debug_assertions)))
                     .build(),

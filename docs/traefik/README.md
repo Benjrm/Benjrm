@@ -32,12 +32,14 @@ If you want to start the release compose with traefik locally and without valid 
 - delete (or completely comment out) the file `config/tls.yaml`
 - comment out `entryPoints.websecure.http.tls.certResolver` in the file `traefik.yaml`
 - start traefik
-- add your domains to `/etc/hosts`:
-  ```
-  127.0.0.1 yourdomain.de
-  127.0.0.1 www.yourdomain.de
-  127.0.0.1 idp.yourdomain.de
-  127.0.0.1 traefik.yourdomain.de
+
+> If you want to change the domain from `benjrm.localhost` to another domain, remember to add the required entries to your `/etc/hosts` file. For example, if you want to use `example.com` locally:
+
+- Add the following entries to `/etc/hosts`:
+  ```text
+  127.0.0.1 example.com
+  127.0.0.1 www.example.com
+  127.0.0.1 traefik.example.com
   ```
 
 > If you're using Chrome on macOS and are unable to access the site because of the `NET::ERR_CERT_AUTHORITY_INVALID` warning, you can bypass it by clicking somewhere on the page and typing `thisisunsafe`.

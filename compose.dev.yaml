@@ -4,109 +4,51 @@ services:
       context: .
       dockerfile: Dockerfile.dev.backend
     depends_on:
-      database:
-        condition: service_healthy
-      identity-provider:
-        condition: service_healthy
       frontend:
         condition: service_started
+      idp:
+        condition: service_healthy
     env_file: .env
     environment:
       - FRONTEND_HOST=frontend
     volumes:
       - ./config:/config
     ports:
-      - "8080:80"
-  
-  identity-provider:
-    # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry>
-    build:
-      context: ./services/identity-provider
-      dockerfile: Dockerfile
-    ports:
-      # access admin interface locally via http://127.0.0.1:8088
-      # admin interface should be accessible to external traffic,
-      # since it is used by the frontend application to authenticate users and manage sessions.
-      - "127.0.0.1:8088:8088"
-      # access management interface locally via http://127.0.0.1:9000
-      # note: this management interface should not be exposed to external traffic.
-      # It should be protected with a reverse proxy and only accessible to internal traffic
-      - "127.0.0.1:9000:9000"
-    env_file:
-      # it is mandatory to include this environment variable files to configure the Keycloak instance
-      # https://www.keycloak.org/server/configuration#_formats_for_configuration
-      # Consider especially updating the section ---Client configurations--- in the '.env' file
-      # to match the frontend and backend applications' configurations.
-      - .env
-    depends_on:
-      database:
-        condition: service_healthy
-    command:
-      # The images default command is 'start' '--import-realm' but for development purposes, we want to use 'start-dev'
-      # to start the server in development mode.
-      - "start-dev"
-      - "--import-realm"
-      - "--verbose"
-    healthcheck:
-      # Checks if Keycloak is ready to process requests or not.
-      # Only direct traffic to a newly started instance once the readiness probe succeeds.
-      # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
-      # https://www.keycloak.org/observability/health#_healthcheck
-      test: [
-        "CMD-SHELL",
-        "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000"
-      ]
-      start_period: 30s
-      start_interval: 5s
-      interval: 30s
-      timeout: 5s
-      retries: 10
-  
-  idp-init:
-    # note: in the deployment stage, we will use image: <keycloak-image-from-github-container-registry> here
-    build:
-      context: ./services/identity-provider
-      dockerfile: Dockerfile.init
-    env_file:
-      # it is mandatory to include the same environment variables as the identity-provider service,
-      # since the initialization shell script relies on the following environment variables
-      # 'KC_HTTP_PORT'
-      # 'KC_BOOTSTRAP_ADMIN_USERNAME''
-      # 'KC_BOOTSTRAP_ADMIN_PASSWORD'
-      # 'KC_REALM_ID'
-      - .env
-    environment:
-      # indicates to the initialization script that it is running in development mode,
-      # so we want to create some test users in the Keycloak instance to facilitate the development purposes.
-      - INIT_MODE=DEV
-    depends_on:
-      # Checks if Keycloak is ready to process requests or not.
-      # If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
-      identity-provider:
-        condition: service_healthy
-  
-  database:
-    image: postgres:18.3
+      - "80:80"
+
+  idp:
+    image: voidauth/voidauth:1.15.1
     restart: unless-stopped
+    volumes:
+      - ./idp/config:/app/config
+      - ./idp/data:/app/db
+    networks:
+      default:
+        aliases:
+          - ${DOMAIN}
     environment:
-      POSTGRES_DB: benjrm
-      POSTGRES_USER: benjrm
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      APP_URL: ${OIDC_PUBLIC_IDP_URL}
+      DB_ADAPTER: ${IDP_DB_ADAPTER}
+      STORAGE_KEY: ${IDP_STORAGE_KEY}
+      SIGNUP: ${IDP_SIGNUP}
+      SIGNUP_REQUIRES_APPROVAL: ${IDP_APPROVAL_REQUIRED}
+      OIDC_BENJRM_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OIDC_BENJRM_CLIENT_DISPLAY_NAME: ${OIDC_CLIENT_NAME}
+      OIDC_BENJRM_CLIENT_HOMEPAGE_URL: ${PUBLIC_URL}
+      OIDC_BENJRM_CLIENT_REDIRECT_URLS: ${PUBLIC_URL}/auth/oidc/callback
+      OIDC_BENJRM_CLIENT_POST_LOGOUT_URLS: ${PUBLIC_URL}/*
+      OIDC_BENJRM_CLIENT_SKIP_CONSENT: ${IDP_CLIENT_SKIP_CONSENT}
+      OIDC_BENJRM_CLIENT_GRANT_TYPES: authorization_code
+
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U benjrm -d benjrm" ]
-      start_period: 30s
+      start_period: 5s
       start_interval: 2s
-      interval: 30s
+      interval: 2s
       timeout: 2s
       retries: 10
-    env_file:
-      - .env
-    volumes:
-      - database:/var/lib/postgresql
-      - ./services/database/mounts/init-keycloak-db.sh:/docker-entrypoint-initdb.d/init-keycloak-db.sh
     ports:
-      - "5432:5432"
-  
+      - "3000:3000"
+
   frontend:
     build:
       context: ./frontend
@@ -124,6 +66,3 @@ services:
       - ./frontend/public:/app/public:ro
     ports:
       - "5173:5173"
-
-volumes:
-  database:
