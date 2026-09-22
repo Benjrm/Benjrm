@@ -1,14 +1,19 @@
 use {
-    crate::{error::Error, game_session::gateway::GameSessionGatewayMiddleware},
+    crate::{
+        app_data::AppDataTrait, error::Error, game_session::gateway::GameSessionGatewayMiddleware,
+    },
     actix_session::{SessionMiddleware, storage::CookieSessionStore},
     actix_web::{
         App, HttpResponse, HttpServer, Resource, Route,
         cookie::{self, SameSite},
-        mime,
+        mime, rt,
         web::{self, JsonConfig, PathConfig, QueryConfig},
     },
     awc::cookie::KeyError,
-    std::env::VarError,
+    deadpool_redis::redis::{AsyncTypedCommands, HashFieldExpirationOptions, SetExpiry},
+    oauth2::http::version,
+    std::{env::VarError, fmt::format, sync::Arc, time::Duration},
+    tokio::time::sleep,
 };
 
 mod app_data;
@@ -83,6 +88,49 @@ async fn main() -> std::io::Result<()> {
     };
 
     let data = web::Data::new(AppData::from_env().await);
+
+    {
+        let data = Arc::clone(&data);
+        rt::spawn(async move {
+            let identifier = data.identifier();
+            let expiration = HashFieldExpirationOptions::default().set_expiration(SetExpiry::EX(3));
+            let node = data.node();
+
+            let mut error = false;
+
+            loop {
+                if let Some(mut redis) = data.redis().await.expect("Can't send redis heartbeat") {
+                    let sessions = data.game_sessions().len().await;
+
+                    match redis
+                        .hset_ex(identifier, &expiration, &[(node, sessions)])
+                        .await
+                    {
+                        Ok(_) => {
+                            if error {
+                                log::info!("Successfully sent heartbeat again");
+                                error = false;
+                            }
+                        }
+                        Err(e) => {
+                            if error {
+                                log::error!(
+                                    "Repeatedly failed to send heartbeat, node may be replaced soon: {e:?}"
+                                );
+                            } else {
+                                log::warn!(
+                                    "Failed to send heartbeat, node may be replaced soon: {e:?}"
+                                );
+                                error = true;
+                            }
+                        }
+                    }
+                }
+
+                sleep(Duration::from_millis(900)).await;
+            }
+        });
+    }
 
     // Use `PORT` from the environment or default to 80 if not set
     let port = std::env::var("PORT")

@@ -124,6 +124,12 @@ pub struct GameSessions {
     sessions: Arc<RwLock<HashMap<SessionCode, Arc<Mutex<GameSession>>>>>,
 }
 
+impl GameSessions {
+    pub async fn len(&self) -> usize {
+        self.sessions.read().await.len()
+    }
+}
+
 impl Clone for GameSessions {
     fn clone(&self) -> Self {
         Self {

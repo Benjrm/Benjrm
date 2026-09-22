@@ -17,6 +17,9 @@ pub trait AppDataTrait {
     fn privacy(&self) -> &StaticFile;
     fn oidc(&self) -> &Oidc;
     fn game_sessions(&self) -> &GameSessions;
+    fn identifier(&self) -> &'static str {
+        concat!(env!("CARGO_PKG_NAME"), "-", env!("CARGO_PKG_VERSION"))
+    }
 }
 
 /// Application-wide shared state.
