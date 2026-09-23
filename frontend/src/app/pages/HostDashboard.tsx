@@ -184,7 +184,6 @@ function HostDashboardComponent({ code }: Readonly<HostDashboardComponentProps>)
             audioRef.current.loop = true
         }
         setAudioElement(audioRef.current)
-        playAudio()
 
         const handleInteraction = (): void => {
             playAudio()

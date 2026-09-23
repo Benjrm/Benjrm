@@ -13,9 +13,9 @@ interface AudioProviderProps {
  */
 export default function AudioProvider({ children }: Readonly<AudioProviderProps>): JSX.Element {
     const audioRef = useRef<HTMLAudioElement | null>(null)
-    const isMutedRef = useRef(false)
+    const isMutedRef = useRef(true)
     const [isAudioActive, setIsAudioActive] = useState(false)
-    const [isMuted, setIsMuted] = useState(false)
+    const [isMuted, setIsMuted] = useState(true)
 
     const setAudioElement = useCallback((audio: HTMLAudioElement | null): void => {
         audioRef.current = audio
