@@ -46,6 +46,7 @@ impl_err! {
     enum GameSessionError {
         #[error("Invalid code")]
         InvalidCode = NOT_FOUND,
+        #[allow(dead_code)]
         #[error("Can't generate a game code")]
         CannotGenerateCode = INTERNAL_SERVER_ERROR,
         #[error("Forbidden")]
@@ -95,11 +96,11 @@ impl_err! {
         #[error("Game session exists on other node `{0}`")]
         DifferentNode(String) = INTERNAL_SERVER_ERROR,
         #[error("awc client not available")]
-        AwcUnavailable() = INTERNAL_SERVER_ERROR,
+        AwcUnavailable = INTERNAL_SERVER_ERROR,
         #[error("Timed out while connecting to the game session server. The session may no longer exist.")]
-        ProxyTimeout() = BAD_GATEWAY,
+        ProxyTimeout = BAD_GATEWAY,
         #[error("Failed to proxy the request to the game session server.")]
-        ProxyError() = BAD_GATEWAY,
+        ProxyError = BAD_GATEWAY,
         #[error("WebSocket handshake failed: `{0}`")]
         ProxyWsHandshake(WsHandshakeError) = BAD_GATEWAY,
         #[error("WebSocket connection failed: `{0}`")]
@@ -239,7 +240,7 @@ pub trait Channel<Msg: Serialize>: Send {
 /// Errors that can occur when sending over a channel.
 #[derive(Debug)]
 pub enum ChannelError {
-    Ws(WsChannelError),
+    Ws(#[allow(dead_code)] WsChannelError),
 }
 
 impl From<WsChannelError> for ChannelError {
@@ -322,7 +323,9 @@ pub trait CommandTrait: Sized {
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 pub enum HostMessage {
+    #[allow(dead_code)]
     Ok,
+    #[allow(dead_code)]
     Error(ErrorResponse),
     AddPlayer(Player),
     RenamePlayer(Player),
@@ -474,7 +477,9 @@ impl CommandTrait for Command<HostCommand> {
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "command", content = "payload", rename_all = "camelCase")]
 pub enum PlayerMessage {
+    #[allow(dead_code)]
     Ok,
+    #[allow(dead_code)]
     Error(ErrorResponse),
     Kick,
     #[serde(rename_all = "camelCase")]

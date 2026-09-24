@@ -11,8 +11,7 @@ use {
     },
     awc::cookie::KeyError,
     deadpool_redis::redis::{AsyncTypedCommands, HashFieldExpirationOptions, SetExpiry},
-    oauth2::http::version,
-    std::{env::VarError, fmt::format, sync::Arc, time::Duration},
+    std::{env::VarError, sync::Arc, time::Duration},
     tokio::time::sleep,
 };
 
@@ -87,7 +86,12 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    let data = web::Data::new(AppData::from_env().await);
+    // Use `PORT` from the environment or default to 80 if not set
+    let port = std::env::var("PORT")
+        .map(|x| x.parse().expect("Invalid port"))
+        .unwrap_or_else(|_| 80);
+
+    let data = web::Data::new(AppData::from_env(port).await);
 
     {
         let data = Arc::clone(&data);
@@ -131,11 +135,6 @@ async fn main() -> std::io::Result<()> {
             }
         });
     }
-
-    // Use `PORT` from the environment or default to 80 if not set
-    let port = std::env::var("PORT")
-        .map(|x| x.parse().expect("Invalid port"))
-        .unwrap_or_else(|_| 80);
 
     HttpServer::new(move || {
         App::new()

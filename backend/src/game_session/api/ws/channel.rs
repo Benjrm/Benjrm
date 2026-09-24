@@ -26,7 +26,7 @@ pub struct WsChannel {
 /// Errors that can occur while sending a WebSocket message.
 #[derive(Debug)]
 pub enum WsChannelError {
-    Serialization(serde_json::Error),
+    Serialization(#[allow(dead_code)] serde_json::Error),
     Tx(actix_ws::Closed),
 }
 

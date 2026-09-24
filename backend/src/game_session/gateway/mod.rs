@@ -125,7 +125,7 @@ where
         ) -> Result<ServiceResponse<BoxBody>, Error> {
             let payload = req.take_payload();
             let Some(client) = req.app_data::<awc::Client>() else {
-                return Err(crate::Error::Session(GameSessionError::AwcUnavailable()))?;
+                return Err(crate::Error::Session(GameSessionError::AwcUnavailable))?;
             };
 
             let node_url = format!("http://{}:{}{}", node, port, req.uri());
@@ -161,11 +161,11 @@ where
                         Err(SendRequestError::Connect(ConnectError::Timeout))
                         | Err(SendRequestError::Timeout) => {
                             log::error!("Proxy timeout");
-                            Err(GameSessionError::ProxyTimeout())
+                            Err(GameSessionError::ProxyTimeout)
                         }
                         Err(err) => {
                             log::error!("Proxy error: {err:?}");
-                            Err(GameSessionError::ProxyError())
+                            Err(GameSessionError::ProxyError)
                         }
                     };
 

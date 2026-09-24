@@ -11,7 +11,7 @@ use {
 
 pub trait AppDataTrait {
     fn db(&self) -> &sea_orm::DbConn;
-    async fn redis(&self) -> Result<Option<RedisConnection>, PoolError>;
+    fn redis(&self) -> impl Future<Output = Result<Option<RedisConnection>, PoolError>> + Send;
     fn node(&self) -> &str;
     fn imprint(&self) -> &StaticFile;
     fn privacy(&self) -> &StaticFile;
@@ -103,7 +103,7 @@ impl AppData {
     /// - load static content
     /// - initialize authentication
     /// - create in-memory game session storage
-    pub async fn from_env() -> Self {
+    pub async fn from_env(port: u16) -> Self {
         let config_dir = PathBuf::from(std::env::var("CONFIG_DIR").unwrap_or(String::from(".")));
         // Setup the database and run the migrator
         let db = {
@@ -163,9 +163,11 @@ impl AppData {
         };
 
         // Redis stores and returns the IP as a string, so keep it as a String here.
-        let node = local_ip_address::local_ip()
-            .expect("Can't get local IP")
-            .to_string();
+        let node = format!(
+            "{}:{}",
+            local_ip_address::local_ip().expect("Can't get local IP"),
+            port
+        );
 
         let imprint = StaticFile::new(&config_dir, "imprint.md", "text/markdown").await;
         let privacy = StaticFile::new(&config_dir, "privacy.md", "text/markdown").await;
