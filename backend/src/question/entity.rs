@@ -11,10 +11,20 @@ mod question {
             quiz::entity::{QuizColumn, QuizEntity},
         },
         sea_orm::entity::prelude::*,
-        serde::Serialize,
+        serde::{Deserialize, Serialize},
     };
 
-    #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, DeriveDisplay)]
+    #[derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        EnumIter,
+        DeriveActiveEnum,
+        Serialize,
+        Deserialize,
+        DeriveDisplay,
+    )]
     #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "question_type")]
     #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
     pub enum QuestionType {

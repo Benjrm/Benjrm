@@ -1,6 +1,8 @@
 use {
     crate::{
-        app_data::AppDataTrait, error::Error, game_session::gateway::GameSessionGatewayMiddleware,
+        app_data::AppDataTrait,
+        error::Error,
+        game_session::{gateway::GameSessionGatewayMiddleware, shadow},
     },
     actix_session::{SessionMiddleware, storage::CookieSessionStore},
     actix_web::{
@@ -151,6 +153,7 @@ async fn main() -> std::io::Result<()> {
                     .build(),
             )
             .app_data(data.clone())
+            .app_data(web::Data::new(reqwest::Client::new()))
             .app_data(awc::Client::new())
             .configure(auth::init)
             .configure(static_file::init)
@@ -176,6 +179,15 @@ async fn main() -> std::io::Result<()> {
                     .default_service(not_found_route()),
             )
             .configure(frontend::init)
+            .service(
+                web::scope("/_api")
+                    .service(
+                        web::scope("/v1")
+                            .configure(shadow::api::init)
+                            .default_service(not_found_route()),
+                    )
+                    .default_service(not_found_route()),
+            )
     })
     .bind(("0.0.0.0", port))?
     .run()

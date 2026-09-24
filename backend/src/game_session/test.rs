@@ -130,6 +130,7 @@ async fn dummy_session(
         .create_session(
             &data.db,
             &mut data.redis().await.unwrap(),
+            None,
             data.node(),
             user.clone(),
             quiz,
@@ -207,6 +208,7 @@ async fn create_get_session() {
             .create_session(
                 data.db(),
                 &mut data.redis().await.unwrap(),
+                None,
                 data.node(),
                 user.clone(),
                 Some(quiz.id),
@@ -270,6 +272,7 @@ async fn create_session_invalid_quiz() {
         .create_session(
             data.db(),
             &mut data.redis().await.unwrap(),
+            None,
             data.node(),
             user.clone(),
             Some(Uuid::new_v4()),
@@ -285,6 +288,7 @@ async fn create_session_invalid_quiz() {
         .create_session(
             data.db(),
             &mut data.redis().await.unwrap(),
+            None,
             data.node(),
             user2,
             Some(quiz.id),

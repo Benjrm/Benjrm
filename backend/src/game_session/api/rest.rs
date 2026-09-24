@@ -14,6 +14,7 @@ use {
 /// Creates a new game session with the provided quiz from the message body and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn create_one(
     app_data: web::Data<AppData>,
+    reqwest: web::Data<reqwest::Client>,
     user: User,
     create: web::Json<NewSession>,
 ) -> Result<HttpResponse> {
@@ -22,6 +23,7 @@ async fn create_one(
         .create_session(
             app_data.db(),
             &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            Some(reqwest.into_inner()),
             app_data.node(),
             user.clone(),
             create.quiz,
@@ -34,6 +36,7 @@ async fn create_one(
 /// Creates a new game session with the provided quiz from the path parameter and returns the [`GameSessionDto`](crate::game_session::api::GameSessionDto).
 async fn create_one_with_quiz(
     app_data: web::Data<AppData>,
+    reqwest: web::Data<reqwest::Client>,
     user: User,
     quiz: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
@@ -42,6 +45,7 @@ async fn create_one_with_quiz(
         .create_session(
             app_data.db(),
             &mut app_data.redis().await.map_err(GameSessionError::from)?,
+            Some(reqwest.into_inner()),
             app_data.node(),
             user.clone(),
             Some(quiz.into_inner()),

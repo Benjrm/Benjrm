@@ -33,6 +33,7 @@ use {
 mod api;
 mod core;
 pub mod gateway;
+pub mod shadow;
 #[cfg(test)]
 mod test;
 
@@ -105,6 +106,17 @@ impl_err! {
         ProxyWsHandshake(WsHandshakeError) = BAD_GATEWAY,
         #[error("WebSocket connection failed: `{0}`")]
         ProxyWsClient(WsClientError) = BAD_GATEWAY,
+        #[allow(dead_code)]
+        #[error("Shadow session, use the owner node instead")]
+        ShadowSession = FORBIDDEN,
+        #[error("Shadow session not found")]
+        ShadowNotFound = NOT_FOUND,
+        #[error("Shadow invalid status")]
+        ShadowInvalidSessionStatus = BAD_REQUEST,
+        #[error("Player couldn't be added since the player already exists")]
+        ShadowPlayerAlreadyPresent = BAD_REQUEST,
+
+
     }
 }
 
@@ -193,19 +205,38 @@ impl From<Question> for PlayableQuestion {
 }
 
 /// A single running quiz game session.
+#[derive(Serialize, Deserialize)]
 pub struct GameSession {
     status: GameSessionStatus,
     host: GameSessionHost,
     players: Vec<GameSessionPlayer>,
     quiz: Option<Arc<PlayableQuiz>>,
+    #[serde(skip, default)]
+    shadow: Option<Arc<reqwest::Client>>,
+    code: SessionCode,
+}
+
+impl GameSession {
+    pub unsafe fn clone_unsafe(&self) -> Self {
+        unsafe {
+            Self {
+                status: self.status.clone_unsafe(),
+                host: self.host.clone_unsafe(),
+                players: self.players.iter().map(|p| p.clone_unsafe()).collect(),
+                quiz: self.quiz.clone(),
+                shadow: None,
+                code: self.code,
+            }
+        }
+    }
 }
 
 /// Represents the current state of a game session.
 ///
 /// Some states carry additional metadata such as the current question index, the start time of the question, and the number of answers received.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum GameSessionStatus {
-    Waiting(Vec<Box<dyn Joining>>),
+    Waiting(#[serde(skip, default)] Vec<Box<dyn Joining>>),
     Started,
     Question {
         idx: usize,
@@ -220,6 +251,7 @@ pub enum GameSessionStatus {
         /// The list has as many entries as there are answer options.
         /// The index represents the count of correct option relationships (two options in the correct order) and the entry is a counter of how many players had this count of correct options.
         answer_distribution: Vec<usize>,
+        #[serde(skip, default)]
         abort_handle: Option<JoinHandle<()>>,
         leaderboard: Option<Arc<Vec<LeaderboardEntry>>>,
     },
@@ -233,13 +265,63 @@ pub enum GameSessionStatus {
     Closed,
 }
 
+impl GameSessionStatus {
+    pub unsafe fn clone_unsafe(&self) -> Self {
+        match self {
+            Self::Waiting(_) => Self::Waiting(Vec::new()),
+            Self::Started => Self::Started,
+            Self::Question {
+                idx,
+                started,
+                answers,
+                answer_distribution,
+                abort_handle: _,
+                leaderboard,
+            } => Self::Question {
+                idx: *idx,
+                started: *started,
+                answers: *answers,
+                answer_distribution: answer_distribution.clone(),
+                abort_handle: None,
+                leaderboard: leaderboard.clone(),
+            },
+            Self::Leaderboard {
+                idx,
+                statistics,
+                leaderboard,
+                is_final,
+            } => Self::Leaderboard {
+                idx: *idx,
+                statistics: statistics.clone(),
+                leaderboard: leaderboard.clone(),
+                is_final: *is_final,
+            },
+            Self::Podium(arg0) => Self::Podium(arg0.clone()),
+            Self::Closed => Self::Closed,
+        }
+    }
+}
+
 /// Represents the host of a game session.
 ///
 /// The host owns the session and controls game flow (start, next question, kick players, etc.).
+#[derive(Serialize, Deserialize)]
 pub struct GameSessionHost {
     user: User,
+    #[serde(skip, default)]
     channel_id: u64,
+    #[serde(skip, default)]
     channel: Option<Box<dyn Channel<HostMessage>>>,
+}
+
+impl GameSessionHost {
+    pub unsafe fn clone_unsafe(&self) -> Self {
+        Self {
+            user: self.user.clone(),
+            channel: None,
+            channel_id: 0,
+        }
+    }
 }
 
 impl From<User> for GameSessionHost {
@@ -255,15 +337,33 @@ impl From<User> for GameSessionHost {
 /// Represents a player connected to a game session.
 ///
 /// Each player maintains a points buffer that is flushed to the final score when a question is finalized.
+#[derive(Serialize, Deserialize)]
 pub struct GameSessionPlayer {
     id: Uuid,
     secret: Uuid,
     name: String,
     emoji: Option<&'static Emoji>,
+    #[serde(skip, default)]
     channel: Option<Box<dyn Channel<PlayerMessage>>>,
+    #[serde(skip, default)]
     channel_id: u64,
     points: u32,
     last_question: Option<(u32, Uuid)>,
+}
+
+impl GameSessionPlayer {
+    pub unsafe fn clone_unsafe(&self) -> Self {
+        Self {
+            id: self.id,
+            secret: self.secret,
+            name: self.name.clone(),
+            emoji: self.emoji,
+            channel: None,
+            channel_id: 0,
+            points: self.points,
+            last_question: self.last_question,
+        }
+    }
 }
 
 /// A trait representing a Channel for a game session.
@@ -419,7 +519,7 @@ impl From<&GameSessionPlayer> for Player {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LeaderboardEntry {
     pub id: Uuid,
@@ -452,7 +552,7 @@ impl PartialOrd for LeaderboardEntry {
 }
 
 /// Represents aggregated answer statistics for a question.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AnswerStatistics {
     SingleChoice(ChoiceStatistics),
@@ -463,7 +563,7 @@ pub enum AnswerStatistics {
 /// Statistics for choice questions.
 ///
 /// Contains total number of answers submitted and a breakdown per answer option.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChoiceStatistics {
     answers: usize,
@@ -473,7 +573,7 @@ pub struct ChoiceStatistics {
 /// Statistics for ordering-based questions.
 ///
 /// Contains total number of answers submitted and a breakdown of how many players got each possible count of correct relationships.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OrderStatistics {
     answers: usize,
@@ -484,7 +584,7 @@ pub struct OrderStatistics {
 /// Statistics for a single answer option.
 ///
 /// Used in [`ChoiceStatistics`] to describe how often a specific option was selected and whether it is correct.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnswerStatistic {
     pub option: Uuid,
     pub votes: usize,

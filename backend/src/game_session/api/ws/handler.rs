@@ -8,6 +8,7 @@ use {
             GameSession, GameSessionError, GameSessionStatus, GameSessions, HostMessage, Message,
             SessionCode,
             api::ws::{WsJoining, channel_builder::WsChannelBuilder},
+            shadow::ShadowEvent,
         },
     },
     actix_web::{HttpRequest, HttpResponse, rt, web},
@@ -84,6 +85,10 @@ async fn remove_host_ws(
     if session.host.channel_id == id {
         log::info!("Deleting session {code} due to inactivity");
         session.close().await;
+        session
+            .shadow_event(ShadowEvent::EndGame, code)
+            .await
+            .unwrap();
         drop(session);
 
         let mut redis = match app_data.redis().await {
@@ -189,6 +194,11 @@ pub(super) async fn remove_player_ws<AppData: AppDataTrait>(
             .msg(Message::from(&HostMessage::RemovePlayer { id: player_id }))
             .await
     }
+
+    session
+        .shadow_event(ShadowEvent::KickPlayer { player: player_id }, session.code)
+        .await
+        .unwrap();
 }
 
 /// Initializes the WebSocket routes for the game session API.

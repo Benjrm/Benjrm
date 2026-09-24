@@ -8,7 +8,7 @@ use {
             DisplayQuestionMessage, GameSession, GameSessionError, GameSessionHost,
             GameSessionPlayer, GameSessionStatus, GameSessions, HostCommand, HostMessage,
             LeaderboardEntry, Message, OrderStatistics, Player, PlayerCommand, PlayerMessage,
-            SessionCode,
+            SessionCode, shadow::ShadowEvent,
         },
         question::{
             Question, QuestionFilter, QuestionOptions,
@@ -50,6 +50,7 @@ impl GameSessions {
         &self,
         conn: &impl ConnectionTrait,
         redis: &mut Option<RedisConnection>,
+        reqwest: Option<Arc<reqwest::Client>>,
         node: &str,
         host: User,
         quiz: Option<Uuid>,
@@ -133,7 +134,17 @@ impl GameSessions {
             host: host.into(),
             players: Vec::new(),
             quiz,
+            shadow: reqwest,
+            code,
         };
+
+        game.shadow_event(
+            ShadowEvent::Init {
+                session: unsafe { game.clone_unsafe() },
+            },
+            code,
+        )
+        .await?;
 
         let game = Arc::new(Mutex::new(game));
         sessions.insert(code, Arc::clone(&game));
@@ -361,6 +372,11 @@ impl GameSession {
                     .position(|v| v.id == id)
                     .ok_or(GameSessionError::PlayerNotFound)?;
                 let mut player = self.players.swap_remove(pos);
+
+                self.shadow_event(ShadowEvent::KickPlayer { player: id }, *code)
+                    .await
+                    .unwrap();
+
                 player.msg(Message::from(&PlayerMessage::Kick)).await;
                 player.close().await;
                 self.host
@@ -385,6 +401,11 @@ impl GameSession {
                 }
 
                 self.status = GameSessionStatus::Started;
+
+                self.shadow_event(ShadowEvent::StartQuiz, *code)
+                    .await
+                    .unwrap();
+
                 self.notify_all_players(Message::from(&PlayerMessage::Start))
                     .await;
             }
@@ -396,6 +417,10 @@ impl GameSession {
                     _ => return Err(GameSessionError::NoLeaderboard),
                 };
                 self.status = GameSessionStatus::Podium(Arc::clone(&leaderboard));
+
+                self.shadow_event(ShadowEvent::ShowPodium, *code)
+                    .await
+                    .unwrap();
 
                 self.host
                     .msg(Message::from(&HostMessage::DisplayPodium))
@@ -419,6 +444,11 @@ impl GameSession {
                     .drop_session(&mut app_data.redis().await?, app_data.node(), *code)
                     .await?;
                 self.end_question(Some(true)).await;
+
+                self.shadow_event(ShadowEvent::EndGame, *code)
+                    .await
+                    .unwrap();
+
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
                     .await;
                 self.close().await
@@ -498,11 +528,11 @@ impl GameSession {
             answers: 0,
             answer_distribution: vec![0; options_len],
             abort_handle,
-            leaderboard,
+            leaderboard: leaderboard.clone(),
         };
 
         let total_questions = quiz.questions.len();
-        let question = Arc::new(DisplayQuestionMessage::new(
+        let question_msg = Arc::new(DisplayQuestionMessage::new(
             &quiz.questions[question],
             question,
             total_questions,
@@ -511,16 +541,27 @@ impl GameSession {
         self.host
             .msg(Message {
                 id: None,
-                msg: &HostMessage::DisplayQuestion(Arc::clone(&question)),
+                msg: &HostMessage::DisplayQuestion(Arc::clone(&question_msg)),
                 timing: Some(started),
             })
             .await;
         self.notify_all_players(Message {
             id: None,
-            msg: &PlayerMessage::DisplayQuestion(question),
+            msg: &PlayerMessage::DisplayQuestion(question_msg),
             timing: Some(started),
         })
         .await;
+
+        self.shadow_event(
+            ShadowEvent::NextQuestion {
+                question,
+                started,
+                options_len,
+                leaderboard,
+            },
+            self.code,
+        )
+        .await?;
 
         Ok(())
     }
@@ -557,7 +598,7 @@ impl GameSession {
         let mut player = GameSessionPlayer {
             id,
             secret,
-            name,
+            name: name.clone(),
             emoji,
             channel_id: channel.id(),
             channel: Some(Box::new(channel)),
@@ -585,6 +626,18 @@ impl GameSession {
             .await;
 
         self.players.push(player);
+
+        self.shadow_event(
+            ShadowEvent::AddPlayer {
+                id,
+                secret,
+                name,
+                emoji,
+            },
+            self.code,
+        )
+        .await
+        .unwrap()
     }
 
     /// Send messages to restore the current state to a player.
@@ -667,13 +720,15 @@ impl GameSession {
                     return Err(GameSessionError::NameAlreadyTaken);
                 }
 
-                if let Some(emoji) = emoji {
+                let emoji = if let Some(emoji) = emoji {
                     let emoji = emojis::get(&emoji).ok_or(GameSessionError::InvalidEmoji)?;
-                    player.emoji = Some(emoji);
+                    Some(emoji)
                 } else {
-                    player.emoji = None;
-                }
-                player.name = name;
+                    None
+                };
+
+                player.name = name.clone();
+                player.emoji = emoji;
 
                 // `handle_player_cmd` is only called if the player is already joined, so a `SetName` command is always a rename
                 self.host
@@ -681,6 +736,19 @@ impl GameSession {
                         &*player,
                     ))))
                     .await;
+
+                let player = player.id;
+
+                self.shadow_event(
+                    ShadowEvent::RenamePlayer {
+                        player,
+                        name,
+                        emoji,
+                    },
+                    self.code,
+                )
+                .await
+                .unwrap();
             }
             PlayerCommand::Reconnect { .. } => Err(GameSessionError::CommandNotAllowed)?,
             PlayerCommand::AnswerQuestion { answer } => {
@@ -745,12 +813,36 @@ impl GameSession {
                     }
 
                     *answers += 1;
-                    if *answers == self.players.len() {
+                    let answers = *answers;
+                    let answer_distribution = answer_distribution.clone();
+                    let question_id = question.id;
+
+                    if answers == self.players.len() {
                         if let Some(handle) = abort_handle {
                             handle.abort();
                         }
                         self.end_question(None).await;
                     }
+
+                    self.shadow_event(
+                        ShadowEvent::PlayerAddPoints {
+                            player: *id,
+                            points,
+                            question: question_id,
+                        },
+                        self.code,
+                    )
+                    .await
+                    .unwrap();
+                    self.shadow_event(
+                        ShadowEvent::UpdateAnswers {
+                            answers,
+                            distribution: answer_distribution,
+                        },
+                        self.code,
+                    )
+                    .await
+                    .unwrap();
                 }
             }
         }
