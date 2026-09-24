@@ -53,7 +53,7 @@ impl From<UpdateAnswerOrder> for UpdateAnswerChoice {
 ///
 /// This is necessary because order questions are stored in the same tables as choice questions, and are mostly handled by the same code.
 /// This struct allows for different implementations around the [`AnswerChoiceModel`] that are specific to order questions.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct AnswerOrderModel {
     pub choice: AnswerChoiceModel,
 }

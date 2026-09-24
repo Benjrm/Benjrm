@@ -6,10 +6,11 @@ use {
         game_session::{
             AnswerStatistics, Channel, ChannelError, Command, DisplayQuestionMessage,
             DisplayQuestionOptions, GameSession, GameSessionError, HostCommand, HostMessage,
-            Message, Player, PlayerCommand, PlayerMessage, api::ws::WsChannelError,
+            Message, PlayableQuestion, Player, PlayerCommand, PlayerMessage,
+            api::ws::WsChannelError,
         },
         question::{
-            NewQuestion, NewQuestionOptions, Question,
+            NewQuestion, NewQuestionOptions,
             answer::{choice::NewAnswerChoice, order::NewAnswerOrder},
         },
         quiz::{QuizError, test::create_one},
@@ -221,7 +222,7 @@ async fn create_get_session() {
 
         assert_eq!(session.host.user.id, user.id);
         let session_quiz = session.quiz.as_ref().unwrap();
-        assert_eq!(session_quiz.model.id, quiz.id);
+        assert_eq!(session_quiz.id, quiz.id);
     }
 
     assert!(matches!(
@@ -643,16 +644,16 @@ async fn show_question() {
     ));
 
     let quiz = session.quiz.clone().unwrap();
-    let mut check_question_command = async |command: HostCommand, expected: &Question| {
+    let mut check_question_command = async |command: HostCommand, expected: &PlayableQuestion| {
         fn check_question(
             host: Arc<DisplayQuestionMessage>,
             player: Arc<DisplayQuestionMessage>,
-            expected: &Question,
+            expected: &PlayableQuestion,
         ) {
-            assert_eq!(host.id, expected.model.id);
-            assert_eq!(host.question, expected.model.question);
-            assert_eq!(player.id, expected.model.id);
-            assert_eq!(player.question, expected.model.question);
+            assert_eq!(host.id, expected.id);
+            assert_eq!(host.question, expected.question);
+            assert_eq!(player.id, expected.id);
+            assert_eq!(player.question, expected.question);
         }
 
         session
@@ -694,14 +695,14 @@ async fn show_question() {
     check_question_command(HostCommand::NextQuestion, &quiz.questions[1]).await;
     check_question_command(
         HostCommand::ShowQuestion {
-            id: quiz.questions[0].model.id,
+            id: quiz.questions[0].id,
         },
         &quiz.questions[0],
     )
     .await;
     check_question_command(
         HostCommand::ShowQuestion {
-            id: quiz.questions[2].model.id,
+            id: quiz.questions[2].id,
         },
         &quiz.questions[2],
     )

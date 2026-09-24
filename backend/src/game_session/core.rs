@@ -64,7 +64,8 @@ impl GameSessions {
                         hidden: Some(false),
                     },
                 )
-                .await?;
+                .await?
+                .into();
                 Some(Arc::new(quiz))
             }
             None => None,
@@ -454,7 +455,7 @@ impl GameSession {
         let question = if let Some(id) = id {
             quiz.questions
                 .iter()
-                .position(|q| q.model.id == id)
+                .position(|q| q.id == id)
                 .ok_or(GameSessionError::QuestionNotFound)?
         } else {
             let question = match self.status {
@@ -470,8 +471,7 @@ impl GameSession {
         let offset_secs = 3u32;
         let started = Utc::now() + TimeDelta::seconds(offset_secs as i64);
         let abort_handle = quiz.questions[question]
-            .model
-            .r#type
+            .options
             .default_answer_duration()
             .map(move |duration| {
                 rt::spawn(async move {
@@ -699,6 +699,7 @@ impl GameSession {
                 else {
                     return Err(GameSessionError::NoCurrentQuestion);
                 };
+
                 let quiz = self.quiz.as_mut().ok_or(GameSessionError::QuizMissing)?;
                 let question = &quiz.questions[*idx];
 
@@ -706,7 +707,7 @@ impl GameSession {
                 let mut points = question.options.get_points(correct);
 
                 let mut answer_in_time = true;
-                if let Some(duration) = question.model.r#type.default_answer_duration() {
+                if let Some(duration) = question.options.default_answer_duration() {
                     let elapsed = (Utc::now() - *started).num_milliseconds() as f64;
                     let max_time = (duration as f64) * 1000f64;
                     if elapsed <= max_time {
@@ -718,7 +719,7 @@ impl GameSession {
                     }
                 }
 
-                player.add_points(points, question.model.id)?;
+                player.add_points(points, question.id)?;
 
                 if answer_in_time {
                     match &question.options {
@@ -823,7 +824,7 @@ impl GameSession {
         let mut leaderboard = Vec::with_capacity(self.players.len());
 
         let iterator = self.players.iter_mut().map(|player| {
-            let points = player.apply_points(question.model.id);
+            let points = player.apply_points(question.id);
             leaderboard.push(LeaderboardEntry {
                 id: player.id,
                 name: player.name.clone(),
@@ -836,7 +837,7 @@ impl GameSession {
             async move {
                 player
                     .msg(Message::from(&PlayerMessage::QuestionResult {
-                        question: question.model.id,
+                        question: question.id,
                         correct_answers,
                         total_points: player.points,
                         points,

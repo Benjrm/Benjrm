@@ -60,13 +60,29 @@ pub struct Question {
 }
 
 /// The answer options for a question.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "options", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum QuestionOptions {
     Slide,
     SingleChoice(Vec<AnswerChoiceModel>),
     MultipleChoice(Vec<AnswerChoiceModel>),
     Order(Vec<AnswerOrderModel>),
+}
+
+impl QuestionOptions {
+    pub fn default_answer_duration(&self) -> Option<u32> {
+        let duration = match self {
+            Self::Slide => None,
+            Self::SingleChoice(_) | Self::MultipleChoice(_) => Some(30),
+            Self::Order(_) => Some(120),
+        };
+
+        #[cfg(test)]
+        return duration.map(|_| 1);
+
+        #[cfg(not(test))]
+        duration
+    }
 }
 
 impl QuestionOptions {
@@ -246,23 +262,6 @@ impl QuestionType {
             Self::Slide => Self::Slide,
             Self::SingleChoice | Self::MultipleChoice | Self::Order => Self::SingleChoice,
         }
-    }
-
-    /// Returns the default answer duration in seconds.
-    ///
-    /// **Hint:** During tests, all `Some` durations are replaced with `1` second. To speed up testing in some cases.
-    pub fn default_answer_duration(&self) -> Option<u32> {
-        let duration = match self {
-            Self::Slide => None,
-            Self::SingleChoice | Self::MultipleChoice => Some(30),
-            Self::Order => Some(120),
-        };
-
-        #[cfg(test)]
-        return duration.map(|_| 1);
-
-        #[cfg(not(test))]
-        duration
     }
 }
 

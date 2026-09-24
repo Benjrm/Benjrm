@@ -33,7 +33,7 @@ impl GameSession {
     pub fn to_dto(&self, code: SessionCode, user: Option<User>) -> GameSessionDto {
         let is_host = user.as_ref() == Some(&self.host.user);
         let quiz = match is_host {
-            true => self.quiz.as_ref().map(|x| x.model.id),
+            true => self.quiz.as_ref().map(|x| x.id),
             false => None,
         };
         GameSessionDto {

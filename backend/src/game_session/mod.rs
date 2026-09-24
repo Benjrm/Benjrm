@@ -139,12 +139,65 @@ impl Clone for GameSessions {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PlayableQuiz {
+    pub id: Uuid,
+    pub title: String,
+    pub description: Option<String>,
+    //pub hidden: bool,
+    pub created: DateTime<Utc>,
+    pub modified: DateTime<Utc>,
+    pub questions: Vec<PlayableQuestion>,
+}
+
+impl From<Quiz<Question>> for PlayableQuiz {
+    fn from(value: Quiz<Question>) -> Self {
+        Self {
+            id: value.model.id,
+            title: value.model.title,
+            description: value.model.description,
+            //hidden: value.model.hidden,
+            created: value.model.created,
+            modified: value.model.modified,
+            questions: value
+                .questions
+                .into_iter()
+                .map(PlayableQuestion::from)
+                .collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayableQuestion {
+    pub id: Uuid,
+    pub question: String,
+    pub hidden: bool,
+    pub created: DateTime<Utc>,
+    pub modified: DateTime<Utc>,
+    #[serde(flatten)]
+    pub options: QuestionOptions,
+}
+
+impl From<Question> for PlayableQuestion {
+    fn from(value: Question) -> Self {
+        Self {
+            id: value.model.id,
+            question: value.model.question,
+            hidden: value.model.hidden,
+            created: value.model.created,
+            modified: value.model.modified,
+            options: value.options,
+        }
+    }
+}
+
 /// A single running quiz game session.
 pub struct GameSession {
     status: GameSessionStatus,
     host: GameSessionHost,
     players: Vec<GameSessionPlayer>,
-    quiz: Option<Arc<Quiz<Question>>>,
+    quiz: Option<Arc<PlayableQuiz>>,
 }
 
 /// Represents the current state of a game session.
@@ -552,12 +605,12 @@ pub struct DisplayQuestionMessage {
 }
 
 impl DisplayQuestionMessage {
-    pub fn new(value: &Question, index: usize, total_questions: usize) -> Self {
+    pub fn new(value: &PlayableQuestion, index: usize, total_questions: usize) -> Self {
         Self {
-            id: value.model.id,
-            question: value.model.question.clone(),
+            id: value.id,
+            question: value.question.clone(),
             options: DisplayQuestionOptions::from(&value.options),
-            seconds: value.model.r#type.default_answer_duration(),
+            seconds: value.options.default_answer_duration(),
             index,
             total_questions,
         }

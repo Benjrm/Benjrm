@@ -8,10 +8,10 @@ mod choice {
     use {
         crate::question::entity::{QuestionColumn, QuestionEntity},
         sea_orm::entity::prelude::*,
-        serde::Serialize,
+        serde::{Deserialize, Serialize},
     };
 
-    #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
+    #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
     #[sea_orm(table_name = "answer_choice")]
     #[serde(rename_all = "camelCase")]
     pub struct Model {

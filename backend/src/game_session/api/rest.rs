@@ -95,7 +95,7 @@ async fn get_one_with_quiz(
         return Err(GameSessionError::InvalidCode.into());
     }
     match &session.quiz {
-        Some(quiz) if quiz.model.id == quiz_id => (),
+        Some(quiz) if quiz.id == quiz_id => (),
         _ => return Err(GameSessionError::InvalidCode.into()),
     }
     Ok(HttpResponse::Ok().json(session.to_dto(code, user.into())))
@@ -138,7 +138,7 @@ async fn delete_with_quiz(
 
     let mut session = session.lock().await;
     match &session.quiz {
-        Some(quiz) if quiz.model.id == quiz_id => (),
+        Some(quiz) if quiz.id == quiz_id => (),
         _ => return Err(GameSessionError::InvalidCode.into()),
     }
     if session.host.user != user {
@@ -201,7 +201,7 @@ async fn get_quiz_with_quiz_id(
 
     let session = session.lock().await;
     match &session.quiz {
-        Some(quiz) if quiz.model.id == quiz_id => (),
+        Some(quiz) if quiz.id == quiz_id => (),
         _ => return Err(GameSessionError::InvalidCode.into()),
     }
     if session.host.user != user {
@@ -265,7 +265,7 @@ async fn get_players_with_quiz(
 
     let session = session.lock().await;
     match &session.quiz {
-        Some(quiz) if quiz.model.id == quiz_id => (),
+        Some(quiz) if quiz.id == quiz_id => (),
         _ => return Err(GameSessionError::InvalidCode.into()),
     }
     player_list_response(&user, &session.host.user, &session.players)
