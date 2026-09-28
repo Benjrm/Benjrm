@@ -19,6 +19,7 @@ mod choice {
         pub id: Uuid,
         #[serde(skip)]
         pub question: Uuid,
+        #[serde(skip)]
         pub correct: bool,
         pub answer: String,
         #[serde(skip)]

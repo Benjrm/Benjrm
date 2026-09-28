@@ -234,7 +234,7 @@ impl GameSession {
         matches!(self.status, GameSessionStatus::Closed)
     }
 
-    /// Closes the session and its host channel.
+    /// Closes the session and its host/player channels.
     pub async fn close(&mut self) {
         let status = std::mem::replace(&mut self.status, GameSessionStatus::Closed);
         if let Some(host_channel) = self.host.channel.take() {
@@ -416,6 +416,7 @@ impl GameSession {
                     GameSessionStatus::Leaderboard { leaderboard, .. } => Arc::clone(leaderboard),
                     _ => return Err(GameSessionError::NoLeaderboard),
                 };
+
                 self.status = GameSessionStatus::Podium(Arc::clone(&leaderboard));
 
                 self.shadow_event(ShadowEvent::ShowPodium, *code)
@@ -531,6 +532,17 @@ impl GameSession {
             leaderboard: leaderboard.clone(),
         };
 
+        self.shadow_event(
+            ShadowEvent::NextQuestion {
+                question,
+                started,
+                options_len,
+                leaderboard,
+            },
+            self.code,
+        )
+        .await?;
+
         let total_questions = quiz.questions.len();
         let question_msg = Arc::new(DisplayQuestionMessage::new(
             &quiz.questions[question],
@@ -551,17 +563,6 @@ impl GameSession {
             timing: Some(started),
         })
         .await;
-
-        self.shadow_event(
-            ShadowEvent::NextQuestion {
-                question,
-                started,
-                options_len,
-                leaderboard,
-            },
-            self.code,
-        )
-        .await?;
 
         Ok(())
     }
@@ -627,17 +628,20 @@ impl GameSession {
 
         self.players.push(player);
 
-        self.shadow_event(
-            ShadowEvent::AddPlayer {
-                id,
-                secret,
-                name,
-                emoji,
-            },
-            self.code,
-        )
-        .await
-        .unwrap()
+        if let Err(err) = self
+            .shadow_event(
+                ShadowEvent::AddPlayer {
+                    id,
+                    secret,
+                    name,
+                    emoji,
+                },
+                self.code,
+            )
+            .await
+        {
+            log::error!("Can't add player to shadow: {err:?}")
+        }
     }
 
     /// Send messages to restore the current state to a player.
@@ -903,8 +907,8 @@ impl GameSession {
                 )),
             };
 
-        let statistics = statistics.map(Arc::new);
-        if let Some(statistics) = &statistics {
+        let statistics_arc = statistics.clone().map(Arc::new);
+        if let Some(statistics) = &statistics_arc {
             self.host
                 .msg(Message::from(&HostMessage::ShowStatistics(Arc::clone(
                     statistics,
@@ -940,10 +944,24 @@ impl GameSession {
         execute_futures(iterator).await;
 
         leaderboard.sort();
+
+        self.shadow_event(
+            ShadowEvent::Leaderboard {
+                idx: *idx,
+                statistics,
+                leaderboard: leaderboard.clone(),
+                is_final,
+            },
+            self.code,
+        )
+        .await
+        .unwrap();
+
         let leaderboard = Arc::new(leaderboard);
+
         self.status = GameSessionStatus::Leaderboard {
             idx: *idx,
-            statistics,
+            statistics: statistics_arc,
             leaderboard: Arc::clone(&leaderboard),
             is_final,
         };

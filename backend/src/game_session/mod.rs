@@ -115,8 +115,6 @@ impl_err! {
         ShadowInvalidSessionStatus = BAD_REQUEST,
         #[error("Player couldn't be added since the player already exists")]
         ShadowPlayerAlreadyPresent = BAD_REQUEST,
-
-
     }
 }
 

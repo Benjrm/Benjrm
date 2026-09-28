@@ -3,7 +3,7 @@ use {
         AppData,
         app_data::AppDataTrait,
         game_session::{
-            GameSessionError, GameSessionPlayer, GameSessionStatus, SessionCode,
+            GameSession, GameSessionError, GameSessionPlayer, GameSessionStatus, SessionCode,
             shadow::ShadowEvent,
         },
     },
@@ -16,7 +16,7 @@ async fn handle_event(
     app_data: web::Data<AppData>,
     event: web::Json<ShadowEvent>,
     code: web::Path<SessionCode>,
-) -> actix_web::Result<HttpResponse> {
+) -> crate::error::Result<HttpResponse> {
     let event = event.into_inner();
     let code = code.into_inner();
 
@@ -43,7 +43,7 @@ async fn handle_event(
 
     let sessions = app_data.shadow_sessions().sessions.read().await;
     let Some(session) = sessions.get(&code) else {
-        Err(crate::Error::Session(GameSessionError::ShadowNotFound))?
+        Err(GameSessionError::ShadowNotFound)?
     };
 
     let mut session = session.lock().await;
@@ -73,11 +73,24 @@ async fn handle_event(
                 leaderboard,
             }
         }
+        ShadowEvent::Leaderboard {
+            idx,
+            statistics,
+            leaderboard,
+            is_final,
+        } => {
+            session.status = GameSessionStatus::Leaderboard {
+                idx,
+                statistics: statistics.map(Arc::new),
+                leaderboard: Arc::new(leaderboard),
+                is_final,
+            }
+        }
         ShadowEvent::ShowPodium => {
             if let GameSessionStatus::Leaderboard { leaderboard, .. } = &session.status {
                 session.status = GameSessionStatus::Podium(Arc::clone(leaderboard))
             } else {
-                return Ok(HttpResponse::Ok().finish());
+                return Err(GameSessionError::ShadowInvalidSessionStatus)?;
             };
         }
         ShadowEvent::RenamePlayer {
@@ -89,7 +102,7 @@ async fn handle_event(
                 player.name = name;
                 player.emoji = emoji
             } else {
-                Err(crate::Error::Session(GameSessionError::PlayerNotFound))?
+                Err(GameSessionError::PlayerNotFound)?
             }
         }
         ShadowEvent::PlayerAddPoints {
@@ -100,7 +113,7 @@ async fn handle_event(
             if let Some(player) = session.players.iter_mut().find(|p| p.id == player) {
                 player.last_question = Some((points, question));
             } else {
-                Err(crate::Error::Session(GameSessionError::PlayerNotFound))?
+                Err(GameSessionError::PlayerNotFound)?
             }
         }
         ShadowEvent::UpdateAnswers {
@@ -116,9 +129,7 @@ async fn handle_event(
                 *answers = new_answers;
                 *answer_distribution = new_distribution;
             } else {
-                Err(crate::Error::Session(
-                    GameSessionError::ShadowInvalidSessionStatus,
-                ))?
+                Err(GameSessionError::ShadowInvalidSessionStatus)?
             }
         }
         ShadowEvent::AddPlayer {
@@ -144,9 +155,7 @@ async fn handle_event(
                     last_question: None,
                 });
             } else {
-                Err(crate::Error::Session(
-                    GameSessionError::ShadowPlayerAlreadyPresent,
-                ))?
+                Err(GameSessionError::ShadowPlayerAlreadyPresent)?
             }
         }
     }
@@ -154,6 +163,21 @@ async fn handle_event(
     Ok(HttpResponse::Ok().finish())
 }
 
+async fn kill_restore(
+    app_data: web::Data<AppData>,
+    code: web::Path<SessionCode>,
+    reqwest: web::Data<reqwest::Client>,
+) -> crate::error::Result<HttpResponse> {
+    GameSession::restore(
+        code.into_inner(),
+        app_data.into_inner(),
+        reqwest.into_inner(),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().finish())
+}
+
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/event/{code}").route(web::post().to(handle_event)));
+    cfg.service(web::resource("/kill_restore/{code}").route(web::get().to(kill_restore)));
 }

@@ -86,11 +86,9 @@ function HostDashboardComponent({ code }: Readonly<HostDashboardComponentProps>)
     })
 
     useSocketEvent("displayLeaderboard", (payload) => {
-        const isFinal =
-            payload.isFinal || (totalQuestions > 0 && currentQuestionIndex >= totalQuestions - 1)
         setLeaderboard(payload.leaderboard)
         setGameState(GameStateEnum.LEADERBOARD)
-        if (isFinal) {
+        if (payload.isFinal) {
             if (currentQuestion?.type === "SLIDE") {
                 // Slide questions have no result screen — jump straight to podium
                 showPodium()

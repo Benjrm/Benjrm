@@ -55,6 +55,7 @@ impl From<UpdateAnswerOrder> for UpdateAnswerChoice {
 /// This struct allows for different implementations around the [`AnswerChoiceModel`] that are specific to order questions.
 #[derive(Debug, Clone, Deserialize)]
 pub struct AnswerOrderModel {
+    #[serde(flatten)]
     pub choice: AnswerChoiceModel,
 }
 
