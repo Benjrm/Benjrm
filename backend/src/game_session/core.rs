@@ -765,7 +765,6 @@ impl GameSession {
                     started,
                     answers,
                     answer_distribution,
-                    abort_handle,
                     ..
                 } = &mut self.status
                 else {
@@ -821,13 +820,6 @@ impl GameSession {
                     let answer_distribution = answer_distribution.clone();
                     let question_id = question.id;
 
-                    if answers == self.players.len() {
-                        if let Some(handle) = abort_handle {
-                            handle.abort();
-                        }
-                        self.end_question(None).await;
-                    }
-
                     self.shadow_event(
                         ShadowEvent::PlayerAddPoints {
                             player: *id,
@@ -838,6 +830,7 @@ impl GameSession {
                     )
                     .await
                     .unwrap();
+
                     self.shadow_event(
                         ShadowEvent::UpdateAnswers {
                             answers,
@@ -847,6 +840,17 @@ impl GameSession {
                     )
                     .await
                     .unwrap();
+
+                    if answers == self.players.len() {
+                        if let GameSessionStatus::Question {
+                            abort_handle: Some(abort_handle),
+                            ..
+                        } = &self.status
+                        {
+                            abort_handle.abort();
+                        }
+                        self.end_question(None).await;
+                    }
                 }
             }
         }
@@ -944,6 +948,10 @@ impl GameSession {
         execute_futures(iterator).await;
 
         leaderboard.sort();
+
+        self.shadow_event(ShadowEvent::PlayerApplyPoints, self.code)
+            .await
+            .unwrap();
 
         self.shadow_event(
             ShadowEvent::Leaderboard {

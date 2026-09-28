@@ -84,6 +84,12 @@ async fn handle_event(
                 statistics: statistics.map(Arc::new),
                 leaderboard: Arc::new(leaderboard),
                 is_final,
+            };
+
+            for player in &mut session.players {
+                if let Some((points, _)) = player.last_question.take() {
+                    player.points += points
+                }
             }
         }
         ShadowEvent::ShowPodium => {

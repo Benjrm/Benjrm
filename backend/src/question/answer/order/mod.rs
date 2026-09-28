@@ -1,11 +1,12 @@
 use {
     crate::{
         question::answer::choice::{
-            NewAnswerChoice, UpdateAnswerChoice, entity::AnswerChoiceModel,
+            NewAnswerChoice, UpdateAnswerChoice,
+            entity::{AnswerChoiceModel},
         },
         update_value::UpdateValue,
     },
-    serde::{Deserialize, Serialize, ser::SerializeStruct},
+    serde::{Deserialize, Deserializer, Serialize, ser::SerializeStruct},
     std::ops::{Deref, DerefMut},
     uuid::Uuid,
 };
@@ -55,8 +56,33 @@ impl From<UpdateAnswerOrder> for UpdateAnswerChoice {
 /// This struct allows for different implementations around the [`AnswerChoiceModel`] that are specific to order questions.
 #[derive(Debug, Clone, Deserialize)]
 pub struct AnswerOrderModel {
-    #[serde(flatten)]
+    #[serde(flatten, deserialize_with = "AnswerOrderModel::deserialize_choice")]
     pub choice: AnswerChoiceModel,
+}
+
+impl AnswerOrderModel {
+    pub fn deserialize_choice<'de, D>(deserializer: D) -> Result<AnswerChoiceModel, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields, rename_all = "camelCase")]
+        struct InternalOrder {
+            id: Uuid,
+            answer: String,
+        }
+
+        let raw = InternalOrder::deserialize(deserializer)?;
+
+        Ok(AnswerChoiceModel {
+            id: raw.id,
+            question: Uuid::default(),
+            correct: bool::default(),
+            answer: raw.answer,
+            prev: Option::default(),
+            next: Option::default(),
+        })
+    }
 }
 
 impl Serialize for AnswerOrderModel {
