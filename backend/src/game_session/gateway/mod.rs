@@ -1,7 +1,7 @@
 use {
     crate::{
         AppData,
-        app_data::{AppDataTrait, RedisConnection},
+        app_data::AppDataTrait,
         game_session::{GameSession, GameSessionError, SessionCode},
     },
     actix_proxy::IntoHttpResponse,
@@ -100,33 +100,63 @@ where
 
         async fn move_session(
             code: SessionCode,
-            mut redis: RedisConnection,
             app_data: &impl AppDataTrait,
         ) -> Result<SessionLocation, GameSessionError> {
-            if !app_data
+            let Some(mut redis) = app_data.redis().await? else {
+                return Ok(SessionLocation::ThisNode);
+            };
+
+            let node = redis.get(format!("{{{code}}}:master")).await?;
+
+            let available_locally = app_data
                 .game_sessions()
                 .sessions
                 .read()
                 .await
-                .contains_key(&code)
-            {
-                let node = redis.get(format!("{{{code}}}:master")).await?;
+                .contains_key(&code);
 
-                if let Some(node) = node
-                    && node != app_data.node()
+            async fn remove_session(app_data: &impl AppDataTrait, code: SessionCode) {
+                if let Some(session) = app_data
+                    .game_sessions()
+                    .sessions
+                    .write()
+                    .await
+                    .remove(&code)
                 {
+                    let mut session = session.lock().await;
+                    if !session.is_closed() {
+                        session.close().await;
+                    }
+                }
+            }
+
+            if let Some(node) = node {
+                if node != app_data.node() {
                     if redis
                         .hget::<_, _, Option<String>>(app_data.identifier(), &node)
                         .await?
                         .is_some()
                     {
-                        return Ok(SessionLocation::OtherNode(node));
+                        if available_locally {
+                            remove_session(app_data, code).await
+                        }
+                        Ok(SessionLocation::OtherNode(node))
                     } else {
-                        return Ok(SessionLocation::Restore);
+                        Ok(SessionLocation::Restore)
+                    }
+                } else {
+                    if available_locally {
+                        Ok(SessionLocation::ThisNode)
+                    } else {
+                        Ok(SessionLocation::Restore)
                     }
                 }
+            } else {
+                if available_locally {
+                    remove_session(app_data, code).await
+                }
+                Ok(SessionLocation::ThisNode)
             }
-            Ok(SessionLocation::ThisNode)
         }
 
         async fn proxy(
@@ -185,30 +215,13 @@ where
         let app_data = Arc::clone(&self.app_data);
 
         Box::pin(async move {
-            if let Some(redis) = app_data
-                .redis()
-                .await
-                .map_err(|e| crate::Error::from(GameSessionError::from(e)))?
-                && let Some(code) = code
-            {
-                let location = move_session(code, redis, app_data.as_ref())
+            if let Some(code) = code {
+                let location = move_session(code, app_data.as_ref())
                     .await
                     .map_err(crate::Error::from)?;
 
                 match location {
-                    SessionLocation::ThisNode => {
-                        if !app_data
-                            .game_sessions()
-                            .sessions
-                            .read()
-                            .await
-                            .contains_key(&code)
-                        {
-                            GameSession::restore(code, app_data.as_ref())
-                                .await
-                                .map_err(crate::Error::from)?;
-                        }
-                    }
+                    SessionLocation::ThisNode => (),
                     SessionLocation::OtherNode(node) => {
                         return Ok(proxy(req, node).await?);
                     }
