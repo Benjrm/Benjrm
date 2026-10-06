@@ -58,38 +58,38 @@ async fn main() -> std::io::Result<()> {
         build_time::build_time_utc!()
     );
 
-    let secret_key = if cfg!(debug_assertions) {
-        log::info!("Using static cookie key in development build");
-        // Constant key for debug builds
-        const KEY: [u8; 64] = [
-            214, 235, 254, 208, 2, 104, 84, 123, 188, 216, 236, 30, 146, 156, 213, 15, 147, 35,
-            130, 11, 141, 202, 130, 20, 211, 63, 205, 136, 81, 195, 0, 80, 80, 42, 206, 22, 171,
-            158, 238, 37, 98, 227, 20, 175, 117, 41, 12, 238, 110, 162, 252, 129, 230, 118, 61,
-            122, 20, 108, 234, 140, 246, 149, 111, 174,
-        ];
-        cookie::Key::from(&KEY)
-    } else {
-        match std::env::var("COOKIE_KEY") {
-            Ok(key) => {
-                log::info!("Using defined cookie key");
-                match cookie::Key::try_from(key.as_bytes()) {
-                    Ok(key) => key,
-                    Err(err) => match err {
-                        KeyError::TooShort(_) => {
-                            panic!(
-                                r#"The given environment variable "COOKIE_KEY" is to short. A minimum of 64 (random) characters is required: {err}"#
-                            );
-                        }
-                        err => todo!(r#"Unknown error: {err:?}"#),
-                    },
-                }
+    let secret_key = match std::env::var("COOKIE_KEY") {
+        Ok(key) => {
+            log::info!("Using defined cookie key");
+            match cookie::Key::try_from(key.as_bytes()) {
+                Ok(key) => key,
+                Err(err) => match err {
+                    KeyError::TooShort(_) => {
+                        panic!(
+                            r#"The given environment variable "COOKIE_KEY" is to short. A minimum of 64 (random) characters is required: {err}"#
+                        );
+                    }
+                    err => todo!(r#"Unknown error: {err:?}"#),
+                },
             }
-            Err(VarError::NotPresent) => {
+        }
+        Err(VarError::NotPresent) => {
+            if cfg!(debug_assertions) {
+                log::info!("Using static cookie key in development build");
+                // Constant key for debug builds
+                const KEY: [u8; 64] = [
+                    214, 235, 254, 208, 2, 104, 84, 123, 188, 216, 236, 30, 146, 156, 213, 15, 147,
+                    35, 130, 11, 141, 202, 130, 20, 211, 63, 205, 136, 81, 195, 0, 80, 80, 42, 206,
+                    22, 171, 158, 238, 37, 98, 227, 20, 175, 117, 41, 12, 238, 110, 162, 252, 129,
+                    230, 118, 61, 122, 20, 108, 234, 140, 246, 149, 111, 174,
+                ];
+                cookie::Key::from(&KEY)
+            } else {
                 log::info!("Cookie key not defined, using random key");
                 cookie::Key::generate()
             }
-            Err(err) => panic!(r#"Can't parse "COOKIE_KEY"": {err:?}"#),
         }
+        Err(err) => panic!(r#"Can't parse "COOKIE_KEY"": {err:?}"#),
     };
 
     // Use `PORT` from the environment or default to 80 if not set
