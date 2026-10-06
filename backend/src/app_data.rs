@@ -17,7 +17,6 @@ pub trait AppDataTrait {
     fn privacy(&self) -> &StaticFile;
     fn oidc(&self) -> &Oidc;
     fn game_sessions(&self) -> &GameSessions;
-    fn shadow_sessions(&self) -> &GameSessions;
     fn identifier(&self) -> &'static str {
         concat!(env!("CARGO_PKG_NAME"), "-", env!("CARGO_PKG_VERSION"))
     }
@@ -39,7 +38,6 @@ pub struct AppData {
     privacy: StaticFile,
     oidc: Oidc,
     game_sessions: GameSessions,
-    shadow_sessions: GameSessions,
 }
 
 enum RedisPool {
@@ -177,7 +175,6 @@ impl AppData {
         let oidc = Oidc::from_env().await;
 
         let game_sessions = GameSessions::new();
-        let shadow_sessions = GameSessions::new();
 
         Self {
             db,
@@ -187,7 +184,6 @@ impl AppData {
             privacy,
             oidc,
             game_sessions,
-            shadow_sessions,
         }
     }
 }
@@ -219,10 +215,6 @@ impl AppDataTrait for AppData {
 
     fn game_sessions(&self) -> &GameSessions {
         &self.game_sessions
-    }
-
-    fn shadow_sessions(&self) -> &GameSessions {
-        &self.shadow_sessions
     }
 }
 
@@ -319,10 +311,6 @@ impl AppDataTrait for TestAppData {
 
     fn game_sessions(&self) -> &GameSessions {
         &self.game_sessions
-    }
-
-    fn shadow_sessions(&self) -> &GameSessions {
-        unimplemented!()
     }
 }
 

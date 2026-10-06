@@ -8,7 +8,7 @@ use {
             GameSession, GameSessionError, GameSessionStatus, GameSessions, HostMessage, Message,
             SessionCode,
             api::ws::{WsJoining, channel_builder::WsChannelBuilder},
-            shadow::ShadowEvent,
+            shadow::types::ShadowEvent,
         },
     },
     actix_web::{HttpRequest, HttpResponse, rt, web},
@@ -86,25 +86,14 @@ async fn remove_host_ws(
         log::info!("Deleting session {code} due to inactivity");
         session.close().await;
         session
-            .shadow_event(ShadowEvent::EndGame, code)
+            .shadow_event(ShadowEvent::EndGame, code, Arc::clone(&app_data))
             .await
             .unwrap();
         drop(session);
 
-        let mut redis = match app_data.redis().await {
-            Ok(opt) => opt,
-            Err(err) => {
-                log::error!(
-                    "Error while deleting session: {:?}",
-                    Error::Session(err.into())
-                );
-                None
-            }
-        };
-
         if let Err(err) = app_data
             .game_sessions()
-            .drop_session(&mut redis, app_data.node(), code)
+            .drop_session(Arc::clone(&app_data), code)
             .await
         {
             // Only log the error since there is nobody to catch it anyways
@@ -167,7 +156,7 @@ async fn get_player_ws(
 ///
 /// If the player has not reconnected, the player gets removed from the session while notifying the host.
 pub(super) async fn remove_player_ws<AppData: AppDataTrait>(
-    _app_data: Arc<AppData>,
+    app_data: Arc<AppData>,
     session: Arc<Mutex<GameSession>>,
     channel_id: u64,
     player_id: Uuid,
@@ -196,7 +185,11 @@ pub(super) async fn remove_player_ws<AppData: AppDataTrait>(
     }
 
     session
-        .shadow_event(ShadowEvent::KickPlayer { player: player_id }, session.code)
+        .shadow_event(
+            ShadowEvent::KickPlayer { player: player_id },
+            session.code,
+            app_data,
+        )
         .await
         .unwrap();
 }

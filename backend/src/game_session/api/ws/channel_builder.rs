@@ -182,8 +182,11 @@ impl<AppData: AppDataTrait + 'static> WsChannelBuilder<AppData> {
                 // Take `_self` out of `self_optional` to let `session.add_player` consume it
                 if let Some(mut _self) = self_optional.take() {
                     _self.inner.ok(cmd.id).await;
+                    let app_data = Arc::clone(&_self.app_data);
                     let channel = _self.build(id, GameSession::handle_player_cmd, remove_player_ws);
-                    session.add_player(cmd.id, id, channel, name, emoji).await;
+                    session
+                        .add_player(cmd.id, id, channel, name, emoji, app_data)
+                        .await;
                 }
             }
             PlayerCommand::Reconnect { id, secret } => {

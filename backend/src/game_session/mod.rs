@@ -109,12 +109,16 @@ impl_err! {
         #[allow(dead_code)]
         #[error("Shadow session, use the owner node instead")]
         ShadowSession = FORBIDDEN,
-        #[error("Shadow session not found")]
-        ShadowNotFound = NOT_FOUND,
         #[error("Shadow invalid status")]
         ShadowInvalidSessionStatus = BAD_REQUEST,
         #[error("Player couldn't be added since the player already exists")]
         ShadowPlayerAlreadyPresent = BAD_REQUEST,
+        #[error("The session can't be restored on a new server ({0} not restorable)")]
+        ShadowCantRestore(&'static str) = BAD_REQUEST,
+        #[error("Not the master")]
+        NotTheMaster = INTERNAL_SERVER_ERROR,
+        #[error("The game session is currently restoring from a failure")]
+        ShadowRestoring = INTERNAL_SERVER_ERROR,
     }
 }
 
@@ -209,24 +213,7 @@ pub struct GameSession {
     host: GameSessionHost,
     players: Vec<GameSessionPlayer>,
     quiz: Option<Arc<PlayableQuiz>>,
-    #[serde(skip, default)]
-    shadow: Option<Arc<reqwest::Client>>,
     code: SessionCode,
-}
-
-impl GameSession {
-    pub unsafe fn clone_unsafe(&self) -> Self {
-        unsafe {
-            Self {
-                status: self.status.clone_unsafe(),
-                host: self.host.clone_unsafe(),
-                players: self.players.iter().map(|p| p.clone_unsafe()).collect(),
-                quiz: self.quiz.clone(),
-                shadow: None,
-                code: self.code,
-            }
-        }
-    }
 }
 
 /// Represents the current state of a game session.
@@ -263,43 +250,6 @@ pub enum GameSessionStatus {
     Closed,
 }
 
-impl GameSessionStatus {
-    pub unsafe fn clone_unsafe(&self) -> Self {
-        match self {
-            Self::Waiting(_) => Self::Waiting(Vec::new()),
-            Self::Started => Self::Started,
-            Self::Question {
-                idx,
-                started,
-                answers,
-                answer_distribution,
-                abort_handle: _,
-                leaderboard,
-            } => Self::Question {
-                idx: *idx,
-                started: *started,
-                answers: *answers,
-                answer_distribution: answer_distribution.clone(),
-                abort_handle: None,
-                leaderboard: leaderboard.clone(),
-            },
-            Self::Leaderboard {
-                idx,
-                statistics,
-                leaderboard,
-                is_final,
-            } => Self::Leaderboard {
-                idx: *idx,
-                statistics: statistics.clone(),
-                leaderboard: leaderboard.clone(),
-                is_final: *is_final,
-            },
-            Self::Podium(arg0) => Self::Podium(arg0.clone()),
-            Self::Closed => Self::Closed,
-        }
-    }
-}
-
 /// Represents the host of a game session.
 ///
 /// The host owns the session and controls game flow (start, next question, kick players, etc.).
@@ -310,16 +260,6 @@ pub struct GameSessionHost {
     channel_id: u64,
     #[serde(skip, default)]
     channel: Option<Box<dyn Channel<HostMessage>>>,
-}
-
-impl GameSessionHost {
-    pub unsafe fn clone_unsafe(&self) -> Self {
-        Self {
-            user: self.user.clone(),
-            channel: None,
-            channel_id: 0,
-        }
-    }
 }
 
 impl From<User> for GameSessionHost {
@@ -347,21 +287,6 @@ pub struct GameSessionPlayer {
     channel_id: u64,
     points: u32,
     last_question: Option<(u32, Uuid)>,
-}
-
-impl GameSessionPlayer {
-    pub unsafe fn clone_unsafe(&self) -> Self {
-        Self {
-            id: self.id,
-            secret: self.secret,
-            name: self.name.clone(),
-            emoji: self.emoji,
-            channel: None,
-            channel_id: 0,
-            points: self.points,
-            last_question: self.last_question,
-        }
-    }
 }
 
 /// A trait representing a Channel for a game session.

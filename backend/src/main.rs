@@ -1,8 +1,6 @@
 use {
     crate::{
-        app_data::AppDataTrait,
-        error::Error,
-        game_session::{gateway::GameSessionGatewayMiddleware, shadow},
+        app_data::AppDataTrait, error::Error, game_session::gateway::GameSessionGatewayMiddleware,
     },
     actix_session::{SessionMiddleware, storage::CookieSessionStore},
     actix_web::{
@@ -54,6 +52,12 @@ async fn main() -> std::io::Result<()> {
             .init();
     }
 
+    log::info!(
+        "Benjrm {} was build on {}",
+        env!("CARGO_PKG_VERSION"),
+        build_time::build_time_utc!()
+    );
+
     let secret_key = if cfg!(debug_assertions) {
         log::info!("Using static cookie key in development build");
         // Constant key for debug builds
@@ -99,7 +103,8 @@ async fn main() -> std::io::Result<()> {
         let data = Arc::clone(&data);
         rt::spawn(async move {
             let identifier = data.identifier();
-            let expiration = HashFieldExpirationOptions::default().set_expiration(SetExpiry::EX(3));
+            let expiration =
+                HashFieldExpirationOptions::default().set_expiration(SetExpiry::PX(250));
             let node = data.node();
 
             let mut error = false;
@@ -133,7 +138,7 @@ async fn main() -> std::io::Result<()> {
                     }
                 }
 
-                sleep(Duration::from_millis(900)).await;
+                sleep(Duration::from_millis(200)).await;
             }
         });
     }
@@ -169,7 +174,6 @@ async fn main() -> std::io::Result<()> {
                                 web::scope("")
                                     .wrap(GameSessionGatewayMiddleware::new(
                                         data.clone().into_inner(),
-                                        port,
                                     ))
                                     .configure(game_session::init)
                                     .default_service(not_found_route()),
@@ -179,17 +183,8 @@ async fn main() -> std::io::Result<()> {
                     .default_service(not_found_route()),
             )
             .configure(frontend::init)
-            .service(
-                web::scope("/_api")
-                    .service(
-                        web::scope("/v1")
-                            .configure(shadow::api::init)
-                            .default_service(not_found_route()),
-                    )
-                    .default_service(not_found_route()),
-            )
     })
-    .bind(("0.0.0.0", port))?
+    .bind(("::", port))?
     .run()
     .await
 }

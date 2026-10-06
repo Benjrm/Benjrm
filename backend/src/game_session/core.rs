@@ -8,7 +8,8 @@ use {
             DisplayQuestionMessage, GameSession, GameSessionError, GameSessionHost,
             GameSessionPlayer, GameSessionStatus, GameSessions, HostCommand, HostMessage,
             LeaderboardEntry, Message, OrderStatistics, Player, PlayerCommand, PlayerMessage,
-            SessionCode, shadow::ShadowEvent,
+            SessionCode,
+            shadow::types::{ShadowEvent, ShadowGameSession},
         },
         question::{
             Question, QuestionFilter, QuestionOptions,
@@ -50,10 +51,9 @@ impl GameSessions {
         &self,
         conn: &impl ConnectionTrait,
         redis: &mut Option<RedisConnection>,
-        reqwest: Option<Arc<reqwest::Client>>,
-        node: &str,
         host: User,
         quiz: Option<Uuid>,
+        app_data: Arc<impl AppDataTrait>,
     ) -> Result<(SessionCode, Arc<Mutex<GameSession>>), Error> {
         let quiz = match quiz {
             Some(quiz_id) => {
@@ -122,27 +122,20 @@ impl GameSessions {
             }
         };
 
-        if let Some(redis) = redis {
-            redis
-                .set_ex(code, node, 60 * 24 * 7)
-                .await
-                .map_err(GameSessionError::Redis)?;
-        }
-
         let game = GameSession {
             status: GameSessionStatus::Waiting(Vec::new()),
             host: host.into(),
             players: Vec::new(),
             quiz,
-            shadow: reqwest,
             code,
         };
 
         game.shadow_event(
             ShadowEvent::Init {
-                session: unsafe { game.clone_unsafe() },
+                session: (&game).into(),
             },
             code,
+            app_data,
         )
         .await?;
 
@@ -179,34 +172,24 @@ impl GameSessions {
     /// Intended for internal cleanup operations.
     pub async fn drop_session(
         &self,
-        redis: &mut Option<RedisConnection>,
-        node: &str,
+        app_data: Arc<impl AppDataTrait>,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
-        if let Some(redis) = redis {
-            let session = redis.get(code).await?;
-            if let Some(session) = session
-                && session == node
-            {
-                redis.del(code).await.map_err(GameSessionError::Redis)?;
-            }
-        }
-
         let mut sessions = self.sessions.write().await;
         sessions.remove(&code);
-
-        Ok(())
+        ShadowGameSession::delete(app_data, code).await
     }
 
     /// Remove and closes a session.
     pub async fn delete_session(
         &self,
         user: &User,
-        redis: &mut Option<RedisConnection>,
-        node: &str,
+        app_data: Arc<impl AppDataTrait>,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
-        let session = self.get_session(redis, node, code).await?;
+        let session = self
+            .get_session(&mut app_data.redis().await?, app_data.node(), code)
+            .await?;
 
         {
             let mut session = session.lock().await;
@@ -216,7 +199,7 @@ impl GameSessions {
             session.close().await;
         }
 
-        self.drop_session(redis, node, code).await?;
+        self.drop_session(Arc::clone(&app_data), code).await?;
 
         Ok(())
     }
@@ -356,7 +339,7 @@ impl GameSession {
     /// Handles a command sent by the host of the session.
     ///
     /// This is where the session state is updated based on the host's commands, such as starting the game or moving to the next question.
-    pub async fn handle_host_cmd<AppData: AppDataTrait>(
+    pub async fn handle_host_cmd<AppData: AppDataTrait + 'static>(
         &mut self,
         cmd: Command<HostCommand>,
         arc: Arc<Mutex<Self>>,
@@ -373,7 +356,7 @@ impl GameSession {
                     .ok_or(GameSessionError::PlayerNotFound)?;
                 let mut player = self.players.swap_remove(pos);
 
-                self.shadow_event(ShadowEvent::KickPlayer { player: id }, *code)
+                self.shadow_event(ShadowEvent::KickPlayer { player: id }, *code, app_data)
                     .await
                     .unwrap();
 
@@ -402,15 +385,15 @@ impl GameSession {
 
                 self.status = GameSessionStatus::Started;
 
-                self.shadow_event(ShadowEvent::StartQuiz, *code)
+                self.shadow_event(ShadowEvent::StartQuiz, *code, app_data)
                     .await
                     .unwrap();
 
                 self.notify_all_players(Message::from(&PlayerMessage::Start))
                     .await;
             }
-            HostCommand::NextQuestion => self.next_question(None, arc).await?,
-            HostCommand::ShowQuestion { id } => self.next_question(Some(id), arc).await?,
+            HostCommand::NextQuestion => self.next_question(None, arc, app_data).await?,
+            HostCommand::ShowQuestion { id } => self.next_question(Some(id), arc, app_data).await?,
             HostCommand::ShowPodium => {
                 let leaderboard = match &self.status {
                     GameSessionStatus::Leaderboard { leaderboard, .. } => Arc::clone(leaderboard),
@@ -419,7 +402,7 @@ impl GameSession {
 
                 self.status = GameSessionStatus::Podium(Arc::clone(&leaderboard));
 
-                self.shadow_event(ShadowEvent::ShowPodium, *code)
+                self.shadow_event(ShadowEvent::ShowPodium, *code, app_data)
                     .await
                     .unwrap();
 
@@ -441,15 +424,11 @@ impl GameSession {
                 execute_futures(player_iterator).await;
             }
             HostCommand::EndGame => {
-                sessions
-                    .drop_session(&mut app_data.redis().await?, app_data.node(), *code)
-                    .await?;
-                self.end_question(Some(true)).await;
-
-                self.shadow_event(ShadowEvent::EndGame, *code)
+                sessions.drop_session(Arc::clone(&app_data), *code).await?;
+                self.end_question(Some(true), Arc::clone(&app_data)).await;
+                self.shadow_event(ShadowEvent::EndGame, *code, app_data)
                     .await
                     .unwrap();
-
                 self.notify_all_players(Message::from(&PlayerMessage::GameEnded))
                     .await;
                 self.close().await
@@ -467,6 +446,7 @@ impl GameSession {
         &mut self,
         id: Option<Uuid>,
         arc: Arc<Mutex<Self>>,
+        app_data: Arc<impl AppDataTrait + 'static>,
     ) -> Result<(), GameSessionError> {
         match &mut self.status {
             GameSessionStatus::Waiting(_) => return Err(GameSessionError::NotStarted),
@@ -475,7 +455,7 @@ impl GameSession {
                 if let Some(abort_handle) = abort_handle.take() {
                     abort_handle.abort();
                 }
-                self.end_question(None).await;
+                self.end_question(None, Arc::clone(&app_data)).await;
             }
             GameSessionStatus::Podium(_) => return Err(GameSessionError::NoQuestionLeft),
             GameSessionStatus::Closed => return Err(GameSessionError::InvalidCode),
@@ -501,22 +481,27 @@ impl GameSession {
 
         let offset_secs = 3u32;
         let started = Utc::now() + TimeDelta::seconds(offset_secs as i64);
-        let abort_handle = quiz.questions[question]
-            .options
-            .default_answer_duration()
-            .map(move |duration| {
-                rt::spawn(async move {
-                    tokio::time::sleep(Duration::from_secs((duration + offset_secs) as u64)).await;
-                    let mut session = arc.lock().await;
 
-                    if let GameSessionStatus::Question { idx, answers, .. } = &session.status
-                        && *idx == question
-                        && session.players.len() > *answers
-                    {
-                        session.end_question(None).await;
-                    }
+        let abort_handle = {
+            let app_data = Arc::clone(&app_data);
+            quiz.questions[question]
+                .options
+                .default_answer_duration()
+                .map(|duration| {
+                    rt::spawn(async move {
+                        tokio::time::sleep(Duration::from_secs((duration + offset_secs) as u64))
+                            .await;
+                        let mut session = arc.lock().await;
+
+                        if let GameSessionStatus::Question { idx, answers, .. } = &session.status
+                            && *idx == question
+                            && session.players.len() > *answers
+                        {
+                            session.end_question(None, app_data).await;
+                        }
+                    })
                 })
-            });
+        };
 
         let leaderboard = match &self.status {
             GameSessionStatus::Leaderboard { leaderboard, .. } => Some(Arc::clone(leaderboard)),
@@ -540,6 +525,7 @@ impl GameSession {
                 leaderboard,
             },
             self.code,
+            app_data,
         )
         .await?;
 
@@ -588,6 +574,7 @@ impl GameSession {
         channel: T,
         name: String,
         emoji: Option<&'static Emoji>,
+        app_data: Arc<impl AppDataTrait>,
     ) {
         if let GameSessionStatus::Waiting(joining) = &mut self.status
             && let Some(pos) = joining.iter().position(|x| x.id() == channel.id())
@@ -637,6 +624,7 @@ impl GameSession {
                     emoji,
                 },
                 self.code,
+                app_data,
             )
             .await
         {
@@ -694,7 +682,7 @@ impl GameSession {
         cmd: Command<PlayerCommand>,
         _arc: Arc<Mutex<Self>>,
         id: &Uuid,
-        _app_data: Arc<AppData>,
+        app_data: Arc<AppData>,
     ) -> Result<(), GameSessionError> {
         match cmd.command {
             PlayerCommand::Pong { .. } => (),
@@ -750,6 +738,7 @@ impl GameSession {
                         emoji,
                     },
                     self.code,
+                    app_data,
                 )
                 .await
                 .unwrap();
@@ -827,6 +816,7 @@ impl GameSession {
                             question: question_id,
                         },
                         self.code,
+                        Arc::clone(&app_data),
                     )
                     .await
                     .unwrap();
@@ -837,6 +827,7 @@ impl GameSession {
                             distribution: answer_distribution,
                         },
                         self.code,
+                        Arc::clone(&app_data),
                     )
                     .await
                     .unwrap();
@@ -849,7 +840,7 @@ impl GameSession {
                         {
                             abort_handle.abort();
                         }
-                        self.end_question(None).await;
+                        self.end_question(None, app_data).await;
                     }
                 }
             }
@@ -880,7 +871,7 @@ impl GameSession {
     }
 
     /// Ends the current question, calculates points for players, and sends the results to both the host and players.
-    pub async fn end_question(&mut self, is_final: Option<bool>) {
+    pub async fn end_question(&mut self, is_final: Option<bool>, app_data: Arc<impl AppDataTrait>) {
         let GameSessionStatus::Question {
             idx,
             answers,
@@ -949,10 +940,6 @@ impl GameSession {
 
         leaderboard.sort();
 
-        self.shadow_event(ShadowEvent::PlayerApplyPoints, self.code)
-            .await
-            .unwrap();
-
         self.shadow_event(
             ShadowEvent::Leaderboard {
                 idx: *idx,
@@ -961,6 +948,7 @@ impl GameSession {
                 is_final,
             },
             self.code,
+            app_data,
         )
         .await
         .unwrap();

@@ -1,8 +1,7 @@
 use {
     crate::{
         question::answer::choice::{
-            NewAnswerChoice, UpdateAnswerChoice,
-            entity::{AnswerChoiceModel},
+            NewAnswerChoice, UpdateAnswerChoice, entity::AnswerChoiceModel,
         },
         update_value::UpdateValue,
     },

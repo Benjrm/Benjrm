@@ -2,11 +2,11 @@ use {
     crate::{
         AppData,
         app_data::{AppDataTrait, RedisConnection},
-        game_session::{GameSessionError, SessionCode},
+        game_session::{GameSession, GameSessionError, SessionCode},
     },
     actix_proxy::IntoHttpResponse,
     actix_web::{
-        Error, HttpMessage, HttpResponse,
+        Error, HttpMessage,
         body::MessageBody,
         dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
     },
@@ -37,12 +37,11 @@ static FORWARD_HEADERS: &[&str] = &[
 
 pub struct GameSessionGatewayMiddleware {
     app_data: Arc<AppData>,
-    port: u16,
 }
 
 impl GameSessionGatewayMiddleware {
-    pub fn new(app_data: Arc<AppData>, port: u16) -> Self {
-        Self { app_data, port }
+    pub fn new(app_data: Arc<AppData>) -> Self {
+        Self { app_data }
     }
 }
 
@@ -61,7 +60,6 @@ where
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(InnerGameSessionGatewayMiddleware {
             app_data: Arc::clone(&self.app_data),
-            port: self.port,
             service: Rc::new(service),
         }))
     }
@@ -69,8 +67,13 @@ where
 
 pub struct InnerGameSessionGatewayMiddleware<S> {
     app_data: Arc<AppData>,
-    port: u16,
     service: Rc<S>,
+}
+
+enum SessionLocation {
+    ThisNode,
+    OtherNode(String),
+    Restore,
 }
 
 impl<S, B> Service<ServiceRequest> for InnerGameSessionGatewayMiddleware<S>
@@ -99,7 +102,7 @@ where
             code: SessionCode,
             mut redis: RedisConnection,
             app_data: Arc<AppData>,
-        ) -> Result<Option<String>, GameSessionError> {
+        ) -> Result<SessionLocation, GameSessionError> {
             if !app_data
                 .game_sessions()
                 .sessions
@@ -107,28 +110,36 @@ where
                 .await
                 .contains_key(&code)
             {
-                let node = redis.get::<_, Option<String>>(code).await?;
+                let node = redis.get(format!("{{{code}}}:master")).await?;
 
                 if let Some(node) = node
                     && node != app_data.node()
                 {
-                    return Ok(Some(node));
+                    if redis
+                        .hget::<_, _, Option<String>>(app_data.identifier(), &node)
+                        .await?
+                        .is_some()
+                    {
+                        return Ok(SessionLocation::OtherNode(node));
+                    } else {
+                        return Ok(SessionLocation::Restore);
+                    }
                 }
             }
-            Ok(None)
+            Ok(SessionLocation::ThisNode)
         }
 
         async fn proxy(
             mut req: ServiceRequest,
             node: String,
-            port: u16,
-        ) -> Result<ServiceResponse<BoxBody>, Error> {
+        ) -> Result<ServiceResponse<BoxBody>, crate::error::Error> {
             let payload = req.take_payload();
             let Some(client) = req.app_data::<awc::Client>() else {
                 return Err(crate::Error::Session(GameSessionError::AwcUnavailable))?;
             };
 
-            let node_url = format!("http://{}:{}{}", node, port, req.uri());
+            let node_url = format!("http://{}{}", node, req.uri());
+            log::debug!("Proxying request to {node_url}");
 
             let mut headers = Vec::with_capacity(FORWARD_HEADERS.len());
 
@@ -154,45 +165,61 @@ where
                     proxy_req = proxy_req.insert_header_if_none(header)
                 }
 
-                log::debug!("Proxying request to {node}");
-                let x: Result<HttpResponse, GameSessionError> =
-                    match proxy_req.send_stream(payload).await {
-                        Ok(res) => Ok(res.into_http_response()),
-                        Err(SendRequestError::Connect(ConnectError::Timeout))
-                        | Err(SendRequestError::Timeout) => {
-                            log::error!("Proxy timeout");
-                            Err(GameSessionError::ProxyTimeout)
-                        }
-                        Err(err) => {
-                            log::error!("Proxy error: {err:?}");
-                            Err(GameSessionError::ProxyError)
-                        }
-                    };
-
-                x.map_err(crate::Error::Session)?
+                match proxy_req.send_stream(payload).await {
+                    Ok(res) => Ok(res.into_http_response()),
+                    Err(SendRequestError::Connect(ConnectError::Timeout))
+                    | Err(SendRequestError::Timeout) => {
+                        log::error!("Proxy timeout");
+                        Err(GameSessionError::ProxyTimeout)
+                    }
+                    Err(err) => {
+                        log::error!("Proxy error: {err:?}");
+                        Err(GameSessionError::ProxyError)
+                    }
+                }
+                .map_err(crate::Error::Session)?
             };
             Ok(req.into_response(response.map_into_boxed_body()))
         }
 
         let app_data = Arc::clone(&self.app_data);
-        let port = self.port;
 
         Box::pin(async move {
-            let res = if let Some(redis) = app_data
+            if let Some(redis) = app_data
                 .redis()
                 .await
                 .map_err(|e| crate::Error::from(GameSessionError::from(e)))?
                 && let Some(code) = code
-                && let Some(node) = move_session(code, redis, Arc::clone(&app_data))
-                    .await
-                    .map_err(crate::Error::from)?
             {
-                proxy(req, node, port).await?
-            } else {
-                service.call(req).await?.map_into_boxed_body()
-            };
+                let location = move_session(code, redis, Arc::clone(&app_data))
+                    .await
+                    .map_err(crate::Error::from)?;
 
-            Ok(res)
+                match location {
+                    SessionLocation::ThisNode => {
+                        if !app_data
+                            .game_sessions()
+                            .sessions
+                            .read()
+                            .await
+                            .contains_key(&code)
+                        {
+                            GameSession::restore(code, Arc::clone(&app_data))
+                                .await
+                                .map_err(crate::Error::from)?;
+                        }
+                    }
+                    SessionLocation::OtherNode(node) => {
+                        return Ok(proxy(req, node).await?);
+                    }
+                    SessionLocation::Restore => {
+                        GameSession::restore(code, Arc::clone(&app_data))
+                            .await
+                            .map_err(crate::Error::from)?;
+                    }
+                }
+            }
+            Ok(service.call(req).await?.map_into_boxed_body())
         })
     }
 }
