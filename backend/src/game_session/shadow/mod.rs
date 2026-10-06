@@ -20,7 +20,7 @@ impl GameSession {
         &self,
         event: ShadowEvent,
         code: SessionCode,
-        app_data: Arc<impl AppDataTrait>,
+        app_data: &impl AppDataTrait,
     ) -> Result<(), GameSessionError> {
         let Some(mut redis) = app_data.redis().await? else {
             return Ok(());
@@ -101,7 +101,7 @@ impl GameSession {
 
     pub async fn restore(
         code: SessionCode,
-        app_data: Arc<impl AppDataTrait>,
+        app_data: &impl AppDataTrait,
     ) -> Result<(), GameSessionError> {
         let Some(mut redis) = app_data.redis().await? else {
             return Ok(());
@@ -122,7 +122,7 @@ impl GameSession {
 
         async fn inner_restore(
             code: SessionCode,
-            app_data: Arc<impl AppDataTrait>,
+            app_data: &impl AppDataTrait,
             redis: &mut RedisConnection,
         ) -> Result<(), GameSessionError> {
             let status = redis
@@ -310,7 +310,7 @@ impl ShadowGameSession {
     }
 
     pub async fn delete(
-        app_data: Arc<impl AppDataTrait>,
+        app_data: &impl AppDataTrait,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
         let Some(mut redis) = app_data.redis().await? else {

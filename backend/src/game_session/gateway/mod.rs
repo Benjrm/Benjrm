@@ -101,7 +101,7 @@ where
         async fn move_session(
             code: SessionCode,
             mut redis: RedisConnection,
-            app_data: Arc<AppData>,
+            app_data: &impl AppDataTrait,
         ) -> Result<SessionLocation, GameSessionError> {
             if !app_data
                 .game_sessions()
@@ -191,7 +191,7 @@ where
                 .map_err(|e| crate::Error::from(GameSessionError::from(e)))?
                 && let Some(code) = code
             {
-                let location = move_session(code, redis, Arc::clone(&app_data))
+                let location = move_session(code, redis, app_data.as_ref())
                     .await
                     .map_err(crate::Error::from)?;
 
@@ -204,7 +204,7 @@ where
                             .await
                             .contains_key(&code)
                         {
-                            GameSession::restore(code, Arc::clone(&app_data))
+                            GameSession::restore(code, app_data.as_ref())
                                 .await
                                 .map_err(crate::Error::from)?;
                         }
@@ -213,7 +213,7 @@ where
                         return Ok(proxy(req, node).await?);
                     }
                     SessionLocation::Restore => {
-                        GameSession::restore(code, Arc::clone(&app_data))
+                        GameSession::restore(code, app_data.as_ref())
                             .await
                             .map_err(crate::Error::from)?;
                     }

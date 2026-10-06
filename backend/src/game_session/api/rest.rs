@@ -17,7 +17,6 @@ async fn create_one(
     user: User,
     create: web::Json<NewSession>,
 ) -> Result<HttpResponse> {
-    let app_data_clone = Arc::clone(&app_data);
     let (code, session) = app_data
         .game_sessions()
         .create_session(
@@ -25,7 +24,7 @@ async fn create_one(
             &mut app_data.redis().await.map_err(GameSessionError::from)?,
             user.clone(),
             create.quiz,
-            app_data_clone,
+            app_data.as_ref(),
         )
         .await?;
     let session = session.lock().await;
@@ -38,7 +37,6 @@ async fn create_one_with_quiz(
     user: User,
     quiz: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
-    let app_data_clone = Arc::clone(&app_data);
     let (code, session) = app_data
         .game_sessions()
         .create_session(
@@ -46,7 +44,7 @@ async fn create_one_with_quiz(
             &mut app_data.redis().await.map_err(GameSessionError::from)?,
             user.clone(),
             Some(quiz.into_inner()),
-            app_data_clone,
+            app_data.as_ref(),
         )
         .await?;
     let session = session.lock().await;
@@ -111,7 +109,7 @@ async fn delete(
 ) -> Result<HttpResponse> {
     app_data
         .game_sessions()
-        .delete_session(&user, Arc::clone(&app_data), code.into_inner())
+        .delete_session(&user, app_data.as_ref(), code.into_inner())
         .await?;
 
     Ok(HttpResponse::NoContent().finish())
@@ -143,7 +141,7 @@ async fn delete_with_quiz(
     }
     app_data
         .game_sessions()
-        .drop_session(Arc::clone(&app_data), code)
+        .drop_session(app_data.as_ref(), code)
         .await?;
     session.close().await;
 

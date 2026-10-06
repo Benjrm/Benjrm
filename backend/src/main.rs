@@ -157,7 +157,7 @@ async fn main() -> std::io::Result<()> {
                     .cookie_secure(cfg!(not(debug_assertions)))
                     .build(),
             )
-            .app_data(data.clone())
+            .app_data(web::Data::clone(&data))
             .app_data(web::Data::new(reqwest::Client::new()))
             .app_data(awc::Client::new())
             .configure(auth::init)
@@ -187,22 +187,25 @@ async fn main() -> std::io::Result<()> {
     .bind(("::", port))?
     .run();
 
-    
     match std::env::var("CHAOS") {
         Ok(seconds) => {
-            let seconds: u64 = seconds.parse().expect(r#"Can't parse "CHAOS" to seconds, expected an integer >=30"#);
+            let seconds: u64 = seconds
+                .parse()
+                .expect(r#"Can't parse "CHAOS" to seconds, expected an integer >=30"#);
             if seconds < 30 {
-                log::info!("Chaos of {seconds} seconds is to small, increasing to a minimum of 30 seconds");
+                log::info!(
+                    "Chaos of {seconds} seconds is to small, increasing to a minimum of 30 seconds"
+                );
             }
 
             let min = seconds.max(30);
             let max = min * 2 - min / 2; // times 1.5 without using a float 
             let rand = rand::random_range(min..=max);
-            
+
             tokio::spawn(async move {
                 log::warn!("Chaos enabled, exiting in {rand} seconds...");
-                tokio::time::sleep(Duration::from_secs(rand-3)).await;
-    
+                tokio::time::sleep(Duration::from_secs(rand - 3)).await;
+
                 log::warn!("Exiting in 3 seconds...");
                 tokio::time::sleep(Duration::from_secs(1)).await;
                 log::warn!("Exiting in 2 seconds...");
@@ -213,7 +216,7 @@ async fn main() -> std::io::Result<()> {
                 log::info!(r#"Exiting now... to disable this behavior unset "CHAOS""#);
                 std::process::exit(0);
             });
-        },
+        }
         Err(VarError::NotPresent) => (),
         Err(err) => panic!(r#"Can't parse "CHAOS"": {err:?}"#),
     };

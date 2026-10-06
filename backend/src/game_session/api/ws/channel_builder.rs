@@ -185,7 +185,7 @@ impl<AppData: AppDataTrait + 'static> WsChannelBuilder<AppData> {
                     let app_data = Arc::clone(&_self.app_data);
                     let channel = _self.build(id, GameSession::handle_player_cmd, remove_player_ws);
                     session
-                        .add_player(cmd.id, id, channel, name, emoji, app_data)
+                        .add_player(cmd.id, id, channel, name, emoji, app_data.as_ref())
                         .await;
                 }
             }

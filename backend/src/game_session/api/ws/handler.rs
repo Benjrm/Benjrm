@@ -85,17 +85,14 @@ async fn remove_host_ws(
     if session.host.channel_id == id {
         log::info!("Deleting session {code} due to inactivity");
         session.close().await;
+        let app_data = app_data.as_ref();
         session
-            .shadow_event(ShadowEvent::EndGame, code, Arc::clone(&app_data))
+            .shadow_event(ShadowEvent::EndGame, code, app_data)
             .await
             .unwrap();
         drop(session);
 
-        if let Err(err) = app_data
-            .game_sessions()
-            .drop_session(Arc::clone(&app_data), code)
-            .await
-        {
+        if let Err(err) = app_data.game_sessions().drop_session(app_data, code).await {
             // Only log the error since there is nobody to catch it anyways
             log::error!("{err:?}");
         }
@@ -188,7 +185,7 @@ pub(super) async fn remove_player_ws<AppData: AppDataTrait>(
         .shadow_event(
             ShadowEvent::KickPlayer { player: player_id },
             session.code,
-            app_data,
+            app_data.as_ref(),
         )
         .await
         .unwrap();

@@ -53,7 +53,7 @@ impl GameSessions {
         redis: &mut Option<RedisConnection>,
         host: User,
         quiz: Option<Uuid>,
-        app_data: Arc<impl AppDataTrait>,
+        app_data: &impl AppDataTrait,
     ) -> Result<(SessionCode, Arc<Mutex<GameSession>>), Error> {
         let quiz = match quiz {
             Some(quiz_id) => {
@@ -172,7 +172,7 @@ impl GameSessions {
     /// Intended for internal cleanup operations.
     pub async fn drop_session(
         &self,
-        app_data: Arc<impl AppDataTrait>,
+        app_data: &impl AppDataTrait,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
         let mut sessions = self.sessions.write().await;
@@ -184,7 +184,7 @@ impl GameSessions {
     pub async fn delete_session(
         &self,
         user: &User,
-        app_data: Arc<impl AppDataTrait>,
+        app_data: &impl AppDataTrait,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
         let session = self
@@ -199,7 +199,7 @@ impl GameSessions {
             session.close().await;
         }
 
-        self.drop_session(Arc::clone(&app_data), code).await?;
+        self.drop_session(app_data, code).await?;
 
         Ok(())
     }
@@ -356,9 +356,13 @@ impl GameSession {
                     .ok_or(GameSessionError::PlayerNotFound)?;
                 let mut player = self.players.swap_remove(pos);
 
-                self.shadow_event(ShadowEvent::KickPlayer { player: id }, *code, app_data)
-                    .await
-                    .unwrap();
+                self.shadow_event(
+                    ShadowEvent::KickPlayer { player: id },
+                    *code,
+                    app_data.as_ref(),
+                )
+                .await
+                .unwrap();
 
                 player.msg(Message::from(&PlayerMessage::Kick)).await;
                 player.close().await;
@@ -385,15 +389,17 @@ impl GameSession {
 
                 self.status = GameSessionStatus::Started;
 
-                self.shadow_event(ShadowEvent::StartQuiz, *code, app_data)
+                self.shadow_event(ShadowEvent::StartQuiz, *code, app_data.as_ref())
                     .await
                     .unwrap();
 
                 self.notify_all_players(Message::from(&PlayerMessage::Start))
                     .await;
             }
-            HostCommand::NextQuestion => self.next_question(None, arc, app_data).await?,
-            HostCommand::ShowQuestion { id } => self.next_question(Some(id), arc, app_data).await?,
+            HostCommand::NextQuestion => self.next_question(None, arc, &app_data).await?,
+            HostCommand::ShowQuestion { id } => {
+                self.next_question(Some(id), arc, &app_data).await?
+            }
             HostCommand::ShowPodium => {
                 let leaderboard = match &self.status {
                     GameSessionStatus::Leaderboard { leaderboard, .. } => Arc::clone(leaderboard),
@@ -402,7 +408,7 @@ impl GameSession {
 
                 self.status = GameSessionStatus::Podium(Arc::clone(&leaderboard));
 
-                self.shadow_event(ShadowEvent::ShowPodium, *code, app_data)
+                self.shadow_event(ShadowEvent::ShowPodium, *code, app_data.as_ref())
                     .await
                     .unwrap();
 
@@ -424,8 +430,9 @@ impl GameSession {
                 execute_futures(player_iterator).await;
             }
             HostCommand::EndGame => {
-                sessions.drop_session(Arc::clone(&app_data), *code).await?;
-                self.end_question(Some(true), Arc::clone(&app_data)).await;
+                let app_data = app_data.as_ref();
+                sessions.drop_session(app_data, *code).await?;
+                self.end_question(Some(true), app_data).await;
                 self.shadow_event(ShadowEvent::EndGame, *code, app_data)
                     .await
                     .unwrap();
@@ -446,7 +453,7 @@ impl GameSession {
         &mut self,
         id: Option<Uuid>,
         arc: Arc<Mutex<Self>>,
-        app_data: Arc<impl AppDataTrait + 'static>,
+        app_data: &Arc<impl AppDataTrait + 'static>,
     ) -> Result<(), GameSessionError> {
         match &mut self.status {
             GameSessionStatus::Waiting(_) => return Err(GameSessionError::NotStarted),
@@ -455,7 +462,7 @@ impl GameSession {
                 if let Some(abort_handle) = abort_handle.take() {
                     abort_handle.abort();
                 }
-                self.end_question(None, Arc::clone(&app_data)).await;
+                self.end_question(None, app_data.as_ref()).await;
             }
             GameSessionStatus::Podium(_) => return Err(GameSessionError::NoQuestionLeft),
             GameSessionStatus::Closed => return Err(GameSessionError::InvalidCode),
@@ -483,7 +490,7 @@ impl GameSession {
         let started = Utc::now() + TimeDelta::seconds(offset_secs as i64);
 
         let abort_handle = {
-            let app_data = Arc::clone(&app_data);
+            let app_data = Arc::clone(app_data);
             quiz.questions[question]
                 .options
                 .default_answer_duration()
@@ -497,7 +504,7 @@ impl GameSession {
                             && *idx == question
                             && session.players.len() > *answers
                         {
-                            session.end_question(None, app_data).await;
+                            session.end_question(None, app_data.as_ref()).await;
                         }
                     })
                 })
@@ -525,7 +532,7 @@ impl GameSession {
                 leaderboard,
             },
             self.code,
-            app_data,
+            app_data.as_ref(),
         )
         .await?;
 
@@ -574,7 +581,7 @@ impl GameSession {
         channel: T,
         name: String,
         emoji: Option<&'static Emoji>,
-        app_data: Arc<impl AppDataTrait>,
+        app_data: &impl AppDataTrait,
     ) {
         if let GameSessionStatus::Waiting(joining) = &mut self.status
             && let Some(pos) = joining.iter().position(|x| x.id() == channel.id())
@@ -738,7 +745,7 @@ impl GameSession {
                         emoji,
                     },
                     self.code,
-                    app_data,
+                    app_data.as_ref(),
                 )
                 .await
                 .unwrap();
@@ -808,6 +815,7 @@ impl GameSession {
                     let answers = *answers;
                     let answer_distribution = answer_distribution.clone();
                     let question_id = question.id;
+                    let app_data = app_data.as_ref();
 
                     self.shadow_event(
                         ShadowEvent::PlayerAddPoints {
@@ -816,7 +824,7 @@ impl GameSession {
                             question: question_id,
                         },
                         self.code,
-                        Arc::clone(&app_data),
+                        app_data,
                     )
                     .await
                     .unwrap();
@@ -827,7 +835,7 @@ impl GameSession {
                             distribution: answer_distribution,
                         },
                         self.code,
-                        Arc::clone(&app_data),
+                        app_data,
                     )
                     .await
                     .unwrap();
@@ -871,7 +879,7 @@ impl GameSession {
     }
 
     /// Ends the current question, calculates points for players, and sends the results to both the host and players.
-    pub async fn end_question(&mut self, is_final: Option<bool>, app_data: Arc<impl AppDataTrait>) {
+    pub async fn end_question(&mut self, is_final: Option<bool>, app_data: &impl AppDataTrait) {
         let GameSessionStatus::Question {
             idx,
             answers,
