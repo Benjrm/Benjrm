@@ -1,6 +1,6 @@
 use {
     crate::{
-        app_data::{AppDataTrait, RedisConnection},
+        app_data::AppDataTrait,
         auth::User,
         error::Error,
         game_session::{
@@ -22,7 +22,6 @@ use {
     deadpool_redis::redis::AsyncTypedCommands,
     emojis::Emoji,
     futures::{StreamExt, stream::FuturesUnordered},
-    sea_orm::ConnectionTrait,
     std::{collections::HashMap, future::ready, pin::Pin, sync::Arc, time::Duration},
     tokio::sync::{Mutex, RwLock},
     uuid::Uuid,
@@ -49,16 +48,15 @@ impl GameSessions {
     ///    - If a unique code can't be generated after 10 attempts, an error is returned (rare situation).
     pub async fn create_session(
         &self,
-        conn: &impl ConnectionTrait,
-        redis: &mut Option<RedisConnection>,
         host: User,
         quiz: Option<Uuid>,
         app_data: &impl AppDataTrait,
     ) -> Result<(SessionCode, Arc<Mutex<GameSession>>), Error> {
+        let redis = &mut app_data.redis().await.map_err(GameSessionError::from)?;
         let quiz = match quiz {
             Some(quiz_id) => {
                 let quiz = Quiz::<Question>::get(
-                    conn,
+                    app_data.db(),
                     host.id,
                     quiz_id,
                     &QuestionFilter {
@@ -148,17 +146,16 @@ impl GameSessions {
     /// Retrieves a game session by its code.
     pub async fn get_session(
         &self,
-        redis: &mut Option<RedisConnection>,
-        node: &str,
+        app_data: &impl AppDataTrait,
         code: SessionCode,
     ) -> Result<Arc<Mutex<GameSession>>, GameSessionError> {
         let map = self.sessions.read().await;
         if let Some(game) = map.get(&code) {
             Ok(Arc::clone(game))
         } else {
-            if let Some(redis) = redis
+            if let Some(redis) = &mut app_data.redis().await?
                 && let Some(redis_node) = redis.get(code).await?
-                && node != redis_node
+                && app_data.node() != redis_node
             {
                 Err(GameSessionError::DifferentNode(redis_node))?
             }
@@ -187,9 +184,7 @@ impl GameSessions {
         app_data: &impl AppDataTrait,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
-        let session = self
-            .get_session(&mut app_data.redis().await?, app_data.node(), code)
-            .await?;
+        let session = self.get_session(app_data, code).await?;
 
         {
             let mut session = session.lock().await;

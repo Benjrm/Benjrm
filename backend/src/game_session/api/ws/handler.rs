@@ -33,14 +33,7 @@ async fn get_host_ws(
     let code = code.into_inner();
     let session = app_data
         .game_sessions()
-        .get_session(
-            &mut app_data
-                .redis()
-                .await
-                .map_err(|e| Error::Session(GameSessionError::from(e)))?,
-            app_data.node(),
-            code,
-        )
+        .get_session(app_data.as_ref(), code)
         .await
         .map_err(Error::from)?;
     let (res, tx, rx) = actix_ws::handle(&req, body)?;
@@ -116,14 +109,7 @@ async fn get_player_ws(
     let code = code.into_inner();
     let session = app_data
         .game_sessions()
-        .get_session(
-            &mut app_data
-                .redis()
-                .await
-                .map_err(|e| Error::Session(GameSessionError::from(e)))?,
-            app_data.node(),
-            code,
-        )
+        .get_session(app_data.as_ref(), code)
         .await
         .map_err(Error::from)?;
 
