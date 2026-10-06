@@ -9,11 +9,13 @@ use {
             },
         },
     },
-    deadpool_redis::redis::{self, AsyncTypedCommands},
+    deadpool_redis::redis::{self, AsyncTypedCommands, MSetOptions, SetExpiry},
     std::sync::Arc,
     tokio::sync::Mutex,
 };
 pub mod types;
+
+const DEFAULT_EXPIRY: u64 = 3 * 24 * 60 * 60; // 3 Days
 
 impl GameSession {
     pub async fn shadow_event(
@@ -36,8 +38,13 @@ impl GameSession {
 
         match event {
             ShadowEvent::Init { session } => {
-                if !redis
-                    .set_nx(format!("{{{code}}}:master"), app_data.node())
+                if !redis::cmd("SET")
+                    .arg(format!("{{{code}}}:master"))
+                    .arg(app_data.node())
+                    .arg("NX")
+                    .arg("EX")
+                    .arg(DEFAULT_EXPIRY)
+                    .query_async(&mut redis)
                     .await?
                 {
                     return Err(GameSessionError::CannotGenerateCode);
@@ -49,12 +56,15 @@ impl GameSession {
                 let host = serde_json::to_string(&session.host).unwrap();
 
                 redis
-                    .mset(&[
-                        (format!("{{{code}}}:snapshot:status"), &status),
-                        (format!("{{{code}}}:snapshot:quiz"), &quiz),
-                        (format!("{{{code}}}:snapshot:players"), &players),
-                        (format!("{{{code}}}:snapshot:host"), &host),
-                    ])
+                    .mset_ex(
+                        &[
+                            (format!("{{{code}}}:snapshot:status"), &status),
+                            (format!("{{{code}}}:snapshot:quiz"), &quiz),
+                            (format!("{{{code}}}:snapshot:players"), &players),
+                            (format!("{{{code}}}:snapshot:host"), &host),
+                        ],
+                        MSetOptions::default().with_expiration(SetExpiry::EX(DEFAULT_EXPIRY)),
+                    )
                     .await?;
 
                 redis.del(format!("{{{code}}}:log")).await?;
@@ -69,10 +79,13 @@ impl GameSession {
                 let players = serde_json::to_string(&shadow.players).unwrap();
 
                 redis
-                    .mset(&[
-                        (format!("{{{code}}}:snapshot:next:status"), &status),
-                        (format!("{{{code}}}:snapshot:next:players"), &players),
-                    ])
+                    .mset_ex(
+                        &[
+                            (format!("{{{code}}}:snapshot:next:status"), &status),
+                            (format!("{{{code}}}:snapshot:next:players"), &players),
+                        ],
+                        MSetOptions::default().with_expiration(SetExpiry::EX(DEFAULT_EXPIRY)),
+                    )
                     .await?;
 
                 redis
@@ -93,7 +106,9 @@ impl GameSession {
 
             event => {
                 let json = serde_json::to_string(&event).unwrap();
-                redis.lpush(format!("{{{code}}}:log"), json).await?;
+                let log_key = format!("{{{code}}}:log");
+                redis.lpush(&log_key, json).await?;
+                redis.expire(log_key, DEFAULT_EXPIRY as i64).await?;
             }
         }
         Ok(())
@@ -142,6 +157,7 @@ impl GameSession {
                 .await?
                 .ok_or(GameSessionError::ShadowCantRestore("host"))?;
 
+            // Maybe do not get the entire log in one query. Do it using an iterator or so...
             let log = redis.lrange(format!("{{{code}}}:log"), 0, -1).await?;
 
             let status = serde_json::from_str::<ShadowGameSessionStatus>(&status).unwrap();
