@@ -1,6 +1,6 @@
 use {
     crate::{
-        app_data::{AppDataTrait, TestAppData},
+        app_data::TestAppData,
         auth::User,
         error::Error,
         game_session::{
@@ -126,15 +126,9 @@ async fn dummy_session(
         }
         false => None,
     };
+
     data.game_sessions
-        .create_session(
-            &data.db,
-            &mut data.redis().await.unwrap(),
-            None,
-            data.node(),
-            user.clone(),
-            quiz,
-        )
+        .create_session(user.clone(), quiz, data)
         .await
         .unwrap()
 }
@@ -143,12 +137,13 @@ async fn dummy_player(
     session: &mut GameSession,
     host_rx: &mut mpsc::Receiver<HostMessage>,
     name: &str,
+    data: &TestAppData,
 ) -> (Uuid, mpsc::Receiver<PlayerMessage>) {
     let player = Uuid::new_v4();
     let (player_channel, _, mut player_rx) = DummyChanel::new();
     session.check_add_player(name).unwrap();
     session
-        .add_player(None, player, player_channel, name.into(), None)
+        .add_player(None, player, player_channel, name.into(), None, data)
         .await;
 
     match player_rx.recv().await.unwrap() {
@@ -191,7 +186,7 @@ async fn create_get_session() {
         let (code, _) = dummy_session(&data, &user, false).await;
         let session = data
             .game_sessions
-            .get_session(&mut data.redis().await.unwrap(), data.node(), code)
+            .get_session(data.as_ref(), code)
             .await
             .unwrap();
         let session = session.lock().await;
@@ -205,19 +200,12 @@ async fn create_get_session() {
             .unwrap();
         let (code, _) = data
             .game_sessions
-            .create_session(
-                data.db(),
-                &mut data.redis().await.unwrap(),
-                None,
-                data.node(),
-                user.clone(),
-                Some(quiz.id),
-            )
+            .create_session(user.clone(), Some(quiz.id), data.as_ref())
             .await
             .unwrap();
         let session = data
             .game_sessions
-            .get_session(&mut data.redis().await.unwrap(), data.node(), code)
+            .get_session(data.as_ref(), code)
             .await
             .unwrap();
         let session = session.lock().await;
@@ -229,7 +217,7 @@ async fn create_get_session() {
 
     assert!(matches!(
         data.game_sessions
-            .get_session(&mut data.redis().await.unwrap(), data.node(), u32::MAX)
+            .get_session(data.as_ref(), u32::MAX)
             .await,
         Err(GameSessionError::InvalidCode)
     ))
@@ -269,14 +257,7 @@ async fn create_session_invalid_quiz() {
 
     let res = data
         .game_sessions
-        .create_session(
-            data.db(),
-            &mut data.redis().await.unwrap(),
-            None,
-            data.node(),
-            user.clone(),
-            Some(Uuid::new_v4()),
-        )
+        .create_session(user.clone(), Some(Uuid::new_v4()), data.as_ref())
         .await;
     assert!(matches!(res, Err(Error::Quiz(QuizError::NotFound))));
 
@@ -285,14 +266,7 @@ async fn create_session_invalid_quiz() {
         .unwrap();
     let res = data
         .game_sessions
-        .create_session(
-            data.db(),
-            &mut data.redis().await.unwrap(),
-            None,
-            data.node(),
-            user2,
-            Some(quiz.id),
-        )
+        .create_session(user2, Some(quiz.id), data.as_ref())
         .await;
     assert!(matches!(res, Err(Error::Quiz(QuizError::Forbidden))));
 }
@@ -307,30 +281,23 @@ async fn delete_session() {
 
     assert!(matches!(
         data.game_sessions
-            .delete_session(
-                &wrong_user,
-                &mut data.redis().await.unwrap(),
-                data.node(),
-                code
-            )
+            .delete_session(&wrong_user, data.as_ref(), code)
             .await,
         Err(GameSessionError::Forbidden)
     ));
     assert!(
         data.game_sessions
-            .get_session(&mut data.redis().await.unwrap(), data.node(), code)
+            .get_session(data.as_ref(), code)
             .await
             .is_ok()
     );
 
     data.game_sessions
-        .delete_session(&user, &mut data.redis().await.unwrap(), data.node(), code)
+        .delete_session(&user, data.as_ref(), code)
         .await
         .unwrap();
     assert!(matches!(
-        data.game_sessions
-            .get_session(&mut data.redis().await.unwrap(), data.node(), code)
-            .await,
+        data.game_sessions.get_session(data.as_ref(), code).await,
         Err(GameSessionError::InvalidCode)
     ));
 }
@@ -363,6 +330,7 @@ async fn join() {
                 player_channel,
                 "cool name".into(),
                 Some(emojis::get("😀").unwrap()),
+                data.as_ref(),
             )
             .await;
         assert!(matches!(
@@ -428,7 +396,7 @@ async fn rename_player() {
         x => panic!("invalid message: {x:?}"),
     }
 
-    let (player, _) = dummy_player(&mut session, &mut host_rx, "name").await;
+    let (player, _) = dummy_player(&mut session, &mut host_rx, "name", data.as_ref()).await;
     session
         .handle_player_cmd(
             Command {
@@ -517,7 +485,14 @@ async fn start() {
         let (player_channel, _, mut player_rx) = DummyChanel::new();
         session.check_add_player("test").unwrap();
         session
-            .add_player(None, player, player_channel, "test".into(), None)
+            .add_player(
+                None,
+                player,
+                player_channel,
+                "test".into(),
+                None,
+                data.as_ref(),
+            )
             .await;
         assert!(matches!(
             player_rx.recv().await.unwrap(),
@@ -587,7 +562,7 @@ async fn kick_on_start() {
         x => panic!("invalid message: {x:?}"),
     }
 
-    let (_, mut player1_rx) = dummy_player(&mut session, &mut host_rx, "test").await;
+    let (_, mut player1_rx) = dummy_player(&mut session, &mut host_rx, "test", data.as_ref()).await;
 
     session
         .handle_host_cmd(
@@ -629,7 +604,8 @@ async fn show_question() {
         x => panic!("invalid message: {x:?}"),
     }
 
-    let (_, mut player_rx) = dummy_player(&mut session, &mut rx, "player name").await;
+    let (_, mut player_rx) =
+        dummy_player(&mut session, &mut rx, "player name", data.as_ref()).await;
     session
         .handle_host_cmd(
             Command {
@@ -731,11 +707,11 @@ async fn play_dummy_quiz() {
     }
 
     let (player_1_uuid, mut player_1_rx) =
-        dummy_player(&mut session, &mut host_rx, "player 1").await;
+        dummy_player(&mut session, &mut host_rx, "player 1", data.as_ref()).await;
     let (player_2_uuid, mut player_2_rx) =
-        dummy_player(&mut session, &mut host_rx, "player 2").await;
+        dummy_player(&mut session, &mut host_rx, "player 2", data.as_ref()).await;
     let (player_3_uuid, mut player_3_rx) =
-        dummy_player(&mut session, &mut host_rx, "player 3").await;
+        dummy_player(&mut session, &mut host_rx, "player 3", data.as_ref()).await;
 
     session.status = super::GameSessionStatus::Started;
 
