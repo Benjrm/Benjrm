@@ -143,7 +143,7 @@ async fn main() -> std::io::Result<()> {
         });
     }
 
-    HttpServer::new(move || {
+    let actix = HttpServer::new(move || {
         App::new()
             .wrap(actix_web::middleware::Logger::default())
             .app_data(JsonConfig::default().error_handler(Error::json_handler))
@@ -185,8 +185,40 @@ async fn main() -> std::io::Result<()> {
             .configure(frontend::init)
     })
     .bind(("::", port))?
-    .run()
-    .await
+    .run();
+
+    
+    match std::env::var("CHAOS") {
+        Ok(seconds) => {
+            let seconds: u64 = seconds.parse().expect(r#"Can't parse "CHAOS" to seconds, expected an integer >=30"#);
+            if seconds < 30 {
+                log::info!("Chaos of {seconds} seconds is to small, increasing to a minimum of 30 seconds");
+            }
+
+            let min = seconds.max(30);
+            let max = min * 2 - min / 2; // times 1.5 without using a float 
+            let rand = rand::random_range(min..=max);
+            
+            tokio::spawn(async move {
+                log::warn!("Chaos enabled, exiting in {rand} seconds...");
+                tokio::time::sleep(Duration::from_secs(rand-3)).await;
+    
+                log::warn!("Exiting in 3 seconds...");
+                tokio::time::sleep(Duration::from_secs(1)).await;
+                log::warn!("Exiting in 2 seconds...");
+                tokio::time::sleep(Duration::from_secs(1)).await;
+                log::warn!("Exiting in 1 seconds...");
+                tokio::time::sleep(Duration::from_secs(1)).await;
+
+                log::info!(r#"Exiting now... to disable this behavior unset "CHAOS""#);
+                std::process::exit(0);
+            });
+        },
+        Err(VarError::NotPresent) => (),
+        Err(err) => panic!(r#"Can't parse "CHAOS"": {err:?}"#),
+    };
+
+    actix.await
 }
 
 /// Health check endpoint.
