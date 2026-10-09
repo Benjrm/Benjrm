@@ -1,17 +1,16 @@
 use {
     crate::{auth::oidc::Oidc, game_session::GameSessions, static_file::StaticFile},
-    deadpool_redis::{
-        PoolError,
-        cluster::{Config, Runtime},
-        redis,
-    },
     is_truthy::IsTruthy as _,
+    redis::{
+        aio::{ConnectionManager, ConnectionManagerConfig},
+        cluster_async::ClusterConnection,
+    },
     std::{env::VarError, path::PathBuf},
 };
 
 pub trait AppDataTrait {
     fn db(&self) -> &sea_orm::DbConn;
-    fn redis(&self) -> impl Future<Output = Result<Option<RedisConnection>, PoolError>> + Send;
+    fn redis(&self) -> impl Future<Output = Option<RedisConnection>> + Send;
     fn node(&self) -> &str;
     fn imprint(&self) -> &StaticFile;
     fn privacy(&self) -> &StaticFile;
@@ -32,7 +31,7 @@ pub trait AppDataTrait {
 /// - in-memory game session storage
 pub struct AppData {
     db: sea_orm::DbConn,
-    redis: RedisPool,
+    redis: RedisClient,
     node: String,
     imprint: StaticFile,
     privacy: StaticFile,
@@ -40,26 +39,29 @@ pub struct AppData {
     game_sessions: GameSessions,
 }
 
-enum RedisPool {
+enum RedisClient {
     None,
-    Single(deadpool_redis::Pool),
-    Cluster(deadpool_redis::cluster::Pool),
+    Single(ConnectionManager),
+    Cluster(ClusterConnection),
 }
 
-impl RedisPool {
-    pub async fn con(&self) -> Result<Option<RedisConnection>, PoolError> {
-        let con = match &self {
-            RedisPool::Single(pool) => RedisConnection::Single(pool.get().await?),
-            RedisPool::Cluster(pool) => RedisConnection::Cluster(pool.get().await?),
-            RedisPool::None => return Ok(None),
-        };
-        Ok(Some(con))
+impl RedisClient {
+    pub async fn con(&self) -> Option<RedisConnection> {
+        match self {
+            RedisClient::None => None,
+            RedisClient::Single(connection_manager) => {
+                Some(RedisConnection::Single(connection_manager.clone()))
+            }
+            RedisClient::Cluster(cluster_client) => {
+                Some(RedisConnection::Cluster(cluster_client.clone()))
+            }
+        }
     }
 }
 
 pub enum RedisConnection {
-    Single(deadpool_redis::Connection),
-    Cluster(deadpool_redis::cluster::Connection),
+    Single(ConnectionManager),
+    Cluster(ClusterConnection),
 }
 
 impl redis::aio::ConnectionLike for RedisConnection {
@@ -134,29 +136,28 @@ impl AppData {
                     };
 
                     if cluster {
-                        let cfg = Config::from_urls(vec![redis_url.clone()]);
-                        let pool = cfg
-                            .create_pool(Some(Runtime::Tokio1))
-                            .expect("Failed to create Redis cluster connection Pool");
-                        pool.get()
+                        let client = redis::cluster::ClusterClient::builder(vec![redis_url])
+                            .build()
+                            .expect("Failed to create Redis cluster client");
+                        let connection = client
+                            .get_async_connection()
                             .await
-                            .expect("Failed to get redis cluster connection");
-                        RedisPool::Cluster(pool)
+                            .expect("Failed to create Redis cluster connection");
+                        RedisClient::Cluster(connection)
                     } else {
-                        let cfg = deadpool_redis::Config::from_url(redis_url);
-                        let pool = cfg
-                            .create_pool(Some(Runtime::Tokio1))
-                            .expect("Failed to create Redis connection Pool");
-                        pool.get()
+                        let client = redis::Client::open(redis_url)
+                            .expect("Failed to create Redis connection");
+                        let config = ConnectionManagerConfig::default();
+                        let manager = ConnectionManager::new_with_config(client, config)
                             .await
-                            .expect("Failed to get redis cluster connection");
-                        RedisPool::Single(pool)
+                            .expect("Failed to create Redis connection magager");
+                        RedisClient::Single(manager)
                     }
                 }
 
                 Err(VarError::NotPresent) => {
                     log::info!("Redis disabled");
-                    RedisPool::None
+                    RedisClient::None
                 }
                 Err(err) => panic!(r#"Can't parse "REDIS_CLUSTER"": {err:?}"#),
             }
@@ -193,7 +194,7 @@ impl AppDataTrait for AppData {
         &self.db
     }
 
-    async fn redis(&self) -> Result<Option<RedisConnection>, PoolError> {
+    async fn redis(&self) -> Option<RedisConnection> {
         self.redis.con().await
     }
 
@@ -289,8 +290,8 @@ impl AppDataTrait for TestAppData {
         &self.db
     }
 
-    async fn redis(&self) -> Result<Option<RedisConnection>, PoolError> {
-        Ok(None)
+    async fn redis(&self) -> Option<RedisConnection> {
+        None
     }
 
     fn node(&self) -> &str {

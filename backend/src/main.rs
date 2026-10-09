@@ -10,7 +10,7 @@ use {
         web::{self, JsonConfig, PathConfig, QueryConfig},
     },
     awc::cookie::KeyError,
-    deadpool_redis::redis::{AsyncTypedCommands, HashFieldExpirationOptions, SetExpiry},
+    redis::{AsyncTypedCommands, HashFieldExpirationOptions, SetExpiry},
     std::{env::VarError, sync::Arc, time::Duration},
     tokio::time::sleep,
 };
@@ -107,34 +107,40 @@ async fn main() -> std::io::Result<()> {
                 HashFieldExpirationOptions::default().set_expiration(SetExpiry::PX(250));
             let node = data.node();
 
-            let mut error = false;
+            enum HeartBeatError {
+                Ok,
+                Error(usize),
+            }
+
+            let mut error = HeartBeatError::Ok;
 
             loop {
-                if let Some(mut redis) = data.redis().await.expect("Can't send redis heartbeat") {
+                if let Some(mut redis) = data.redis().await {
                     let sessions = data.game_sessions().len().await;
 
                     match redis
                         .hset_ex(identifier, &expiration, &[(node, sessions)])
                         .await
                     {
-                        Ok(_) => {
-                            if error {
-                                log::info!("Successfully sent heartbeat again");
-                                error = false;
-                            }
+                        Ok(_) if !matches!(error, HeartBeatError::Ok) => {
+                            log::info!("Successfully sent heartbeat again");
+                            error = HeartBeatError::Ok
                         }
-                        Err(e) => {
-                            if error {
-                                log::error!(
-                                    "Repeatedly failed to send heartbeat, node may be replaced soon: {e:?}"
-                                );
-                            } else {
+                        Ok(_) => (),
+                        Err(e) => match &mut error {
+                            HeartBeatError::Ok => {
                                 log::warn!(
                                     "Failed to send heartbeat, node may be replaced soon: {e:?}"
                                 );
-                                error = true;
+                                error = HeartBeatError::Error(0);
                             }
-                        }
+                            HeartBeatError::Error(times) => {
+                                *times += 1;
+                                log::error!(
+                                    "Repeatedly ({times}) failed to send heartbeat, node may be replaced soon: {e:?}"
+                                );
+                            }
+                        },
                     }
                 }
 
@@ -199,7 +205,7 @@ async fn main() -> std::io::Result<()> {
             }
 
             let min = seconds.max(30);
-            let max = min * 2 - min / 2; // times 1.5 without using a float 
+            let max = min * 2 - min / 2; // times 1.5 without using a float
             let rand = rand::random_range(min..=max);
 
             tokio::spawn(async move {

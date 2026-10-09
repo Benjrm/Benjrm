@@ -11,9 +11,9 @@ use {
     },
     awc::error::{WsClientError, WsHandshakeError},
     chrono::{DateTime, Utc},
-    deadpool_redis::{cluster::PoolError, redis::RedisError},
     emojis::Emoji,
     rand::seq::SliceRandom,
+    redis::RedisError,
     serde::{Deserialize, Serialize},
     std::{
         collections::HashMap,
@@ -92,8 +92,6 @@ impl_err! {
         NoLeaderboard = BAD_REQUEST,
         #[error("Redis error")]
         Redis(RedisError) = INTERNAL_SERVER_ERROR,
-        #[error("Redis pool error")]
-        RedisPool(PoolError) = INTERNAL_SERVER_ERROR,
         #[error("Game session exists on other node `{0}`")]
         DifferentNode(String) = INTERNAL_SERVER_ERROR,
         #[error("awc client not available")]

@@ -6,7 +6,7 @@ use {
     },
     actix_web::{HttpRequest, HttpResponse, error::PayloadError},
     actix_web_actors::ws::{self, CloseReason, ProtocolError, WebsocketContext, handshake},
-    awc::error::HeaderValue,
+    awc::http::header as HttpHeader,
     bytes::Bytes,
     futures::{Sink, Stream, StreamExt},
     std::error::Error,
@@ -44,7 +44,7 @@ pub async fn start<T>(
     client: &awc::Client,
     target: String,
     stream: T,
-    headers: &Vec<(&str, &HeaderValue)>,
+    headers: &Vec<(&HttpHeader::HeaderName, &HttpHeader::HeaderValue)>,
 ) -> Result<HttpResponse, GameSessionError>
 where
     T: Stream<Item = Result<Bytes, PayloadError>> + 'static,

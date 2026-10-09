@@ -13,8 +13,9 @@ use {
     awc::{
         body::BoxBody,
         error::{ConnectError, SendRequestError},
+        http::header as HttpHeader,
     },
-    deadpool_redis::redis::AsyncCommands,
+    redis::AsyncTypedCommands,
     std::{
         future::{Future, Ready, ready},
         pin::Pin,
@@ -25,14 +26,14 @@ use {
 
 pub mod ws_proxy;
 
-static FORWARD_HEADERS: &[&str] = &[
-    "accept",
-    "accept-encoding",
-    "accept-language",
-    "user-agent",
-    "cookie",
-    "connection",
-    "upgrade",
+static FORWARD_HEADERS: &[HttpHeader::HeaderName] = &[
+    HttpHeader::ACCEPT,
+    HttpHeader::ACCEPT_ENCODING,
+    HttpHeader::ACCEPT_LANGUAGE,
+    HttpHeader::USER_AGENT,
+    HttpHeader::COOKIE,
+    HttpHeader::CONNECTION,
+    HttpHeader::UPGRADE,
 ];
 
 pub struct GameSessionGatewayMiddleware {
@@ -102,7 +103,7 @@ where
             code: SessionCode,
             app_data: &impl AppDataTrait,
         ) -> Result<SessionLocation, GameSessionError> {
-            let Some(mut redis) = app_data.redis().await? else {
+            let Some(mut redis) = app_data.redis().await else {
                 return Ok(SessionLocation::ThisNode);
             };
 
@@ -132,11 +133,7 @@ where
 
             if let Some(node) = node {
                 if node != app_data.node() {
-                    if redis
-                        .hget::<_, _, Option<String>>(app_data.identifier(), &node)
-                        .await?
-                        .is_some()
-                    {
+                    if redis.hget(app_data.identifier(), &node).await?.is_some() {
                         if available_locally {
                             remove_session(app_data, code).await
                         }
@@ -174,15 +171,19 @@ where
             let mut headers = Vec::with_capacity(FORWARD_HEADERS.len());
 
             for header_key in FORWARD_HEADERS {
-                if let Some(header_value) = req.headers().get(*header_key) {
-                    headers.push((*header_key, header_value));
+                if let Some(header_value) = req.headers().get(header_key) {
+                    headers.push((header_key, header_value));
                 }
             }
 
-            let response = if let Some(connection) = req.headers().get("connection")
-                && connection == "upgrade"
-                && let Some(upgrade) = req.headers().get("upgrade")
-                && upgrade == "websocket"
+            let response = if let Some(connection) = req.headers().get(HttpHeader::CONNECTION)
+                && connection
+                    .to_str()
+                    .map_or_else(|_| false, |s| s.to_ascii_lowercase().contains("upgrade"))
+                && let Some(upgrade) = req.headers().get(HttpHeader::UPGRADE)
+                && upgrade
+                    .to_str()
+                    .map_or_else(|_| false, |s| s.to_ascii_lowercase().contains("websocket"))
             {
                 log::debug!("Proxying websocket connection to {node}");
                 ws_proxy::start(req.request(), client, node_url, payload, &headers)
@@ -226,7 +227,7 @@ where
                         return Ok(proxy(req, node).await?);
                     }
                     SessionLocation::Restore => {
-                        GameSession::restore(code, app_data.as_ref())
+                        GameSession::restore(code, &app_data)
                             .await
                             .map_err(crate::Error::from)?;
                     }

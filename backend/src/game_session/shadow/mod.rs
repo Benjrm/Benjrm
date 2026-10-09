@@ -2,14 +2,15 @@ use {
     crate::{
         app_data::{AppDataTrait, RedisConnection},
         game_session::{
-            GameSession, GameSessionError, PlayableQuiz, SessionCode,
+            GameSession, GameSessionError, GameSessionStatus, PlayableQuiz, SessionCode,
             shadow::types::{
                 ShadowEvent, ShadowGameSession, ShadowGameSessionHost, ShadowGameSessionPlayer,
                 ShadowGameSessionStatus,
             },
         },
     },
-    deadpool_redis::redis::{self, AsyncTypedCommands, MSetOptions, SetExpiry},
+    chrono::Utc,
+    redis::{AsyncTypedCommands, MSetOptions, SetExpiry},
     std::sync::Arc,
     tokio::sync::Mutex,
 };
@@ -24,7 +25,7 @@ impl GameSession {
         code: SessionCode,
         app_data: &impl AppDataTrait,
     ) -> Result<(), GameSessionError> {
-        let Some(mut redis) = app_data.redis().await? else {
+        let Some(mut redis) = app_data.redis().await else {
             return Ok(());
         };
 
@@ -116,9 +117,9 @@ impl GameSession {
 
     pub async fn restore(
         code: SessionCode,
-        app_data: &impl AppDataTrait,
+        app_data: &Arc<impl AppDataTrait + 'static>,
     ) -> Result<(), GameSessionError> {
-        let Some(mut redis) = app_data.redis().await? else {
+        let Some(mut redis) = app_data.redis().await else {
             return Ok(());
         };
 
@@ -137,7 +138,7 @@ impl GameSession {
 
         async fn inner_restore(
             code: SessionCode,
-            app_data: &impl AppDataTrait,
+            app_data: &Arc<impl AppDataTrait + 'static>,
             redis: &mut RedisConnection,
         ) -> Result<(), GameSessionError> {
             let status = redis
@@ -192,8 +193,28 @@ impl GameSession {
                 }
             }
 
+            let session = Arc::new(Mutex::new(GameSession::from(&shadow)));
+
+            if let GameSessionStatus::Question {
+                idx,
+                started,
+                abort_handle,
+                ..
+            } = &mut session.lock().await.status
+                && let Some(quiz) = shadow.quiz
+            {
+                let elapsed = (Utc::now().timestamp_millis() - started.timestamp_millis()) as i32;
+                let new_handle = quiz.create_abort_handle(
+                    3 * 1000 - elapsed,
+                    Arc::clone(app_data),
+                    *idx,
+                    Arc::clone(&session),
+                );
+                *abort_handle = new_handle;
+            };
+
             let mut sessions = app_data.game_sessions().sessions.write().await;
-            sessions.insert(code, Arc::new(Mutex::new((&shadow).into())));
+            sessions.insert(code, session);
 
             redis
                 .set(format!("{{{code}}}:master"), app_data.node())
@@ -329,7 +350,7 @@ impl ShadowGameSession {
         app_data: &impl AppDataTrait,
         code: SessionCode,
     ) -> Result<(), GameSessionError> {
-        let Some(mut redis) = app_data.redis().await? else {
+        let Some(mut redis) = app_data.redis().await else {
             return Ok(());
         };
 

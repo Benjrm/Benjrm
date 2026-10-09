@@ -7,8 +7,8 @@ use {
             AnswerStatistic, AnswerStatistics, Channel, ChoiceStatistics, Command,
             DisplayQuestionMessage, GameSession, GameSessionError, GameSessionHost,
             GameSessionPlayer, GameSessionStatus, GameSessions, HostCommand, HostMessage,
-            LeaderboardEntry, Message, OrderStatistics, Player, PlayerCommand, PlayerMessage,
-            SessionCode,
+            LeaderboardEntry, Message, OrderStatistics, PlayableQuiz, Player, PlayerCommand,
+            PlayerMessage, SessionCode,
             shadow::types::{ShadowEvent, ShadowGameSession},
         },
         question::{
@@ -19,11 +19,14 @@ use {
     },
     actix_web::rt,
     chrono::{TimeDelta, Utc},
-    deadpool_redis::redis::AsyncTypedCommands,
     emojis::Emoji,
     futures::{StreamExt, stream::FuturesUnordered},
+    redis::AsyncTypedCommands,
     std::{collections::HashMap, future::ready, pin::Pin, sync::Arc, time::Duration},
-    tokio::sync::{Mutex, RwLock},
+    tokio::{
+        sync::{Mutex, RwLock},
+        task::JoinHandle,
+    },
     uuid::Uuid,
 };
 
@@ -52,7 +55,6 @@ impl GameSessions {
         quiz: Option<Uuid>,
         app_data: &impl AppDataTrait,
     ) -> Result<(SessionCode, Arc<Mutex<GameSession>>), Error> {
-        let redis = &mut app_data.redis().await.map_err(GameSessionError::from)?;
         let quiz = match quiz {
             Some(quiz_id) => {
                 let quiz = Quiz::<Question>::get(
@@ -73,6 +75,8 @@ impl GameSessions {
         let mut sessions = self.sessions.write().await;
 
         let code = {
+            let redis = &mut app_data.redis().await;
+
             #[cfg(debug_assertions)]
             {
                 if let Some(redis) = redis {
@@ -153,7 +157,7 @@ impl GameSessions {
         if let Some(game) = map.get(&code) {
             Ok(Arc::clone(game))
         } else {
-            if let Some(redis) = &mut app_data.redis().await?
+            if let Some(redis) = &mut app_data.redis().await
                 && let Some(redis_node) = redis.get(code).await?
                 && app_data.node() != redis_node
             {
@@ -481,29 +485,10 @@ impl GameSession {
             question
         };
 
-        let offset_secs = 3u32;
+        let offset_secs = 3;
         let started = Utc::now() + TimeDelta::seconds(offset_secs as i64);
-
-        let abort_handle = {
-            let app_data = Arc::clone(app_data);
-            quiz.questions[question]
-                .options
-                .default_answer_duration()
-                .map(|duration| {
-                    rt::spawn(async move {
-                        tokio::time::sleep(Duration::from_secs((duration + offset_secs) as u64))
-                            .await;
-                        let mut session = arc.lock().await;
-
-                        if let GameSessionStatus::Question { idx, answers, .. } = &session.status
-                            && *idx == question
-                            && session.players.len() > *answers
-                        {
-                            session.end_question(None, app_data.as_ref()).await;
-                        }
-                    })
-                })
-        };
+        let abort_handle =
+            quiz.create_abort_handle(offset_secs * 1000, Arc::clone(app_data), question, arc);
 
         let leaderboard = match &self.status {
             GameSessionStatus::Leaderboard { leaderboard, .. } => Some(Arc::clone(leaderboard)),
@@ -971,6 +956,37 @@ impl GameSession {
                 is_final,
             }))
             .await;
+    }
+}
+
+impl PlayableQuiz {
+    pub fn create_abort_handle(
+        &self,
+        offset_ms: i32,
+        app_data: Arc<impl AppDataTrait + 'static>,
+        question: usize,
+        arc: Arc<Mutex<GameSession>>,
+    ) -> Option<JoinHandle<()>> {
+        self.questions[question]
+            .options
+            .default_answer_duration()
+            .map(|duration| {
+                rt::spawn(async move {
+                    let delay = duration as i32 * 1000 + offset_ms;
+
+                    if delay > 0 {
+                        tokio::time::sleep(Duration::from_millis(delay as u64)).await;
+                    }
+
+                    let mut session = arc.lock().await;
+                    if let GameSessionStatus::Question { idx, answers, .. } = &session.status
+                        && *idx == question
+                        && session.players.len() > *answers
+                    {
+                        session.end_question(None, app_data.as_ref()).await;
+                    }
+                })
+            })
     }
 }
 
