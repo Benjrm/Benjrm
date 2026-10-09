@@ -164,7 +164,6 @@ async fn main() -> std::io::Result<()> {
                     .build(),
             )
             .app_data(web::Data::clone(&data))
-            .app_data(web::Data::new(reqwest::Client::new()))
             .app_data(awc::Client::new())
             .configure(auth::init)
             .configure(static_file::init)
