@@ -195,23 +195,33 @@ impl GameSession {
 
             let session = Arc::new(Mutex::new(GameSession::from(&shadow)));
 
-            if let GameSessionStatus::Question {
-                idx,
-                started,
-                abort_handle,
-                ..
-            } = &mut session.lock().await.status
-                && let Some(quiz) = shadow.quiz
             {
-                let elapsed = (Utc::now().timestamp_millis() - started.timestamp_millis()) as i32;
-                let new_handle = quiz.create_abort_handle(
-                    3 * 1000 - elapsed,
-                    Arc::clone(app_data),
-                    *idx,
+                let mut locked_session = session.lock().await;
+                if let GameSessionStatus::Question {
+                    idx,
+                    started,
+                    abort_handle,
+                    ..
+                } = &mut locked_session.status
+                    && let Some(quiz) = shadow.quiz
+                {
+                    let elapsed =
+                        (Utc::now().timestamp_millis() - started.timestamp_millis()) as i32;
+                    let new_handle = quiz.create_abort_handle(
+                        3 * 1000 - elapsed,
+                        Arc::clone(app_data),
+                        *idx,
+                        Arc::clone(&session),
+                    );
+                    *abort_handle = new_handle;
+                };
+
+                locked_session.replace_inactivity_handle_mut(
                     Arc::clone(&session),
+                    Arc::clone(app_data),
+                    code,
                 );
-                *abort_handle = new_handle;
-            };
+            }
 
             let mut sessions = app_data.game_sessions().sessions.write().await;
             sessions.insert(code, session);

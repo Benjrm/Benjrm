@@ -49,6 +49,10 @@ async fn get_host_ws(
         remove_host_ws,
     );
 
+    if let Some(handle) = session.inactivity_handle.take() {
+        handle.abort();
+    }
+
     session.set_host_channel(channel).await;
 
     Ok(res)
@@ -63,33 +67,13 @@ async fn remove_host_ws(
     id: u64,
     (_, code): (GameSessions, SessionCode),
 ) {
+    let mut locked_session = session.lock().await;
+    if locked_session.host.channel_id == id
+        && let Some(channel) = locked_session.host.channel.take()
     {
-        let mut session = session.lock().await;
-        if session.host.channel_id == id
-            && let Some(channel) = session.host.channel.take()
-        {
-            channel.close().await;
-        }
+        channel.close().await;
     }
-
-    sleep(Duration::from_mins(15)).await;
-    let mut session = session.lock().await;
-
-    if session.host.channel_id == id {
-        log::info!("Deleting session {code} due to inactivity");
-        session.close().await;
-        let app_data = app_data.as_ref();
-        session
-            .shadow_event(ShadowEvent::EndGame, code, app_data)
-            .await
-            .unwrap();
-        drop(session);
-
-        if let Err(err) = app_data.game_sessions().drop_session(app_data, code).await {
-            // Only log the error since there is nobody to catch it anyways
-            log::error!("{err:?}");
-        }
-    }
+    locked_session.replace_inactivity_handle_mut(Arc::clone(&session), app_data, code);
 }
 
 /// Upgrades a player connection to a WebSocket.

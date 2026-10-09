@@ -107,7 +107,7 @@ lazy_static::lazy_static! {
 }
 
 async fn dummy_session(
-    data: &TestAppData,
+    data: &Arc<TestAppData>,
     user: &User,
     with_quiz: bool,
 ) -> (u32, Arc<Mutex<GameSession>>) {
@@ -128,7 +128,7 @@ async fn dummy_session(
     };
 
     data.game_sessions
-        .create_session(user.clone(), quiz, data)
+        .create_session(user.clone(), quiz, Arc::clone(data))
         .await
         .unwrap()
 }
@@ -200,7 +200,7 @@ async fn create_get_session() {
             .unwrap();
         let (code, _) = data
             .game_sessions
-            .create_session(user.clone(), Some(quiz.id), data.as_ref())
+            .create_session(user.clone(), Some(quiz.id), Arc::clone(&data))
             .await
             .unwrap();
         let session = data
@@ -225,7 +225,7 @@ async fn create_get_session() {
 
 #[actix_web::test]
 async fn check_set_host_channel() {
-    let data = TestAppData::test().await;
+    let data = Arc::new(TestAppData::test().await);
     let user = data.dummy_user().await;
 
     let (_, session) = dummy_session(&data, &user, false).await;
@@ -257,7 +257,7 @@ async fn create_session_invalid_quiz() {
 
     let res = data
         .game_sessions
-        .create_session(user.clone(), Some(Uuid::new_v4()), data.as_ref())
+        .create_session(user.clone(), Some(Uuid::new_v4()), Arc::clone(&data))
         .await;
     assert!(matches!(res, Err(Error::Quiz(QuizError::NotFound))));
 
@@ -266,7 +266,7 @@ async fn create_session_invalid_quiz() {
         .unwrap();
     let res = data
         .game_sessions
-        .create_session(user2, Some(quiz.id), data.as_ref())
+        .create_session(user2, Some(quiz.id), Arc::clone(&data))
         .await;
     assert!(matches!(res, Err(Error::Quiz(QuizError::Forbidden))));
 }

@@ -19,7 +19,7 @@ async fn create_one(
 ) -> Result<HttpResponse> {
     let (code, session) = app_data
         .game_sessions()
-        .create_session(user.clone(), create.quiz, app_data.as_ref())
+        .create_session(user.clone(), create.quiz, Arc::clone(&app_data))
         .await?;
     let session = session.lock().await;
     Ok(HttpResponse::Created().json(session.to_dto(code, Some(user))))
@@ -33,7 +33,7 @@ async fn create_one_with_quiz(
 ) -> Result<HttpResponse> {
     let (code, session) = app_data
         .game_sessions()
-        .create_session(user.clone(), Some(quiz.into_inner()), app_data.as_ref())
+        .create_session(user.clone(), Some(quiz.into_inner()), Arc::clone(&app_data))
         .await?;
     let session = session.lock().await;
     Ok(HttpResponse::Created().json(session.to_dto(code, Some(user))))

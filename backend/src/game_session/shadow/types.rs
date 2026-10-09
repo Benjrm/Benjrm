@@ -46,6 +46,7 @@ impl From<&ShadowGameSession> for GameSession {
             players: value.players.iter().map(GameSessionPlayer::from).collect(),
             quiz: value.quiz.clone(),
             code: value.code,
+            inactivity_handle: None,
         }
     }
 }

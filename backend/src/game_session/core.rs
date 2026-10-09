@@ -53,7 +53,7 @@ impl GameSessions {
         &self,
         host: User,
         quiz: Option<Uuid>,
-        app_data: &impl AppDataTrait,
+        app_data: Arc<impl AppDataTrait + 'static>,
     ) -> Result<(SessionCode, Arc<Mutex<GameSession>>), Error> {
         let quiz = match quiz {
             Some(quiz_id) => {
@@ -130,6 +130,7 @@ impl GameSessions {
             players: Vec::new(),
             quiz,
             code,
+            inactivity_handle: None,
         };
 
         game.shadow_event(
@@ -137,11 +138,12 @@ impl GameSessions {
                 session: (&game).into(),
             },
             code,
-            app_data,
+            app_data.as_ref(),
         )
         .await?;
 
         let game = Arc::new(Mutex::new(game));
+        GameSession::replace_inactivity_handle(Arc::clone(&game), app_data, code).await;
         sessions.insert(code, Arc::clone(&game));
 
         Ok((code, game))
@@ -956,6 +958,42 @@ impl GameSession {
                 is_final,
             }))
             .await;
+    }
+
+    pub async fn replace_inactivity_handle(
+        self_arc: Arc<Mutex<GameSession>>,
+        app_data: Arc<impl AppDataTrait + 'static>,
+        code: SessionCode,
+    ) {
+        let mut session = self_arc.lock().await;
+        session.replace_inactivity_handle_mut(Arc::clone(&self_arc), app_data, code);
+    }
+
+    pub fn replace_inactivity_handle_mut(
+        &mut self,
+        self_arc: Arc<Mutex<GameSession>>,
+        app_data: Arc<impl AppDataTrait + 'static>,
+        code: SessionCode,
+    ) {
+        if let Some(handle) = self.inactivity_handle.replace(rt::spawn(async move {
+            tokio::time::sleep(Duration::from_mins(15)).await;
+            log::info!("Deleting session {code} due to inactivity");
+            let mut session = self_arc.lock().await;
+            session.close().await;
+            let app_data = app_data.as_ref();
+            session
+                .shadow_event(ShadowEvent::EndGame, code, app_data)
+                .await
+                .unwrap();
+            drop(session);
+
+            if let Err(err) = app_data.game_sessions().drop_session(app_data, code).await {
+                // Only log the error since there is nobody to catch it anyways
+                log::error!("{err:?}");
+            }
+        })) {
+            handle.abort();
+        }
     }
 }
 

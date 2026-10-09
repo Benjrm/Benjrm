@@ -212,6 +212,8 @@ pub struct GameSession {
     players: Vec<GameSessionPlayer>,
     quiz: Option<Arc<PlayableQuiz>>,
     code: SessionCode,
+    #[serde(skip)]
+    inactivity_handle: Option<JoinHandle<()>>,
 }
 
 /// Represents the current state of a game session.
