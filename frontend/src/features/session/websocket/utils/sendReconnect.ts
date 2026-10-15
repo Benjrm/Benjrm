@@ -1,3 +1,4 @@
+import type { ServerMessage } from "../types/serverMessage"
 import type WebSocketService from "@/features/session/websocket/utils/webSocketService.ts"
 
 /**
@@ -8,11 +9,11 @@ import type WebSocketService from "@/features/session/websocket/utils/webSocketS
  * stale data from a previous session), the `id` and `secret` are removed from sessionStorage so
  * the player can join fresh via `setName` instead.
  */
-export default function sendReconnect(
+export default async function sendReconnect(
     ws: WebSocketService,
     storageKey: string,
-    setNameSaved: (value: boolean) => void
-): void {
+    response: (response: ServerMessage) => void
+): Promise<void> {
     const raw = sessionStorage.getItem(storageKey)
     if (!raw) return
 
@@ -25,38 +26,18 @@ export default function sendReconnect(
 
     if (!saved.id || !saved.secret) return
 
-    const arr = new Uint32Array(1)
-    crypto.getRandomValues(arr)
-    const cmdId = arr[0]
-    let resolved = false
-
-    let unsubOk: () => void = () => {}
-    let unsubErr: () => void = () => {}
-
-    unsubOk = ws.subscribe("ok", (_payload, _timing, id) => {
-        if (id !== cmdId || resolved) return
-        resolved = true
-        unsubOk()
-        unsubErr()
-        setNameSaved(true)
+    const reconnect = await ws.send({
+        command: "reconnect",
+        payload: { id: saved.id, secret: saved.secret },
     })
 
-    unsubErr = ws.subscribe("error", (_payload, _timing, id) => {
-        if (id !== cmdId || resolved) return
-        resolved = true
-        unsubOk()
-        unsubErr()
-        setNameSaved(false)
-        try {
-            const current = JSON.parse(sessionStorage.getItem(storageKey) ?? "{}")
-            delete current.id
-            delete current.secret
-            delete current.nameSaved
-            sessionStorage.setItem(storageKey, JSON.stringify(current))
-        } catch {
-            // ignore
-        }
-    })
+    const err = reconnect.getError()
+    if (
+        err?.category === "session" &&
+        (err.error === "invalid_player_secret" || err.error === "player_not_found")
+    ) {
+        sessionStorage.removeItem(storageKey)
+    }
 
-    ws.send({ id: cmdId, command: "reconnect", payload: { id: saved.id, secret: saved.secret } })
+    response(reconnect)
 }

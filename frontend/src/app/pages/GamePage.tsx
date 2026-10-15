@@ -21,6 +21,7 @@ import type {
     LeaderboardEntry,
     QuestionResult,
 } from "@/features/session/types/session.ts"
+import type { ServerMessage } from "@/features/session/websocket/types/serverMessage"
 
 function mergeStorage(key: string, patch: object): void {
     try {
@@ -49,7 +50,7 @@ function GamePageComponent({ code }: Readonly<GamePageComponentProps>): JSX.Elem
             return false
         }
     })
-    usePlayerWebSocket(code, setNameSaved)
+
     const ws = useWebSocketContext()
     const { session } = useSessionStatus(code)
 
@@ -64,29 +65,42 @@ function GamePageComponent({ code }: Readonly<GamePageComponentProps>): JSX.Elem
     )
     const [isEmojiOpen, setIsEmojiOpen] = useState(false)
     const [nameError, setNameError] = useState<string | null>(null)
-    const [saveNameId, setSaveNameId] = useState<number | null>(null)
+    const [namePending, setNamePending] = useState(false)
 
-    // Persist player credentials for reconnect
-    useSocketEvent(
-        "connectResponse",
-        ({ id: playerId, secret, name: serverName, emoji: serverEmoji }) => {
-            if (!storageKey) return
-            try {
-                const existing = JSON.parse(sessionStorage.getItem(storageKey) ?? "{}")
-                sessionStorage.setItem(
-                    storageKey,
-                    JSON.stringify({ ...existing, id: playerId, secret })
-                )
-            } catch {
-                // ignore
+    const handleConnectResponse = useCallback(
+        (response: ServerMessage) => {
+            const error = response.getError()
+            if (error != null) {
+                setNameSaved(false)
             }
-            // connectResponse confirms the player is in the session (initial join or reconnect).
-            // Restore lobby state so a refresh doesn't show the join form again.
-            setNameSaved(true)
-            setName(serverName)
-            if (serverEmoji) setEmoji(serverEmoji)
-        }
+
+            const connectResponse = response.getPayload("connectResponse")
+            if (connectResponse != null) {
+                if (!storageKey) return
+                try {
+                    const existing = JSON.parse(sessionStorage.getItem(storageKey) ?? "{}")
+                    sessionStorage.setItem(
+                        storageKey,
+                        JSON.stringify({
+                            ...existing,
+                            id: connectResponse.id,
+                            secret: connectResponse.secret,
+                        })
+                    )
+                } catch {
+                    // ignore
+                }
+                // connectResponse confirms the player is in the session (initial join or reconnect).
+                // Restore lobby state so a refresh doesn't show the join form again.
+                setNameSaved(true)
+                setName(connectResponse.name)
+                if (connectResponse.emoji) setEmoji(connectResponse.emoji)
+            }
+        },
+        [storageKey]
     )
+
+    usePlayerWebSocket(code, handleConnectResponse)
 
     const [isAlreadyStarted, setIsAlreadyStarted] = useState(false)
     useEffect(() => {
@@ -107,23 +121,6 @@ function GamePageComponent({ code }: Readonly<GamePageComponentProps>): JSX.Elem
         return undefined
     }, [session, storageKey])
 
-    useSocketEvent("ok", (_payload, _timing, id) => {
-        if (id === saveNameId) {
-            setSaveNameId(null)
-            setNameSaved(true)
-            if (storageKey) sessionStorage.setItem(storageKey, JSON.stringify({ nameSaved: true }))
-        }
-    })
-
-    useSocketEvent("error", (payload, _timing, id) => {
-        if (id === saveNameId) {
-            setSaveNameId(null)
-            setNameError(payload.message)
-        } else if (!(payload.category === "session" && payload.error === "player_not_found")) {
-            toast.error(payload.message || t("lobby.errors.somethingWentWrong"))
-        }
-    })
-
     useSocketEvent("kick", () => {
         if (storageKey) sessionStorage.removeItem(storageKey)
         toast.error(t("lobby.errors.kicked"))
@@ -136,14 +133,21 @@ function GamePageComponent({ code }: Readonly<GamePageComponentProps>): JSX.Elem
         }, 2000)
     })
 
-    const onSaveName = useCallback((): void => {
+    const onSaveName = useCallback(async (): Promise<void> => {
         const trimmed = name.trim()
         if (!trimmed) return
-        const id = Math.floor(Math.random() * 2 ** 31)
-        setSaveNameId(id)
+        setNamePending(true)
         setNameError(null)
-        ws.send({ id, command: "setName", payload: { name: trimmed, emoji } })
-    }, [name, emoji, ws])
+        const res = await ws.send({ command: "setName", payload: { name: trimmed, emoji } })
+        const err = res.getError()
+        if (err != null) {
+            setNameError(err.message)
+            toast.error(err.message || t("lobby.errors.somethingWentWrong"))
+        } else {
+            handleConnectResponse(res)
+        }
+        setNamePending(false)
+    }, [t, name, emoji, ws, handleConnectResponse])
 
     const onPickEmoji = useCallback((nextEmoji: string): void => {
         setEmoji(nextEmoji)
@@ -250,18 +254,26 @@ function GamePageComponent({ code }: Readonly<GamePageComponentProps>): JSX.Elem
     }, [hostEndedGame, navigate, code, t])
 
     const sendAnswer = useCallback(
-        (answer: string | string[]): void => {
+        async (answer: string | string[]): Promise<void> => {
             const answerArray = Array.isArray(answer) ? answer : [answer]
-            ws.send({ command: "answerQuestion", payload: { answer: answerArray } })
-            setHasSubmittedAnswer(true)
-            if (storageKey && currentQuestion) {
-                mergeStorage(storageKey, {
-                    submittedQuestionId: currentQuestion.id,
-                    submittedAnswers: answerArray,
-                })
+            const res = await ws.send({
+                command: "answerQuestion",
+                payload: { answer: answerArray },
+            })
+            const err = res.getError()
+            if (err != null) {
+                toast.error(err.message || t("lobby.errors.somethingWentWrong"))
+            } else {
+                setHasSubmittedAnswer(true)
+                if (storageKey && currentQuestion) {
+                    mergeStorage(storageKey, {
+                        submittedQuestionId: currentQuestion.id,
+                        submittedAnswers: answerArray,
+                    })
+                }
             }
         },
-        [ws, storageKey, currentQuestion]
+        [t, ws, storageKey, currentQuestion]
     )
 
     const handleItemOrderChange = useCallback(
@@ -312,7 +324,7 @@ function GamePageComponent({ code }: Readonly<GamePageComponentProps>): JSX.Elem
                     isEmojiOpen={isEmojiOpen}
                     name={name}
                     nameError={nameError}
-                    namePending={saveNameId !== null}
+                    namePending={namePending}
                     nameSaved={nameSaved}
                     onCloseEmoji={setIsEmojiOpen}
                     onNameChange={setName}

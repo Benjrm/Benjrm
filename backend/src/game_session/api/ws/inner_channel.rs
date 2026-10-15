@@ -155,11 +155,6 @@ impl InnerChannel {
         }
     }
 
-    /// Sends an "ok" response as acknowledgment for a received command.
-    pub(super) async fn ok(&mut self, id: Option<u64>) {
-        self.msg(id, &Response::Ok).await;
-    }
-
     /// Send an [`Error`] response for a received command.
     pub(super) async fn error(&mut self, id: Option<u64>, err: Error) {
         self.msg(id, &Response::Error(err.into())).await;

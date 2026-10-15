@@ -5,7 +5,6 @@ import type { ClientEvents } from "@/features/session/websocket/types/clientEven
  */
 export type ClientMessage = {
     [K in keyof ClientEvents]: {
-        id?: number
         command: K
         payload?: ClientEvents[K]
     }

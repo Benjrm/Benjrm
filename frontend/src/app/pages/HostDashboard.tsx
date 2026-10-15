@@ -22,6 +22,7 @@ import type {
 import type { QuestionStatistics } from "@/features/question/types/statistics.ts"
 import parseDisplayQuestion from "@/features/question/utils/parseDisplayQuestion.ts"
 import useAudio from "@/shared/hooks/useAudio.ts"
+import type { ServerEvents } from "@/features/session/websocket/types/serverEvents"
 
 interface HostDashboardComponentProps {
     code?: number
@@ -36,7 +37,7 @@ function HostDashboardComponent({ code }: Readonly<HostDashboardComponentProps>)
     const { data: quiz } = useSessionQuiz(code)
     const codeWithDash = useCodeWithDash(code)
 
-    const [pendingStartId, setPendingStartId] = useState<number | null>(null)
+    const [startPending, setStartPending] = useState(false)
     const [gameState, setGameState] = useState<GameState>(GameStateEnum.LOBBY)
     const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(null)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
@@ -54,14 +55,23 @@ function HostDashboardComponent({ code }: Readonly<HostDashboardComponentProps>)
     const hasDisplayedQuestionRef = useRef(false)
     const gameEndedRef = useRef(false)
 
-    const sendEndGame = useCallback((): void => {
+    const sendEndGame = useCallback(async (): Promise<void> => {
+        const end = await ws.send({ command: "endGame" })
+        const err = end.getError()
+        if (err != null) {
+            toast.error(err.message || t("lobby.errors.somethingWentWrong"))
+            return
+        }
         gameEndedRef.current = true
-        ws.send({ command: "endGame" })
-    }, [ws])
+    }, [t, ws])
 
-    const sendShowPodium = useCallback((): void => {
-        ws.send({ command: "showPodium" })
-    }, [ws])
+    const sendShowPodium = useCallback(async (): Promise<void> => {
+        const res = await ws.send({ command: "showPodium" })
+        const err = res.getError()
+        if (err != null) {
+            toast.error(t("lobby.errors.somethingWentWrong"))
+        }
+    }, [t, ws])
 
     const showPodium = useCallback((): void => {
         setIsFinalLeaderboard(true)
@@ -72,17 +82,6 @@ function HostDashboardComponent({ code }: Readonly<HostDashboardComponentProps>)
     useSocketEvent("displayPodium", () => {
         setIsFinalLeaderboard(true)
         setHasPendingFinalPodium(false)
-    })
-
-    useSocketEvent("displayQuestion", (payload, timing) => {
-        hasDisplayedQuestionRef.current = true
-        setGameState(GameStateEnum.QUESTION)
-        setCurrentQuestion(parseDisplayQuestion(payload))
-        const startsAt = timing ? new Date(timing).getTime() : Date.now()
-        setQuestionStartsAt(startsAt)
-        setQuestionExpiresAt(payload.seconds ? startsAt + payload.seconds * 1000 : null)
-        setTotalQuestions(payload.totalQuestions)
-        setCurrentQuestionIndex(payload.index)
     })
 
     useSocketEvent("displayLeaderboard", (payload) => {
@@ -122,56 +121,66 @@ function HostDashboardComponent({ code }: Readonly<HostDashboardComponentProps>)
     useSocketEvent("setPlayers", ({ players: newPlayers }) => setPlayers(newPlayers))
 
     const onKickPlayer = useCallback(
-        (playerId: string): void => {
-            ws.send({ command: "kickPlayer", payload: { id: playerId } })
+        async (playerId: string): Promise<void> => {
+            const res = await ws.send({ command: "kickPlayer", payload: { id: playerId } })
+            const err = res.getError()
+            if (err != null) {
+                toast.error(t("lobby.errors.somethingWentWrong"))
+            }
         },
-        [ws]
+        [t, ws]
     )
-
-    useSocketEvent("ok", (_payload, _timing, id) => {
-        if (id === pendingStartId) {
-            setPendingStartId(null)
-            setGameState(GameStateEnum.PLAYING)
-        }
-    })
-
-    useSocketEvent("error", (payload, _timing, id) => {
-        if (id === pendingStartId) {
-            setPendingStartId(null)
-            toast.error(payload.message || t("lobby.errors.failedToStart"))
-        } else {
-            toast.error(payload.message || t("game.anErrorOccurred"))
-        }
-    })
 
     const { isReconnecting, isInvalidCode, unableToConnect } = useWebSocketConnectError(ws, code)
 
-    const onStartGame = useCallback((): void => {
+    const displayQuestion = useCallback(
+        (question: ServerEvents["displayQuestion"], timing?: string) => {
+            hasDisplayedQuestionRef.current = true
+            setGameState(GameStateEnum.QUESTION)
+            setCurrentQuestion(parseDisplayQuestion(question))
+            const startsAt = timing ? new Date(timing).getTime() : Date.now()
+            setQuestionStartsAt(startsAt)
+            setQuestionExpiresAt(question.seconds ? startsAt + question.seconds * 1000 : null)
+            setTotalQuestions(question.totalQuestions)
+            setCurrentQuestionIndex(question.index)
+            if (question.index === question.totalQuestions - 1) {
+                setHasPendingFinalPodium(true)
+            }
+        },
+        []
+    )
+
+    useSocketEvent("displayQuestion", (payload, timing) => {
+        displayQuestion(payload, timing)
+    })
+
+    const nextQuestion = useCallback(async () => {
+        const next = await ws.send({ command: "nextQuestion" })
+        const nextErr = next.getError()
+        if (nextErr != null) {
+            toast.error(nextErr.message || t("lobby.errors.failedToStart"))
+        }
+    }, [t, ws])
+
+    const onStartGame = useCallback(async () => {
         if (players.length === 0) {
             toast.error(t("lobby.errors.waitingForPlayers"))
             return
         }
-        const id = Math.floor(Math.random() * 2 ** 31)
-        setPendingStartId(id)
-        ws.send({ id, command: "start" })
-        ws.send({ command: "nextQuestion" })
-    }, [players.length, ws, t])
 
-    // Send endGame on unmount only after the first question was received from the server.
-    // Guards against React StrictMode's double-mount: the cleanup fires before the server
-    // ever sends displayQuestion, so hasDisplayedQuestionRef is still false then.
-    useEffect(
-        () => () => {
-            if (!gameEndedRef.current && hasDisplayedQuestionRef.current) {
-                ws.send({ command: "endGame" })
-            }
-        },
-        [ws]
-    )
+        const startErr = (await ws.send({ command: "start" })).getError()
+        if (startErr != null) {
+            toast.error(startErr.message || t("lobby.errors.failedToStart"))
+        } else {
+            setGameState(GameStateEnum.PLAYING)
+            await nextQuestion()
+        }
+        setStartPending(false)
+    }, [players.length, ws, t, nextQuestion])
 
-    const sendNextQuestion = useCallback((): void => {
-        ws.send({ command: "nextQuestion" })
-    }, [ws])
+    const sendNextQuestion = useCallback(async () => {
+        await nextQuestion()
+    }, [nextQuestion])
 
     const { setAudioElement, playAudio } = useAudio()
     const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -218,7 +227,7 @@ function HostDashboardComponent({ code }: Readonly<HostDashboardComponentProps>)
                     onStartGame={onStartGame}
                     players={players}
                     quiz={quiz}
-                    startPending={pendingStartId !== null}
+                    startPending={startPending}
                 />
             ) : (
                 <HostGameScreen

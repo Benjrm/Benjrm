@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import type { ServerMessage } from "../types/serverMessage"
 import useWebSocket from "@/features/session/websocket/hooks/useWebSocket.ts"
 import useWebSocketContext from "@/features/session/websocket/hooks/useWebSocketContext.ts"
 import sendReconnect from "@/features/session/websocket/utils/sendReconnect.ts"
@@ -11,7 +12,7 @@ import sendReconnect from "@/features/session/websocket/utils/sendReconnect.ts"
  */
 export default function usePlayerWebSocket(
     code: number | string | undefined,
-    setNameSaved: (value: boolean) => void
+    response: (response: ServerMessage) => void
 ): void {
     useWebSocket(code, "ws/player")
     const ws = useWebSocketContext()
@@ -19,6 +20,6 @@ export default function usePlayerWebSocket(
     useEffect(() => {
         if (!code) return undefined
         const storageKey = `waitingRoom:${code}`
-        return ws.onEveryConnect(() => sendReconnect(ws, storageKey, setNameSaved))
-    }, [code, ws, setNameSaved])
+        return ws.onEveryConnect(async () => sendReconnect(ws, storageKey, response))
+    }, [code, ws, response])
 }

@@ -2,7 +2,14 @@ import type { ClientMessage } from "@/features/session/websocket/types/clientMes
 import type { ServerEvents } from "@/features/session/websocket/types/serverEvents.ts"
 import type { AnyServerEventHandler } from "@/features/session/websocket/types/anyServerEventHandler.ts"
 import type { ServerEventHandler } from "@/features/session/websocket/types/serverEventHandler.ts"
-import type { ServerMessage } from "@/features/session/websocket/types/serverMessage.ts"
+import { ServerMessage } from "@/features/session/websocket/types/serverMessage.ts"
+import type { InnerServerMessage } from "@/features/session/websocket/types/serverMessage.ts"
+
+interface PendingRequest {
+    resolve: (value: ServerMessage) => void
+    reject: (error: unknown) => void
+    timeout: number | undefined
+}
 
 /**
  * Service for managing WebSocket connection lifecycle, sending messages, and handling incoming messages with a publish-subscribe pattern.
@@ -34,6 +41,10 @@ export default class WebSocketService {
 
     private isOffline = false
 
+    private messageCounter = 0
+
+    private readonly pending = new Map<number, PendingRequest>()
+
     /** Normalizes the various payload shapes a `MessageEvent` can carry into a UTF-8 string. */
     private static async decodeMessageData(data: MessageEvent["data"]): Promise<string | null> {
         if (typeof data === "string") {
@@ -57,6 +68,12 @@ export default class WebSocketService {
         if (this.socket === ws) {
             this.socket = null
         }
+
+        this.pending.forEach((value, key) => {
+            value.reject(Error("Socket closed"))
+            this.pending.delete(key)
+        })
+
         // Since some components may still be connected and continue to expect messages after the connection is reestablished, we do not remove the listener here.
     }
 
@@ -123,15 +140,28 @@ export default class WebSocketService {
                     console.error("Received invalid WebSocket message:", raw)
                     return
                 }
-                const data = raw as ServerMessage
-                const handlers = this.listeners.get(data.command)
-                handlers?.forEach((handler) =>
-                    (handler as ServerEventHandler<typeof data.command>)(
-                        data.payload,
-                        data.timing,
-                        data.id
+                const data = raw as InnerServerMessage
+
+                const promiseResolver = (() => {
+                    if (data.id === undefined) return null
+                    const pendingRequest = this.pending.get(data.id)
+                    if (pendingRequest === undefined) return null
+                    clearTimeout(pendingRequest.timeout)
+                    return pendingRequest.resolve
+                })()
+
+                if (promiseResolver) {
+                    promiseResolver(new ServerMessage(data))
+                } else {
+                    const handlers = this.listeners.get(data.command)
+                    handlers?.forEach((handler) =>
+                        (handler as ServerEventHandler<typeof data.command>)(
+                            data.payload,
+                            data.timing,
+                            data.id
+                        )
                     )
-                )
+                }
             } catch (error) {
                 console.error("Failed to process WebSocket message:", error)
             }
@@ -227,16 +257,47 @@ export default class WebSocketService {
      * @param message The message to send to the WebSocket server.
      * @throws Error if the socket is not connected or not open.
      */
-    public send(message: ClientMessage): void {
-        if (!this.socket) {
-            throw new Error("Cannot send WebSocket message: socket is not connected.")
-        }
-        if (this.socket.readyState !== WebSocket.OPEN) {
-            throw new Error(
-                `Cannot send WebSocket message: socket is not open (readyState: ${this.socket.readyState}).`
-            )
-        }
-        this.socket.send(JSON.stringify(message))
+    public async send(message: ClientMessage): Promise<ServerMessage> {
+        this.messageCounter += 1
+        const id = this.messageCounter
+
+        return new Promise<ServerMessage>((resolve, reject) => {
+            let catchHandler = () => {}
+
+            if (message.command !== "pong" && message.command !== "endGame") {
+                const timeout = setTimeout(() => {
+                    this.pending.delete(id)
+                    console.log("Timeout for message", id)
+                    reject(Error("Request timed out after 5000 ms"))
+                }, 5000)
+
+                this.pending.set(id, {
+                    resolve: (value) => resolve(value),
+                    reject,
+                    timeout,
+                })
+
+                catchHandler = () => {
+                    clearTimeout(timeout)
+                    this.pending.delete(id)
+                }
+            }
+
+            try {
+                if (!this.socket) {
+                    throw new Error("Cannot send WebSocket message: socket is not connected.")
+                }
+                if (this.socket.readyState !== WebSocket.OPEN) {
+                    throw new Error(
+                        `Cannot send WebSocket message: socket is not open (readyState: ${this.socket.readyState}).`
+                    )
+                }
+                this.socket.send(JSON.stringify({ ...message, id }))
+            } catch {
+                catchHandler()
+                reject(Error(`Failed to send message: ${message.command}`))
+            }
+        })
     }
 
     /**
