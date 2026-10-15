@@ -404,7 +404,20 @@ impl GameSession {
             HostCommand::ShowPodium => {
                 let leaderboard = match &self.status {
                     GameSessionStatus::Leaderboard { leaderboard, .. } => Arc::clone(leaderboard),
-                    _ => return Err(GameSessionError::NoLeaderboard),
+                    _ => {
+                        let mut leaderboard = Vec::with_capacity(self.players.len());
+                        for player in self.players.iter() {
+                            leaderboard.push(LeaderboardEntry {
+                                id: player.id,
+                                name: player.name.clone(),
+                                emoji: player.emoji,
+                                total_points: player.points,
+                                points: player.points,
+                            });
+                        }
+                        leaderboard.sort();
+                        Arc::new(leaderboard)
+                    }
                 };
 
                 self.status = GameSessionStatus::Podium(Arc::clone(&leaderboard));

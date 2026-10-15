@@ -88,8 +88,6 @@ impl_err! {
         NoQuestionLeft = BAD_REQUEST,
         #[error("Quiz has no questions")]
         NoQuestions = BAD_REQUEST,
-        #[error("No leaderboard to show")]
-        NoLeaderboard = BAD_REQUEST,
         #[error("Redis error")]
         Redis(RedisError) = INTERNAL_SERVER_ERROR,
         #[error("Game session exists on other node `{0}`")]
