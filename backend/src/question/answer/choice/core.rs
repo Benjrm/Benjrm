@@ -13,7 +13,7 @@ use {
     sea_orm::{
         ActiveModelTrait,
         ActiveValue::{self, NotSet, Set},
-        ConnectionTrait, DatabaseTransaction, DbErr,
+        ConnectionTrait, DbErr, TransactionTrait,
     },
     uuid::Uuid,
 };
@@ -116,10 +116,10 @@ impl LinkedItem for AnswerChoiceModel {
 }
 
 impl UpdateLinkedOptions<AnswerChoiceModel> {
-    pub async fn update(
+    pub async fn update<T: TransactionTrait + ConnectionTrait>(
         mut self,
         new: Vec<UpdateAnswerChoiceEnum>,
-        txn: &DatabaseTransaction,
+        txn: &T,
     ) -> Result<Vec<AnswerChoiceModel>, QuestionError> {
         for option in new {
             match option {

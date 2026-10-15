@@ -18,8 +18,8 @@ use {
     sea_orm::{
         ActiveModelTrait,
         ActiveValue::{NotSet, Set},
-        ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait, IntoActiveModel,
-        ModelTrait, QueryFilter, TransactionTrait,
+        ColumnTrait, ConnectionTrait, EntityTrait, IntoActiveModel, ModelTrait, QueryFilter,
+        TransactionSession, TransactionTrait,
         sea_query::Expr,
     },
     uuid::Uuid,
@@ -138,10 +138,14 @@ impl QuestionModel {
     /// This function validates:
     /// - minimum number of answers
     /// - at least one correct answer (if required)
-    async fn insert_options<Model: OptionModel, New: NewOption<Model>>(
+    async fn insert_options<
+        Model: OptionModel,
+        New: NewOption<Model>,
+        T: TransactionTrait + ConnectionTrait,
+    >(
         &self,
         new_options: Vec<New>,
-        txn: &DatabaseTransaction,
+        txn: &T,
         require_correct: bool,
     ) -> Result<Vec<Model>, QuestionError> {
         if new_options.len() < 2 {
@@ -207,7 +211,10 @@ impl QuestionModel {
     }
 
     /// Deletes all answer options for the question, unlinking them first to avoid leaving dangling references in the database.
-    pub async fn delete_answers(&self, txn: &DatabaseTransaction) -> Result<(), QuestionError> {
+    pub async fn delete_answers<T: TransactionTrait + ConnectionTrait>(
+        &self,
+        txn: &T,
+    ) -> Result<(), QuestionError> {
         match self.r#type {
             QuestionType::Slide => (),
             QuestionType::SingleChoice | QuestionType::MultipleChoice | QuestionType::Order => {

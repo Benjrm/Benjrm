@@ -290,7 +290,7 @@ impl ShadowGameSession {
                 if let ShadowGameSessionStatus::Leaderboard { leaderboard, .. } = &self.status {
                     self.status = ShadowGameSessionStatus::Podium(Arc::clone(leaderboard))
                 } else {
-                    return Err(GameSessionError::ShadowInvalidSessionStatus)?;
+                    Err(GameSessionError::ShadowInvalidSessionStatus)?
                 };
             }
             ShadowEvent::RenamePlayer {

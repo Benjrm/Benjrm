@@ -13,7 +13,8 @@ use {
     chrono::DateTime,
     sea_orm::{
         ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, DbErr, EntityTrait,
-        IntoActiveModel, QueryFilter, TransactionTrait, sea_query::Expr, sqlx::types::chrono::Utc,
+        IntoActiveModel, QueryFilter, TransactionSession, TransactionTrait, sea_query::Expr,
+        sqlx::types::chrono::Utc,
     },
     uuid::Uuid,
 };

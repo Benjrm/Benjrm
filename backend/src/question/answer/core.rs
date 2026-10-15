@@ -5,7 +5,7 @@ use {
     },
     sea_orm::{
         ActiveValue::{Set, Unchanged},
-        DatabaseTransaction,
+        ConnectionTrait, TransactionTrait,
     },
     uuid::Uuid,
 };
@@ -160,7 +160,10 @@ impl<Model: OptionModel> UpdateLinkedOptions<Model> {
     ///     2. delete the option
     ///
     /// Then a vector of all persisted options is returned.
-    pub async fn execute(self, txn: &DatabaseTransaction) -> Result<Vec<Model>, QuestionError> {
+    pub async fn execute<T: TransactionTrait + ConnectionTrait>(
+        self,
+        txn: &T,
+    ) -> Result<Vec<Model>, QuestionError> {
         // Insert new options before updating prev and next for all options
         for option in &self.options {
             if matches!(option.active_model.id(), Set(_)) {

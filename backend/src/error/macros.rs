@@ -116,9 +116,9 @@ macro_rules! impl_err {
                 match value {
                     // SQLSTATE 22021 (e.g. NUL byte in text).
                     // Postgres rejects `\0` in strings, unlike MySQL/SQLite.
-                    sea_orm::DbErr::Query(sea_orm::RuntimeErr::SqlxError(
-                        sea_orm::SqlxError::Database(error),
-                    )) if error.code().as_deref() == Some("22021") => Self::DatabaseInvalidCharacter,
+                    sea_orm::DbErr::Query(sea_orm::RuntimeErr::SqlxError(error))
+                        if matches!(error.as_ref(), sea_orm::SqlxError::Database(db_error)
+                        if db_error.code().as_deref() == Some("22021")) => Self::DatabaseInvalidCharacter,
                     e => Self::$name(e),
                 }
             }

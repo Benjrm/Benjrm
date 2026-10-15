@@ -9,7 +9,7 @@ use {
     sea_orm::{
         ActiveModelTrait,
         ActiveValue::{Set, Unchanged},
-        ConnectionTrait, DatabaseTransaction, IntoActiveModel,
+        ConnectionTrait, IntoActiveModel, TransactionTrait,
     },
     serde::{Deserialize, Deserializer},
     uuid::Uuid,
@@ -132,9 +132,9 @@ impl Neighbors {
     }
 
     /// Moves a new question by its id between the current neighbors, updating the [`prev`](QuestionModel::prev) and [`next`](QuestionModel::prev) fields of the neighboring questions in the database.
-    pub async fn move_between(
+    pub async fn move_between<T: TransactionTrait + ConnectionTrait>(
         self,
-        txn: &DatabaseTransaction,
+        txn: &T,
         id: Uuid,
     ) -> Result<(), QuestionError> {
         if let Some(prev) = self.prev {
@@ -152,9 +152,9 @@ impl Neighbors {
 
     /// Removes the current question from the linked list.
     /// Remaining questions will be linked together.
-    pub async fn remove_links(
+    pub async fn remove_links<T: TransactionTrait + ConnectionTrait>(
         question: &QuestionModel,
-        txn: &DatabaseTransaction,
+        txn: &T,
     ) -> Result<(), QuestionError> {
         if let Some(prev) = question.prev {
             ActiveQuestion {
