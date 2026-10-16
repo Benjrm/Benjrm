@@ -10,7 +10,12 @@ COPY frontend /app/frontend
 
 RUN npm run build
 
-FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/cargo-zigbuild AS build
+FROM --platform=$BUILDPLATFORM ghcr.io/rust-cross/cargo-zigbuild:0.23.4 AS build
+
+# Update the Rust toolchain because the cargo-zigbuild image ships with an outdated version.
+RUN rustup toolchain install 1.95.0 --profile minimal && \
+    rustup default 1.95.0
+
 ARG TARGETPLATFORM
 WORKDIR /app/backend
 
