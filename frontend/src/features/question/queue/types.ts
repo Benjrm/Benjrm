@@ -92,10 +92,7 @@ export interface ReorderQueueItem extends BaseQueueItem {
  * Union type of all supported queue operations.
  */
 export type QueueItem =
-    | CreateQuestionQueueItem
-    | UpdateQuestionQueueItem
-    | DeleteQuestionQueueItem
-    | ReorderQueueItem
+    CreateQuestionQueueItem | UpdateQuestionQueueItem | DeleteQuestionQueueItem | ReorderQueueItem
 
 /**
  * Actions used to manipulate the local queue state (e.g. reducer actions).
