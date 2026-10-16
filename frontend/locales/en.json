@@ -1,5 +1,11 @@
 {
     "common": {
+        "language": {
+            "name": "English",
+            "flag": "🇬🇧",
+            "switchLanguage": "Switch language",
+            "selectLanguage": "Select language"
+        },
         "errors": {
             "backendUnavailable": "The backend is currently unavailable. Please try again later.",
             "notFound": "The page you are looking for does not exist."

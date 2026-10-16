@@ -73,6 +73,7 @@ export default function LandingPage(): JSX.Element {
                                 <img
                                     alt={t("landing.imageAlt")}
                                     className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                                    loading="lazy"
                                     src="/pictures/happy_people.jpg"
                                 />
                                 <div className="from-background/95 via-background/10 absolute inset-0 flex items-end bg-linear-to-t to-transparent p-8 lg:p-12">

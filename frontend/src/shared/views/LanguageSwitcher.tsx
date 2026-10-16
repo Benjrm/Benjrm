@@ -1,6 +1,8 @@
-/* eslint-disable i18next/no-literal-string -- language names must appear in their native form */
 import type { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
+// eslint-disable-next-line import-x/no-unresolved -- Resolved by the Vite locales plugin.
+import { manifest } from "virtual:locale"
+import { t } from "i18next"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,35 +13,28 @@ import {
 export default function LanguageSwitcher(): ReactElement {
     const { i18n } = useTranslation()
 
-    // Determine the active language prefix (defaults to 'en' if not set)
-    const activeLang = i18n.resolvedLanguage ?? i18n.language ?? "en"
-    const activeFlag = activeLang.startsWith("de") ? "🇩🇪" : "🇬🇧"
-
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
                     className="text-muted-foreground hover:bg-accent hover:text-accent-foreground flex h-9 w-9 items-center justify-center rounded-md text-lg transition-colors"
-                    title={activeLang.startsWith("de") ? "Sprache wechseln" : "Switch language"}
+                    title={t("common.language.switchLanguage")}
                     type="button"
                 >
-                    <span aria-hidden="true">{activeFlag}</span>
-                    <span className="sr-only">Toggle language</span>
+                    <span aria-hidden="true">{t("common.language.flag")}</span>
+                    <span className="sr-only">{t("common.language.selectLanguage")}</span>
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={async () => i18n.changeLanguage("en")}
-                >
-                    <span className="mr-2 text-lg">🇬🇧</span> English
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={async () => i18n.changeLanguage("de")}
-                >
-                    <span className="mr-2 text-lg">🇩🇪</span> Deutsch
-                </DropdownMenuItem>
+                {Object.entries(manifest).map(([code, data]) => (
+                    <DropdownMenuItem
+                        key={code}
+                        className="cursor-pointer"
+                        onClick={async () => i18n.changeLanguage(code)}
+                    >
+                        <span className="mr-2 text-lg">{data.flag}</span> {data.name}
+                    </DropdownMenuItem>
+                ))}
             </DropdownMenuContent>
         </DropdownMenu>
     )

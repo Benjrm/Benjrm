@@ -1,6 +1,6 @@
 import "i18next"
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import en from "../../../public/locales/en.json"
+import en from "../../../locales/en.json"
 
 /**
  * Augments i18next's types with the shape of the `en.json` locale file, so

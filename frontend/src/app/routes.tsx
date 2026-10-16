@@ -1,15 +1,19 @@
 import type { RouteObject } from "react-router"
-import LandingPage from "./pages/LandingPage"
-import Dashboard from "./pages/Dashboard"
-import ErrorPage from "./pages/ErrorPage"
+import { lazy } from "react"
 import RootLayout from "./layout/RootLayout"
-import QuizCreator from "./pages/QuizCreator"
-import DownloadableMarkdown from "@/shared/views/markdown/DownloadableMarkdown.tsx"
 import LoginRedirect from "@/auth/utils/LoginRedirect.tsx"
 import AuthGuard from "@/auth/guards/AuthGuard.tsx"
-import Quizzes from "@/app/pages/Quizzes.tsx"
-import GamePage from "@/app/pages/GamePage.tsx"
-import HostDashboard from "@/app/pages/HostDashboard.tsx"
+
+const LandingPage = lazy(async () => import("./pages/LandingPage"))
+const DownloadableMarkdown = lazy(
+    async () => import("@/shared/views/markdown/DownloadableMarkdown.tsx")
+)
+const ErrorPage = lazy(async () => import("./pages/ErrorPage"))
+const GamePage = lazy(async () => import("./pages/GamePage"))
+const HostDashboard = lazy(async () => import("./pages/HostDashboard"))
+const Dashboard = lazy(async () => import("./pages/Dashboard"))
+const QuizCreator = lazy(async () => import("./pages/QuizCreator"))
+const Quizzes = lazy(async () => import("./pages/Quizzes"))
 
 const routes: RouteObject[] = [
     {

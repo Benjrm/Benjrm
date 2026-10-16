@@ -1,8 +1,6 @@
 import type { JSX } from "react"
-import { useState, useEffect } from "react"
-import MDEditor from "@uiw/react-md-editor"
+import { useState, useEffect, lazy } from "react"
 import { useTranslation } from "react-i18next"
-import QuestionAnswerOptions from "./QuestionAnswerOptions"
 import {
     Select,
     SelectContent,
@@ -17,6 +15,9 @@ import updateQuestionWithPatch from "@/features/question/utils/updateQuestionWit
 import questionTypes from "@/features/question/constants/questionTypes.ts"
 import type { QuestionError } from "@/features/question/types/questionError.ts"
 import useTheme from "@/shared/hooks/useTheme.ts"
+
+const MDEditor = lazy(async () => import("@uiw/react-md-editor"))
+const QuestionAnswerOptions = lazy(async () => import("./QuestionAnswerOptions"))
 
 interface QuestionEditorProps {
     question: Question

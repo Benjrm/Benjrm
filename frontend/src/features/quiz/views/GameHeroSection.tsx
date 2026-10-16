@@ -79,6 +79,7 @@ export default function GameHeroSection({
                     <img
                         alt={t("dashboard.hero.imageAlt")}
                         className="absolute inset-0 h-full w-full object-cover"
+                        loading="lazy"
                         src="/pictures/happy_people.jpg"
                     />
                     <div className="absolute inset-0 w-full bg-linear-to-r from-white via-white/70 to-transparent md:w-1/3 dark:from-[#111318] dark:via-[#111318]/40" />

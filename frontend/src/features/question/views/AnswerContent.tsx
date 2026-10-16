@@ -1,13 +1,14 @@
 import type { JSX } from "react"
-import { useState } from "react"
+import { lazy, useState } from "react"
 import { Maximize2 } from "lucide-react"
-import MDEditor from "@uiw/react-md-editor"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/shadcn/components/ui/button"
 import { Input } from "@/shadcn/components/ui/input"
 import { Textarea } from "@/shadcn/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shadcn/components/ui/dialog"
 import useTheme from "@/shared/hooks/useTheme.ts"
+
+const MDEditor = lazy(async () => import("@uiw/react-md-editor"))
 
 interface AnswerContentProps {
     value: string

@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url"
 const scriptFilename = fileURLToPath(import.meta.url)
 const scriptDirname = path.dirname(scriptFilename)
 
-const LOCALES_DIR = path.resolve(scriptDirname, "../public/locales")
+const LOCALES_DIR = path.resolve(scriptDirname, "../locales")
 const BASE_LOCALE = "en.json"
 
 function getKeys(obj: Record<string, unknown>, prefix = ""): string[] {
